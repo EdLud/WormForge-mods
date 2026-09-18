@@ -1,0 +1,12 @@
+id = "example.gif_donkey"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = ["example.gif_donkey"]
+replace = ["grenade"]
+
+[actors]
+register = ["example.gif_donkey.drop"]

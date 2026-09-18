@@ -1,0 +1,9 @@
+id = "example.worm_toss"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = ["example.worm_toss"]
+replace = ["battle_axe"]

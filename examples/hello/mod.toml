@@ -1,0 +1,9 @@
+id = "example.hello"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "init.lua"
+
+[weapons]
+register = []
+replace = []

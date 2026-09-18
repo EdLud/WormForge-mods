@@ -1,0 +1,12 @@
+id = "example.ice_bazooka"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = ["example.ice_bazooka"]
+replace = ["bazooka"]
+
+[actors]
+register = []
