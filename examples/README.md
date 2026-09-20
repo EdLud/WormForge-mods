@@ -7,4 +7,4 @@ Example packs. Copy a folder to `Mods/` next to `WA.exe`.
 - `wormcraft` — overlays **cluster bomb**. Aiming keeps the stock cluster sprite. Shot plays an anime cut-in (speed lines + portrait) with `cutout.mp3`, then writes `WormCraft` letter by letter and the meme sting. Needs no other cluster_bomb overlay.
 - `worm_toss` — overlays **battle axe**. Strike cursor, click-hold a worm to drag (stock airborne physics / wiggle), release to throw or drop.
 - `pooz` — overlays **shotgun** as a panel slot only. Selecting it possesses the owner as the POOZ runner (run/sprint, coyote, double jump). A/D, W to jump, Shift. Switch weapon to drop out. Needs no other shotgun overlay.
-- `q_bazooka` — no slot overlay. On your turn, **Q** stock-selects bazooka. **Space** hold charges the power bar; release shoots. Same as a real bazooka.
+- `q_bazooka` — use bazooka even when its not on panel or in scheme. On your turn, **Q** stock-selects bazooka. **Space** hold charges the power bar; release shoots. Same as a real bazooka.
