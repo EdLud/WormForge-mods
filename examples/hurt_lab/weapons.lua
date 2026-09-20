@@ -1,5 +1,6 @@
 -- Fire punch is only the panel slot. Space is lockstep FIRE_WEAPON.
--- Eat the stock punch. Lua does the 10 HP hits. No explosion, no projectile.
+-- "Eat" stops the firepunch stock attack and animation to happen to be able to make your custom firepath timing.
+-- First Eat stops the firepunch attack from happening even when you have 0 firepunch ammo, this is because you could still use this weapon with 0 firepunch in scheme and we want it to still work.
 
 local line = "ten  Space = 10 hp each enemy"
 
