@@ -1,6 +1,6 @@
 Example packs. Copy a folder to `Mods/` next to `WA.exe`.
 
-- `hello` — logs a line, no weapons.
+- `hurt_lab` — overlays **fire punch** as **Ten**. Space is lockstep `FIRE_WEAPON`: eat the punch, `worm:hurt(10)` every enemy. Needs no other fire_punch overlay.
 - `circle_bazooka` — overlays bazooka with `sprites/ball.png` (8-frame spin), gravity 25, wind 200, extra Lua bounce. Do not enable together with `ice_bazooka`.
 - `gif_donkey` — grenade slot Growth Hormones via **statuses** (checkboxes: gravity, collide, persist, drown, explode). GUI path.
 - `gif_donkey_lua` — same weapon via **Lua verbs**. `on_click` is a function that calls `wa.actors.spawn`; the brain ticks gravity/move/explode. `wa.land` / `wa.worms` / `wa.crates` are available. Disable `gif_donkey` if both are in `Mods/` (same slot).

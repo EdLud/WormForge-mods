@@ -1,0 +1,9 @@
+id = "example.hurt_lab"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = ["example.hurt_lab"]
+replace = ["fire_punch"]
