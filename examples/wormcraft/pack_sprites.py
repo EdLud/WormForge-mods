@@ -4,7 +4,7 @@ import subprocess
 import zlib
 from pathlib import Path
 
-ROOT = Path(r"C:\Users\Adw11\Desktop\NewPX")
+ROOT = Path(__file__).resolve().parents[3]
 PACK = ROOT / "mods" / "examples" / "wormcraft" / "sprites"
 SRC = ROOT / "Resources" / "Fantasy Spells"
 
