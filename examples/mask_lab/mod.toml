@@ -1,6 +1,0 @@
-id = "mask_lab"
-api_version = 1
-entry = "weapons.lua"
-
-[weapons]
-replace = ["prod"]
