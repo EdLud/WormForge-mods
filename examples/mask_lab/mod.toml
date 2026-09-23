@@ -1,0 +1,7 @@
+id = "mask_lab"
+api_version = 1
+entry = "weapons.lua"
+name = "Mask Lab"
+
+[weapons]
+replace = ["prod"]

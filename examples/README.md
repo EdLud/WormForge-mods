@@ -1,5 +1,6 @@
 Example packs. Copy a folder to `Mods/` next to `WA.exe`.
 
+- `mask_lab` — overlays **prod**. Click places a solid PNG silhouette (`mask = true` + worm/land/weapon/actor checkboxes). Throw grenades at it / walk into it. Needs no other prod overlay.
 - `hurt_lab` — overlays **fire punch** as **Ten**. Space is lockstep `FIRE_WEAPON`: eat the punch, `worm:hurt(10)` every enemy. Needs no other fire_punch overlay.
 - `turret` — overlays **dynamite**. Space plants a persist sentry (mine placement). Line of sight is `wa.land.trace`; rounds are `worm:hurt`, not explosions. Needs no other dynamite overlay.
 - `circle_bazooka` — overlays bazooka with `sprites/ball.png` (8-frame spin), gravity 25, wind 200, extra Lua bounce. Do not enable together with `ice_bazooka`.
