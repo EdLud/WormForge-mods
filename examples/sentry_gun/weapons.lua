@@ -54,7 +54,11 @@ local CASING_SPEED_MIN  = 200
 local CASING_SPEED_MAX  = 300
 
 local state = {}
-local active_team = nil   -- team currently taking its turn; turrets hold fire
+-- Alliance currently taking its turn; that side's turrets hold fire.
+-- Alliance, not team: it is WA's colour index (0 red .. 5 cyan), so it is
+-- also what colours the turret, and allied teams share it -- a turret must
+-- not fire on its owner's allies either.
+local active_alliance = nil
 
 local function pad2(i)
   return string.format("%02d", i)
@@ -165,7 +169,7 @@ end
 -- need_motion only on acquisition: PX requires movement to notice a worm, but
 -- keeps an acquired target on line of sight alone, even if it stands still.
 local function sees(a, s, w, need_motion)
-  if w.team == s.team or w.visible == false then
+  if w.alliance == s.alliance or w.visible == false then
     return false
   end
   if need_motion and REQUIRE_MOTION and not moving(s, w) then
@@ -311,7 +315,7 @@ local function fire(a, s)
   local rx, ry = (hx - mx) // PX, (hy - my) // PX
   local hit_px = rx * rx + ry * ry
   for _, w in ipairs(wa.worms.all()) do
-    if w.team ~= s.team and w.visible ~= false then
+    if w.alliance ~= s.alliance and w.visible ~= false then
       local wx = (w.x - mx) // PX
       local wy = (w.y - my) // PX
       local along = wx * dx + wy * dy
@@ -448,7 +452,7 @@ local function think(a, s)
   -- firing until it loses the target, runs dry or is disabled. Re-testing the
   -- aim gap per shot makes it stutter against a moving worm, because the gap
   -- oscillates around the tolerance while tracking.
-  local hold_fire = (active_team == s.team)
+  local hold_fire = (active_alliance == s.alliance)
 
   if target and not hold_fire and s.activate <= 0 and (s.firing or aligned) then
     start_firing(a, s)
@@ -522,7 +526,7 @@ local function sync(a, s)
   -- pixel by source instead of inheriting one order.
   gun:gfx({
     angle = (90 - s.angle) % 360,
-    tint = TEAM_TINT[s.team] or TEAM_TINT[1],
+    tint = TEAM_TINT[s.alliance + 1] or TEAM_TINT[1],
     depth = IN_FRONT_OF_TERRAIN,
   })
 end
@@ -640,11 +644,12 @@ wa.weapons.replace({
   -- Stock mine fire timing/ammo/retreat, but a Lua body instead of a MineEntity.
   on_fire = function(fire_ev)
     local worm = fire_ev.worm
-    -- worm.team is WA's team field, 1-based in the colour order
-    -- Red Blue Green Yellow Magenta Cyan.
-    local team = (worm and worm.team) or 1
-    if team < 1 or team > 6 then
-      team = 1
+    -- The owner's colour. Not worm.team: that is the team's slot in the
+    -- roster, which matches its colour only in a default offline game --
+    -- online, a blue team in slot 1 placed a red turret.
+    local alliance = (worm and worm.alliance) or 0
+    if alliance < 0 or alliance > 5 then
+      alliance = 0
     end
     local facing = worm.facing
     local idle = facing < 0 and 270 or 90
@@ -665,7 +670,7 @@ wa.weapons.replace({
     })
 
     state[body.id] = {
-      team = team,
+      alliance = alliance,
       owner = worm,
       planted = false,
       active = true,
@@ -736,10 +741,17 @@ wa.on.worm_message(function(worm, msg)
   if msg ~= wa.msg.START_TURN then
     return
   end
-  active_team = worm.team
+  active_alliance = worm.alliance
   for _, s in pairs(state) do
     s.ammo = AMMO
     s.active = true
     s.had_target = false
+    -- A new turn needs new movement. The target acquired last turn -- often
+    -- while this turret held fire through its own side's turn -- is dropped,
+    -- and so is the motion memory; otherwise the turret opened fire on a
+    -- worm that had stood still since, the moment its teammate's turn began.
+    s.tid = nil
+    s.lost = false
+    s.seen = {}
   end
 end)
