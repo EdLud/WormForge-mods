@@ -1,5 +1,7 @@
 -- PX's script replaces these four stock mole digging sprites. WA still owns
 -- the mole strike's movement, terrain cuts, sounds, damage and stop conditions.
+-- PX's Gravler has no underwater art, so a gravler that dives into water sinks
+-- as its dive frame under PX's sinking tint (no `mole` key needed here).
 wa.weapons.replace({
   weapon = "donkey",
   name = "Gravler Strike",
