@@ -1,0 +1,11 @@
+id = "example.highlander"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "rules.lua"
+
+# Rules only: this pack claims no weapon slots. It hands out and takes away
+# the stock weapons already on them.
+[weapons]
+register = []
+replace = []
