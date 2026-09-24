@@ -1,12 +1,11 @@
 id = "example.highlander"
-version = "0.1.0"
+version = "0.2.0"
 author = "wkLua"
 api_version = 1
 kind = "gameplay"
 entry = "rules.lua"
 
-# Rules only: this pack claims no weapon slots. It hands out and takes away
-# the stock weapons already on them.
+# Verb-based edition: wa.inventory + turn_start + death.
 [weapons]
 register = []
 replace = []

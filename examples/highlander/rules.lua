@@ -34,10 +34,10 @@
 --     range short (RandomInt(0,20) instead of (0,28)), which only works
 --     because its list happened to keep the strikes at the end.
 --
--- Lockstep: every rule runs inside wa.on.worm_message, which is WA's own
--- simulation, and every random choice is wa.random(). Two peers, or a peer
--- and a replay, deal the same hands and make the same grants. Nothing here
--- reads local input or the clock.
+-- Lockstep: dealing, turn_start and death are all dispatched from WA's own
+-- simulation messages, and every random choice is wa.random(). Two peers, or
+-- a peer and a replay, deal the same hands and make the same grants. Nothing
+-- here reads local input or the clock.
 
 -- ----------------------------------------------------------------- pools
 
@@ -95,34 +95,11 @@ end
 
 -- ----------------------------------------------------------------- state
 
--- Keyed by stable worm id (team * 16 + index), which is the same on every
--- peer and in a replay. Never by handle: a handle is an entity address, and a
--- dead worm's entity is freed while its id lives on in these tables.
-local hands = {} -- [id] = { weapon names }, draw order first, then stolen
-local dead = {} -- [id] = true once the worm has been seen at 0 hp
-local active_id -- PX's CurW: the worm whose turn it is, or was
-
-local function by_id(a, b)
-  return a.id < b.id
-end
-
--- The live worms, in id order. Called fresh every time rather than cached:
--- the list shrinks as worms die, and a cached handle to a freed worm would be
--- a read of freed memory.
-local function worms()
-  local list = wa.worms.all()
-  table.sort(list, by_id)
-  return list
-end
-
-local function find(id)
-  for _, w in ipairs(worms()) do
-    if w.id == id then
-      return w
-    end
-  end
-  return nil
-end
+-- The engine store is keyed by stable worm id (team * 16 + index), never by
+-- entity address. It is virtual: WA's physical ammo is still alliance-shared
+-- and is materialized from one worm's inventory at turn start.
+local arsenal = wa.inventory.create({ id = "arsenal", slots = POOLED })
+local dealt = {}
 
 local function describe(list)
   if not list or #list == 0 then
@@ -132,10 +109,6 @@ local function describe(list)
 end
 
 -- ----------------------------------------------------------------- rules
-
-local function draw(pool)
-  return pool[wa.random(1, #pool)]
-end
 
 local function offensive_pool()
   if not wa.world.cavern() then
@@ -158,83 +131,55 @@ end
 -- sequence everywhere.
 local function deal(worm)
   local cave = wa.world.cavern()
-  hands[worm.id] = { draw(offensive_pool()), draw(SECOND), draw(MOVEMENT) }
+  arsenal:deal(worm, offensive_pool(), 1)
+  arsenal:deal(worm, SECOND, 1)
+  arsenal:deal(worm, MOVEMENT, 1)
+  dealt[worm.id] = true
   wa.log(string.format(
     "highlander: worm %d dealt %s (%s map)",
-    worm.id, describe(hands[worm.id]), cave and "cavern" or "open"
+    worm.id, describe(arsenal:list(worm)), cave and "cavern" or "open"
   ))
 end
 
-local function set_all(worm, list, n)
-  for _, name in ipairs(list) do
-    worm:ammo(name, { set = n })
-  end
-end
-
--- Take every pooled weapon away from every team.
---
--- WA keeps ammo per alliance (`worm.alliance`; allied teams share a row).
--- Going through one worm of each team reaches every row without relying on
--- that mapping -- a row two allied teams share is simply written twice.
-local function clear_pooled()
-  local seen = {}
-  for _, w in ipairs(worms()) do
-    if not seen[w.team] then
-      seen[w.team] = true
-      set_all(w, POOLED, 0)
-    end
-  end
-end
-
 local function start_turn(worm)
-  clear_pooled()
-  active_id = worm.id
-  set_all(worm, hands[worm.id] or {}, 1)
+  arsenal:apply(worm, { clear = true, each = 1 })
 end
 
--- PX checks every worm on every frame for "0 hp and not yet marked dead".
-local function check_death(worm)
-  local id = worm.id
-  if dead[id] or worm.hp > 0 then
-    return
-  end
-  dead[id] = true
-  local mine = hands[id] or {}
+local function on_death(event)
+  local victim = event.victim
+  local active = event.active
+  local mine = arsenal:list(victim)
 
-  if active_id == id then
+  if active and active.id == victim.id then
     -- Died on its own turn: nothing to hand on, just take its weapons away.
-    set_all(worm, mine, 0)
-    wa.log(string.format("highlander: worm %d died on its own turn", id))
+    arsenal:clear(victim)
+    arsenal:apply(victim, { clear = true, each = 1 })
+    wa.log(string.format("highlander: worm %d died on its own turn", victim.id))
     return
   end
 
   -- Otherwise the worm whose turn it is gets everything -- whoever or
   -- whatever did the killing, friend or foe, exactly as in PX.
-  if active_id == nil or dead[active_id] then
+  if not active or active.hp <= 0 then
     return
   end
-  local stealer = find(active_id)
-  if not stealer then
-    return
-  end
-  local theirs = hands[active_id]
-  for _, name in ipairs(mine) do
-    theirs[#theirs + 1] = name
-  end
+  arsenal:transfer(victim, active, { weapons = "all", mode = "move" })
   -- Usable at once, this turn, not from the stealer's next turn.
-  set_all(stealer, mine, 1)
+  arsenal:apply(active, { weapons = mine, each = 1 })
   wa.log(string.format(
-    "highlander: worm %d took %s from worm %d", active_id, describe(mine), id
+    "highlander: worm %d took %s from worm %d",
+    active.id, describe(mine), victim.id
   ))
 end
 
 wa.on.worm_message(function(worm, msg)
-  if hands[worm.id] == nil then
+  if not dealt[worm.id] then
     deal(worm)
   end
-  if msg == wa.msg.START_TURN then
-    start_turn(worm)
-  elseif msg == wa.msg.FRAME_FINISH then
-    check_death(worm)
-  end
 end)
+
+wa.on.turn_start(function(event)
+  start_turn(event.worm)
+end)
+
+wa.on.death(on_death)

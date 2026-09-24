@@ -1,4 +1,8 @@
-# Highlander (stock weapons)
+# Highlander (inventory verbs)
+
+This is the concise implementation built on `wa.inventory`,
+`wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
+is preserved in `highlander_pure_lua` for comparison. Enable only one edition.
 
 The gameplay rules of Project X's *Highlander 0rang3 1.1*, played with WA's
 own weapons. There are no custom weapons yet. The point is to test the rules
@@ -57,16 +61,25 @@ These are deliberate, and each one is explained in `rules.lua`:
 
 ## Lockstep
 
-Every rule runs inside `wa.on.worm_message`, which is WA's own simulation.
+The pack uses lockstep `worm_message`, `turn_start`, and `death` events.
 Every random choice is `wa.random()`, which draws from WA's shared RNG, and
-hands are dealt in worm-id order. Two peers, or a replay, deal the same
+hands are dealt in worm-message order. Two peers, or a replay, deal the same
 hands. Nothing reads local input or the clock.
 
-## Engine features it needed
+## Reusable engine features
 
 - `worm:ammo(name, { set = n })`: an absolute ammo write, WormForge's
   version of PX's `SetWeaponEx`. The older `worm:ammo(name, n)` adds to
   the current ammo and never changes infinite.
+- `wa.inventory.create({ id, slots })`: a pack-scoped, per-worm virtual
+  inventory. Its `deal`, `transfer`, `clear`, and `apply` verbs are usable by
+  class/loadout mods without copying Highlander's bookkeeping.
+- `wa.on.turn_start`: the active worm as a first-class lockstep event.
+- `wa.on.death`: one event per death with `victim`, current `active`, and
+  optional proven `attacker`, `attacker_team`, `weapon`, `slot`, and damage
+  `kind`. Highlander intentionally transfers to `active`, preserving PX rules.
+- `wa.on.hurt` carries the same optional attribution fields, so a different
+  pack can transfer on damage or only for a particular weapon.
 - `wa.world.cavern()`: WA's own cavern flag (`GameWorld+0x777C`).
 - A fix: granting ammo used to move the weapon into the F1 panel row. It now
   stays in its own row.
@@ -93,4 +106,5 @@ the engine's job, and the mock can't test it. They cover:
 - no double transfer
 - a worm dying on its own turn
 
-**Not verified in game yet.**
+The inventory/rule-event refactor is covered by this mock suite and still
+needs an in-game validation after deploying the matching DLL and pack.

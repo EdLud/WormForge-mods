@@ -52,7 +52,7 @@ local STRIKES = {
 
 -- ------------------------------------------------------------ mocked WA
 
-local M, ammo, worms, cavern, rng, logs
+local M, ammo, worms, cavern, rng, logs, active, death_seen
 
 local Worm = {}
 Worm.__index = Worm
@@ -67,9 +67,105 @@ function Worm:ammo(name, change)
   return change.set
 end
 
+local function inventory_api()
+  local api = {}
+
+  function api.create(spec)
+    local slots, allowed, values = spec.slots, {}, {}
+    for _, name in ipairs(slots) do allowed[name] = true end
+
+    local inv = {}
+    local function row(worm, create)
+      local r = values[worm.id]
+      if not r and create then r = {}; values[worm.id] = r end
+      return r
+    end
+    function inv:get(worm, name)
+      local r = row(worm)
+      return r and (r[name] or 0) or 0
+    end
+    function inv:set(worm, name, n)
+      assert(allowed[name])
+      local r = row(worm, true)
+      r[name] = n > 0 and n or nil
+      return n
+    end
+    function inv:add(worm, name, n)
+      return self:set(worm, name, self:get(worm, name) + (n or 1))
+    end
+    function inv:remove(worm, name, n)
+      return self:set(worm, name, math.max(0, self:get(worm, name) - (n or 1)))
+    end
+    function inv:list(worm)
+      local out, r = {}, row(worm)
+      if not r then return out end
+      for _, name in ipairs(slots) do
+        for _ = 1, r[name] or 0 do out[#out + 1] = name end
+      end
+      return out
+    end
+    function inv:deal(worm, pool, count)
+      local out = {}
+      for _ = 1, count or 1 do
+        local name = pool[wa.random(1, #pool)]
+        self:add(worm, name, 1)
+        out[#out + 1] = name
+      end
+      return out
+    end
+    function inv:clear(worm, weapons)
+      local r = row(worm)
+      if not r then return end
+      local names = weapons
+      if names == nil or names == "all" then names = slots end
+      if type(names) == "string" then names = { names } end
+      for _, name in ipairs(names) do r[name] = nil end
+    end
+    function inv:transfer(from, to, opts)
+      opts = opts or {}
+      local names = opts.weapons
+      if names == nil or names == "all" then names = slots end
+      if type(names) == "string" then names = { names } end
+      local moved = {}
+      for _, name in ipairs(names) do
+        local have = self:get(from, name)
+        local n = opts.amount and math.min(have, opts.amount) or have
+        if n > 0 then
+          self:add(to, name, n)
+          if (opts.mode or "move") == "move" then self:remove(from, name, n) end
+          moved[name] = n
+        end
+      end
+      return moved
+    end
+    function inv:apply(worm, opts)
+      opts = opts or {}
+      if opts.clear then
+        local seen = {}
+        for _, live in ipairs(wa.worms.all()) do
+          if not seen[live.alliance] then
+            seen[live.alliance] = true
+            for _, name in ipairs(slots) do live:ammo(name, { set = 0 }) end
+          end
+        end
+      end
+      local names = opts.weapons or slots
+      local r = row(worm)
+      if not r then return end
+      for _, name in ipairs(names) do
+        if (r[name] or 0) > 0 then
+          worm:ammo(name, { set = opts.each or r[name] })
+        end
+      end
+    end
+    return inv
+  end
+  return api
+end
+
 local function new_match(opts)
   opts = opts or {}
-  M, logs = {}, {}
+  M, logs, active, death_seen = {}, {}, nil, {}
   cavern = opts.cavern or false
   rng = 12345
   ammo = {}
@@ -111,8 +207,11 @@ local function new_match(opts)
         return live
       end,
     },
+    inventory = inventory_api(),
     on = {
       worm_message = function(f) M.message = f end,
+      turn_start = function(f) M.turn_start = f end,
+      death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
     },
   }
@@ -130,11 +229,17 @@ end
 local function frame()
   for _, w in ipairs(worms) do
     M.message(w, 2)
+    if w.hp <= 0 and not death_seen[w.id] then
+      death_seen[w.id] = true
+      M.death({ victim = w, active = active })
+    end
   end
 end
 
 local function turn(id)
-  M.message(worm(id), 0x34)
+  active = worm(id)
+  M.message(active, 0x34)
+  M.turn_start({ worm = active, active = active })
 end
 
 local function kill(id)
@@ -445,6 +550,29 @@ do
     if line:find("took") then took = true end
   end
   check("no transfer to a dead worm", not took)
+end
+
+print("inventory verbs: damage and weapon conditions choose arbitrary targets")
+do
+  new_match()
+  local loot = wa.inventory.create({
+    id = "conditional-test", slots = { "bazooka", "grenade" },
+  })
+  loot:set(worm(32), "bazooka", 2)
+  loot:set(worm(32), "grenade", 1)
+  local hit = {
+    victim = worm(32), attacker = worm(16),
+    lost = 25, weapon = "baseball_bat",
+  }
+  if hit.lost >= 20 and hit.weapon == "baseball_bat" then
+    loot:transfer(hit.victim, hit.attacker, {
+      weapons = "bazooka", amount = 1, mode = "move",
+    })
+  end
+  check("conditioned steal moved one selected weapon",
+    loot:get(worm(16), "bazooka") == 1
+      and loot:get(worm(32), "bazooka") == 1
+      and loot:get(worm(32), "grenade") == 1)
 end
 
 print("")
