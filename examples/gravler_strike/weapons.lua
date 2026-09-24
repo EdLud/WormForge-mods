@@ -6,10 +6,10 @@ wa.weapons.replace({
   copy_from = "mole_squadron",
   panel_icon = "mole_squadron",
   stock_sprite_overrides = {
-    [245] = "sprites/gravlerdive.png",
-    [246] = "sprites/gravlerdiga.png",
-    [247] = "sprites/gravlerdigb.png",
-    [248] = "sprites/gravlerdigc.png",
+    moledive = "sprites/gravlerdive.png",
+    moledig1 = "sprites/gravlerdiga.png",
+    moledig2 = "sprites/gravlerdigb.png",
+    moledig3 = "sprites/gravlerdigc.png",
   },
   is_weapon = true,
 })

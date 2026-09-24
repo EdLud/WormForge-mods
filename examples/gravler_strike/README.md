@@ -6,7 +6,8 @@ damage, sound and turn timing. PX's `weapon_gravler.pxl` defines Gravler Strike
 in weapon data and uses its script only to replace the mole's four digging
 sprite sheets (IDs 245–248). The four PNG strips here were extracted without
 modification from that local PX library. The pack applies the same global
-sprite overrides. PX weapon-data tuning still needs in-game comparison against
+sprite overrides by name: `moledive` and `moledig1`–`moledig3` resolve to IDs
+158–161 in WA 3.8.1. PX weapon-data tuning still needs in-game comparison against
 WA's Mole Squadron parameters. The panel icon is WA's Mole Squadron icon for
 now; the PX Gravler Strike icon is not yet wired into the panel.
 
