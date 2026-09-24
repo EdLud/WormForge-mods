@@ -5,7 +5,7 @@ wa.weapons.replace({
   name = "Gravler Strike",
   copy_from = "mole_squadron",
   panel_icon = "mole_squadron",
-  stock_sprite_overrides = {
+  mole_dig_rotation = {
     moledive = "sprites/gravlerdive.png",
     moledig1 = "sprites/gravlerdiga.png",
     moledig2 = "sprites/gravlerdigb.png",
