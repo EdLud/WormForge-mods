@@ -33,10 +33,17 @@ timing.
 - `a:frame(index)` selects a zero-based frame and holds it until another `frame`
   or `look` call. Negative and overflowing indices wrap. Sheets support up to
   65,536 explicitly addressable frames.
-- `worm.facing` reads -1 (left) or 1 (right).
+- `worm.facing` reads -1 (left) or 1 (right): the side WA's own fire code
+  shoots to, so a worm that turns and fires in one aim places to its new side.
 - `worm_sprites = { weaponlnk = "sprites/equip", wthrow = "sprites/unequip", ... }`
   supplies custom-weapon equip and placement animations for flat/up/down slopes.
   These assets are installed automatically; do not duplicate them in `sprites`.
+  A pose may instead list one sheet per team colour, red to cyan
+  (`weaponlnk = { red, blue, green, yellow, magenta, cyan }`); each worm draws
+  its own team's. This pack's are baked by `tools/bake_sentry_team_sprites.py`,
+  so the housing a worm carries matches the turret it plants. PX's grey
+  sheets stay in `sprites/equip*` and `sprites/unequip*` for a neutral
+  sentry, one that fires on every team.
   Stock flags and phase remain.
 - `copy_from = "mine"` with `on_fire` keeps stock placement but routes the body
   through the existing Lua spawn hook. The stock mine slot remains unchanged.
