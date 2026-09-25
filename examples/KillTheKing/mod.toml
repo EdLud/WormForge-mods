@@ -1,0 +1,12 @@
+id = "ktk_control"
+version = "1.0.0"
+author = "WormForge Porting Engine"
+api_version = 1
+entry = "init.lua"
+
+[weapons]
+register = []
+replace = []
+
+[actors]
+register = []
