@@ -619,7 +619,8 @@ wa.weapons.replace({
   is_weapon = true,
   -- One sheet per team colour, so the housing the worm carries is its team's
   -- colour like the planted turret. tools/bake_sentry_team_sprites.py bakes
-  -- them from PX's grey sheets with TEAM_TINT.
+  -- them from PX's grey sheets with TEAM_TINT. The grey sheets
+  -- (sprites/equip*, sprites/unequip*) stay for a neutral sentry.
   worm_sprites = {
     weaponlnk = team_sheets("equip"), weaponlnku = team_sheets("equipu"),
     weaponlnkd = team_sheets("equipd"),

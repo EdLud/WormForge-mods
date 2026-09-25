@@ -41,7 +41,9 @@ timing.
   A pose may instead list one sheet per team colour, red to cyan
   (`weaponlnk = { red, blue, green, yellow, magenta, cyan }`); each worm draws
   its own team's. This pack's are baked by `tools/bake_sentry_team_sprites.py`,
-  so the housing a worm carries matches the turret it plants.
+  so the housing a worm carries matches the turret it plants. PX's grey
+  sheets stay in `sprites/equip*` and `sprites/unequip*` for a neutral
+  sentry, one that fires on every team.
   Stock flags and phase remain.
 - `copy_from = "mine"` with `on_fire` keeps stock placement but routes the body
   through the existing Lua spawn hook. The stock mine slot remains unchanged.
