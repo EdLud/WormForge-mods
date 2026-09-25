@@ -97,21 +97,26 @@ so replays share them. The strips are split into frame folders with
 | mail_strike | Pigeon Strike | icon |
 | cluster_bomb | Windy Cluster | icon, cluster bits |
 | banana_bomb | Super Gravedigger | icon, flight and cluster sprites, the worm holding and taking it out (flat, up, down) |
+| minigun | Burst Rifle | icon, the worm aiming it, taking it out and firing it (`weaponfire*`) |
+| mortar | S.M.A.R.T Bomb | icon, flight and cluster sprites, the bits' own sprite while they home, trail, worm |
+| homing_pigeon | Blaster Worm | icon, flight and cluster sprites, the bits' trail, worm |
+| battle_axe | Thumper Nade | icon, flight and cluster sprites, both trails, worm |
 
-All six were played in game.
+All ten were played in game.
+
+**Trails.** PX draws the last three weapons' trails by overriding stock
+sprites their records point at: the Salvation Army's `wsv*` frames (249-252),
+free here because the Ferret holds that slot. The pack does the same with
+`sprite_overrides`, for the whole match, using the trail art from PX's
+`sprite_curtis_<id>` libraries.
 
 **Old Woman Launcher's record differs from PX's in one field.** For a
 projectile, +0x34 picks the worm's aim sheet (0x51C060). WA knows values 1 to
 12 only, and for PX's 0 it draws no worm at all. The pack's copy has 3, the
 bazooka hold, as the Cow Launcher's.
 
-The Windy Cluster's bits and the Super Gravedigger's flight and cluster
-sprites take 3 of the 223 shared sprite slots. The worm sheets are drawn by
-the GPU renderer and take none.
-
-The Burst Rifle needs its own aim, draw and fire poses, which the engine's
-worm-sheet remapping does not cover yet (only the bazooka, flamethrower and
-throw poses). It is left for its own change.
+Flight, cluster and trail sprites take 14 of the 223 shared sprite slots.
+The worm sheets are drawn by the GPU renderer and take none.
 
 ## Playing it
 

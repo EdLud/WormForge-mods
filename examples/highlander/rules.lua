@@ -105,6 +105,76 @@ local PX_ART = {
       wthrowd = "sprites/super_gravedigger/drawd",
     },
   },
+  -- The next three have trails PX draws by overriding stock sprites its
+  -- records point at: the Salvation Army's wsv* frames, free here because
+  -- the Ferret holds that slot. sprite_overrides does the same, for the
+  -- whole match. The trail art is PX's sprite_curtis_<id> libraries'.
+  { -- S.M.A.R.T Bomb: its bits home, and draw their own sprite doing so.
+    weapon = "mortar",
+    panel_icon = "sprites/smart_bomb/smart_ico.png",
+    sprite = "sprites/smart_bomb/flight",
+    cluster = {
+      sprite = "sprites/smart_bomb/cluster",
+      homing_sprite = "sprites/smart_bomb/cluster_homing",
+    },
+    sprite_overrides = { wsvbd = "sprites/smart_bomb/trail" },          -- 250
+    worm_sprites = {
+      weaponlnk = "sprites/smart_bomb/aim",
+      weaponlnku = "sprites/smart_bomb/aimu",
+      weaponlnkd = "sprites/smart_bomb/aimd",
+      wthrow = "sprites/smart_bomb/draw",
+      wthrowu = "sprites/smart_bomb/drawu",
+      wthrowd = "sprites/smart_bomb/drawd",
+    },
+  },
+  { -- Blaster Worm
+    weapon = "homing_pigeon",
+    panel_icon = "sprites/blaster_worm/bworm_ico.png",
+    sprite = "sprites/blaster_worm/flight",
+    cluster = { sprite = "sprites/blaster_worm/cluster" },
+    sprite_overrides = { wsvbu = "sprites/blaster_worm/cluster_trail" }, -- 249
+    worm_sprites = {
+      weaponlnk = "sprites/blaster_worm/aim",
+      weaponlnku = "sprites/blaster_worm/aimu",
+      weaponlnkd = "sprites/blaster_worm/aimd",
+      wthrow = "sprites/blaster_worm/draw",
+      wthrowu = "sprites/blaster_worm/drawu",
+      wthrowd = "sprites/blaster_worm/drawd",
+    },
+  },
+  { -- Thumper Nade
+    weapon = "battle_axe",
+    panel_icon = "sprites/thumper_nade/thumpern_ico.png",
+    sprite = "sprites/thumper_nade/flight",
+    cluster = { sprite = "sprites/thumper_nade/cluster" },
+    sprite_overrides = {
+      wsvg = "sprites/thumper_nade/trail",                                -- 251
+      wsvgu = "sprites/thumper_nade/cluster_trail",                       -- 252
+    },
+    worm_sprites = {
+      weaponlnk = "sprites/thumper_nade/aim",
+      weaponlnku = "sprites/thumper_nade/aimu",
+      weaponlnkd = "sprites/thumper_nade/aimd",
+      wthrow = "sprites/thumper_nade/draw",
+      wthrowu = "sprites/thumper_nade/drawu",
+      wthrowd = "sprites/thumper_nade/drawd",
+    },
+  },
+  { -- Burst Rifle: the worm aiming it, taking it out and firing it.
+    weapon = "minigun",
+    panel_icon = "sprites/burst_rifle/ico_burstr.png",
+    worm_sprites = {
+      weaponlnk = "sprites/burst_rifle/aim",
+      weaponlnku = "sprites/burst_rifle/aimu",
+      weaponlnkd = "sprites/burst_rifle/aimd",
+      wthrow = "sprites/burst_rifle/draw",
+      wthrowu = "sprites/burst_rifle/drawu",
+      wthrowd = "sprites/burst_rifle/drawd",
+      weaponfire = "sprites/burst_rifle/fire",
+      weaponfireu = "sprites/burst_rifle/fireu",
+      weaponfired = "sprites/burst_rifle/fired",
+    },
+  },
 }
 
 for _, list in ipairs({ PORTED, PX_ART }) do

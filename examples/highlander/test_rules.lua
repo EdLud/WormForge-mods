@@ -325,7 +325,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("18 slots replaced, each once", #replaced == 18 and not dupes, tostring(#replaced))
+  check("22 slots replaced, each once", #replaced == 22 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
