@@ -101,22 +101,35 @@ so replays share them. The strips are split into frame folders with
 | mortar | S.M.A.R.T Bomb | icon, flight and cluster sprites, the bits' own sprite while they home, trail, worm |
 | homing_pigeon | Blaster Worm | icon, flight and cluster sprites, the bits' trail, worm |
 | battle_axe | Thumper Nade | icon, flight and cluster sprites, both trails, worm |
+| carpet_bomb | Thumper Nade Strike | icon, the Thumper Nade's flight and cluster sprites and trails |
+| air_strike | Mortar Strike | icon, cluster sprite, both trails (stock mortar shells) |
+| mole_bomb | Gravler | icon, dive and dig frames, worm |
+| mole_squadron | Gravler Strike | icon (the Gravler's frames) |
+| aqua_sheep | Ghost Sheep | icon, its two sprites |
+| sheep | Pogo Sheep | icon, flight and cluster sprites (the Blaster Worm's bits' trail) |
 
-All ten were played in game.
+All sixteen were played in game.
 
 **Trails.** PX draws the last three weapons' trails by overriding stock
 sprites their records point at: the Salvation Army's `wsv*` frames (249-252),
 free here because the Ferret holds that slot. The pack does the same with
 `sprite_overrides`, for the whole match, using the trail art from PX's
-`sprite_curtis_<id>` libraries.
+`sprite_curtis_<id>` libraries. The Gravler (245-248), Ghost Sheep (156/157)
+and Mortar Strike (260, 466) have their art on overridden stock sprites the
+same way; PX's scripts for them do nothing else.
+
+**Strikes** keep their bomb's art 0x14 further along than a projectile does
+(+0x74 bomb, +0x7C trail, +0x138 bits, +0x140 bits' trail). The importer and
+`sprite` / `cluster.sprite` follow them there.
 
 **Old Woman Launcher's record differs from PX's in one field.** For a
 projectile, +0x34 picks the worm's aim sheet (0x51C060). WA knows values 1 to
 12 only, and for PX's 0 it draws no worm at all. The pack's copy has 3, the
 bazooka hold, as the Cow Launcher's.
 
-Flight, cluster and trail sprites take 14 of the 223 shared sprite slots.
-The worm sheets are drawn by the GPU renderer and take none.
+Flight and cluster sprites take 15 of the 223 shared sprite slots. Worm
+sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
+frames) are drawn by the GPU renderer, in true colour, and take none.
 
 ## Playing it
 
@@ -176,7 +189,7 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art
+- the ported slots, each from its own scheme record, with PX's art (28)
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)

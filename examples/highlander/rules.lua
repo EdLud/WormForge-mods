@@ -160,6 +160,62 @@ local PX_ART = {
       wthrowd = "sprites/thumper_nade/drawd",
     },
   },
+  -- Strikes keep their bomb's art 0x14 further along than a projectile
+  -- does; `sprite` and `cluster.sprite` follow it there.
+  { -- Thumper Nade Strike: Thumper Nades from the sky, with the Thumper
+    -- Nade's own trails (the overrides above).
+    weapon = "carpet_bomb",
+    panel_icon = "sprites/thumper_nade/thumpernst_ico.png",
+    sprite = "sprites/thumper_nade/flight",
+    cluster = { sprite = "sprites/thumper_nade/cluster" },
+  },
+  { -- Mortar Strike: stock mortar shells, PX's trails and bits.
+    weapon = "air_strike",
+    panel_icon = "sprites/mortar_strike/ico_mortarst.png",
+    cluster = { sprite = "sprites/mortar_strike/cluster" },
+    sprite_overrides = {
+      wsvclnk = "sprites/mortar_strike/trail",                             -- 466
+      wsvc = "sprites/mortar_strike/cluster_trail",                        -- 260
+    },
+  },
+  { -- Gravler: a mole bomb whose records point its dive and dig frames at
+    -- the Salvation Army's wsvr*/wsvb, which PX's script overrides.
+    weapon = "mole_bomb",
+    panel_icon = "sprites/gravler/gravler_ico.png",
+    sprite_overrides = {
+      wsvr = "sprites/gravler/gravlerdive",                                -- 245
+      wsvru = "sprites/gravler/gravlerdiga",                               -- 246
+      wsvrd = "sprites/gravler/gravlerdigb",                               -- 247
+      wsvb = "sprites/gravler/gravlerdigc",                                -- 248
+    },
+    worm_sprites = {
+      weaponlnk = "sprites/gravler/aim",
+      weaponlnku = "sprites/gravler/aimu",
+      weaponlnkd = "sprites/gravler/aimd",
+      wthrow = "sprites/gravler/draw",
+      wthrowu = "sprites/gravler/drawu",
+      wthrowd = "sprites/gravler/drawd",
+    },
+  },
+  { -- Gravler Strike: its record points at the same four frames, so the
+    -- Gravler's overrides draw it.
+    weapon = "mole_squadron",
+    panel_icon = "sprites/gravler/gravlerst_ico.png",
+  },
+  { -- Ghost Sheep: the Aqua Sheep's own sprites, overridden.
+    weapon = "aqua_sheep",
+    panel_icon = "sprites/ghost_sheep/ghost_sheep_ico.png",
+    sprite_overrides = {
+      aquashp1 = "sprites/ghost_sheep/ghstshp1",                           -- 156
+      aquashp2 = "sprites/ghost_sheep/ghstshp2",                           -- 157
+    },
+  },
+  { -- Pogo Sheep. Its bits' trail is the Blaster Worm's (249, above).
+    weapon = "sheep",
+    panel_icon = "sprites/pogo_sheep/psheep_ico.png",
+    sprite = "sprites/pogo_sheep/flight",
+    cluster = { sprite = "sprites/pogo_sheep/cluster" },
+  },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
