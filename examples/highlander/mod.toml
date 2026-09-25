@@ -1,11 +1,16 @@
 id = "example.highlander"
-version = "0.2.0"
+version = "0.3.0"
 author = "wkLua"
 api_version = 1
 kind = "gameplay"
 entry = "rules.lua"
 
-# Verb-based edition: wa.inventory + turn_start + death.
+# Verb-based edition: wa.inventory + turn_start + death, on PX's weapon
+# layout. The slots below carry the weapons ported so far.
 [weapons]
 register = []
-replace = []
+replace = [
+  "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
+  "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
+  "damage_x2", "double_turn_time",
+]

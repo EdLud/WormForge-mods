@@ -4,9 +4,14 @@ This is the concise implementation built on `wa.inventory`,
 `wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
 is preserved in `highlander_pure_lua` for comparison. Enable only one edition.
 
-The gameplay rules of Project X's *Highlander 0rang3 1.1*, played with WA's
-own weapons. There are no custom weapons yet. The point is to test the rules
-on their own.
+Project X's *Highlander 0rang3 1.1*: its rules, on its weapon layout. The
+scheme puts each of its weapons on one of WA's stock slots, e.g. the Baseball
+Bat on the girder's. The pools are PX's own lists, each weapon written as the
+slot it takes.
+
+Weapons are ported in batches. **A weapon not ported yet leaves WA's stock
+weapon on its slot, and that stands in for it.** For example, the Ice Arrow's
+slot still holds Armageddon, dealt as a second weapon.
 
 ## Rules
 
@@ -19,43 +24,83 @@ on their own.
   worm carried**, and can use it that same turn. That includes friendly and
   accidental kills, as in PX. A worm that dies on its own turn simply loses its
   weapons.
-- **On cavern maps, nothing that falls from the sky is dealt.**
+- **On cavern maps, the Ferret and nothing that falls from the sky is
+  dealt.**
 
-| Pool | Weapons |
+| Pool | Weapons (stock slot) |
 |---|---|
-| Movement (7) | ninja rope, girder, girder pack, jet pack, low gravity, fast walk, parachute |
-| Second (8) | the F4 row (fire punch, dragon ball, kamikaze, suicide bomber, prod), plus blow torch, pneumatic drill, baseball bat |
-| Offensive (42) | every other weapon that does damage, super weapons included |
-| Not pooled (13) | bungee, teleport, scales of justice, select worm, freeze, skip go, surrender, and the utilities (laser sight, invisibility, damage x2, crate spy, double turn time, crate shower) |
+| Offensive (29) | Double Bazooka (bazooka), Igniter (homing missile), S.M.A.R.T Bomb (mortar), Blaster Worm (homing pigeon), Burning Sheep Launcher (sheep launcher), Sticky Bomb (grenade), Windy Cluster (cluster bomb), Super Gravedigger (banana bomb), Thumper Nade (battle axe), Electric Grenade (earthquake), Dynamite, Nuke Rocket (mine), Pogo Sheep (sheep), Ghost Sheep (aqua sheep), Chilli Bomb (super banana), Hellish Hand-Grenade (holy grenade), Valyrian Fire (petrol bomb), Remote Roller (skunk), Priceless Ming Vase (ming vase), Cow Launcher (mad cow), Old Woman Launcher (old woman), Ferret (salvation army), Mortar Strike (air strike), Pigeon Strike (mail strike), Submarine Attack (mine strike), Gravler Strike (mole squadron), Banana Express (mb bomb), Bowling Ball Strike (sheep strike), Thumper Nade Strike (carpet bomb) |
+| Second (19) | Fire Jump (fire punch), Sentry Laser (dragon ball), Sentry Gun (kamikaze), Javelin (prod), Baseball Bat (girder), Electromagnet (baseball bat), Real Shotgun (shotgun), Sniper Rifle (handgun), Laser Gun (uzi), Burst Rifle (minigun), Shadow-Bolt (longbow), BlowTorch, Super Drill (pneumatic drill), Portal Gun (scales of justice), Ice Arrow (armageddon), Flame Thrower, Reinforcement (nuclear test), Crate Strike (donkey), Lightning Strike (napalm strike) |
+| Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
+| Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
 Highlander never touches the **not pooled** slots. Their ammo is whatever
-the scheme gives, so the scheme decides whether teleport or skip go is always
+the scheme gives, so the scheme decides whether Teleport or Skip Go is always
 available.
 
-Cavern maps drop air strike, napalm strike, mail strike, mine strike, mole
-squadron, sheep strike, carpet bomb, donkey and armageddon from the offensive
-pool.
+On cavern maps PX draws from the first 21 offensive and the first 16 second
+weapons only. That leaves out the Ferret and the strikes, and Reinforcement,
+Crate Strike and Lightning Strike.
+
+## Ported weapons
+
+Each takes its record from the scheme itself (`weps/<slot>.wep`), which
+carries PX's tuning for this scheme and its name. They are cut from
+`HL - 0rang3 - 1.1.pxs` with:
+
+```sh
+python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander/weps <slot> ...
+```
+
+| Slot | Weapon | Notes |
+|---|---|---|
+| dynamite | Dynamite | |
+| blow_torch | BlowTorch | |
+| flame_thrower | Flame Thrower | |
+| girder | Baseball Bat | stock bat icon |
+| girder_pack | 3 Girder Pack | still places five; see below |
+| fast_walk | Fast Walk | |
+| crate_spy | Crate Spy | |
+| crate_shower | Crate Shower | |
+| magic_bullet | Cluster Bomb | stock cluster icon |
+| invisibility | Teleport | stock teleport icon |
+| damage_x2 | Skunk | stock skunk icon |
+| double_turn_time | Mole Bomb | stock mole icon |
+
+These are WA's own weapons. Moving one to another slot works only as far as
+WA reads the weapon from its record rather than its slot number. Played in
+game: the Baseball Bat on the girder slot aims and swings as the bat; the
+Cluster Bomb, Skunk and Mole Bomb fire as their records say; Dynamite still
+gives its retreat time. Open points:
+
+- **3 Girder Pack places five girders.** Its record's shot count (+0x14) is
+  3 and is imported; WA copies that field into the worm when the weapon is
+  selected (0x51AF53), yet five are placed. Something else supplies the count.
+- **Teleport on the invisibility slot:** WA disables Invisibility's slot in
+  offline games, so the Teleport is unavailable offline. Not yet checked
+  online.
+- **The scheme's header fields** (the dwords before the fire type) do not
+  match WA's stock values. For example, Dynamite's retreat time is 0, not 5 s,
+  and the bat's first flag is 0 where WA's is 1. The whole record is imported,
+  as PX writes it; neither weapon plays differently for it.
 
 ## Playing it
 
 1. Enable only this pack in the mod loader. Packs that replace a stock slot,
    such as `sentry_gun`, `pooz` or `worm_toss`, would put their weapon into the
-   pool in place of the stock one.
+   pool in place of the one there.
 2. Any scheme works. The pooled slots are overwritten every turn, including
    ones the scheme has at infinite.
-3. `wkLua.log` records every hand dealt and every weapon taken:
+3. `wkLua.log` records every hand dealt, by slot, and every weapon taken:
    `highlander: worm 16 took ... from worm 32`.
 
 ## Differences from PX
 
 These are deliberate, and each one is explained in `rules.lua`:
 
-- Wind Changer and Hot Air Balloon are PX weapons with no stock equivalent,
-  so nothing is granted in their place.
+- Wind Changer and Hot Air Balloon are not ported yet, so nothing is granted
+  in their place.
 - There's no removal at turn end. The next turn start does the same job.
-- Strikes are banned from caverns **by name**. PX did it by shortening its
-  random range, which only worked because the strikes happened to be last in
-  its list.
 - Every pooled slot is zeroed at each turn start, not only the previous
   worm's. PX left that to its own scheme; here any scheme works.
 
@@ -97,9 +142,10 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- pool coverage (57 pooled slots, and the 13 others never touched)
+- the ported slots, each from its own scheme record
+- pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
-- cavern hands
+- cavern hands (PX's short ranges)
 - per-turn ownership and taking weapons back
 - a stolen hand usable the same turn and kept afterwards
 - friendly kills

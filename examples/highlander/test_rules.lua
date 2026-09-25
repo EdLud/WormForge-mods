@@ -30,29 +30,35 @@ for _, n in ipairs(STOCK) do
   IS_STOCK[n] = true
 end
 
+-- The scheme's layout: each HL weapon as the stock slot it takes.
 local MOVEMENT = {
-  ninja_rope = 1, girder = 1, girder_pack = 1, jet_pack = 1,
-  low_gravity = 1, fast_walk = 1, parachute = 1,
+  girder_pack = 1, ninja_rope = 1, parachute = 1, teleport = 1,
+  jet_pack = 1, low_gravity = 1, laser_sight = 1,
 }
 local SECOND = {
-  fire_punch = 1, dragon_ball = 1, kamikaze = 1, suicide_bomber = 1,
-  prod = 1, blow_torch = 1, pneumatic_drill = 1, baseball_bat = 1,
+  fire_punch = 1, dragon_ball = 1, kamikaze = 1, prod = 1, girder = 1,
+  baseball_bat = 1, shotgun = 1, handgun = 1, uzi = 1, minigun = 1,
+  longbow = 1, blow_torch = 1, pneumatic_drill = 1, scales_of_justice = 1,
+  armageddon = 1, flame_thrower = 1, nuclear_test = 1, donkey = 1,
+  napalm_strike = 1,
 }
 local SCHEME_OWNED = {
-  bungee = 1, teleport = 1, scales_of_justice = 1, skip_go = 1,
-  surrender = 1, select_worm = 1, freeze = 1, laser_sight = 1,
-  invisibility = 1, damage_x2 = 1, crate_spy = 1, double_turn_time = 1,
-  crate_shower = 1,
+  suicide_bomber = 1, super_sheep = 1, mole_bomb = 1, bungee = 1,
+  skip_go = 1, surrender = 1, select_worm = 1, freeze = 1,
+  magic_bullet = 1, fast_walk = 1, invisibility = 1, damage_x2 = 1,
+  crate_spy = 1, double_turn_time = 1, crate_shower = 1,
 }
-local STRIKES = {
-  air_strike = 1, napalm_strike = 1, mail_strike = 1, mine_strike = 1,
-  mole_squadron = 1, sheep_strike = 1, carpet_bomb = 1, donkey = 1,
-  armageddon = 1,
+-- What PX's cavern ranges leave out: the Ferret and the strikes from the
+-- sky, and the last three second weapons.
+local NOT_IN_CAVES = {
+  salvation_army = 1, air_strike = 1, mail_strike = 1, mine_strike = 1,
+  mole_squadron = 1, mb_bomb = 1, sheep_strike = 1, carpet_bomb = 1,
+  nuclear_test = 1, donkey = 1, napalm_strike = 1,
 }
 
 -- ------------------------------------------------------------ mocked WA
 
-local M, ammo, worms, cavern, rng, logs, active, death_seen
+local M, ammo, worms, cavern, rng, logs, active, death_seen, replaced
 
 local Worm = {}
 Worm.__index = Worm
@@ -165,7 +171,7 @@ end
 
 local function new_match(opts)
   opts = opts or {}
-  M, logs, active, death_seen = {}, {}, nil, {}
+  M, logs, active, death_seen, replaced = {}, {}, nil, {}, {}
   cavern = opts.cavern or false
   rng = 12345
   ammo = {}
@@ -179,11 +185,12 @@ local function new_match(opts)
       }, Worm)
     end
   end
-  -- A stock-like scheme: infinite bazooka, a few counted weapons, a utility.
+  -- A stock-like scheme: infinite bazooka, a few counted weapons, and two
+  -- slots Highlander leaves alone (Teleport's and Skip Go's).
   for a = 0, 1 do
     ammo[a].bazooka = -1
     ammo[a].grenade = 5
-    ammo[a].teleport = 2
+    ammo[a].invisibility = 2
     ammo[a].skip_go = -1
   end
   wa = {
@@ -208,6 +215,12 @@ local function new_match(opts)
       end,
     },
     inventory = inventory_api(),
+    weapons = {
+      replace = function(spec)
+        assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
+        replaced[#replaced + 1] = spec
+      end,
+    },
     on = {
       worm_message = function(f) M.message = f end,
       turn_start = function(f) M.turn_start = f end,
@@ -304,6 +317,26 @@ end
 
 -- ------------------------------------------------------------ tests
 
+print("weapons: the ported slots take the scheme's records")
+do
+  new_match()
+  local by_slot, dupes = {}, false
+  for _, spec in ipairs(replaced) do
+    if by_slot[spec.weapon] then dupes = true end
+    by_slot[spec.weapon] = spec
+  end
+  check("12 slots replaced, each once", #replaced == 12 and not dupes, tostring(#replaced))
+  local own_file = true
+  for slot, spec in pairs(by_slot) do
+    if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
+  end
+  check("each from its own scheme record", own_file)
+  check("Baseball Bat on the girder slot, with its own icon",
+    by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
+  check("a weapon on its own slot keeps its icon",
+    by_slot.dynamite and by_slot.dynamite.panel_icon == nil)
+end
+
 print("pools: every stock slot is in exactly one place")
 do
   new_match()
@@ -324,7 +357,7 @@ do
       bad[#bad + 1] = name
     end
   end
-  check("57 pooled slots", n == 57, tostring(n))
+  check("55 pooled slots", n == 55, tostring(n))
   check("all pooled names are stock", #bad == 0, table.concat(bad, ","))
   local untouched = true
   for name in pairs(SCHEME_OWNED) do
@@ -333,7 +366,7 @@ do
     end
   end
   check("scheme-owned slots are never pooled", untouched)
-  check("teleport ammo left to the scheme", ammo[0].teleport == 2 and ammo[1].teleport == 2)
+  check("Teleport's slot left to the scheme", ammo[0].invisibility == 2 and ammo[1].invisibility == 2)
   check("skip go left to the scheme", ammo[0].skip_go == -1)
 end
 
@@ -399,27 +432,29 @@ do
   check("all four dealt", ok)
 end
 
-print("cavern: no strikes are dealt")
+print("cavern: PX's short ranges, no strikes or Ferret")
 do
-  local struck = false
+  local banned = false
   for seed = 1, 40 do
     new_match({ cavern = true })
     rng = seed * 7919
     frame()
     for _, id in ipairs({ 16, 17, 32, 33 }) do
-      if STRIKES[hand(id)[1]] then
-        struck = true
+      local h = hand(id)
+      if NOT_IN_CAVES[h[1]] or NOT_IN_CAVES[h[2]] then
+        banned = true
       end
     end
   end
-  check("160 cavern hands, no strike", not struck)
+  check("160 cavern hands, none of them", not banned)
   local seen = false
   for seed = 1, 40 do
     new_match()
     rng = seed * 7919
     frame()
     for _, id in ipairs({ 16, 17, 32, 33 }) do
-      if STRIKES[hand(id)[1]] then
+      local h = hand(id)
+      if NOT_IN_CAVES[h[1]] or NOT_IN_CAVES[h[2]] then
         seen = true
       end
     end

@@ -1,10 +1,15 @@
--- Highlander, stock weapons only.
+-- Highlander, on Project X's weapon layout.
 --
--- A port of the rules in Project X's `scheme_hl_0rang3` (Highlander 0rang3
--- 1.1), without its custom weapons. Every worm is dealt one weapon from each
--- of three pools at the start of the match. Only the worm whose turn it is
--- may use its weapons, one shot of each per turn. Kill a worm and you take
--- everything it carried.
+-- A port of Project X's `scheme_hl_0rang3` (Highlander 0rang3 1.1). Every
+-- worm is dealt one weapon from each of three pools at the start of the match.
+-- Only the worm whose turn it is may use its weapons, one shot of each per
+-- turn. Kill a worm and you take everything it carried.
+--
+-- The scheme puts each of its weapons on one of WA's 71 stock slots: the
+-- Baseball Bat on the girder's, the Cluster Bomb on the magic bullet's, and
+-- so on. The pools below are PX's own lists, in PX's order, each weapon
+-- written as the stock slot it takes. A weapon not ported yet leaves WA's
+-- stock weapon on its slot, and that stands in for it.
 --
 -- The source (`highlander.txt`) does all of this with four calls:
 -- SetWeaponEx(team, weapon, 1) to grant and SetWeaponEx(team, weapon, 0) to
@@ -27,60 +32,125 @@
 --     just the previous worm's. PX relied on its scheme having those slots at
 --     zero. Here the scheme can say anything, so the pack enforces it itself.
 --
---   * Wind Changer (x1) and Hot Air Balloon (x3) are PX weapons with no stock
---     equivalent, so nothing is granted in their place.
---
---   * The cavern rule bans strikes by NAME. PX did it by cutting the random
---     range short (RandomInt(0,20) instead of (0,28)), which only works
---     because its list happened to keep the strikes at the end.
+--   * Wind Changer (x1) and Hot Air Balloon (x3) are not ported yet, so
+--     nothing is granted in their place.
 --
 -- Lockstep: dealing, turn_start and death are all dispatched from WA's own
 -- simulation messages, and every random choice is wa.random(). Two peers, or
 -- a peer and a replay, deal the same hands and make the same grants. Nothing
 -- here reads local input or the clock.
 
+-- ---------------------------------------------------------------- weapons
+
+-- Ported weapons. Each takes its scheme record, cut from the .pxs with
+-- tools/px_scheme_weps.py: how it fires, and its PX name. A weapon moved off
+-- its own stock slot borrows its own stock icon.
+--
+-- These are WA's own weapons, as PX tuned them for this scheme.
+local PORTED = {
+  { slot = "dynamite" },
+  { slot = "blow_torch" },                               -- BlowTorch
+  { slot = "flame_thrower" },
+  { slot = "girder", icon = "baseball_bat" },            -- Baseball Bat
+  { slot = "girder_pack" },                              -- 3 Girder Pack
+  { slot = "fast_walk" },
+  { slot = "crate_spy" },
+  { slot = "crate_shower" },
+  { slot = "magic_bullet", icon = "cluster_bomb" },      -- Cluster Bomb
+  { slot = "invisibility", icon = "teleport" },          -- Teleport
+  { slot = "damage_x2", icon = "skunk" },                -- Skunk
+  { slot = "double_turn_time", icon = "mole_bomb" },     -- Mole Bomb
+}
+
+for _, w in ipairs(PORTED) do
+  wa.weapons.replace({
+    weapon = w.slot,
+    wep = "weps/" .. w.slot .. ".wep",
+    panel_icon = w.icon,
+  })
+end
+
 -- ----------------------------------------------------------------- pools
 
--- Movement: exactly the seven the design names.
-local MOVEMENT = {
-  "ninja_rope", "girder", "girder_pack", "jet_pack", "low_gravity",
-  "fast_walk", "parachute",
-}
-
--- Second weapon: the F4 row, plus what is left of F7 once the girders have
--- gone to movement.
-local SECOND = {
-  "fire_punch", "dragon_ball", "kamikaze", "suicide_bomber", "prod",
-  "blow_torch", "pneumatic_drill", "baseball_bat",
-}
-
--- Offensive: every remaining weapon that does damage, super weapons included.
--- The non-attacks -- bungee, teleport, scales, select worm, freeze, the
--- utilities, skip go and surrender -- are not in any pool. Highlander never
--- touches them, so their ammo is whatever the scheme says.
+-- Offensive: PX's `Weapons`, 29 entries.
 local OFFENSIVE = {
-  -- F1-F3
-  "bazooka", "homing_missile", "mortar", "homing_pigeon", "sheep_launcher",
-  "grenade", "cluster_bomb", "banana_bomb", "battle_axe", "earthquake",
-  "shotgun", "handgun", "uzi", "minigun", "longbow",
-  -- F5-F6
-  "dynamite", "mine", "sheep", "super_sheep", "aqua_sheep", "mole_bomb",
-  "air_strike", "napalm_strike", "mail_strike", "mine_strike", "mole_squadron",
-  -- F9-F11
-  "super_banana", "holy_grenade", "flame_thrower", "salvation_army", "mb_bomb",
-  "petrol_bomb", "skunk", "ming_vase", "sheep_strike", "carpet_bomb",
-  "mad_cow", "old_woman", "donkey", "nuclear_test", "armageddon",
-  -- F12
-  "magic_bullet",
+  "bazooka",          -- Double Bazooka
+  "homing_missile",   -- Igniter
+  "mortar",           -- S.M.A.R.T Bomb
+  "homing_pigeon",    -- Blaster Worm
+  "sheep_launcher",   -- Burning Sheep Launcher
+  "grenade",          -- Sticky Bomb
+  "cluster_bomb",     -- Windy Cluster
+  "banana_bomb",      -- Super Gravedigger
+  "battle_axe",       -- Thumper Nade
+  "earthquake",       -- Electric Grenade
+  "dynamite",         -- Dynamite
+  "mine",             -- Nuke Rocket
+  "sheep",            -- Pogo Sheep
+  "aqua_sheep",       -- Ghost Sheep
+  "super_banana",     -- Chilli Bomb
+  "holy_grenade",     -- Hellish Hand-Grenade
+  "petrol_bomb",      -- Valyrian Fire
+  "skunk",            -- Remote Roller
+  "ming_vase",        -- Priceless Ming Vase
+  "mad_cow",          -- Cow Launcher
+  "old_woman",        -- Old Woman Launcher
+  -- Not dealt on cavern maps:
+  "salvation_army",   -- Ferret
+  "air_strike",       -- Mortar Strike
+  "mail_strike",      -- Pigeon Strike
+  "mine_strike",      -- Submarine Attack
+  "mole_squadron",    -- Gravler Strike
+  "mb_bomb",          -- Banana Express
+  "sheep_strike",     -- Bowling Ball Strike
+  "carpet_bomb",      -- Thumper Nade Strike
 }
 
--- Everything that arrives from the sky. PX keeps strikes out of caverns, where
--- they would hit the roof.
-local CAVE_BANNED = {
-  air_strike = true, napalm_strike = true, mail_strike = true,
-  mine_strike = true, mole_squadron = true, sheep_strike = true,
-  carpet_bomb = true, donkey = true, armageddon = true,
+-- Second weapon: PX's `NotWeapons`, 19 entries.
+local SECOND = {
+  "fire_punch",         -- Fire Jump
+  "dragon_ball",        -- Sentry Laser
+  "kamikaze",           -- Sentry Gun
+  "prod",               -- Javelin
+  "girder",             -- Baseball Bat
+  "baseball_bat",       -- Electromagnet
+  "shotgun",            -- Real Shotgun
+  "handgun",            -- Sniper Rifle
+  "uzi",                -- Laser Gun
+  "minigun",            -- Burst Rifle
+  "longbow",            -- Shadow-Bolt
+  "blow_torch",         -- BlowTorch
+  "pneumatic_drill",    -- Super Drill
+  "scales_of_justice",  -- Portal Gun
+  "armageddon",         -- Ice Arrow
+  "flame_thrower",      -- Flame Thrower
+  -- Not dealt on cavern maps:
+  "nuclear_test",       -- Reinforcement
+  "donkey",             -- Crate Strike
+  "napalm_strike",      -- Lightning Strike
 }
+
+-- Movement: PX's `MoveWeapons`, 7 entries, all dealt on every map.
+local MOVEMENT = {
+  "girder_pack",   -- 3 Girder Pack
+  "ninja_rope",    -- Jump
+  "parachute",     -- Hang-Glider
+  "teleport",      -- Super Tele
+  "jet_pack",      -- Helicopter
+  "low_gravity",   -- Gravity Control
+  "laser_sight",   -- Swim Suit
+}
+
+-- On cavern maps PX draws RandomInt(0,20) and RandomInt(0,15) instead of the
+-- whole lists: the first 21 offensive and first 16 second weapons. What that
+-- leaves out is what comes from the sky, plus the Ferret.
+local CAVE_OFFENSIVE = 21
+local CAVE_SECOND = 16
+
+-- The slots Highlander never touches -- Kamikaze Rocket, Gravler, Hot Air
+-- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
+-- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
+-- whatever ammo the scheme gives them.
 
 -- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
 -- must not depend on pairs() order: Lua's string hashing is seeded per
@@ -110,17 +180,12 @@ end
 
 -- ----------------------------------------------------------------- rules
 
-local function offensive_pool()
-  if not wa.world.cavern() then
-    return OFFENSIVE
+local function first(pool, n)
+  local out = {}
+  for i = 1, n do
+    out[i] = pool[i]
   end
-  local pool = {}
-  for _, name in ipairs(OFFENSIVE) do
-    if not CAVE_BANNED[name] then
-      pool[#pool + 1] = name
-    end
-  end
-  return pool
+  return out
 end
 
 -- One from each pool, dealt to a worm on the first message it receives -- as
@@ -131,8 +196,8 @@ end
 -- sequence everywhere.
 local function deal(worm)
   local cave = wa.world.cavern()
-  arsenal:deal(worm, offensive_pool(), 1)
-  arsenal:deal(worm, SECOND, 1)
+  arsenal:deal(worm, cave and first(OFFENSIVE, CAVE_OFFENSIVE) or OFFENSIVE, 1)
+  arsenal:deal(worm, cave and first(SECOND, CAVE_SECOND) or SECOND, 1)
   arsenal:deal(worm, MOVEMENT, 1)
   dealt[worm.id] = true
   wa.log(string.format(
