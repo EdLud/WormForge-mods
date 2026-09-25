@@ -620,6 +620,8 @@ wa.weapons.replace({
   weapon = "bazooka",
   copy_from = "mine",
   name = "Sentry Gun",
+  -- PX's own icon, copied byte for byte so replays share its asset.
+  panel_icon = "sprites/ico_sentrygun.png",
   is_weapon = true,
   -- One sheet per team colour, so the housing the worm carries is its team's
   -- colour like the planted turret. tools/bake_sentry_team_sprites.py bakes
