@@ -1,0 +1,12 @@
+id = "example.panel_icon"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = []
+replace = ["holy_grenade"]
+
+[actors]
+register = []
