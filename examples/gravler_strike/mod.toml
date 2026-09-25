@@ -1,0 +1,9 @@
+id = "example.gravler_strike"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = ["example.gravler_strike"]
+replace = ["donkey"]
