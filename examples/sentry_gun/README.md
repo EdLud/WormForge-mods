@@ -55,6 +55,6 @@ handles require the 32-bit target.
 In a WA 3.8.1 match, verify flat/uphill/downhill equip in both directions; tap and
 hold Space (one placed turret, no charge bar); left/right placement; diagonal
 tracking and firing behind the housing; 20-shot exhaustion and next-turn reload;
-and unchanged stock mines. Check `%LOCALAPPDATA%\WormForge\wkLua.log` and
-`wkluaerror.txt` for asset or callback errors. Native animation and input hooks
-still require this in-game check.
+and unchanged stock mines. Check `wkLua.log` and `wkluaerror.txt` beside `WA.exe`
+for asset or callback errors. Native animation and input hooks still require this
+in-game check.
