@@ -58,7 +58,7 @@ python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander
 | blow_torch | BlowTorch | |
 | flame_thrower | Flame Thrower | |
 | girder | Baseball Bat | stock bat icon |
-| girder_pack | 3 Girder Pack | still places five; see below |
+| girder_pack | 3 Girder Pack | three girders, not five |
 | fast_walk | Fast Walk | |
 | crate_spy | Crate Spy | |
 | crate_shower | Crate Shower | |
@@ -70,12 +70,9 @@ python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander
 These are WA's own weapons. Moving one to another slot works only as far as
 WA reads the weapon from its record rather than its slot number. Played in
 game: the Baseball Bat on the girder slot aims and swings as the bat; the
-Cluster Bomb, Skunk and Mole Bomb fire as their records say; Dynamite still
-gives its retreat time. Open points:
+Cluster Bomb, Skunk and Mole Bomb fire as their records say; 3 Girder Pack
+places three; Dynamite still gives its retreat time. Open points:
 
-- **3 Girder Pack places five girders.** Its record's shot count (+0x14) is
-  3 and is imported; WA copies that field into the worm when the weapon is
-  selected (0x51AF53), yet five are placed. Something else supplies the count.
 - **Teleport on the invisibility slot:** WA disables Invisibility's slot in
   offline games, so the Teleport is unavailable offline. Not yet checked
   online.
