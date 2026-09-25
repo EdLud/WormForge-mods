@@ -1,0 +1,9 @@
+id = "example.hellish_grenade"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+entry = "weapons.lua"
+
+[weapons]
+register = []
+replace = ["holy_grenade"]
