@@ -43,31 +43,78 @@
 -- ---------------------------------------------------------------- weapons
 
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
--- tools/px_scheme_weps.py: how it fires, and its PX name. A weapon moved off
--- its own stock slot borrows its own stock icon.
+-- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
+-- entry goes to wa.weapons.replace as it is.
 --
--- These are WA's own weapons, as PX tuned them for this scheme.
+-- WA's own weapons, as PX tuned them for this scheme. One moved off its own
+-- stock slot borrows its own stock icon.
 local PORTED = {
-  { slot = "dynamite" },
-  { slot = "blow_torch" },                               -- BlowTorch
-  { slot = "flame_thrower" },
-  { slot = "girder", icon = "baseball_bat" },            -- Baseball Bat
-  { slot = "girder_pack" },                              -- 3 Girder Pack
-  { slot = "fast_walk" },
-  { slot = "crate_spy" },
-  { slot = "crate_shower" },
-  { slot = "magic_bullet", icon = "cluster_bomb" },      -- Cluster Bomb
-  { slot = "invisibility", icon = "teleport" },          -- Teleport
-  { slot = "damage_x2", icon = "skunk" },                -- Skunk
-  { slot = "double_turn_time", icon = "mole_bomb" },     -- Mole Bomb
+  { weapon = "dynamite" },
+  { weapon = "blow_torch" },                                   -- BlowTorch
+  { weapon = "flame_thrower" },
+  { weapon = "girder", panel_icon = "baseball_bat" },          -- Baseball Bat
+  { weapon = "girder_pack" },                                  -- 3 Girder Pack
+  { weapon = "fast_walk" },
+  { weapon = "crate_spy" },
+  { weapon = "crate_shower" },
+  { weapon = "magic_bullet", panel_icon = "cluster_bomb" },    -- Cluster Bomb
+  { weapon = "invisibility", panel_icon = "teleport" },        -- Teleport
+  { weapon = "damage_x2", panel_icon = "skunk" },              -- Skunk
+  { weapon = "double_turn_time", panel_icon = "mole_bomb" },   -- Mole Bomb
 }
 
-for _, w in ipairs(PORTED) do
-  wa.weapons.replace({
-    weapon = w.slot,
-    wep = "weps/" .. w.slot .. ".wep",
-    panel_icon = w.icon,
-  })
+-- PX weapons that need only PX's art: its icons, copied byte for byte so
+-- replays share them, and its strips split into frame folders with
+-- tools/px_split_strip.py. None of them has a script in PX.
+local PX_ART = {
+  { -- Burning Sheep Launcher
+    weapon = "sheep_launcher",
+    panel_icon = "sprites/launchers/burning_sheep_launcher_ico.png",
+  },
+  { -- Cow Launcher
+    weapon = "mad_cow",
+    panel_icon = "sprites/launchers/cow_launcher_ico.png",
+  },
+  { -- Old Woman Launcher. Its record is PX's but for one field: +0x34,
+    -- which picks a projectile's aim sheet in WA (0x51C060), is 3 (the
+    -- bazooka hold, as the Cow Launcher's) where PX has 0. WA knows 1-12
+    -- only and draws no worm at all for 0.
+    weapon = "old_woman",
+    panel_icon = "sprites/launchers/old_woman_launcher_ico.png",
+  },
+  { -- Pigeon Strike
+    weapon = "mail_strike",
+    panel_icon = "sprites/pigeon_strike/ico_pigeonst.png",
+  },
+  { -- Windy Cluster: the stock cluster bomb's body, PX's bits.
+    weapon = "cluster_bomb",
+    panel_icon = "sprites/windy_cluster/ico_windyc.png",
+    cluster = { sprite = "sprites/windy_cluster/cluster" },
+  },
+  { -- Super Gravedigger, and the worm holding and taking it out.
+    weapon = "banana_bomb",
+    panel_icon = "sprites/super_gravedigger/sgrave_ico.png",
+    sprite = "sprites/super_gravedigger/flight",
+    cluster = { sprite = "sprites/super_gravedigger/cluster" },
+    worm_sprites = {
+      weaponlnk = "sprites/super_gravedigger/aim",
+      weaponlnku = "sprites/super_gravedigger/aimu",
+      weaponlnkd = "sprites/super_gravedigger/aimd",
+      wthrow = "sprites/super_gravedigger/draw",
+      wthrowu = "sprites/super_gravedigger/drawu",
+      wthrowd = "sprites/super_gravedigger/drawd",
+    },
+  },
+}
+
+for _, list in ipairs({ PORTED, PX_ART }) do
+  for _, w in ipairs(list) do
+    local spec = { wep = "weps/" .. w.weapon .. ".wep" }
+    for key, value in pairs(w) do
+      spec[key] = value
+    end
+    wa.weapons.replace(spec)
+  end
 end
 
 -- ----------------------------------------------------------------- pools

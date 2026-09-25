@@ -52,6 +52,8 @@ carries PX's tuning for this scheme and its name. They are cut from
 python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander/weps <slot> ...
 ```
 
+### WA's own weapons
+
 | Slot | Weapon | Notes |
 |---|---|---|
 | dynamite | Dynamite | |
@@ -80,6 +82,36 @@ places three; Dynamite still gives its retreat time. Open points:
   match WA's stock values. For example, Dynamite's retreat time is 0, not 5 s,
   and the bat's first flag is 0 where WA's is 1. The whole record is imported,
   as PX writes it; neither weapon plays differently for it.
+
+### PX weapons that need only PX's art
+
+None of these has a script in PX. The icons are PX's files byte for byte,
+so replays share them. The strips are split into frame folders with
+`tools/px_split_strip.py`.
+
+| Slot | Weapon | Art |
+|---|---|---|
+| sheep_launcher | Burning Sheep Launcher | icon |
+| mad_cow | Cow Launcher | icon |
+| old_woman | Old Woman Launcher | icon |
+| mail_strike | Pigeon Strike | icon |
+| cluster_bomb | Windy Cluster | icon, cluster bits |
+| banana_bomb | Super Gravedigger | icon, flight and cluster sprites, the worm holding and taking it out (flat, up, down) |
+
+All six were played in game.
+
+**Old Woman Launcher's record differs from PX's in one field.** For a
+projectile, +0x34 picks the worm's aim sheet (0x51C060). WA knows values 1 to
+12 only, and for PX's 0 it draws no worm at all. The pack's copy has 3, the
+bazooka hold, as the Cow Launcher's.
+
+The Windy Cluster's bits and the Super Gravedigger's flight and cluster
+sprites take 3 of the 223 shared sprite slots. The worm sheets are drawn by
+the GPU renderer and take none.
+
+The Burst Rifle needs its own aim, draw and fire poses, which the engine's
+worm-sheet remapping does not cover yet (only the bazooka, flamethrower and
+throw poses). It is left for its own change.
 
 ## Playing it
 
@@ -139,7 +171,7 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record
+- the ported slots, each from its own scheme record, with PX's art
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)

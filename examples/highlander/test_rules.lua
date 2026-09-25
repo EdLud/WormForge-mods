@@ -325,7 +325,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("12 slots replaced, each once", #replaced == 12 and not dupes, tostring(#replaced))
+  check("18 slots replaced, each once", #replaced == 18 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -335,6 +335,9 @@ do
     by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
   check("a weapon on its own slot keeps its icon",
     by_slot.dynamite and by_slot.dynamite.panel_icon == nil)
+  check("Windy Cluster brings PX's icon and bits",
+    by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
+      and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster")
 end
 
 print("pools: every stock slot is in exactly one place")

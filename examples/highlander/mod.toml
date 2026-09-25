@@ -1,5 +1,5 @@
 id = "example.highlander"
-version = "0.3.0"
+version = "0.4.0"
 author = "wkLua"
 api_version = 1
 kind = "gameplay"
@@ -13,4 +13,6 @@ replace = [
   "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
   "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
   "damage_x2", "double_turn_time",
+  "sheep_launcher", "mad_cow", "old_woman", "mail_strike", "cluster_bomb",
+  "banana_bomb",
 ]
