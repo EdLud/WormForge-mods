@@ -589,14 +589,42 @@ local function brain(a, ev)
   sync(a, s)
 end
 
+-- Alliance order, matching TEAM_TINT.
+local TEAM_NAMES = { "red", "blue", "green", "yellow", "magenta", "cyan" }
+
+local function team_sheets(pose)
+  local list = {}
+  for i, team in ipairs(TEAM_NAMES) do
+    list[i] = "sprites/teams/" .. team .. "/" .. pose
+  end
+  return list
+end
+
+-- Where the turret lands: slightly in front of the worm, not on it. A wall
+-- that close leaves it at the worm, as before.
+local FRONT_PX = 5
+
+local function placement_x(worm, facing)
+  local x = worm.x + facing * FRONT_PX * PX
+  if wa.land.trace(worm.x, worm.y, x, worm.y) then
+    return worm.x
+  end
+  return x
+end
+
 wa.weapons.replace({
   weapon = "bazooka",
   copy_from = "mine",
   name = "Sentry Gun",
   is_weapon = true,
+  -- One sheet per team colour, so the housing the worm carries is its team's
+  -- colour like the planted turret. tools/bake_sentry_team_sprites.py bakes
+  -- them from PX's grey sheets with TEAM_TINT.
   worm_sprites = {
-    weaponlnk = "sprites/equip", weaponlnku = "sprites/equipu", weaponlnkd = "sprites/equipd",
-    wthrow = "sprites/unequip", wthrowu = "sprites/unequipu", wthrowd = "sprites/unequipd",
+    weaponlnk = team_sheets("equip"), weaponlnku = team_sheets("equipu"),
+    weaponlnkd = team_sheets("equipd"),
+    wthrow = team_sheets("unequip"), wthrowu = team_sheets("unequipu"),
+    wthrowd = team_sheets("unequipd"),
   },
 
   -- Single-frame sprites, not strips. sprite_columns defaults to 8, which
@@ -648,10 +676,11 @@ wa.weapons.replace({
     end
     local facing = worm.facing
     local idle = facing < 0 and 270 or 90
+    local x = placement_x(worm, facing)
 
     local body = wa.actors.spawn({
       sprite = BASE,
-      x = worm.x,
+      x = x,
       y = worm.y,
       -- Small placement nudge, independent of aim or charged power.
       vx = (worm.vx // 2) + facing * 19661,
@@ -696,7 +725,7 @@ wa.weapons.replace({
     -- sync() places both every frame from the tripod's position.
     state[body.id].gun = wa.actors.spawn({
       sprite = GUN,
-      x = worm.x,
+      x = x,
       y = worm.y - MUZZLE_UP * PX,
       vx = 0, vy = 0,
       gravity = false,
@@ -710,7 +739,7 @@ wa.weapons.replace({
     })
     state[body.id].flare = wa.actors.spawn({
       sprite = FLARE,
-      x = worm.x,
+      x = x,
       y = worm.y - MUZZLE_UP * PX,
       vx = 0, vy = 0,
       gravity = false,
