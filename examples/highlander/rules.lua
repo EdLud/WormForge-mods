@@ -304,6 +304,16 @@ local PX_ART = {
     weapon = "pneumatic_drill",
     panel_icon = "sprites/super_drill/ico_superdrill.png",
   },
+  { -- Shadow-Bolt: the record leaves the bolt's sprite 0, and PX draws the
+    -- bolt at run time, animated and turned to its flight (PX_WEAP_SPRITES
+    -- below), with its trail on stock 453 (sprite_curtis_453).
+    weapon = "longbow",
+    panel_icon = "sprites/shadow_bolt/ico_shadowb.png",
+    worm_sprites = PX_POSTURE,
+    sprite_overrides = { [453] = "sprites/shadow_bolt/trail" },
+    sprites = { "sprites/px_hold/shadow_bolt", "sprites/shadow_bolt/bolt" },
+    params = { gpu_prefix = "sprites/" },
+  },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
@@ -464,15 +474,36 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
+  longbow = { -- Shadow-Bolt (shadow_bolt_script): no hand, the bolt animated
+    sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
+    hand_rotation = 0.0, hand_radial_rotation = 0.0,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 3.5,
+    animate = true, anim_speed = 1.30, frames = 6,
+  },
 }
 
-local held = {} -- worm id -> { slot, weapon, hand, counter }
+-- WormSprite::CalculateFrame and WeapSprite::CalculateFrame: a phase from 0
+-- to 1 through the sheet, anim_speed * 0.03 a frame, back to 0 past 0.99.
+local function next_phase(phase, anim_speed)
+  if phase > 0.99 then
+    return 0
+  end
+  return phase + anim_speed * 30 / 1000
+end
+
+local function frame_of(phase, frames)
+  return math.min(math.floor(phase * frames), frames - 1)
+end
+
+local held = {} -- worm id -> { slot, weapon, hand, counter, phase }
 
 local function drop_hold(id)
   local h = held[id]
   if h then
     h.weapon:despawn()
-    h.hand:despawn()
+    if h.hand then
+      h.hand:despawn()
+    end
     held[id] = nil
   end
 end
@@ -517,8 +548,11 @@ local function update_hold(worm)
         collide = false, owner = worm, on = function() end,
       })
     end
-    h = { slot = worm.weapon, counter = 0,
-          weapon = actor(p.sheet), hand = actor(PX_HANDS[p.hand_type]) }
+    h = { slot = worm.weapon, counter = 0, phase = 0, weapon = actor(p.sheet) }
+    -- A weapon PX draws with no hand: draw_hand = false.
+    if p.draw_hand ~= false then
+      h.hand = actor(PX_HANDS[p.hand_type])
+    end
     held[worm.id] = h
   end
   local pi = math.pi
@@ -528,8 +562,14 @@ local function update_hold(worm)
   local grow = PICK[h.counter]
   place(h.weapon, worm, math.sin(rot_w) * p.weap_radius, -math.cos(rot_w) * p.weap_radius,
     pi - pi * aim - pi * (1 - p.weap_rotation), grow)
-  place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
-    rot + pi * p.hand_rotation, grow * p.hand_scale)
+  if p.animate then
+    h.phase = next_phase(h.phase, p.anim_speed)
+    h.weapon:frame(frame_of(h.phase, p.frames))
+  end
+  if h.hand then
+    place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
+      rot + pi * p.hand_rotation, grow * p.hand_scale)
+  end
   h.counter = math.min(h.counter + 1, 20)
 end
 
@@ -537,6 +577,67 @@ wa.on.worm_message(function(worm, msg)
   if msg == wa.msg.FRAME_FINISH then
     update_hold(worm)
   end
+end)
+
+-- ------------------------------------ PX's missile sprites, at run time
+--
+-- For some weapons PX draws the missile itself (p_sprite_builder,
+-- WeapSprite) and leaves WA's sprite 0: a sprite that follows the missile,
+-- turned to its flight, mirrored when it flies left, and, if `animate`,
+-- stepped through its sheet as a hold is. Here it is a GPU actor per
+-- missile, placed from wa.on.missile_frame after WA has moved the missile.
+-- It reads m.weapon (the missile's slot); on an engine without it nothing
+-- matches and nothing is drawn.
+
+-- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
+local PX_WEAP_SPRITES = {
+  longbow = { -- Shadow-Bolt
+    sheet = "sprites/shadow_bolt/bolt", animate = true, anim_speed = 1.30, frames = 6,
+  },
+}
+
+local flying = {} -- missile id -> { actor, phase, seen }
+
+-- The actor goes when its missile stops reporting: WA has freed it.
+local function follow_missile(id)
+  return function(a)
+    local f = flying[id]
+    if f and f.seen then
+      f.seen = false
+      return
+    end
+    if f and f.actor == a then
+      flying[id] = nil
+    end
+    a:despawn()
+  end
+end
+
+wa.on.missile_frame(function(m)
+  local p = m.phase == "post" and PX_WEAP_SPRITES[m.weapon]
+  if not p then
+    return
+  end
+  local f = flying[m.id]
+  if not f then
+    f = { phase = 0 }
+    f.actor = wa.actors.spawn({
+      sprite = p.sheet, x = m.x, y = m.y, gravity = false, collide = false,
+      on = follow_missile(m.id),
+    })
+    flying[m.id] = f
+  end
+  f.seen = true
+  local a = f.actor
+  a.x, a.y, a.vx, a.vy = m.x, m.y, 0, 0
+  a.facing = m.vx < 0 and -1 or 1
+  if p.animate then
+    f.phase = next_phase(f.phase, p.anim_speed)
+    a:frame(frame_of(f.phase, p.frames))
+  end
+  -- WeapSprite::CalculateAngle, rotation 0.
+  local rot = -math.atan(m.vx, m.vy) - math.pi
+  a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)
 
 -- ----------------------------------------------------------------- pools

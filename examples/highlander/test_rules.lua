@@ -225,6 +225,7 @@ local function new_match(opts)
       spawn = function(spec)
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false }
         function a:gfx(g) self.angle, self.scale = g.angle, g.scale end
+        function a:frame(i) self.shown = i end
         function a:despawn() self.dead = true end
         M.spawned = M.spawned or {}
         M.spawned[#M.spawned + 1] = a
@@ -247,6 +248,7 @@ local function new_match(opts)
         end
       end,
       turn_start = function(f) M.turn_start = f end,
+      missile_frame = function(f) M.missile = f end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
     },
@@ -348,7 +350,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("36 slots replaced, each once", #replaced == 36 and not dupes, tostring(#replaced))
+  check("37 slots replaced, each once", #replaced == 37 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -715,6 +717,55 @@ do
   local before = #M.spawned
   M.message(w, wa.msg.FRAME_FINISH)
   check("no hold for a weapon without one", #M.spawned == before)
+end
+
+print("px holds: a weapon drawn with no hand, animated")
+do
+  new_match()
+  frame()
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim = "longbow", 1, 100 * 0x10000, 50 * 0x10000, true, 0.5
+  M.message(w, wa.msg.FRAME_FINISH)
+  local bolt = M.spawned[#M.spawned]
+  check("only the weapon: PX draws no hand", #M.spawned == 1 and bolt.sprite == "sprites/px_hold/shadow_bolt")
+  local shown = {}
+  for _ = 1, 26 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    shown[bolt.shown] = true
+  end
+  check("the bolt animates in the hand", shown[0] and shown[5])
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and goes when the worm stops aiming", bolt.dead)
+end
+
+print("px missile sprites: WeapSprite at run time")
+do
+  new_match()
+  frame()
+  local PX = 0x10000
+  local m = { id = 77, phase = "post", weapon = "longbow", x = 10 * PX, y = 20 * PX, vx = 3 * PX, vy = 0 }
+  M.missile(m)
+  local bolt = M.spawned and M.spawned[#M.spawned]
+  check("a bolt on the Shadow-Bolt's missile", bolt and bolt.sprite == "sprites/shadow_bolt/bolt"
+    and bolt.x == m.x and bolt.y == m.y)
+  check("flying right, turned to its flight", bolt.facing == 1 and math.abs(bolt.angle - 90) < 1e-6,
+    tostring(bolt.angle))
+  local before = #M.spawned
+  m.vx = -3 * PX
+  M.missile(m)
+  check("one bolt per missile, mirrored flying left", #M.spawned == before and bolt.facing == -1)
+  local shown = {}
+  for _ = 1, 26 do
+    M.missile(m)
+    shown[bolt.shown] = true
+  end
+  check("steps through all six frames", shown[0] and shown[5], tostring(bolt.shown))
+  m.phase = "pre"
+  M.missile(m)
+  m.phase, m.weapon, m.id = "post", "bazooka", 78
+  M.missile(m)
+  check("nothing for another weapon's missile", #M.spawned == before)
 end
 
 print("")
