@@ -146,8 +146,11 @@ bazooka hold, as the Cow Launcher's.
 | grenade | Sticky Bomb | icon, the bomb and its bits | the hold, drawn at run time |
 | fire_punch | Fire Jump | icon | PX's jump timeline |
 | pneumatic_drill | Super Drill | icon | a second hole each frame |
+| longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
+| handgun | Sniper Rifle | icon, the hold, laser.png | the hold, the laser sight and its own shot sound |
 
-Played in game: the Fire Jump, and the Sticky Bomb and Igniter holds.
+Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
+Shadow-Bolt and the Sniper Rifle.
 
 **Holds drawn at run time.** For some weapons PX draws the worm holding it
 with its sprite builder, not from a sheet. It takes a posture with no weapon
@@ -179,6 +182,36 @@ way up. The full analysis is in `docs/px-reverse-engineering.md`.
 
 **Super Drill.** WA drills as usual, and a hidden actor cuts a second drill
 hole at the worm each frame until WA's drill stops.
+
+**Missiles drawn at run time.** For some weapons PX leaves WA's flight
+sprite 0 and draws the missile itself (`WeapSprite`). The sprite is turned
+to its flight, mirrored when it flies left, and can be animated. The pack
+does the same with a GPU actor per missile, placed from
+`wa.on.missile_frame`, and uses each weapon's numbers from its PX script
+(`PX_WEAP_SPRITES` in `rules.lua`). It needs `m.weapon`, the missile's slot
+(engine branch `missile-weapon`). The Shadow-Bolt's bolt is drawn this way,
+its hold is animated, and its trail is stock sprite 453 with PX's shadow
+trail, as `sprite_curtis_453` does.
+
+**Sniper Rifle.** While the current worm aims it, PX's laser sight is drawn
+every rendered frame from `wa.on.draw`, as `wa.draw.quad`s (engine branch
+`draw-quad`), following PX's `laserray` point for point:
+
+- 100-pixel additive quads of `laser.png` along the aim;
+- narrowing along the ray, with PX's brighter start and faint 7-pixel tip.
+
+It stops at terrain, traced exactly, and at worms, mines, crates and
+barrels. PX stops it with a 2x2 collision mask, so the object radii here are
+estimates. Two differences from PX:
+
+- **The aim:** the ray uses the aim the rifle was drawn with, so the two
+  always turn together. `worm.aim` is WA's smoothed crosshair, and WA
+  rewrites it at render time (see `docs/px-reverse-engineering.md`).
+- **The start:** the ray starts on the barrel, 2 pixels off the worm's
+  centre line where PX starts it, because the art's barrel runs 2 pixels to
+  one side.
+
+The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`.
 
 Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
@@ -242,9 +275,14 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (36)
+- the ported slots, each from its own scheme record, with PX's art (38)
 - the Fire Jump's timeline, counted from the punch, not the fire key
-- the run-time holds: placed from the aim, mirrored, grown in, and dropped
+- the run-time holds: placed from the aim, mirrored, grown in, and dropped;
+  animated, and with no hand
+- the run-time missile sprites: one per missile, turned to its flight,
+  animated, and only on its own weapon's missiles
+- the laser sight: its start, colours, length (full, to terrain, to a worm),
+  when it shows, and the shot sound
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)

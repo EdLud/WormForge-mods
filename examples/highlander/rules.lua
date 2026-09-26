@@ -314,6 +314,14 @@ local PX_ART = {
     sprites = { "sprites/px_hold/shadow_bolt", "sprites/shadow_bolt/bolt" },
     params = { gpu_prefix = "sprites/" },
   },
+  { -- Sniper Rifle: the hold drawn at run time, PX's laser sight while aiming
+    -- and its own shot (below).
+    weapon = "handgun",
+    panel_icon = "sprites/sniper_rifle/srico.png",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser" },
+    params = { gpu_prefix = "sprites/" },
+  },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
@@ -412,6 +420,9 @@ wa.on.worm_message(function(worm, msg)
       })
     elseif worm.weapon == "fire_punch" and worm:ammo("fire_punch") ~= 0 then
       winding[worm.id] = 0
+    elseif worm.weapon == "handgun" and worm:ammo("handgun") ~= 0 then
+      -- The Sniper Rifle's own shot, over WA's (PX's snipfiring).
+      wa.sound.play(worm, "sounds/sniper_firing.wav")
     end
     -- Neither eats the shot: WA's drill and fire punch still run.
     return
@@ -474,6 +485,11 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
+  handgun = { -- Sniper Rifle (sniper_rifle_script): its hand at scale 0
+    sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
+    hand_rotation = 1.0, hand_radial_rotation = 0.9,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
+  },
   longbow = { -- Shadow-Bolt (shadow_bolt_script): no hand, the bolt animated
     sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
     hand_rotation = 0.0, hand_radial_rotation = 0.0,
@@ -495,7 +511,7 @@ local function frame_of(phase, frames)
   return math.min(math.floor(phase * frames), frames - 1)
 end
 
-local held = {} -- worm id -> { slot, weapon, hand, counter, phase }
+local held = {} -- worm id -> { slot, weapon, hand, counter, phase, aim }
 
 local function drop_hold(id)
   local h = held[id]
@@ -555,6 +571,10 @@ local function update_hold(worm)
     end
     held[worm.id] = h
   end
+  -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
+  -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
+  -- which WA also rewrites at render time, between sim frames.
+  h.aim = aim
   local pi = math.pi
   local rot = (1 - aim) * pi
   local rot_w = rot + pi * p.weap_radial_rotation
@@ -578,6 +598,117 @@ wa.on.worm_message(function(worm, msg)
     update_hold(worm)
   end
 end)
+
+-- ------------------------------------------ the Sniper Rifle's laser sight
+--
+-- PX's LaserSight (weapon_gun_sniper_rifle_sb, on utility_laser_pointer's
+-- laserray): while the current worm aims the rifle, a red ray from 12 pixels
+-- out along the aim to the first thing in its way, drawn every rendered
+-- frame as 100-pixel quads of laser.png, added to the scene, narrowing along
+-- the ray, with a faint 7-pixel tip. It is drawing only: wa.on.draw, never
+-- the simulation.
+
+local LASER_LEN = 15000
+local LASER_WIDTH = 2
+local LASER_STEP = 5 -- PX's Trace tests every 5 pixels
+-- PX starts the ray on the worm's centre line, but the rifle art's barrel
+-- runs 2 pixels to its left (columns 26-29 of 60), so the ray ran that far
+-- under the barrel. It starts on the barrel instead.
+local LASER_BARREL = 2
+local function argb(a, r, g, b)
+  return ((a * 256 + r) * 256 + g) * 256 + b
+end
+local LASER_RED, LASER_START, LASER_TIP =
+  argb(255, 255, 48, 48), argb(192, 255, 96, 96), argb(16, 255, 48, 48)
+-- PX's Trace stops at anything its 2x2 mask touches. Terrain is traced
+-- exactly; objects by these radii in pixels, an estimate of their masks.
+local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
+
+local function laser_length(x, y, dx, dy, shooter)
+  local P = 0x10000
+  local len = LASER_LEN
+  local hit = wa.land.trace(math.floor(x), math.floor(y),
+    math.floor(x + dx * LASER_LEN * P), math.floor(y + dy * LASER_LEN * P))
+  if hit then
+    len = math.sqrt(((hit.x - x) / P) ^ 2 + ((hit.y - y) / P) ^ 2)
+  end
+  for _, s in ipairs(STOPPERS) do
+    local list, r = s[1], s[2]
+    if list and list.all then
+      for _, o in ipairs(list.all()) do
+        if o.id ~= shooter then
+          local ox, oy = (o.x - x) / P, (o.y - y) / P
+          local t = ox * dx + oy * dy
+          if t > 0 and t < len and math.abs(ox * dy - oy * dx) < r then
+            len = t
+          end
+        end
+      end
+    end
+  end
+  return math.floor(len / LASER_STEP) * LASER_STEP
+end
+
+-- laserray's MakeLaserRayF, point for point.
+local function laser_ray(x, y, ang, len)
+  local P = 0x10000
+  local rdx, rdy = math.sin(ang - 1.57), -math.cos(ang - 1.57)
+  local dx, dy = math.sin(ang), -math.cos(ang)
+  local tx, ty = x, y
+  local nparts = math.floor(len / 100)
+  local w = (wa.draw.random() / 4 + 0.85) * LASER_WIDTH / 2
+  local wdx, wdy = w * rdx * P, w * rdy * P
+  local wscale = 1
+  local lastl = len - nparts * 100
+  local colors
+  for i = 0, nparts do
+    local l = i == nparts and lastl or 100
+    if l <= 0 then break end
+    local p0, p3 = { tx + wdx, ty + wdy }, { tx - wdx, ty - wdy }
+    w = wscale * (wa.draw.random() / 3 + 0.82) * LASER_WIDTH
+    wdx, wdy = w * rdx * P, w * rdy * P
+    wscale = wscale - 0.75 / (nparts + 1)
+    local ex, ey = tx + dx * l * P, ty + dy * l * P
+    colors = { LASER_RED, LASER_RED, LASER_RED, LASER_RED }
+    if i == 0 then
+      colors[1], colors[4] = LASER_START, LASER_START
+    end
+    wa.draw.quad({
+      points = { p0, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, p3 },
+      colors = colors, sprite = "sprites/sniper_rifle/laser", blend = "add",
+    })
+    tx, ty = ex, ey
+  end
+  local ex, ey = tx + dx * 7 * P, ty + dy * 7 * P
+  wa.draw.quad({
+    points = { { tx + wdx, ty + wdy }, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, { tx - wdx, ty - wdy } },
+    colors = { LASER_RED, LASER_TIP, LASER_TIP, LASER_RED },
+    sprite = "sprites/sniper_rifle/laser", blend = "add",
+  })
+end
+
+if wa.on.draw then
+  wa.on.draw(function()
+    for _, worm in ipairs(wa.worms.all()) do
+      -- The aim the rifle was drawn with, so the ray leaves along it; there
+      -- is a hold only while the worm aims the rifle.
+      local h = worm.turn and held[worm.id]
+      local aim = h and h.slot == "handgun" and h.aim
+      if aim then
+        local ang = (1 - aim) * 3.14159
+        if worm.facing < 0 then
+          ang = 6.28318 - ang
+        end
+        local P = 0x10000
+        -- The art's left, turned with the aim and mirrored with the worm.
+        local side = LASER_BARREL * worm.facing * P
+        local x = worm.x + math.sin(ang) * 12 * P - math.cos(ang) * side
+        local y = worm.y - math.cos(ang) * 12 * P - math.sin(ang) * side
+        laser_ray(x, y, ang, laser_length(x, y, math.sin(ang), -math.cos(ang), worm.id))
+      end
+    end
+  end)
+end
 
 -- ------------------------------------ PX's missile sprites, at run time
 --

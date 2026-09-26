@@ -220,6 +220,14 @@ local function new_match(opts)
         M.cuts = M.cuts or {}
         M.cuts[#M.cuts + 1] = spec
       end,
+      trace = function() return M.trace_hit end,
+    },
+    draw = {
+      quad = function(q) M.quads[#M.quads + 1] = q end,
+      random = function() return 0.5 end,
+    },
+    sound = {
+      play = function(target, name) M.sounds[#M.sounds + 1] = name end,
     },
     actors = {
       spawn = function(spec)
@@ -251,8 +259,10 @@ local function new_match(opts)
       missile_frame = function(f) M.missile = f end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
+      draw = function(f) M.draw = f end,
     },
   }
+  M.quads, M.sounds, M.trace_hit = {}, {}, nil
   dofile("mods/examples/highlander/rules.lua")
 end
 
@@ -350,7 +360,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("37 slots replaced, each once", #replaced == 37 and not dupes, tostring(#replaced))
+  check("38 slots replaced, each once", #replaced == 38 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -737,6 +747,59 @@ do
   w.aiming = false
   M.message(w, wa.msg.FRAME_FINISH)
   check("and goes when the worm stops aiming", bolt.dead)
+end
+
+print("sniper rifle: PX's laser sight, drawn only")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  for _, o in ipairs(worms) do
+    o.x, o.y = -5000 * P, 0 -- behind the ray
+  end
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn = "handgun", 1, 100 * P, 50 * P, true, 0.5, true
+  M.message(w, wa.msg.FRAME_FINISH) -- the rifle is drawn with this aim
+  w.aim = 0.53 -- WA's crosshair, rewritten at render time: the ray keeps the rifle's
+  M.draw()
+  check("a full-length ray: 150 quads and the tip", #M.quads == 151, tostring(#M.quads))
+  local q = M.quads[1]
+  -- The quad's first corner is the start plus half the ray's width, across.
+  local sx, sy = (q.points[1][1] + q.points[4][1]) / 2, (q.points[1][2] + q.points[4][2]) / 2
+  check("from 12 pixels out along the aim, on the barrel 2 above the centre line",
+    math.abs(sx - 112 * P) < P / 8 and math.abs(sy - 48 * P) < P / 8, sx / P .. "," .. sy / P)
+  check("added, red, brighter at the start", q.blend == "add" and q.colors[1] == 0xC0FF6060
+    and q.colors[2] == 0xFFFF3030)
+  local tip = M.quads[#M.quads]
+  check("fading out at the tip", tip.colors[2] == 0x10FF3030 and tip.colors[1] == 0xFFFF3030)
+  M.quads, M.trace_hit = {}, { x = 312 * P, y = 50 * P }
+  M.draw()
+  check("stops at terrain 200 pixels on", #M.quads == 3, tostring(#M.quads))
+  M.quads, M.trace_hit = {}, nil
+  local other = worm(32)
+  other.x, other.y = 172 * P, 52 * P
+  M.draw()
+  check("and at a worm in the way", #M.quads == 2, tostring(#M.quads))
+  M.quads = {}
+  w.turn = false
+  M.draw()
+  w.turn, w.aiming = true, false
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.draw()
+  check("only the current worm, only while aiming", #M.quads == 0)
+  w.aiming, w.facing, w.x, w.aim = true, -1, 300 * P, 0.5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.draw()
+  q = M.quads[1]
+  sx, sy = (q.points[1][1] + q.points[4][1]) / 2, (q.points[1][2] + q.points[4][2]) / 2
+  check("facing left: 12 out to the left, the barrel still above",
+    math.abs(sx - 288 * P) < P / 8 and math.abs(sy - 48 * P) < P / 8, sx / P .. "," .. sy / P)
+  M.quads = {}
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  ammo[w.alliance].handgun = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  check("its own shot sound on firing", M.sounds[1] == "sounds/sniper_firing.wav")
 end
 
 print("px missile sprites: WeapSprite at run time")
