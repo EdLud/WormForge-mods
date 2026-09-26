@@ -564,37 +564,27 @@ local function aim_of(worm)
   return ok and aim or nil
 end
 
--- WormSprite::CalculateAngle.
-local function update_hold(worm)
-  local p = PX_HOLDS[worm.weapon]
-  local aim = p and aim_of(worm)
-  if not aim or not worm.aiming then
-    drop_hold(worm.id)
-    return
+local function spawn_hold(worm, slot)
+  local p = PX_HOLDS[slot]
+  local function actor(sheet)
+    return wa.actors.spawn({
+      sprite = sheet, x = worm.x, y = worm.y, gravity = false,
+      collide = false, owner = worm, on = function() end,
+    })
   end
-  local h = held[worm.id]
-  if h and h.slot ~= worm.weapon then
-    drop_hold(worm.id)
-    h = nil
+  local h = { slot = slot, counter = 0, phase = 0, weapon = actor(p.sheet) }
+  -- A weapon PX draws with no hand: draw_hand = false.
+  if p.draw_hand ~= false then
+    h.hand = actor(PX_HANDS[p.hand_type])
   end
-  if not h then
-    local function actor(sheet)
-      return wa.actors.spawn({
-        sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-        collide = false, owner = worm, on = function() end,
-      })
-    end
-    h = { slot = worm.weapon, counter = 0, phase = 0, weapon = actor(p.sheet) }
-    -- A weapon PX draws with no hand: draw_hand = false.
-    if p.draw_hand ~= false then
-      h.hand = actor(PX_HANDS[p.hand_type])
-    end
-    held[worm.id] = h
-  end
-  -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
-  -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
-  -- which WA also rewrites at render time, between sim frames.
-  h.aim = aim
+  held[worm.id] = h
+  return h
+end
+
+-- WormSprite::CalculateAngle: the hold at its aim, grown to PICK[counter].
+local function place_hold(worm, h)
+  local p = PX_HOLDS[h.slot]
+  local aim = h.aim
   local pi = math.pi
   local rot = (1 - aim) * pi
   local rot_w = rot + pi * p.weap_radial_rotation
@@ -610,6 +600,74 @@ local function update_hold(worm)
     place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
       rot + pi * p.hand_rotation, grow * p.hand_scale)
   end
+end
+
+-- Putting a weapon away. Not PX's: PX drops the hold the frame the worm
+-- stops aiming. WA puts a weapon away by playing the worm's draw sheet
+-- backwards, standing, over 20 frames; after a gun's last shot it has
+-- already selected the next weapon. So a hold last aimed (`put_away`
+-- remembers it) comes back when the worm stands with another weapon, and
+-- shrinks out along the grow-in played backwards, a step a frame.
+local put_away = {} -- worm id -> { slot, aim, phase } of the hold last aimed
+
+local function update_put_away(worm)
+  local h = held[worm.id]
+  if h and h.putting_away then
+    if worm.state ~= "standing" or h.counter == 0 then
+      drop_hold(worm.id)
+      return
+    end
+    h.counter = h.counter - 1
+    place_hold(worm, h)
+    return
+  end
+  local last = put_away[worm.id]
+  local state = worm.state
+  if not last or state == nil then
+    -- No name: WA's firing states between the last aim and the put-away.
+    return
+  end
+  put_away[worm.id] = nil
+  if state == "standing" and worm.weapon ~= last.slot then
+    h = spawn_hold(worm, last.slot)
+    h.aim, h.counter, h.putting_away = last.aim, 20, true
+    place_hold(worm, h)
+  end
+end
+
+local function update_hold(worm)
+  local p = PX_HOLDS[worm.weapon]
+  local aim = p and aim_of(worm)
+  if not aim or not worm.aiming then
+    local h = held[worm.id]
+    if h and not h.putting_away then
+      put_away[worm.id] = { slot = h.slot, aim = h.aim, phase = h.phase }
+      drop_hold(worm.id)
+    end
+    update_put_away(worm)
+    return
+  end
+  local last = put_away[worm.id]
+  put_away[worm.id] = nil
+  local h = held[worm.id]
+  if h and (h.slot ~= worm.weapon or h.putting_away) then
+    drop_hold(worm.id)
+    h = nil
+  end
+  if not h then
+    h = spawn_hold(worm, worm.weapon)
+    -- Aiming again straight after a shot (the Sniper Rifle's three): the
+    -- weapon never left the worm's hands, so it is back at full size. Not
+    -- PX's: PX grows it in again after every shot.
+    if last and last.slot == worm.weapon then
+      h.counter, h.phase = 20, last.phase
+    end
+  end
+  -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
+  -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
+  -- which WA also rewrites at render time, between sim frames.
+  h.aim = aim
+  place_hold(worm, h)
   h.counter = math.min(h.counter + 1, 20)
 end
 
@@ -710,10 +768,10 @@ end
 if wa.on.draw then
   wa.on.draw(function()
     for _, worm in ipairs(wa.worms.all()) do
-      -- The aim the rifle was drawn with, so the ray leaves along it; there
-      -- is a hold only while the worm aims the rifle.
+      -- The aim the rifle was drawn with, so the ray leaves along it; only
+      -- while the worm aims the rifle, not while it puts it away.
       local h = worm.turn and held[worm.id]
-      local aim = h and h.slot == "handgun" and h.aim
+      local aim = h and h.slot == "handgun" and not h.putting_away and h.aim
       if aim then
         local ang = (1 - aim) * 3.14159
         if worm.facing < 0 then

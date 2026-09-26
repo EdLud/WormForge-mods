@@ -773,6 +773,61 @@ do
   check("and goes when the worm stops aiming", bolt.dead)
 end
 
+print("px holds: put away, the grow-in played backwards")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "handgun", 1, 100 * P, 50 * P, true, 0.5, true, "standing"
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local rifle = M.spawned[#M.spawned]
+  check("the rifle, grown in", rifle.sprite == "sprites/px_hold/sniper_rifle" and rifle.scale == 1)
+  -- The last shot: WA's firing states have no name, and then the worm
+  -- stands with the next weapon already selected, putting the rifle away.
+  w.aiming, w.state = false, nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("gone while it fires, as in PX", rifle.dead)
+  -- Not the last shot: back to aiming the rifle straight after firing.
+  w.aiming = true
+  M.message(w, wa.msg.FRAME_FINISH)
+  local again = M.spawned[#M.spawned]
+  check("aiming again after a shot: full size at once, no grow-in", again ~= rifle
+    and again.sprite == "sprites/px_hold/sniper_rifle" and again.scale == 1, tostring(again.scale))
+  -- The last shot.
+  w.aiming, w.state = false, nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("gone again while it fires", again.dead)
+  w.weapon, w.state = "bazooka", "standing"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local back = M.spawned[#M.spawned]
+  check("back at full size as WA puts it away", back ~= rifle and not back.dead
+    and back.sprite == "sprites/px_hold/sniper_rifle" and back.scale == 1)
+  M.quads = {}
+  M.draw()
+  check("with no laser", #M.quads == 0, tostring(#M.quads))
+  local scales = {}
+  for _ = 1, 20 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    scales[#scales + 1] = back.scale
+  end
+  check("shrinking along the grow-in backwards", scales[1] == 0.95 and scales[2] == 0.9
+    and scales[20] == 0, table.concat(scales, " "))
+  check("over WA's 20 frames", not back.dead)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("then gone", back.dead)
+
+  -- Standing with the same weapon is no put-away: PX's instant drop.
+  w.weapon, w.aiming = "handgun", true
+  for _ = 1, 5 do M.message(w, wa.msg.FRAME_FINISH) end
+  local before = #M.spawned
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the same weapon, standing: gone at once", #M.spawned == before and M.spawned[before].dead)
+end
+
 print("sniper rifle: PX's laser sight, drawn only")
 do
   new_match()
