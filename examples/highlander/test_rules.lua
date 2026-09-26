@@ -196,7 +196,7 @@ local function new_match(opts)
   wa = {
     log = function(s) logs[#logs + 1] = s end,
     hud = { line = function() end },
-    msg = { FRAME_FINISH = 2, START_TURN = 0x34 },
+    msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26 },
     world = { cavern = function() return cavern end },
     -- A fixed LCG: the pack must not care which numbers, only that it draws
     -- through here.
@@ -215,6 +215,22 @@ local function new_match(opts)
       end,
     },
     inventory = inventory_api(),
+    land = {
+      cut = function(spec)
+        M.cuts = M.cuts or {}
+        M.cuts[#M.cuts + 1] = spec
+      end,
+    },
+    actors = {
+      spawn = function(spec)
+        local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false }
+        function a:gfx(g) self.angle, self.scale = g.angle, g.scale end
+        function a:despawn() self.dead = true end
+        M.spawned = M.spawned or {}
+        M.spawned[#M.spawned + 1] = a
+        return a
+      end,
+    },
     weapons = {
       replace = function(spec)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
@@ -222,7 +238,14 @@ local function new_match(opts)
       end,
     },
     on = {
-      worm_message = function(f) M.message = f end,
+      -- Every handler, in registration order, as the engine keeps them.
+      worm_message = function(f)
+        M.handlers = M.handlers or {}
+        M.handlers[#M.handlers + 1] = f
+        M.message = function(w, msg)
+          for _, h in ipairs(M.handlers) do h(w, msg) end
+        end
+      end,
       turn_start = function(f) M.turn_start = f end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
@@ -325,7 +348,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("30 slots replaced, each once", #replaced == 30 and not dupes, tostring(#replaced))
+  check("36 slots replaced, each once", #replaced == 36 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -611,6 +634,87 @@ do
     loot:get(worm(16), "bazooka") == 1
       and loot:get(worm(32), "bazooka") == 1
       and loot:get(worm(32), "grenade") == 1)
+end
+
+print("fire jump: PX's timeline after a fire punch")
+do
+  new_match()
+  frame()
+  local w = worm(16)
+  w.weapon, w.facing, w.vx, w.vy = "fire_punch", -1, 0, 0
+  ammo[w.alliance].fire_punch = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  -- WA's wind-up: the worm stands still, and nothing may move it.
+  for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("nothing during the wind-up", w.vx == 0 and w.vy == 0, w.vx .. " " .. w.vy)
+  -- FireFinal: WA's setup_Punching starts the worm up at 6.
+  local PX = 0x10000
+  w.vy = -6 * PX
+  local at = {}
+  for t = 1, 215 do
+    if t == 100 then w.vy = 8 * PX end -- falling fast mid-glide
+    M.message(w, wa.msg.FRAME_FINISH)
+    at[t] = { vx = w.vx, vy = w.vy }
+  end
+  check("up at 9 on the punch's first frame", at[1].vy == -9 * PX, tostring(at[1].vy))
+  check("forward, the way it faces, 30 frames in", at[30].vx == -4 * PX and at[29].vx == 0,
+    tostring(at[30].vx))
+  check("a little higher at 60", at[60].vy == -10 * PX, tostring(at[60].vy))
+  check("a fall past 5 goes back to 4", at[100].vy == 4 * PX, tostring(at[100].vy))
+  w.vy = 8 * PX
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and lets go after 210 frames", w.vy == 8 * PX, tostring(w.vy))
+  check("no cut of its own: WA's punch cuts", not M.cuts)
+  local other = worm(32)
+  other.weapon, other.vy = "bazooka", 0
+  M.message(other, wa.msg.FIRE_WEAPON)
+  other.vy = -6 * PX
+  M.message(other, wa.msg.FRAME_FINISH)
+  check("another weapon does not jump", other.vy == -6 * PX)
+end
+
+print("fire jump: a wind-up that never ends in a punch")
+do
+  new_match()
+  frame()
+  local w = worm(16)
+  w.weapon, w.vy = "fire_punch", 0
+  ammo[w.alliance].fire_punch = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
+  w.vy = -3 * 0x10000 -- a later jump of some other kind
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("is forgotten", w.vy == -3 * 0x10000, tostring(w.vy))
+end
+
+print("px holds: the sprite builder at run time")
+do
+  new_match()
+  frame()
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming = "grenade", 1, 100 * 0x10000, 50 * 0x10000, true
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("dormant without worm.aim", not M.spawned)
+  w.aim = 0.5
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local weapon, hand = M.spawned[1], M.spawned[2]
+  check("a weapon and a hand while aiming", weapon and hand and weapon.sprite == "sprites/px_hold/sticky_bomb"
+    and hand.sprite == "sprites/px_hold/hand_rad_lower")
+  check("grown in to full size after 20 frames", weapon.scale == 1 and math.abs(hand.scale - 0.8) < 1e-9,
+    tostring(weapon.scale))
+  local right = weapon.x - w.x
+  w.facing = -1
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("positions are 16.16 integers", math.type(weapon.x) == "integer" and math.type(hand.y) == "integer")
+  check("facing left mirrors the weapon", math.abs((weapon.x - w.x) + right) <= 1 and weapon.facing == -1,
+    right .. " " .. (weapon.x - w.x))
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and it goes when the worm stops aiming", weapon.dead and hand.dead)
+  w.aiming, w.weapon = true, "bazooka"
+  local before = #M.spawned
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no hold for a weapon without one", #M.spawned == before)
 end
 
 print("")

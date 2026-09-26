@@ -42,6 +42,18 @@
 
 -- ---------------------------------------------------------------- weapons
 
+-- PX's sprite builder, for the weapons below whose hold PX draws at run
+-- time: the worm posture with no weapon in it, and its hands. The helper
+-- further down draws the weapon and a hand over it.
+local PX_POSTURE = {
+  weaponlnk = "sprites/px_hold/aim", weaponlnku = "sprites/px_hold/aimu",
+  weaponlnkd = "sprites/px_hold/aimd",
+  wthrow = "sprites/px_hold/draw", wthrowu = "sprites/px_hold/drawu",
+  wthrowd = "sprites/px_hold/drawd",
+}
+local PX_HANDS = {
+  "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad", "sprites/px_hold/hand_rad_upper",
+}
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -65,7 +77,8 @@ local PORTED = {
 
 -- PX weapons that need only PX's art: its icons, copied byte for byte so
 -- replays share them, and its strips split into frame folders with
--- tools/px_split_strip.py. None of them has a script in PX.
+-- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
+-- its sprite builder (p_sprite_builder), so does the pack (PX_HOLDS below).
 local PX_ART = {
   { -- Burning Sheep Launcher
     weapon = "sheep_launcher",
@@ -229,6 +242,68 @@ local PX_ART = {
     panel_icon = "sprites/real_shotgun/real_shotgun_ico.png",
     fire_repeat = 5,
   },
+  { -- Hellish Hand-Grenade: the hellish_grenade example's art on the scheme's
+    -- record, which leaves the flight sprite to the slot.
+    weapon = "holy_grenade",
+    panel_icon = "sprites/hellish/hhh_ico.png",
+    sprite = "sprites/hellish/grenade",
+    worm_sprites = {
+      weaponlnk = "sprites/hellish/aim",
+      weaponlnku = "sprites/hellish/aimu",
+      weaponlnkd = "sprites/hellish/aimd",
+      wthrow = "sprites/hellish/draw",
+      wthrowu = "sprites/hellish/drawu",
+      wthrowd = "sprites/hellish/drawd",
+    },
+  },
+  { -- Remote Roller
+    weapon = "skunk",
+    panel_icon = "sprites/remote_roller/rroller_ico.png",
+    sprite = "sprites/remote_roller/flight",
+    worm_sprites = {
+      weaponlnk = "sprites/remote_roller/aim",
+      weaponlnku = "sprites/remote_roller/aimu",
+      weaponlnkd = "sprites/remote_roller/aimd",
+      wthrow = "sprites/remote_roller/draw",
+      wthrowu = "sprites/remote_roller/drawu",
+      wthrowd = "sprites/remote_roller/drawd",
+    },
+  },
+  { -- Igniter: PX draws its bullet on the missile at run time; here it is the
+    -- flight sprite.
+    weapon = "homing_missile",
+    panel_icon = "sprites/igniter/igniter_ico.png",
+    sprite = "sprites/igniter/flight",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/igniter", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    params = { gpu_prefix = "sprites/px_hold/" },
+  },
+  { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
+    -- draws the bomb at run time. Here the bomb is the stock grenade sprite
+    -- again -- a grenade-type slot picks the worm's throw sheet from it, and
+    -- 0 has none -- which the override draws as PX's bomb. The bits too.
+    weapon = "grenade",
+    panel_icon = "sprites/sticky_bomb/sbico.png",
+    sprite = "grenade",
+    cluster = { sprite = "sprites/sticky_bomb/bomb" },
+    -- Stuck, the bits draw with the frames at +0x178..+0x184, which the
+    -- record points at the Salvation Army's 467; PX overrides that too.
+    sprite_overrides = {
+      grenade = "sprites/sticky_bomb/bomb",                                -- 50
+      wsvclnku = "sprites/sticky_bomb/bomb",                               -- 467
+    },
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/sticky_bomb", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    params = { gpu_prefix = "sprites/px_hold/" },
+  },
+  { -- Fire Jump: a fire punch, then a jump and a glide (below).
+    weapon = "fire_punch",
+    panel_icon = "sprites/fire_jump/fire_jump_ico.png",
+  },
+  { -- Super Drill: WA's drill, cutting a second hole each frame (below).
+    weapon = "pneumatic_drill",
+    panel_icon = "sprites/super_drill/ico_superdrill.png",
+  },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
@@ -255,6 +330,214 @@ for _, list in ipairs({ PORTED, PX_ART }) do
     wa.weapons.replace(spec)
   end
 end
+
+-- The two with a script of their own. Both run from worm messages, which WA
+-- sends in lockstep on every peer and in replays.
+
+-- Super Drill (PX weapon_super_drill): WA keeps drilling as it always does,
+-- and a hidden actor cuts a second hole at the worm each frame until WA's
+-- drill stops. The same as the super_drill example.
+local drills = {}
+
+local function follow_drill(worm, id)
+  local started, waiting = false, 0
+  return function(a)
+    if worm.drilling then
+      started = true
+      wa.land.cut({ x = worm.x, y = worm.y, shape = "drill" })
+      return
+    end
+    -- WA enters its drilling state a few frames after the shot.
+    if not started and waiting < 4 then
+      waiting = waiting + 1
+      return
+    end
+    drills[id] = nil
+    a:despawn()
+  end
+end
+
+-- Fire Jump (PX Fire_Jump_script): WA's fire punch, whose speed then follows
+-- PX's timeline, counted in frames from the punch -- up at once, forward
+-- after half a second, a little higher at one second, and from 80 frames a
+-- fall cut back to 4 pixels a frame whenever it passes 5, until 210. PX
+-- speeds are pixels per frame; WA's are 16.16. See
+-- docs/px-reverse-engineering.md.
+--
+-- PX counts from FireFinal, which WA calls only once the punch's wind-up has
+-- played, not when fire is pressed. FireFinal starts the punch at -6 pixels
+-- a frame; the worm stood still until then. So the count starts on the
+-- first frame after fire is pressed that the worm is rising.
+--
+-- WA keeps the worm in its punch state until it has stopped, so the punch
+-- itself cuts the way up and burns worms on it, all jump long: PX adds no cut.
+local PX = 0x10000
+local jumps = {}   -- worm id -> frames since the punch
+local winding = {} -- worm id -> frames since fire was pressed
+-- A wind-up never takes this long; give up rather than fire late.
+local WIND_UP_MAX = 100
+
+local function fire_jump(worm, t)
+  if t == 1 then
+    worm.vy = -9 * PX
+  elseif t == 30 then
+    worm.vx = worm.facing * 4 * PX
+  elseif t == 60 then
+    worm.vy = worm.vy - PX
+  end
+  if t > 80 and t < 210 and worm.vy > 5 * PX then
+    worm.vy = 4 * PX
+  end
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON then
+    if worm.weapon == "pneumatic_drill" and not drills[worm.id]
+        and worm:ammo("pneumatic_drill") ~= 0 then
+      local id = worm.id
+      drills[id] = wa.actors.spawn({
+        sprite = false, x = worm.x, y = worm.y,
+        gravity = false, collide = false, owner = worm,
+        on = follow_drill(worm, id),
+      })
+    elseif worm.weapon == "fire_punch" and worm:ammo("fire_punch") ~= 0 then
+      winding[worm.id] = 0
+    end
+    -- Neither eats the shot: WA's drill and fire punch still run.
+    return
+  end
+  if msg == wa.msg.FRAME_FINISH and winding[worm.id] then
+    if worm.vy < 0 then
+      winding[worm.id], jumps[worm.id] = nil, 0
+    else
+      local w = winding[worm.id] + 1
+      winding[worm.id] = w < WIND_UP_MAX and w or nil
+    end
+  end
+  if msg == wa.msg.FRAME_FINISH and jumps[worm.id] then
+    local t = jumps[worm.id] + 1
+    fire_jump(worm, t)
+    jumps[worm.id] = t < 211 and t or nil
+  end
+end)
+
+-- ------------------------------------------ PX's sprite builder, at run time
+--
+-- PX draws many weapons' holds at run time (p_sprite_builder, WormSprite).
+-- Over a worm posture with no weapon in it -- def_shot_aim_*, the sheets
+-- below -- it draws the weapon and a hand, each placed and turned from the
+-- aim angle by the weapon's CWormAnimParams, and grows the weapon in over the
+-- first 20 frames of aiming. This does the same with two actors per aiming
+-- worm, from worm messages, so in lockstep.
+--
+-- It reads worm.aim (the aim WA draws, 0 straight down .. 1 straight up:
+-- PX's FireAngle) and worm.aiming (WA draws the worm with its weapon out:
+-- PX's WS_AIMING or WS_SETPOWER). On an engine without them it does
+-- nothing.
+
+-- In front of worms and terrain, as the sentry's gun.
+local HOLD_DEPTH = 0x10000
+
+-- WormSprite's grow-in, counter 0..20: to 2.7 * c/20 up to 9, then 0.025
+-- smaller a frame, then 0.9, 0.95, and full size from 20.
+local PICK = {}
+do
+  local s = 0
+  for c = 0, 20 do
+    if c >= 20 then s = 1
+    elseif c > 17 then s = c / 20
+    elseif c > 9 then s = s - 0.025
+    else s = 2.7 * c / 20 end
+    PICK[c] = s
+  end
+end
+
+-- Slot -> the weapon's CWormAnimParams, as its PX script states them.
+local PX_HOLDS = {
+  grenade = { -- Sticky Bomb (sb_script)
+    sheet = "sprites/px_hold/sticky_bomb", hand_type = 1, hand_radius = 24,
+    hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
+    weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
+  },
+  homing_missile = { -- Igniter (igniter_anim)
+    sheet = "sprites/px_hold/igniter", hand_type = 2, hand_radius = -6.0,
+    hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
+  },
+}
+
+local held = {} -- worm id -> { slot, weapon, hand, counter }
+
+local function drop_hold(id)
+  local h = held[id]
+  if h then
+    h.weapon:despawn()
+    h.hand:despawn()
+    held[id] = nil
+  end
+end
+
+-- One sprite of the hold: centred at (dx, dy) pixels from the worm, turned
+-- by `angle` radians, as PX computes them for a worm facing right; facing
+-- left mirrors all three, as PX's left-facing formulas do.
+local function place(a, worm, dx, dy, angle, scale)
+  local f = worm.facing
+  -- Positions are 16.16 integers.
+  a.x = worm.x + math.floor(f * dx * 0x10000 + 0.5)
+  a.y = worm.y + math.floor(dy * 0x10000 + 0.5)
+  a.vx, a.vy = 0, 0
+  a.facing = f
+  a:gfx({ angle = math.deg(angle * f) % 360, scale = scale, depth = HOLD_DEPTH })
+end
+
+-- worm.aim, or nil on an engine without it: a worm has no such field there,
+-- and reading one is an error rather than nil.
+local function aim_of(worm)
+  local ok, aim = pcall(function() return worm.aim end)
+  return ok and aim or nil
+end
+
+-- WormSprite::CalculateAngle.
+local function update_hold(worm)
+  local p = PX_HOLDS[worm.weapon]
+  local aim = p and aim_of(worm)
+  if not aim or not worm.aiming then
+    drop_hold(worm.id)
+    return
+  end
+  local h = held[worm.id]
+  if h and h.slot ~= worm.weapon then
+    drop_hold(worm.id)
+    h = nil
+  end
+  if not h then
+    local function actor(sheet)
+      return wa.actors.spawn({
+        sprite = sheet, x = worm.x, y = worm.y, gravity = false,
+        collide = false, owner = worm, on = function() end,
+      })
+    end
+    h = { slot = worm.weapon, counter = 0,
+          weapon = actor(p.sheet), hand = actor(PX_HANDS[p.hand_type]) }
+    held[worm.id] = h
+  end
+  local pi = math.pi
+  local rot = (1 - aim) * pi
+  local rot_w = rot + pi * p.weap_radial_rotation
+  local rot_h = rot - pi * p.hand_radial_rotation
+  local grow = PICK[h.counter]
+  place(h.weapon, worm, math.sin(rot_w) * p.weap_radius, -math.cos(rot_w) * p.weap_radius,
+    pi - pi * aim - pi * (1 - p.weap_rotation), grow)
+  place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
+    rot + pi * p.hand_rotation, grow * p.hand_scale)
+  h.counter = math.min(h.counter + 1, 20)
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FRAME_FINISH then
+    update_hold(worm)
+  end
+end)
 
 -- ----------------------------------------------------------------- pools
 
