@@ -182,6 +182,7 @@ local function new_match(opts)
     for index = 0, 1 do
       worms[#worms + 1] = setmetatable({
         id = team * 16 + index, team = team, alliance = team - 1, hp = 100,
+        gravity = 0x10000, -- WA's normal
       }, Worm)
     end
   end
@@ -238,7 +239,7 @@ local function new_match(opts)
       spawn = function(spec)
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false, explode = spec.explode,
                     owner = spec.owner }
-        function a:gfx(g) self.angle, self.scale = g.angle, g.scale end
+        function a:gfx(g) self.angle, self.scale, self.tint = g.angle, g.scale, g.tint end
         function a:frame(i) self.shown = i end
         function a:despawn() self.dead = true end
         M.spawned = M.spawned or {}
@@ -261,7 +262,14 @@ local function new_match(opts)
           for _, h in ipairs(M.handlers) do h(w, msg) end
         end
       end,
-      turn_start = function(f) M.turn_start = f end,
+      -- Every handler, as for worm_message: the balloon's and the rules'.
+      turn_start = function(f)
+        M.turn_starts = M.turn_starts or {}
+        M.turn_starts[#M.turn_starts + 1] = f
+        M.turn_start = function(...)
+          for _, h in ipairs(M.turn_starts) do h(...) end
+        end
+      end,
       missile_frame = function(f) M.missile = f end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
@@ -367,7 +375,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("39 slots replaced, each once", #replaced == 39 and not dupes, tostring(#replaced))
+  check("40 slots replaced, each once", #replaced == 40 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -505,6 +513,15 @@ do
     end
   end
   check("...while open maps do deal them", seen)
+end
+
+print("turn: three Hot Air Balloons, as PX's GiveWeapons")
+do
+  new_match()
+  frame()
+  ammo[0].bungee = 1 -- one left over from the last turn
+  turn(16)
+  check("the active team has 3 again", ammo[0].bungee == 3, tostring(ammo[0].bungee))
 end
 
 print("turn: only the active worm's hand is usable, one of each")
@@ -884,6 +901,50 @@ do
   local before = #M.spawned
   M.contact(w, { kind = "land" }, { vx = 0, vy = 3 * P, flags = 0 })
   check("a fast landing crashes it, as in PX", #M.spawned == before + 1 and M.spawned[#M.spawned].explode)
+end
+
+print("hot air balloon: PX's balloon on WA's parachute")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "sliding", 100 * P, 50 * P, 0, P, 1, true
+  w.gravity, w.body_visible, w.alliance = P, true, 1
+  function w:set_state(s) self.state = s end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("nothing while it just falls", #M.spawned == 0 and w.gravity == P)
+  -- WA opens the parachute and clears the selection: "none", as seen in WA.
+  w.state, w.weapon = "parachuting", "none"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("up: gravity turned over", w.gravity == -P, tostring(w.gravity))
+  check("an inflate sound", M.sounds[1] and M.sounds[1]:find("inflate"))
+  local balloon, basket = M.spawned[1], M.spawned[2]
+  check("the balloon in the team's colour, the basket below", balloon.sprite == "sprites/balloon/balloon"
+    and balloon.tint == 0xFF0096FF and basket.sprite == "sprites/balloon/basket" and w.body_visible == false,
+    string.format("%x", balloon.tint or 0))
+  check("the balloon 43 above, 6 ahead; the basket's art mirrored facing right",
+    balloon.y == w.y - 43 * P and balloon.x == w.x + 6 * P and basket.facing == -1)
+  -- The parachute closes on the ground: slide, pop, gravity back.
+  w.state = "standing"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("closed: gravity back, sliding, popped", w.gravity == P and w.state == "sliding"
+    and M.sounds[#M.sounds]:find("pop") and balloon.dead and w.body_visible == true)
+  -- Up again, then the turn changes.
+  w.state, w.weapon = "sliding", "bungee"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("up again", w.gravity == -P)
+  M.turn_start({ worm = worm(32), active = worm(32) })
+  check("a turn change pops it", w.gravity == P)
+  -- The Hang-Glider's parachute is not a balloon.
+  w.state, w.weapon = "sliding", "parachute"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("another slot's parachute is left alone", w.gravity == P)
 end
 
 print("px missile sprites: WeapSprite at run time")

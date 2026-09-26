@@ -32,8 +32,9 @@
 --     just the previous worm's. PX relied on its scheme having those slots at
 --     zero. Here the scheme can say anything, so the pack enforces it itself.
 --
---   * Wind Changer (x1) and Hot Air Balloon (x3) are not ported yet, so
---     nothing is granted in their place.
+--   * PX's GiveWeapons also sets the Hot Air Balloon to 3 and the Wind
+--     Changer to 1 each turn. The balloon is granted; the Wind Changer is
+--     not ported yet, and its slot would hand out WA's stock Surrender.
 --
 -- Lockstep: dealing, turn_start and death are all dispatched from WA's own
 -- simulation messages, and every random choice is wa.random(). Two peers, or
@@ -313,6 +314,12 @@ local PX_ART = {
     sprite_overrides = { [453] = "sprites/shadow_bolt/trail" },
     sprites = { "sprites/px_hold/shadow_bolt", "sprites/shadow_bolt/bolt" },
     params = { gpu_prefix = "sprites/" },
+  },
+  { -- Hot Air Balloon: WA's parachute, carried up by PX's script (below).
+    weapon = "bungee",
+    panel_icon = "sprites/balloon/balloon_icon.png",
+    sprites = { "sprites/balloon/balloon", "sprites/balloon/basket" },
+    params = { gpu_prefix = "sprites/balloon/" },
   },
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
     weapon = "jet_pack",
@@ -1014,6 +1021,122 @@ if wa.on.contact then
   end)
 end
 
+-- --------------------------------------------------------- Hot Air Balloon
+--
+-- PX's balloon_s (r2_balloon by rafa''2, modified by 0rang3), on WA's
+-- parachute. While the parachute is open, the worm's gravity is turned
+-- upside down, so it rises; the balloon pops -- gravity back -- when the
+-- parachute closes, at a turn change, or in water. The worm's body is
+-- hidden behind the balloon, drawn in its team's colour, and the worm in its
+-- basket, as PX's RenderWorm override draws them.
+
+local BALLOON_DEPTH = 0x10001    -- behind the basket, in front of worms
+local BASKET_DEPTH = 0x10000
+-- PX's GetTeamColorRGB, by WA's colour index (worm.alliance, 0 red .. 5 cyan).
+-- PX adds it to its dark grey balloon (SetColorMod mode 8); the GPU tint
+-- multiplies, so the pack's balloon art is PX's lightened to white, and the
+-- team colour shows at full strength.
+local TEAM_RGB = { 0xFF8080, 0x0096FF, 0x00D000, 0xFFFF40, 0xE800E8, 0x50FFFF }
+
+local balloons = {} -- worm id -> { active, gravity, ticks, last_weapon, balloon, basket }
+
+local function balloon_of(worm)
+  local b = balloons[worm.id]
+  if not b then
+    b = { active = false, gravity = 0, ticks = 0 }
+    balloons[worm.id] = b
+  end
+  return b
+end
+
+local function balloon_sound(worm, name, n)
+  wa.sound.play(worm, "sounds/balloon/" .. name .. wa.random(1, n) .. ".wav")
+end
+
+-- StopBalloon: gravity back, and a pop.
+local function balloon_stop(worm, b)
+  if not b.active then
+    return
+  end
+  worm.gravity = -b.gravity
+  b.active, b.ticks = false, 0
+  if b.balloon then b.balloon:despawn(); b.balloon = nil end
+  if b.basket then b.basket:despawn(); b.basket = nil end
+  worm.body_visible = true
+  balloon_sound(worm, "pop", 4)
+end
+
+local function balloon_frame(worm)
+  local b = balloon_of(worm)
+  local state = worm.state
+  -- FireFinal(Hot Air Balloon): WA opens its parachute straight away and
+  -- clears the selection as it does ("none"), so it is the one the worm had
+  -- the frame before.
+  local weapon = worm.weapon
+  if weapon == nil or weapon == "none" then
+    weapon = b.last_weapon
+  end
+  if not b.active and state == "parachuting" and not b.was_parachuting
+      and weapon == "bungee" then
+    b.active, b.ticks = true, 0
+    balloon_sound(worm, "inflate", 3)
+  end
+  b.was_parachuting = state == "parachuting"
+  b.last_weapon = worm.weapon
+  if b.active then
+    if state == "parachuting" and worm.turn and worm.y < wa.world.water() then
+      worm.gravity = b.gravity
+    else
+      if state == "standing" then
+        worm:set_state("sliding")
+      end
+      balloon_stop(worm, b)
+      return
+    end
+    b.ticks = b.ticks + 1
+    -- DrawBalloonWorm: the balloon above, in the team's colour, and the worm
+    -- in its basket, whose art faces left.
+    local f = worm.facing
+    local function art(sheet)
+      return wa.actors.spawn({
+        sprite = sheet, x = worm.x, y = worm.y, gravity = false,
+        collide = false, owner = worm, on = function() end,
+      })
+    end
+    b.balloon = b.balloon or art("sprites/balloon/balloon")
+    b.basket = b.basket or art("sprites/balloon/basket")
+    local x = worm.x + 6 * f * FX
+    b.balloon.x, b.balloon.y, b.balloon.vx, b.balloon.vy = x, worm.y - 43 * FX, 0, 0
+    b.balloon:frame(math.min((b.ticks % 200) * 16 // 200, 15))
+    b.balloon:gfx({ tint = 0xFF000000 | (TEAM_RGB[(worm.alliance or 0) + 1] or 0xFFFFFF),
+      depth = BALLOON_DEPTH })
+    b.basket.x, b.basket.y, b.basket.vx, b.basket.vy = x, worm.y + 3 * FX, 0, 0
+    b.basket.facing = -f
+    b.basket:frame(math.min((b.ticks % 80) * 17 // 80, 16))
+    b.basket:gfx({ depth = BASKET_DEPTH })
+    worm.body_visible = false
+  else
+    -- Kept up to date while it is not flying: the gravity to turn over.
+    b.gravity = -worm.gravity
+  end
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FRAME_FINISH then
+    balloon_frame(worm)
+  end
+end)
+
+-- M_TURNBEGIN: any balloon still up pops.
+wa.on.turn_start(function()
+  for _, worm in ipairs(wa.worms.all()) do
+    local b = balloons[worm.id]
+    if b and b.active then
+      balloon_stop(worm, b)
+    end
+  end
+end)
+
 -- ----------------------------------------------------------------- pools
 
 -- Offensive: PX's `Weapons`, 29 entries.
@@ -1091,10 +1214,11 @@ local MOVEMENT = {
 local CAVE_OFFENSIVE = 21
 local CAVE_SECOND = 16
 
--- The slots Highlander never touches -- Kamikaze Rocket, Gravler, Hot Air
+-- The slots Highlander never pools -- Kamikaze Rocket, Gravler, Hot Air
 -- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
 -- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
--- whatever ammo the scheme gives them.
+-- whatever ammo the scheme gives them, except the Hot Air Balloon, which
+-- start_turn sets to 3.
 
 -- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
 -- must not depend on pairs() order: Lua's string hashing is seeded per
@@ -1152,6 +1276,8 @@ end
 
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
+  -- GiveWeapons: three Hot Air Balloons for the turn, whatever is left.
+  worm:ammo("bungee", { set = 3 })
 end
 
 local function on_death(event)

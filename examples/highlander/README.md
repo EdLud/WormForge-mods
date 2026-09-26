@@ -34,9 +34,10 @@ slot still holds Armageddon, dealt as a second weapon.
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
 | Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
-Highlander never touches the **not pooled** slots. Their ammo is whatever
-the scheme gives, so the scheme decides whether Teleport or Skip Go is always
-available.
+Highlander never touches the **not pooled** slots, except the Hot Air
+Balloon: every turn it gives the worm's team 3, as PX does. The others keep
+whatever ammo the scheme gives, so the scheme decides whether Teleport or Skip
+Go is always available.
 
 On cavern maps PX draws from the first 21 offensive and the first 16 second
 weapons only. That leaves out the Ferret and the strikes, and Reinforcement,
@@ -258,8 +259,9 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 
 These are deliberate, and each one is explained in `rules.lua`:
 
-- Wind Changer and Hot Air Balloon are not ported yet, so nothing is granted
-  in their place.
+- PX grants 3 Hot Air Balloons and 1 Wind Changer every turn. The balloons
+  are granted; the Wind Changer is not ported yet, so its slot (WA's
+  Surrender) is left to the scheme.
 - There's no removal at turn end. The next turn start does the same job.
 - Every pooled slot is zeroed at each turn start, not only the previous
   worm's. PX left that to its own scheme; here any scheme works.
