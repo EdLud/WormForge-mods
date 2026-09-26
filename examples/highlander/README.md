@@ -147,7 +147,7 @@ bazooka hold, as the Cow Launcher's.
 | fire_punch | Fire Jump | icon | PX's jump timeline |
 | pneumatic_drill | Super Drill | icon | a second hole each frame |
 | longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
-| handgun | Sniper Rifle | icon, the hold, laser.png | the hold, the laser sight and its own shot sound |
+| handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png | the hold, the laser sight and its own shot sound |
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
@@ -212,7 +212,9 @@ estimates. Two differences from PX:
   centre line where PX starts it, because the art's barrel runs 2 pixels to
   one side.
 
-The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`.
+The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`, and
+the worm fires it in the `snipefire` poses the scheme's record names; left
+out, WA drew its own handgun for the shot.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 
@@ -231,9 +233,10 @@ The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`.
 - **Crash:** when the fuel runs out, the worm reaches water, or it hits
   anything but a mine faster than a pixel a frame (`wa.on.contact`, judged
   on the speed before impact). The explosion is sized by the fuel left and
-  the speed, followed by one of PX's "oops" lines. Touching the ground
-  never crashes it (PX's smooth landing: the landscape is `NullObj`). When
-  WA ends the jet pack at rest, the worm slides.
+  the speed, followed by one of PX's "oops" lines. The ground counts as
+  something it hits: landing slower than a pixel a frame is PX's smooth
+  landing, and a faster one crashes it. When WA ends the jet pack at rest,
+  the worm slides.
 
 The engine pieces are on the `worm-flight` branch.
 
@@ -308,8 +311,8 @@ the engine's job, and the mock can't test it. They cover:
 - the laser sight: its start, colours, length (full, to terrain, to a worm),
   when it shows, and the shot sound
 - the Helicopter: the climb-in, launch (including with the last shot),
-  kicks, damping, fuel and retreat, crashes by contact and fuel, mines and
-  the ground not crashing it, and the landing slide
+  kicks, damping, fuel and retreat, crashes by contact and fuel, mines not
+  crashing it, slow and fast landings, and the landing slide
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)

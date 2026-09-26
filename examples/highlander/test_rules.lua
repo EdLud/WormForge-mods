@@ -842,13 +842,13 @@ do
   check("no fuel burnt during retreat", w.fuel == fuel)
   M.retreat = 0
   -- Hitting a mine is fine; hitting a worm fast is not.
-  M.contact(w, { kind = "mine" }, { vx = 3 * P, vy = 0 })
+  M.contact(w, { kind = "mine" }, { vx = 3 * P, vy = 0, flags = 0 })
   check("a mine does not crash it", #M.spawned == 2)
-  M.contact(w, { kind = "worm" }, { vx = P // 2, vy = 0 })
+  M.contact(w, { kind = "worm" }, { vx = P // 2, vy = 0, flags = 0 })
   check("a slow touch does not crash it", #M.spawned == 2)
-  M.contact(w, { kind = "land" }, { vx = 0, vy = 3 * P })
-  check("touching down does not crash it, however fast", #M.spawned == 2)
-  M.contact(w, { kind = "worm" }, { vx = 3 * P, vy = 0 })
+  M.contact(w, { kind = "land" }, { vx = 0, vy = P // 2, flags = 0 })
+  check("a slow landing does not crash it: PX's smooth landing", #M.spawned == 2)
+  M.contact(w, { kind = "worm" }, { vx = 3 * P, vy = 0, flags = 0 })
   local boom = M.spawned[#M.spawned]
   check("a fast hit crashes it: an explosion of at least 10", boom.explode and boom.explode.id == 10
     and boom.explode.damage == 20 and boom.explode.now, boom.explode and boom.explode.id)
@@ -881,6 +881,9 @@ do
   w.state, w.weapon = "jetpacking", nil
   M.message(w, wa.msg.FRAME_FINISH)
   check("the last one still flies: armed in the wind-up", w.fuel > 99 * P, tostring(w.fuel / P))
+  local before = #M.spawned
+  M.contact(w, { kind = "land" }, { vx = 0, vy = 3 * P, flags = 0 })
+  check("a fast landing crashes it, as in PX", #M.spawned == before + 1 and M.spawned[#M.spawned].explode)
 end
 
 print("px missile sprites: WeapSprite at run time")

@@ -321,10 +321,17 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/helicopter/" },
   },
   { -- Sniper Rifle: the hold drawn at run time, PX's laser sight while aiming
-    -- and its own shot (below).
+    -- and its own shot (below). Firing, the worm holds the rifle: the
+    -- snipefire poses the scheme's record names, not WA's handgun.
     weapon = "handgun",
     panel_icon = "sprites/sniper_rifle/srico.png",
-    worm_sprites = PX_POSTURE,
+    worm_sprites = {
+      weaponlnk = PX_POSTURE.weaponlnk, weaponlnku = PX_POSTURE.weaponlnku,
+      weaponlnkd = PX_POSTURE.weaponlnkd,
+      wthrow = PX_POSTURE.wthrow, wthrowu = PX_POSTURE.wthrowu, wthrowd = PX_POSTURE.wthrowd,
+      weaponfire = "sprites/sniper_rifle/fire", weaponfireu = "sprites/sniper_rifle/fireu",
+      weaponfired = "sprites/sniper_rifle/fired",
+    },
     sprites = { "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser" },
     params = { gpu_prefix = "sprites/" },
   },
@@ -786,7 +793,8 @@ end)
 -- with it (not during retreat), and a crash -- an explosion sized by the fuel
 -- left and the speed -- when the fuel runs out, the worm reaches water, the
 -- turn ends, or it hits something other than a mine faster than a pixel a
--- frame. The worm's body is hidden behind the helicopter, and behind PX's
+-- frame, the ground included: landing slower than that is PX's smooth
+-- landing. The worm's body is hidden behind the helicopter, and behind PX's
 -- climb-in animation while WA winds the jet pack up; its labels, the fuel
 -- counter among them, stay, as with PX's RenderWorm override.
 --
@@ -994,12 +1002,12 @@ wa.on.worm_message(function(worm, msg)
 end)
 
 -- Collide: hitting anything but a mine faster than a pixel a frame crashes
--- it, judged on the speed before WA exchanged velocities. Not the ground:
--- PX gets the landscape as NullObj and lets it land, however fast.
+-- it, the ground included -- a slow landing is PX's smooth landing -- judged
+-- on the speed before WA exchanged velocities.
 if wa.on.contact then
   wa.on.contact(function(worm, other, c)
     local h = helis[worm.id]
-    if h and h.flying and other.kind ~= "mine" and other.kind ~= "land"
+    if h and h.flying and other.kind ~= "mine"
         and (math.abs(c.vx) > FX or math.abs(c.vy) > FX) then
       heli_crash(worm, h, c.vx, c.vy)
     end
