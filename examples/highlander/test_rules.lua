@@ -197,7 +197,12 @@ local function new_match(opts)
     log = function(s) logs[#logs + 1] = s end,
     hud = { line = function() end },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26 },
-    world = { cavern = function() return cavern end },
+    world = {
+      cavern = function() return cavern end,
+      retreat = function() return M.retreat or 0 end,
+      water = function() return M.water or 0x7FFFFFFF end,
+      keys = function() return { sprint = M.shift or false } end,
+    },
     -- A fixed LCG: the pack must not care which numbers, only that it draws
     -- through here.
     random = function(lo, hi)
@@ -231,7 +236,8 @@ local function new_match(opts)
     },
     actors = {
       spawn = function(spec)
-        local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false }
+        local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false, explode = spec.explode,
+                    owner = spec.owner }
         function a:gfx(g) self.angle, self.scale = g.angle, g.scale end
         function a:frame(i) self.shown = i end
         function a:despawn() self.dead = true end
@@ -260,6 +266,7 @@ local function new_match(opts)
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
       draw = function(f) M.draw = f end,
+      contact = function(f) M.contact = f end,
     },
   }
   M.quads, M.sounds, M.trace_hit = {}, {}, nil
@@ -360,7 +367,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("38 slots replaced, each once", #replaced == 38 and not dupes, tostring(#replaced))
+  check("39 slots replaced, each once", #replaced == 39 and not dupes, tostring(#replaced))
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -800,6 +807,80 @@ do
   ammo[w.alliance].handgun = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   check("its own shot sound on firing", M.sounds[1] == "sounds/sniper_firing.wav")
+end
+
+print("helicopter: PX's script on WA's jet pack")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "jet_pack", "prefiring", 100 * P, 50 * P, 0, 0, 1, true
+  w.fuel, w.gravity, w.wind, w.body_visible = 30 * P, P, 0, true
+  w.keys = { up = false, down = false, left = false, right = false }
+  function w:clear_keys() self.keys = { up = false, down = false, left = false, right = false }; self.cleared = true end
+  function w:set_state(s) self.state = s end
+  M.spawned = {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  local climb = M.spawned[#M.spawned]
+  check("the climb-in while WA winds up, the body hidden, the labels kept", climb and climb.sprite == "sprites/helicopter/jumpin"
+    and w.body_visible == false and w.visible == nil)
+  w.state = "jetpacking"
+  w.keys.up = true
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("launch: PX's fuel, gravity and wind", w.fuel < 100 * P and w.fuel > 99 * P and w.gravity == math.floor(0.2 * P)
+    and w.wind == math.floor(0.2 * P), w.fuel / P .. " " .. w.gravity .. " " .. w.wind)
+  check("up: a kick of 0.8 from standstill", w.vy == -math.floor(0.8 * P) - 0 or w.vy == -52428, tostring(w.vy))
+  check("its keys consumed, so WA's jet pack does nothing", w.cleared and not w.keys.up)
+  check("the helicopter replaces the climb-in", climb.dead and M.spawned[#M.spawned].sprite == "sprites/helicopter/flying")
+  local vy = w.vy
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no key: speed dies away", w.vy > vy and w.vy < 0, vy .. " -> " .. w.vy)
+  local fuel = w.fuel
+  M.retreat = 2000
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no fuel burnt during retreat", w.fuel == fuel)
+  M.retreat = 0
+  -- Hitting a mine is fine; hitting a worm fast is not.
+  M.contact(w, { kind = "mine" }, { vx = 3 * P, vy = 0 })
+  check("a mine does not crash it", #M.spawned == 2)
+  M.contact(w, { kind = "worm" }, { vx = P // 2, vy = 0 })
+  check("a slow touch does not crash it", #M.spawned == 2)
+  M.contact(w, { kind = "land" }, { vx = 0, vy = 3 * P })
+  check("touching down does not crash it, however fast", #M.spawned == 2)
+  M.contact(w, { kind = "worm" }, { vx = 3 * P, vy = 0 })
+  local boom = M.spawned[#M.spawned]
+  check("a fast hit crashes it: an explosion of at least 10", boom.explode and boom.explode.id == 10
+    and boom.explode.damage == 20 and boom.explode.now, boom.explode and boom.explode.id)
+  -- From wa.on.contact there is no brain to inherit an owner from.
+  check("the explosion is the worm's own", boom.owner == w)
+  check("and lands the worm, shown again", w.gravity == P and w.wind == 0 and w.body_visible == true)
+  -- Out of fuel.
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "jetpacking"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local n = #M.spawned
+  w.fuel = math.floor(0.05 * P)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("fuel below 0.1 crashes it", #M.spawned == n + 1 and M.spawned[#M.spawned].explode)
+  -- WA ends the jet pack on the ground: slide, no crash.
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "jetpacking"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.fuel, w.vy, w.vx = 50 * P, 0, 0
+  w.state = "standing"
+  n = #M.spawned
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("WA ends the jet pack at rest: sliding, no explosion", w.state == "sliding" and #M.spawned == n
+    and w.gravity == P)
+  -- The last Helicopter: WA clears the selection when it fires.
+  w.state, w.weapon, w.vy = "prefiring", "jet_pack", 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state, w.weapon = "jetpacking", nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the last one still flies: armed in the wind-up", w.fuel > 99 * P, tostring(w.fuel / P))
 end
 
 print("px missile sprites: WeapSprite at run time")

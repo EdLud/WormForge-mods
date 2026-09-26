@@ -148,9 +148,10 @@ bazooka hold, as the Cow Launcher's.
 | pneumatic_drill | Super Drill | icon | a second hole each frame |
 | longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
 | handgun | Sniper Rifle | icon, the hold, laser.png | the hold, the laser sight and its own shot sound |
+| jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
-Shadow-Bolt and the Sniper Rifle.
+Shadow-Bolt, the Sniper Rifle and the Helicopter.
 
 **Holds drawn at run time.** For some weapons PX draws the worm holding it
 with its sprite builder, not from a sheet. It takes a posture with no weapon
@@ -212,6 +213,29 @@ estimates. Two differences from PX:
   one side.
 
 The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`.
+
+**Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
+
+- **Arming:** the Helicopter is armed while WA winds the jet pack up and
+  launches on the jet pack that follows, since WA may clear the worm's
+  selection as it fires the team's last one. During the wind-up, PX's
+  climb-in animation plays.
+- **Flight:** the script flies the worm from the worm's own move keys
+  (`worm.keys`) and consumes them (`worm:clear_keys()`), so WA's jet pack
+  neither thrusts nor burns fuel. Speed builds while a key is held, towards
+  10 pixels a frame, and dies away when it is not. Gravity and wind act at
+  0.2, and Shift keeps the facing.
+- **Fuel:** 100 (`worm.fuel`), burnt by flying and by each key, but not
+  during retreat. WA's own fuel counter shows it, because only the worm's
+  body is hidden (`worm.body_visible`), as PX's `RenderWorm` override does.
+- **Crash:** when the fuel runs out, the worm reaches water, or it hits
+  anything but a mine faster than a pixel a frame (`wa.on.contact`, judged
+  on the speed before impact). The explosion is sized by the fuel left and
+  the speed, followed by one of PX's "oops" lines. Touching the ground
+  never crashes it (PX's smooth landing: the landscape is `NullObj`). When
+  WA ends the jet pack at rest, the worm slides.
+
+The engine pieces are on the `worm-flight` branch.
 
 Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
@@ -275,7 +299,7 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (38)
+- the ported slots, each from its own scheme record, with PX's art (39)
 - the Fire Jump's timeline, counted from the punch, not the fire key
 - the run-time holds: placed from the aim, mirrored, grown in, and dropped;
   animated, and with no hand
@@ -283,6 +307,9 @@ the engine's job, and the mock can't test it. They cover:
   animated, and only on its own weapon's missiles
 - the laser sight: its start, colours, length (full, to terrain, to a worm),
   when it shows, and the shot sound
+- the Helicopter: the climb-in, launch (including with the last shot),
+  kicks, damping, fuel and retreat, crashes by contact and fuel, mines and
+  the ground not crashing it, and the landing slide
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)
