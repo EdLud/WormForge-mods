@@ -216,6 +216,19 @@ local PX_ART = {
     sprite = "sprites/pogo_sheep/flight",
     cluster = { sprite = "sprites/pogo_sheep/cluster" },
   },
+  { -- Banana Express: stock banana bombs from PX's banana plane. PX's
+    -- record names its plane 704, an id PX adds past WA's sprites; `plane`
+    -- gives the strike the sheet instead.
+    weapon = "mb_bomb",
+    panel_icon = "sprites/banana_express/banana_express_ico.png",
+    plane = "sprites/banana_express/plane",
+  },
+  { -- Real Shotgun: PX's FireFinal fires the shotgun five times per shot,
+    -- five pellets in one frame, each spread by WA's own hitscan cone.
+    weapon = "shotgun",
+    panel_icon = "sprites/real_shotgun/real_shotgun_ico.png",
+    fire_repeat = 5,
+  },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",

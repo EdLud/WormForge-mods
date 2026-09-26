@@ -107,8 +107,10 @@ so replays share them. The strips are split into frame folders with
 | mole_squadron | Gravler Strike | icon (the Gravler's frames) |
 | aqua_sheep | Ghost Sheep | icon, its two sprites |
 | sheep | Pogo Sheep | icon, flight and cluster sprites (the Blaster Worm's bits' trail) |
+| mb_bomb | Banana Express | icon, the banana plane (`plane`) |
+| shotgun | Real Shotgun | icon; five pellets per shot (`fire_repeat = 5`) |
 
-All sixteen were played in game.
+All eighteen were played in game.
 
 **Trails.** PX draws the last three weapons' trails by overriding stock
 sprites their records point at: the Salvation Army's `wsv*` frames (249-252),
@@ -120,14 +122,21 @@ same way; PX's scripts for them do nothing else.
 
 **Strikes** keep their bomb's art 0x14 further along than a projectile does
 (+0x74 bomb, +0x7C trail, +0x138 bits, +0x140 bits' trail). The importer and
-`sprite` / `cluster.sprite` follow them there.
+`sprite` / `cluster.sprite` follow them there. A strike's plane is at +0x38:
+PX's record names the Banana Express's 704, an id PX adds past WA's last
+sprite (696), so the importer keeps the slot's own plane there and the pack
+gives it the banana plane with `plane`.
+
+**The Real Shotgun** has no art of its own. PX's script calls the shotgun's
+fire five times per shot; `fire_repeat = 5` does the same, five pellets in one
+frame, each spread by WA's own hitscan cone.
 
 **Old Woman Launcher's record differs from PX's in one field.** For a
 projectile, +0x34 picks the worm's aim sheet (0x51C060). WA knows values 1 to
 12 only, and for PX's 0 it draws no worm at all. The pack's copy has 3, the
 bazooka hold, as the Cow Launcher's.
 
-Flight and cluster sprites take 15 of the 223 shared sprite slots. Worm
+Flight, cluster and plane sprites take 16 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
 frames) are drawn by the GPU renderer, in true colour, and take none.
 
@@ -189,7 +198,7 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (28)
+- the ported slots, each from its own scheme record, with PX's art (30)
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)

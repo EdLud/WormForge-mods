@@ -1,5 +1,5 @@
 id = "example.highlander"
-version = "0.6.0"
+version = "0.7.0"
 author = "wkLua"
 api_version = 1
 kind = "gameplay"
@@ -16,5 +16,5 @@ replace = [
   "sheep_launcher", "mad_cow", "old_woman", "mail_strike", "cluster_bomb",
   "banana_bomb", "minigun", "mortar", "homing_pigeon", "battle_axe",
   "carpet_bomb", "air_strike", "mole_bomb", "mole_squadron", "aqua_sheep",
-  "sheep",
+  "sheep", "mb_bomb", "shotgun",
 ]
