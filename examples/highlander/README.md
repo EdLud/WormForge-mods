@@ -136,7 +136,51 @@ projectile, +0x34 picks the worm's aim sheet (0x51C060). WA knows values 1 to
 12 only, and for PX's 0 it draws no worm at all. The pack's copy has 3, the
 bazooka hold, as the Cow Launcher's.
 
-Flight, cluster and plane sprites take 16 of the 223 shared sprite slots. Worm
+### PX weapons with a small script
+
+| Slot | Weapon | Art | Script |
+|---|---|---|---|
+| holy_grenade | Hellish Hand-Grenade | icon, flight sprite, worm | none: PX draws its hold and grenade at run time, and the pack uses sheets |
+| skunk | Remote Roller | icon, flight sprite, worm | none: the library's script is empty in the extract |
+| homing_missile | Igniter | icon, flight sprite (PX's bullet) | the hold, drawn at run time |
+| grenade | Sticky Bomb | icon, the bomb and its bits | the hold, drawn at run time |
+| fire_punch | Fire Jump | icon | PX's jump timeline |
+| pneumatic_drill | Super Drill | icon | a second hole each frame |
+
+Played in game: the Fire Jump, and the Sticky Bomb and Igniter holds.
+
+**Holds drawn at run time.** For some weapons PX draws the worm holding it
+with its sprite builder, not from a sheet. It takes a posture with no weapon
+in it, then draws the weapon and a hand over it, placed and turned from the
+aim each frame, and grows the weapon in as aiming starts. The pack does the
+same with two GPU actors per aiming worm, from each weapon's numbers in its
+PX script (`PX_HOLDS` in `rules.lua`). This needs `worm.aim` and
+`worm.aiming` (engine branch `worm-aim-reads`), and without them it does
+nothing. For the weapon to draw in front of the worm, it also needs
+`gpu-depth-order`.
+
+**Sticky Bomb.** PX's record leaves the bomb's sprite 0. That gives a
+grenade-type slot no throw sheet, so the pack keeps the stock grenade sprite
+and overrides it with PX's bomb. Its bits, once stuck, draw with the
+Salvation Army's frame 467, which PX overrides too; so does the pack.
+
+**Fire Jump.** This is WA's fire punch, whose speed then follows PX's
+timeline:
+
+- up at 9 pixels a frame at once;
+- forward at 4 after 30 frames;
+- 1 more upward at 60 frames;
+- until 210 frames, a fall faster than 5 goes back to 4.
+
+PX counts from `FireFinal`, which WA calls after the punch's wind-up, so the
+pack starts counting when the worm starts rising. WA keeps the worm in its
+punch state until it stops, so the punch cuts terrain and burns worms all the
+way up. The full analysis is in `docs/px-reverse-engineering.md`.
+
+**Super Drill.** WA drills as usual, and a hidden actor cuts a second drill
+hole at the worm each frame until WA's drill stops.
+
+Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
 frames) are drawn by the GPU renderer, in true colour, and take none.
 
@@ -198,7 +242,9 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (30)
+- the ported slots, each from its own scheme record, with PX's art (36)
+- the Fire Jump's timeline, counted from the punch, not the fire key
+- the run-time holds: placed from the aim, mirrored, grown in, and dropped
 - pool coverage (55 pooled slots, and the 15 others never touched)
 - deterministic dealing, including worms that appear late
 - cavern hands (PX's short ranges)
