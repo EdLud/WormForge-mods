@@ -248,7 +248,9 @@ local function new_match(opts)
         end
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false, explode = spec.explode,
                     owner = spec.owner }
-        function a:gfx(g) self.angle, self.scale, self.tint = g.angle, g.scale, g.tint end
+        function a:gfx(g)
+          self.angle, self.scale, self.tint, self.blend, self.depth = g.angle, g.scale, g.tint, g.blend, g.depth
+        end
         function a:frame(i) self.shown = i end
         function a:despawn() self.dead = true end
         M.spawned = M.spawned or {}
@@ -884,7 +886,7 @@ do
   local before = #M.spawned
   M.message(w, wa.msg.FRAME_FINISH)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("the put-away of the rifle just aimed, and only that", #M.spawned == before + 1)
+  check("the put-away of the rifle just aimed, and only that (the rifle and its flash)", #M.spawned == before + 2)
 end
 
 print("px holds: a thrown Sticky Bomb is not put away")
@@ -995,6 +997,56 @@ do
     M.message(w, wa.msg.FRAME_FINISH)
   end
   check("still the same rifle after two shots", not rifle.dead and M.spawned[#M.spawned] == rifle)
+end
+
+print("sniper rifle: a muzzle flash on each shot")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  for _, o in ipairs(worms) do
+    if o ~= w then o.x, o.y = -5000 * P, 0 end
+  end
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "handgun", 1, 100 * P, 50 * P, true, 0.5, true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local flash
+  for _, a in ipairs(M.spawned) do
+    if a.sprite == "sprites/sniper_rifle/flash" then flash = a end
+  end
+  check("a flash with the rifle, dark while it aims", flash and flash.shown == 0)
+  ammo[w.alliance].handgun = 3
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("still dark through the wind-up", flash.shown == 0)
+  w.aiming, w.state = false, nil
+  local lit = {}
+  for i = 1, 5 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    lit[i] = flash.shown
+  end
+  check("lit for 3 frames from the shot", table.concat(lit, " ") == "1 1 1 0 0", table.concat(lit, " "))
+  check("at the barrel's tip, 30 out and 2 to the side, pointing along the aim",
+    flash.x == 130 * P and flash.y == 48 * P and flash.angle == 0, (flash.x / P) .. "," .. (flash.y / P))
+  check("smaller than the sentry's, additive, white, in front of the rifle", flash.scale == 0.45
+    and flash.blend == "add" and flash.tint == 0xFFFFFF and flash.depth < 0x10000)
+  -- The second shot lights it again.
+  w.aiming = true
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("lit again by the next shot", flash.shown == 1)
+  -- Facing left: mirrored with the worm.
+  w.aiming, w.facing = true, -1
+  for _ = 1, 4 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("facing left: 30 out to the left", flash.x == 70 * P and flash.facing == -1, tostring(flash.x / P))
+  w.aiming = false
+  w.state, w.weapon = "standing", "bazooka"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("dropped with the rifle", flash.dead)
 end
 
 print("sniper rifle: PX's laser sight, drawn only")
