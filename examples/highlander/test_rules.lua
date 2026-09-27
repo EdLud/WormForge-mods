@@ -852,6 +852,43 @@ do
   check("the put-away of the rifle just aimed, and only that", #M.spawned == before + 1)
 end
 
+print("px holds: a thrown Sticky Bomb is not put away")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "grenade", 1, 100 * P, 50 * P, true, 0.5, true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local bomb = M.spawned[#M.spawned - 1]
+  check("the Sticky Bomb in hand", bomb.sprite == "sprites/px_hold/sticky_bomb" and bomb.scale == 1)
+  -- Thrown, then the worm stands with the next weapon selected.
+  ammo[w.alliance].grenade = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.aiming, w.state = false, nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("gone as it is thrown", bomb.dead)
+  local before = #M.spawned
+  w.weapon, w.state = "bazooka", "standing"
+  for _ = 1, 3 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("nothing put away after the throw", #M.spawned == before)
+
+  -- Not thrown: switched away while aiming it, it is put away.
+  w.weapon, w.aiming, w.state = "grenade", true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  before = #M.spawned
+  w.weapon, w.state = "bazooka", "standing"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local away = M.spawned[#M.spawned - 1]
+  check("put away when switched away unthrown", #M.spawned == before + 2
+    and away.sprite == "sprites/px_hold/sticky_bomb")
+end
+
 print("px holds: the Igniter stays up through its shot")
 do
   new_match()

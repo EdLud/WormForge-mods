@@ -499,6 +499,9 @@ end
 -- Slot -> the weapon's CWormAnimParams, as its PX script states them.
 local PX_HOLDS = {
   grenade = { -- Sticky Bomb (sb_script)
+    -- Thrown: once fired it has left the worm's hands, and WA puts nothing
+    -- away (as for its own grenades), so neither does the rule.
+    thrown = true,
     sheet = "sprites/px_hold/sticky_bomb", hand_type = 1, hand_radius = 24,
     hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
     weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
@@ -664,7 +667,9 @@ local function update_hold(worm)
       return
     end
     if h and not h.putting_away then
-      put_away[worm.id] = { slot = h.slot, aim = h.aim }
+      if not (h.firing and PX_HOLDS[h.slot].thrown) then
+        put_away[worm.id] = { slot = h.slot, aim = h.aim }
+      end
       drop_hold(worm.id)
     end
     update_put_away(worm)
