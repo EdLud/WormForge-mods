@@ -69,6 +69,7 @@ python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander
 | invisibility | Teleport | stock teleport icon |
 | damage_x2 | Skunk | stock skunk icon |
 | double_turn_time | Mole Bomb | stock mole icon |
+| ming_vase | Priceless Ming Vase | the stock vase under PX's name |
 
 These are WA's own weapons. Moving one to another slot works only as far as
 WA reads the weapon from its record rather than its slot number. Played in
@@ -150,6 +151,7 @@ bazooka hold, as the Cow Launcher's.
 | longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
 | handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png | the hold, the laser sight and its own shot sound |
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
+| parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -253,6 +255,21 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   the worm slides.
 
 The engine pieces are on the `worm-flight` branch.
+
+**Hang-Glider.** PX's `paratest` (`utility_hangglider_render`), on WA's
+parachute. Opened with the Hang-Glider, the parachute flies as PX's glider:
+gravity at 0.75, the wind along the wing's up side at 3x, a quarter of the
+speed across the wing damped each frame, and a nose that turns towards the
+flight path, at most about 86 degrees up or down. Up and down turn the nose,
+faster the faster it flies; left and right push it. It needs WA's own gravity
+and wind, `wa.world.gravity()` / `wa.world.wind()`. Two differences:
+
+- Just before it would run into something, PX ends the glide with
+  `WS_AFTERROPE`; the pack uses WA's sliding state, as the Helicopter does.
+- PX swaps the sheet WA packs a parachute away with on flat ground
+  (`wparbak`, 289) for the glider's own. The pack cannot see which sheet WA
+  plays, so it hides the worm and plays the glider's pack-away, its 6 frames
+  at 24 a second, whenever the glider lands on its feet.
 
 Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
