@@ -363,12 +363,25 @@ local PX_ART = {
     weapon = "bungee",
     panel_icon = "sprites/balloon/balloon_icon.png",
     sprites = { "sprites/balloon/balloon", "sprites/balloon/basket" },
+    -- A pack WAV plays only once an entry registers it.
+    sounds = {
+      "sounds/balloon/inflate1.wav", "sounds/balloon/inflate2.wav", "sounds/balloon/inflate3.wav",
+      "sounds/balloon/pop1.wav", "sounds/balloon/pop2.wav", "sounds/balloon/pop3.wav",
+      "sounds/balloon/pop4.wav",
+    },
     params = { gpu_prefix = "sprites/balloon/" },
   },
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
     weapon = "jet_pack",
     panel_icon = "sprites/helicopter/heli_ico.png",
     sprites = { "sprites/helicopter/flying", "sprites/helicopter/jumpin" },
+    sounds = {
+      "sounds/helicopter/helicopterloop.wav",
+      "sounds/helicopter/1.wav", "sounds/helicopter/2.wav", "sounds/helicopter/3.wav",
+      "sounds/helicopter/4.wav",
+      "sounds/helicopter/oops1.wav", "sounds/helicopter/oops2.wav", "sounds/helicopter/huh.wav",
+      "sounds/helicopter/poop.wav", "sounds/helicopter/idiot.wav",
+    },
     params = { gpu_prefix = "sprites/helicopter/" },
   },
   { -- Sniper Rifle: the hold drawn at run time, PX's laser sight while aiming
@@ -387,6 +400,7 @@ local PX_ART = {
     sprites = {
       "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser", "sprites/sniper_rifle/flash",
     },
+    sounds = { "sounds/sniper_firing.wav" },
     params = { gpu_prefix = "sprites/" },
   },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
