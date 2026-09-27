@@ -59,6 +59,7 @@ local NOT_IN_CAVES = {
 -- ------------------------------------------------------------ mocked WA
 
 local M, ammo, worms, cavern, rng, logs, active, death_seen, replaced
+local unregistered_sounds = {} -- pack WAVs played but never registered
 
 local Worm = {}
 Worm.__index = Worm
@@ -233,7 +234,20 @@ local function new_match(opts)
       random = function() return 0.5 end,
     },
     sound = {
-      play = function(target, name) M.sounds[#M.sounds + 1] = name end,
+      play = function(target, name)
+        M.sounds[#M.sounds + 1] = name
+        -- A pack WAV plays only once an entry registers it (`sounds`);
+        -- otherwise the engine plays nothing, without a word.
+        if type(name) == "string" then
+          local registered = false
+          for _, r in ipairs(replaced) do
+            for _, snd in ipairs(r.sounds or {}) do
+              if snd == name then registered = true end
+            end
+          end
+          if not registered then unregistered_sounds[name] = true end
+        end
+      end,
     },
     actors = {
       spawn = function(spec)
@@ -1183,6 +1197,34 @@ do
     shown[bullet.shown] = true
   end
   check("steps through all sixteen frames", shown[0] and shown[15])
+end
+
+print("pack sounds: every WAV registered")
+do
+  local missing = {}
+  for name in pairs(unregistered_sounds) do missing[#missing + 1] = name end
+  table.sort(missing)
+  check("every pack sound the rules played is registered", #missing == 0, table.concat(missing, ", "))
+  -- And every WAV in the pack, where the suite can list its folder.
+  local ls = io and io.popen and io.popen("find mods/examples/highlander/sounds -name '*.wav' 2>/dev/null")
+  if ls then
+    new_match()
+    local registered, unlisted = {}, {}
+    for _, r in ipairs(replaced) do
+      for _, snd in ipairs(r.sounds or {}) do registered[snd] = true end
+    end
+    local found = 0
+    for line in ls:lines() do
+      local rel = line:match("mods/examples/highlander/(.*)")
+      found = found + 1
+      if rel and not registered[rel] then unlisted[#unlisted + 1] = rel end
+    end
+    ls:close()
+    if found > 0 then
+      table.sort(unlisted)
+      check("every WAV in sounds/ is registered by an entry", #unlisted == 0, table.concat(unlisted, ", "))
+    end
+  end
 end
 
 print("")
