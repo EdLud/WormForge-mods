@@ -12,11 +12,11 @@ register = []
 replace = [
   "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
   "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
-  "damage_x2", "double_turn_time",
+  "damage_x2", "double_turn_time", "ming_vase",
   "sheep_launcher", "mad_cow", "old_woman", "mail_strike", "cluster_bomb",
   "banana_bomb", "minigun", "mortar", "homing_pigeon", "battle_axe",
   "carpet_bomb", "air_strike", "mole_bomb", "mole_squadron", "aqua_sheep",
   "sheep", "mb_bomb", "shotgun", "holy_grenade", "skunk", "homing_missile",
-  "grenade", "fire_punch", "pneumatic_drill", "longbow", "handgun", "jet_pack", "bungee", "super_banana",
+  "grenade", "fire_punch", "pneumatic_drill", "longbow", "handgun", "jet_pack", "bungee", "parachute", "super_banana",
   "bazooka", "mine",
 ]

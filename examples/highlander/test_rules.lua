@@ -203,6 +203,8 @@ local function new_match(opts)
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
       water = function() return M.water or 0x7FFFFFFF end,
+      gravity = function() return M.gravity or 0 end,
+      wind = function() return M.wind or 0 end,
       keys = function() return { sprint = M.shift or false } end,
     },
     -- A fixed LCG: the pack must not care which numbers, only that it draws
@@ -414,7 +416,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("43 slots replaced, each once", #replaced == 43 and not dupes, tostring(#replaced))
+  check("44 slots replaced, each once", #replaced == 44 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -441,6 +443,8 @@ do
     by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
   check("a weapon on its own slot keeps its icon",
     by_slot.dynamite and by_slot.dynamite.panel_icon == nil)
+  check("Priceless Ming Vase: the stock vase, as the scheme tunes it",
+    by_slot.ming_vase and by_slot.ming_vase.panel_icon == nil and by_slot.ming_vase.on_fire == nil)
   check("Windy Cluster brings PX's icon and bits",
     by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
       and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster")
@@ -1427,7 +1431,10 @@ do
   local P = 0x10000
   local w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "sliding", 100 * P, 50 * P, 0, P, 1, true
-  w.gravity, w.body_visible, w.alliance = P, true, 1
+  w.gravity, w.body_visible, w.alliance, w.keys = P, true, 1, {}
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y = -1000 * P * i, 0 end
+  end
   function w:set_state(s) self.state = s end
   M.spawned, M.sounds = {}, {}
   M.message(w, wa.msg.FRAME_FINISH)
@@ -1462,6 +1469,71 @@ do
   w.state = "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("another slot's parachute is left alone", w.gravity == P)
+end
+
+print("hang-glider: PX's glider on WA's parachute")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  M.gravity, M.wind, M.trace_hit = 0x3AE, 0, nil -- a small pull, as WA's is
+  for i, o in ipairs(worms) do o.x, o.y = -1000 * P * i, 0 end
+  local w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "sliding", 100 * P, 50 * P, 3 * P, P, 1, true
+  w.body_visible, w.keys = true, {}
+  function w:set_state(s) self.state = s end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("nothing while it just falls", #M.spawned == 0 and w.body_visible == true)
+  -- WA opens the parachute and clears the selection.
+  w.state, w.weapon = "parachuting", "none"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local art = M.spawned[1]
+  check("opens: the glider sound and art, the body hidden", M.sounds[1] and M.sounds[1]:find("hangopen")
+    and art and art.sprite == "sprites/hang_glider/glider" and w.body_visible == false)
+  check("its art faces left, as WA's worms: mirrored facing right", art.facing == -1)
+  -- Level, the wing's up side is straight up: a quarter of the fall goes.
+  check("the speed carries on into the glide; the wing takes a quarter of the fall",
+    math.abs(w.vx - 3 * P) <= 1 and math.abs(w.vy - (1 + 0x3AE * 0.75 / P) * 0.75 * P) <= 1, w.vx .. " " .. w.vy)
+  for _ = 1, 30 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("and the nose follows the flight path", art.angle ~= 0, tostring(art.angle))
+  check("it opens over 25 frames", art.shown == 9, tostring(art.shown))
+  -- Nose up: the nose angle drops, faster the faster it flies.
+  w.keys = { up = true }
+  for _ = 1, 10 do M.message(w, wa.msg.FRAME_FINISH) end
+  w.keys = {}
+  check("up turns the nose up", art.angle and art.angle > 180, tostring(art.angle))
+  -- Heading into the ground: it stops gliding, as PX's WS_AFTERROPE.
+  M.trace_hit = { x = w.x, y = w.y }
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("about to hit something: it slides", w.state == "sliding")
+  M.trace_hit = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("closed: the sound, the art gone, the body back, no pack-away",
+    M.sounds[#M.sounds]:find("hangclose") and art.dead and w.body_visible == true and #M.spawned == 1)
+  -- Up again (the weapon was the glider), then a landing on its feet.
+  w.state = "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "standing"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local pack = M.spawned[#M.spawned]
+  check("landed: the glider's own pack-away over the hidden body",
+    pack.sprite == "sprites/hang_glider/pack" and w.body_visible == false and pack.facing == -1)
+  for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("six frames at 24 a second", pack.shown == 5 and not pack.dead, tostring(pack.shown))
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("then the worm again", pack.dead and w.body_visible == true)
+  -- The balloon's parachute is not a glider.
+  w.weapon = "bungee"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local n = #M.spawned
+  w.state = "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local glider = false
+  for i = n + 1, #M.spawned do
+    if M.spawned[i].sprite == "sprites/hang_glider/glider" then glider = true end
+  end
+  check("the Hot Air Balloon's parachute is left alone", not glider)
 end
 
 print("px missile sprites: WeapSprite at run time")
