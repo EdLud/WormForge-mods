@@ -330,8 +330,9 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/helicopter/" },
   },
   { -- Sniper Rifle: the hold drawn at run time, PX's laser sight while aiming
-    -- and its own shot (below). Firing, the worm holds the rifle: the
-    -- snipefire poses the scheme's record names, not WA's handgun.
+    -- and its own shot (below). Firing, the worm takes the snipefire poses
+    -- the scheme's record names (lit by the muzzle), not WA's handgun, and
+    -- the hold and laser stay up over them (PX_HOLDS).
     weapon = "handgun",
     panel_icon = "sprites/sniper_rifle/srico.png",
     worm_sprites = {
@@ -511,6 +512,10 @@ local PX_HOLDS = {
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
   handgun = { -- Sniper Rifle (sniper_rifle_script): its hand at scale 0
+    -- Up through each shot, with its laser, over the snipefire poses (the
+    -- worm lit by the muzzle), so it does not flicker between the three.
+    -- Not PX's: PX hides it until the worm aims again.
+    keep_while_firing = true,
     sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
     hand_rotation = 1.0, hand_radial_rotation = 0.9,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
@@ -613,7 +618,7 @@ end
 -- already selected the next weapon. So a hold last aimed (`put_away`
 -- remembers it) comes back when the worm stands with another weapon, and
 -- shrinks out along the grow-in played backwards, a step a frame.
-local put_away = {} -- worm id -> { slot, aim, phase } of the hold last aimed
+local put_away = {} -- worm id -> { slot, aim } of the hold last aimed
 
 local function update_put_away(worm)
   local h = held[worm.id]
@@ -628,6 +633,11 @@ local function update_put_away(worm)
   end
   local last = put_away[worm.id]
   local state = worm.state
+  if last and worm.aiming then
+    -- Aiming another weapon: this one was never put away here.
+    put_away[worm.id] = nil
+    return
+  end
   if not last or state == nil then
     -- No name: WA's firing states between the last aim and the put-away.
     return
@@ -654,28 +664,19 @@ local function update_hold(worm)
       return
     end
     if h and not h.putting_away then
-      put_away[worm.id] = { slot = h.slot, aim = h.aim, phase = h.phase }
+      put_away[worm.id] = { slot = h.slot, aim = h.aim }
       drop_hold(worm.id)
     end
     update_put_away(worm)
     return
   end
-  local last = put_away[worm.id]
   put_away[worm.id] = nil
   local h = held[worm.id]
   if h and (h.slot ~= worm.weapon or h.putting_away) then
     drop_hold(worm.id)
     h = nil
   end
-  if not h then
-    h = spawn_hold(worm, worm.weapon)
-    -- Aiming again straight after a shot (the Sniper Rifle's three): the
-    -- weapon never left the worm's hands, so it is back at full size. Not
-    -- PX's: PX grows it in again after every shot.
-    if last and last.slot == worm.weapon then
-      h.counter, h.phase = 20, last.phase
-    end
-  end
+  h = h or spawn_hold(worm, worm.weapon)
   -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
   -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
   -- which WA also rewrites at render time, between sim frames.
@@ -789,8 +790,8 @@ end
 if wa.on.draw then
   wa.on.draw(function()
     for _, worm in ipairs(wa.worms.all()) do
-      -- The aim the rifle was drawn with, so the ray leaves along it; only
-      -- while the worm aims the rifle, not while it puts it away.
+      -- The aim the rifle was drawn with, so the ray leaves along it; while
+      -- the worm aims or fires the rifle, not while it puts it away.
       local h = worm.turn and held[worm.id]
       local aim = h and h.slot == "handgun" and not h.putting_away and h.aim
       if aim then

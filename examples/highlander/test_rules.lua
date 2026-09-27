@@ -791,19 +791,11 @@ do
   check("the rifle, grown in", rifle.sprite == "sprites/px_hold/sniper_rifle" and rifle.scale == 1)
   -- The last shot: WA's firing states have no name, and then the worm
   -- stands with the next weapon already selected, putting the rifle away.
+  ammo[w.alliance].handgun = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
   w.aiming, w.state = false, nil
   M.message(w, wa.msg.FRAME_FINISH)
-  check("gone while it fires, as in PX", rifle.dead)
-  -- Not the last shot: back to aiming the rifle straight after firing.
-  w.aiming = true
-  M.message(w, wa.msg.FRAME_FINISH)
-  local again = M.spawned[#M.spawned]
-  check("aiming again after a shot: full size at once, no grow-in", again ~= rifle
-    and again.sprite == "sprites/px_hold/sniper_rifle" and again.scale == 1, tostring(again.scale))
-  -- The last shot.
-  w.aiming, w.state = false, nil
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("gone again while it fires", again.dead)
+  check("up while it fires", not rifle.dead and rifle.scale == 1)
   w.weapon, w.state = "bazooka", "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   local back = M.spawned[#M.spawned]
@@ -831,6 +823,33 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   M.message(w, wa.msg.FRAME_FINISH)
   check("the same weapon, standing: gone at once", #M.spawned == before and M.spawned[before].dead)
+end
+
+print("px holds: a weapon drawn out again grows in again")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "handgun", 1, 100 * P, 50 * P, true, 0.5, true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local first = M.spawned[#M.spawned]
+  check("the rifle, grown in", first.scale == 1)
+  -- Another weapon aimed (no named state), then the rifle again: no shot.
+  w.weapon = "bazooka"
+  for _ = 1, 5 do M.message(w, wa.msg.FRAME_FINISH) end
+  w.weapon = "handgun"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local again = M.spawned[#M.spawned]
+  check("drawn out again: a new rifle, growing in from nothing", again ~= first and first.dead
+    and again.scale == 0, tostring(again.scale))
+  -- And no stray put-away later for the rifle aimed before.
+  w.aiming, w.weapon, w.state = false, "bazooka", "standing"
+  local before = #M.spawned
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the put-away of the rifle just aimed, and only that", #M.spawned == before + 1)
 end
 
 print("px holds: the Igniter stays up through its shot")
@@ -865,15 +884,30 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("but not while walking off", igniter.dead)
 
-  -- The Sniper Rifle keeps PX's: hidden while it fires, for its snipefire poses.
+  -- The Sniper Rifle too, with its laser, through each of its three shots.
+  for _, o in ipairs(worms) do
+    if o ~= w then
+      o.x, o.y = -5000 * P, 0 -- out of the laser's way
+    end
+  end
   w.weapon, w.aiming = "handgun", true
   for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
   local rifle = M.spawned[#M.spawned]
   ammo[w.alliance].handgun = 3
-  M.message(w, wa.msg.FIRE_WEAPON)
-  w.aiming = false
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("the Sniper Rifle is hidden while it fires", rifle.dead)
+  for shot = 1, 2 do
+    M.message(w, wa.msg.FIRE_WEAPON)
+    w.state = "prefiring"
+    M.message(w, wa.msg.FRAME_FINISH)
+    w.aiming, w.state = false, nil
+    for _ = 1, 4 do M.message(w, wa.msg.FRAME_FINISH) end
+    M.quads = {}
+    M.draw()
+    check("the rifle and its laser stay up through shot " .. shot, not rifle.dead
+      and rifle.scale == 1 and #M.quads > 0, tostring(#M.quads))
+    w.aiming = true
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("still the same rifle after two shots", not rifle.dead and M.spawned[#M.spawned] == rifle)
 end
 
 print("sniper rifle: PX's laser sight, drawn only")

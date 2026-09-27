@@ -217,14 +217,16 @@ The rifle fires with PX's own shot sound, `sounds/sniper_firing.wav`, and
 the worm fires it in the `snipefire` poses the scheme's record names; left
 out, WA drew its own handgun for the shot.
 
-Two things differ from PX on purpose, for every weapon drawn at run time:
+A few things differ from PX on purpose, for weapons drawn at run time:
 
 - **Putting it away.** PX drops the weapon the frame the worm stops
   aiming. WA puts it away by playing the worm's draw backwards (see
   `docs/px-reverse-engineering.md`), so the weapon shrinks out with it:
   PX's grow-in played backwards, over WA's 20 frames.
-- **Between shots.** Aiming again straight after a shot, the weapon comes
-  back at full size instead of growing in again.
+- **While firing.** PX hides the weapon while the worm fires. The Igniter
+  and the Sniper Rifle (with its laser) stay up instead, over whatever
+  pose WA fires in: the Sniper Rifle's `snipefire` poses are the worm lit by
+  the muzzle, and the Igniter has none, so the worm would be empty-handed.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 
