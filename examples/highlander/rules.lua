@@ -524,6 +524,9 @@ local PX_HOLDS = {
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
   },
   longbow = { -- Shadow-Bolt (shadow_bolt_script): no hand, the bolt animated
+    -- The crossbow stays up through the shot: it has no firing poses of
+    -- its own, so WA fires it in the aim posture. Not PX's.
+    keep_while_firing = true,
     sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
     hand_rotation = 0.0, hand_radial_rotation = 0.0,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 3.5,

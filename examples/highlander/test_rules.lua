@@ -921,6 +921,21 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("but not while walking off", igniter.dead)
 
+  -- The Shadow-Bolt's crossbow too.
+  w.weapon, w.aiming, w.state = "longbow", true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local crossbow = M.spawned[#M.spawned]
+  check("the Shadow-Bolt's crossbow", crossbow.sprite == "sprites/px_hold/shadow_bolt")
+  ammo[w.alliance].longbow = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.aiming, w.state = false, nil
+  for _ = 1, 4 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("up through its shot", not crossbow.dead and crossbow.scale == 1)
+  w.aiming = true
+  M.message(w, wa.msg.FRAME_FINISH)
+
   -- The Sniper Rifle too, with its laser, through each of its three shots.
   for _, o in ipairs(worms) do
     if o ~= w then

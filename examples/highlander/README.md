@@ -224,10 +224,11 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   `docs/px-reverse-engineering.md`), so the weapon shrinks out with it:
   PX's grow-in played backwards, over WA's 20 frames. Not after a throw:
   a thrown Sticky Bomb has left the worm's hands, and WA puts nothing away.
-- **While firing.** PX hides the weapon while the worm fires. The Igniter
-  and the Sniper Rifle (with its laser) stay up instead, over whatever
-  pose WA fires in: the Sniper Rifle's `snipefire` poses are the worm lit by
-  the muzzle, and the Igniter has none, so the worm would be empty-handed.
+- **While firing.** PX hides the weapon while the worm fires. The Igniter,
+  the Shadow-Bolt's crossbow and the Sniper Rifle (with its laser) stay up
+  instead, over whatever pose WA fires in: the Sniper Rifle's `snipefire`
+  poses are the worm lit by the muzzle, and the other two have none, so the
+  worm would be empty-handed.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 
