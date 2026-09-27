@@ -416,7 +416,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("44 slots replaced, each once", #replaced == 44 and not dupes, tostring(#replaced))
+  check("45 slots replaced, each once", #replaced == 45 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
