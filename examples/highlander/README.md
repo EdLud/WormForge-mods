@@ -148,7 +148,7 @@ bazooka hold, as the Cow Launcher's.
 | fire_punch | Fire Jump | icon | PX's jump timeline |
 | pneumatic_drill | Super Drill | icon | a second hole each frame |
 | longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
-| handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png | the hold, the laser sight and its own shot sound |
+| handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png, a muzzle flash | the hold, the laser sight, a muzzle flash and its own shot sound |
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
@@ -229,6 +229,9 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   instead, over whatever pose WA fires in: the Sniper Rifle's `snipefire`
   poses are the worm lit by the muzzle, and the other two have none, so the
   worm would be empty-handed.
+- **A muzzle flash.** PX's Sniper Rifle has none. Each shot lights the
+  sentry gun's flare, smaller (0.45), at the rifle's tip for 3 frames:
+  additive and white, turned with the aim.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 

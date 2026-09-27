@@ -342,7 +342,9 @@ local PX_ART = {
       weaponfire = "sprites/sniper_rifle/fire", weaponfireu = "sprites/sniper_rifle/fireu",
       weaponfired = "sprites/sniper_rifle/fired",
     },
-    sprites = { "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser" },
+    sprites = {
+      "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser", "sprites/sniper_rifle/flash",
+    },
     params = { gpu_prefix = "sprites/" },
   },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
@@ -519,6 +521,10 @@ local PX_HOLDS = {
     -- worm lit by the muzzle), so it does not flicker between the three.
     -- Not PX's: PX hides it until the worm aims again.
     keep_while_firing = true,
+    -- A muzzle flash on each shot. Not PX's: its rifle and snipefire poses
+    -- have none. The sentry gun's flare, smaller, at the barrel's tip (30
+    -- pixels out, on the barrel 2 to the side, as the laser leaves it).
+    flash = { sheet = "sprites/sniper_rifle/flash", out = 30, side = 2, scale = 0.45, frames = 3 },
     sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
     hand_rotation = 1.0, hand_radial_rotation = 0.9,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
@@ -556,6 +562,9 @@ local function drop_hold(id)
     if h.hand then
       h.hand:despawn()
     end
+    if h.flash then
+      h.flash:despawn()
+    end
     held[id] = nil
   end
 end
@@ -563,14 +572,18 @@ end
 -- One sprite of the hold: centred at (dx, dy) pixels from the worm, turned
 -- by `angle` radians, as PX computes them for a worm facing right; facing
 -- left mirrors all three, as PX's left-facing formulas do.
-local function place(a, worm, dx, dy, angle, scale)
+local function place(a, worm, dx, dy, angle, scale, look)
   local f = worm.facing
   -- Positions are 16.16 integers.
   a.x = worm.x + math.floor(f * dx * 0x10000 + 0.5)
   a.y = worm.y + math.floor(dy * 0x10000 + 0.5)
   a.vx, a.vy = 0, 0
   a.facing = f
-  a:gfx({ angle = math.deg(angle * f) % 360, scale = scale, depth = HOLD_DEPTH })
+  local g = { angle = math.deg(angle * f) % 360, scale = scale, depth = HOLD_DEPTH }
+  for k, v in pairs(look or {}) do
+    g[k] = v
+  end
+  a:gfx(g)
 end
 
 -- worm.aim, or nil on an engine without it: a worm has no such field there,
@@ -588,7 +601,12 @@ local function spawn_hold(worm, slot)
       collide = false, owner = worm, on = function() end,
     })
   end
-  local h = { slot = slot, counter = 0, phase = 0, weapon = actor(p.sheet) }
+  local h = { slot = slot, counter = 0, phase = 0 }
+  if p.flash then
+    h.flash = actor(p.flash.sheet)
+    h.flash:frame(0) -- its empty frame, until a shot
+  end
+  h.weapon = actor(p.sheet)
   -- A weapon PX draws with no hand: draw_hand = false.
   if p.draw_hand ~= false then
     h.hand = actor(PX_HANDS[p.hand_type])
@@ -615,6 +633,19 @@ local function place_hold(worm, h)
   if h.hand then
     place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
       rot + pi * p.hand_rotation, grow * p.hand_scale)
+  end
+  if h.flash then
+    -- At the barrel's tip, pointing along the aim (the art points right).
+    -- Additive and white, in front of the weapon, as the sentry's flare.
+    local f = p.flash
+    local lit = (h.flash_left or 0) > 0
+    if lit then
+      h.flash_left = h.flash_left - 1
+    end
+    h.flash:frame(lit and 1 or 0)
+    place(h.flash, worm, math.sin(rot) * f.out - math.cos(rot) * f.side,
+      -math.cos(rot) * f.out - math.sin(rot) * f.side, rot - pi / 2, f.scale,
+      { tint = 0xFFFFFF, blend = "add", depth = HOLD_DEPTH - 0x100 })
   end
 end
 
@@ -665,6 +696,11 @@ local function update_hold(worm)
     -- selected. Walking is unnamed too, hence the fire key.
     if h and h.firing and PX_HOLDS[h.slot].keep_while_firing and worm.state == nil
         and worm.weapon == h.slot then
+      local flash = PX_HOLDS[h.slot].flash
+      if flash and not h.shot_out then
+        -- The first frame of WA's firing states: the shot.
+        h.flash_left = flash.frames
+      end
       h.shot_out = true
       place_hold(worm, h)
       return
