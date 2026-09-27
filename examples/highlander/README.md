@@ -152,6 +152,7 @@ bazooka hold, as the Cow Launcher's.
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
 | bazooka | Double Bazooka | icon | a second shell from where the first explodes |
 | mine | Nuke Rocket | icon, the rocket, the hold, the launch sound | a nuke climbs out of the fusing rocket |
+| super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -290,6 +291,18 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   the worm slides.
 
 The engine pieces are on the `worm-flight` branch.
+
+**Chilli Bomb.** PX's `pyro_grenades_script` (PyroMan), on WA's super
+banana. When it explodes, five more Chillis burst out of it, straight up with
+a random spread: real WA missiles of the same slot (`wa.weapons.launch`), each
+with damage 30, an 8 s fuse, no countdown, the fire key setting it off, and a
+burst of fire where it ends. They do not burst again: a missile PX's script
+makes has no weapon of its own. PX draws the chilli turned to its flight
+and leaves WA's sprite 0; so does the pack. The record keeps WA's banana,
+because a thrown weapon's worm posture is picked by its sprite, and each
+missile's own copy is set to 0 in flight instead (`m.sprite`). Not ported: PX's particles, the five's smoke trail power
+of 20, and PX writing the five's changes into the weapon's own launch data,
+so that every later Chilli Bomb flies with them.
 
 Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's

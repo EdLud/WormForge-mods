@@ -58,6 +58,7 @@ local PX_HANDS = {
 -- Filled in by the Double Bazooka's and Nuke Rocket's sections further down.
 local double_bazooka_explode
 local nuke_rocket_explode
+local chilli_bomb_explode
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -309,6 +310,19 @@ local PX_ART = {
     },
     params = { gpu_prefix = "sprites/" },
   },
+  { -- Chilli Bomb: five more Chillis burst out of it, which burst into fire
+    -- (its section below). PX's record has sprite 0 and PX draws the chilli
+    -- at run time, turned to its flight (PX_WEAP_SPRITES below). A thrown
+    -- weapon's worm posture is picked by its sprite, so the record keeps the
+    -- banana, and each missile's own copy is set to 0 in flight instead.
+    weapon = "super_banana",
+    panel_icon = "sprites/chilli_bomb/chilli_ico.png",
+    sprite = "banana",
+    on_explode = function(ev) chilli_bomb_explode(ev) end,
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/chilli_bomb", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    params = { gpu_prefix = "sprites/px_hold/" },
+  },
   { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
     -- draws the bomb at run time. Here the bomb is the stock grenade sprite
     -- again -- a grenade-type slot picks the worm's throw sheet from it, and
@@ -534,6 +548,11 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
     weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
   },
+  super_banana = { -- Chilli Bomb (chilli_bomb_anim)
+    thrown = true,
+    sheet = "sprites/px_hold/chilli_bomb", hand_type = 1, hand_radius = 13,
+    hand_scale = 0.8, weap_rotation = 0.5, weap_radius = 9,
+  },
   homing_missile = { -- Igniter (igniter_anim)
     -- Up through the shot too: it has no firing poses of its own, so WA
     -- fires it in the aim posture, empty-handed without the hold. Not PX's.
@@ -569,6 +588,22 @@ local PX_HOLDS = {
     animate = true, anim_speed = 1.30, frames = 6,
   },
 }
+
+-- CWormAnimParams' own defaults, for whatever a weapon's script leaves out:
+-- the Chilli Bomb sets neither radial rotation, so its hold is cocked back
+-- behind the worm's head (1.0: half a turn) as a throw.
+local PX_HOLD_DEFAULTS = {
+  hand_radius = 1.0, hand_rotation = 1.0, hand_radial_rotation = 1.0,
+  hand_scale = 1.0, hand_type = 2, weap_rotation = 1.0,
+  weap_radial_rotation = 1.0, weap_radius = 1.0, anim_speed = 1.0,
+}
+for _, p in pairs(PX_HOLDS) do
+  for k, v in pairs(PX_HOLD_DEFAULTS) do
+    if p[k] == nil then
+      p[k] = v
+    end
+  end
+end
 
 -- WormSprite::CalculateFrame and WeapSprite::CalculateFrame: a phase from 0
 -- to 1 through the sheet, anim_speed * 0.03 a frame, back to 0 past 0.99.
@@ -863,12 +898,19 @@ end
 -- stepped through its sheet as a hold is. Here it is a GPU actor per
 -- missile, placed from wa.on.missile_frame after WA has moved the missile.
 -- It reads m.weapon (the missile's slot); on an engine without it nothing
--- matches and nothing is drawn.
+-- matches and nothing is drawn. With `hide`, WA draws nothing for the
+-- missile (m.sprite = 0), as PX's sprite 0 does; its record keeps its
+-- sprite, which a thrown weapon's worm posture is picked by.
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = {
   longbow = { -- Shadow-Bolt
     sheet = "sprites/shadow_bolt/bolt", animate = true, anim_speed = 1.30, frames = 6,
+  },
+  super_banana = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
+    sheet = "sprites/px_hold/chilli_bomb", frames = 1,
+    -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
+    hide = true,
   },
   homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
     sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
@@ -903,7 +945,11 @@ local function current_worm()
 end
 
 wa.on.missile_frame(function(m)
-  local p = m.phase == "post" and PX_WEAP_SPRITES[m.weapon]
+  local p = PX_WEAP_SPRITES[m.weapon]
+  if p and p.hide and m.phase == "pre" then
+    m.sprite = 0
+  end
+  p = m.phase == "post" and p
   if not p then
     return
   end
@@ -997,6 +1043,64 @@ wa.on.worm_message(function(worm, msg)
       db_second[id] = true
     end
     db_pending = {}
+  end
+end)
+
+-- ------------------------------------------------------------- Chilli Bomb
+--
+-- PX's pyro_grenades_script (PyroMan), on WA's super banana. When a Chilli
+-- Bomb explodes, five more Chillis burst out of it, straight up with a
+-- random spread (PX's ShotClustlets): real WA missiles of the same slot,
+-- each with damage 30, an 8 s fuse, no countdown, the fire key setting it
+-- off, and a burst of fire where it ends. The five do not burst again: a
+-- missile PX's script makes has no weapon of its own (weap), so its
+-- ExplodeAt skips the Chilli's branch.
+--
+-- Not ported: PX's particle trail and the sparks while aiming
+-- (pxparticles), and the smoke trail's power of 20 on the five. PX also
+-- writes the five's changes into the weapon's own launch data, so every
+-- later Chilli Bomb flies with them; the port changes the five only.
+
+local CHILLI_CHILD = { count = 5, damage = 30, fuse = 8000 }
+
+local chilli_child = {}   -- missile id -> true: one of the five, which ends it
+local chilli_pending = {} -- where the five burst out, once the blast is over
+local chilli_shooter      -- the worm that threw it (PX's ClWT / ClWN)
+
+chilli_bomb_explode = function(ev)
+  local id = ev.missile
+  if not id then
+    return
+  end
+  if chilli_child[id] then
+    chilli_child[id] = nil
+    return
+  end
+  chilli_pending[#chilli_pending + 1] = { x = ev.x, y = ev.y }
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "super_banana" then
+    chilli_shooter = worm
+  elseif msg == wa.msg.FRAME_FINISH and #chilli_pending > 0 then
+    -- After the blast, as the Double Bazooka's second shell.
+    local P = 0x10000
+    local owner = chilli_shooter or worm
+    for _, p in ipairs(chilli_pending) do
+      for _ = 1, CHILLI_CHILD.count do
+        -- RandomFloat(3, -3), then RandomFloat(-7, -10).
+        local vx = wa.random(-3 * P, 3 * P)
+        local vy = wa.random(-10 * P, -7 * P)
+        local id = wa.weapons.launch({
+          weapon = "super_banana", owner = owner, x = p.x, y = p.y, vx = vx, vy = vy,
+          damage = CHILLI_CHILD.damage, fuse = CHILLI_CHILD.fuse, countdown = 0,
+          explode_on_space = true, explode_into = "fire",
+          sprite = 0, -- PX leaves them WA's sprite 0; the chilli is drawn instead
+        })
+        chilli_child[id] = true
+      end
+    end
+    chilli_pending = {}
   end
 end)
 

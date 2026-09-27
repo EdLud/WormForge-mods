@@ -248,7 +248,9 @@ local function new_match(opts)
         end
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false, explode = spec.explode,
                     owner = spec.owner }
-        function a:gfx(g) self.angle, self.scale, self.tint = g.angle, g.scale, g.tint end
+        function a:gfx(g)
+          self.angle, self.scale, self.tint, self.blend, self.depth = g.angle, g.scale, g.tint, g.blend, g.depth
+        end
         function a:frame(i) self.shown = i end
         function a:despawn() self.dead = true end
         M.spawned = M.spawned or {}
@@ -398,7 +400,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("42 slots replaced, each once", #replaced == 42 and not dupes, tostring(#replaced))
+  check("43 slots replaced, each once", #replaced == 43 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -793,6 +795,36 @@ do
   check("no hold for a weapon without one", #M.spawned == before)
 end
 
+print("px holds: every hold places, PX's defaults filling the rest")
+do
+  local P = 0x10000
+  for _, slot in ipairs({ "grenade", "super_banana", "homing_missile", "mine", "handgun", "longbow" }) do
+    new_match()
+    frame()
+    local w = worm(16)
+    w.weapon, w.facing, w.x, w.y, w.aiming, w.aim = slot, 1, 100 * P, 50 * P, true, 0.5
+    local ok, err = pcall(function()
+      for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+    end)
+    local front = M.spawned and #M.spawned > 0
+    for _, a in ipairs(M.spawned or {}) do
+      front = front and a.depth ~= nil and a.depth <= 0x10000
+    end
+    check(slot .. " aims without an error, in front of the worm", ok and front, tostring(err))
+  end
+  -- The Chilli Bomb sets no radial rotations: CWormAnimParams' 1.0, half a
+  -- turn, cocks it back behind the head, the hand further back.
+  new_match()
+  frame()
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim = "super_banana", 1, 100 * P, 50 * P, true, 0.5
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local chilli, hand = M.spawned[1], M.spawned[2]
+  check("the Chilli held back, 9 pixels behind; the hand 13",
+    math.abs(chilli.x - (w.x - 9 * P)) <= 1 and math.abs(hand.x - (w.x - 13 * P)) <= 1,
+    ((chilli.x - w.x) / P) .. " " .. ((hand.x - w.x) / P))
+end
+
 print("px holds: a weapon drawn with no hand, animated")
 do
   new_match()
@@ -1096,6 +1128,55 @@ do
   spec.on_explode({ x = 1, y = 1, slot = 1, missile = 777 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("no missile id, or one never seen flying: nothing", #M.launched == 1 and #M.digs == 1)
+end
+
+print("chilli bomb: five more Chillis burst out")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "super_banana" then spec = r end
+  end
+  check("the Chilli Bomb on the super banana slot, with its icon, the banana kept, and an explode step", spec
+    and spec.wep == "weps/super_banana.wep" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
+    and spec.sprite == "banana" and type(spec.on_explode) == "function")
+  local w = worm(16)
+  w.weapon = "super_banana"
+  M.launched = nil
+  M.message(w, wa.msg.FIRE_WEAPON)
+  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 42, missile = 600 })
+  check("none during the blast", not M.launched)
+  M.message(worm(32), wa.msg.FRAME_FINISH)
+  local l = M.launched or {}
+  local ok = #l == 5
+  for _, c in ipairs(l) do
+    ok = ok and c.weapon == "super_banana" and c.owner == w and c.x == 100 * P and c.y == 50 * P
+      and c.vx >= -3 * P and c.vx <= 3 * P and c.vy >= -10 * P and c.vy <= -7 * P
+  end
+  check("five after it, for the thrower, up with PX's spread", ok, tostring(#l))
+  local c = l[1] or {}
+  check("each with damage 30, an 8 s fuse, no countdown, set off by the fire key, bursting into fire",
+    c.damage == 30 and c.fuse == 8000 and c.countdown == 0 and c.explode_on_space == true
+    and c.explode_into == "fire")
+  check("and WA's sprite 0: only the chilli is drawn", c.sprite == 0)
+  local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = P, vy = 0, sprite = 51 }
+  M.missile(m)
+  check("the thrown Chilli's own banana hidden in flight", m.sprite == 0)
+  local b = { id = 611, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = P, vy = 0, sprite = 48 }
+  M.missile(b)
+  check("other missiles keep theirs", b.sprite == 48)
+  M.message(worm(32), wa.msg.FRAME_FINISH)
+  check("launched once", #M.launched == 5)
+  for i = 1, 5 do
+    spec.on_explode({ x = 1, y = 1, slot = 42, missile = 9000 + i })
+  end
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the five do not burst again", #M.launched == 5)
+  spec.on_explode({ x = 1, y = 1, slot = 42 })
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no missile id: nothing", #M.launched == 5)
 end
 
 print("nuke rocket: a nuke climbs out of the fusing rocket")
