@@ -226,6 +226,10 @@ local function new_match(opts)
         M.cuts = M.cuts or {}
         M.cuts[#M.cuts + 1] = spec
       end,
+      dig = function(spec)
+        M.digs = M.digs or {}
+        M.digs[#M.digs + 1] = spec
+      end,
       trace = function() return M.trace_hit end,
     },
     draw = {
@@ -257,6 +261,14 @@ local function new_match(opts)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
         replaced[#replaced + 1] = spec
       end,
+      -- As the engine: a real missile, its id.
+      launch = function(spec)
+        assert(IS_STOCK[spec.weapon], "launch from a slot that does not exist: " .. tostring(spec.weapon))
+        assert(spec.owner ~= nil, "launch needs an owner")
+        M.launched = M.launched or {}
+        M.launched[#M.launched + 1] = spec
+        return 9000 + #M.launched
+      end,
     },
     on = {
       -- Every handler, in registration order, as the engine keeps them.
@@ -275,7 +287,13 @@ local function new_match(opts)
           for _, h in ipairs(M.turn_starts) do h(...) end
         end
       end,
-      missile_frame = function(f) M.missile = f end,
+      missile_frame = function(f)
+        M.missile_handlers = M.missile_handlers or {}
+        M.missile_handlers[#M.missile_handlers + 1] = f
+        M.missile = function(m)
+          for _, h in ipairs(M.missile_handlers) do h(m) end
+        end
+      end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
       draw = function(f) M.draw = f end,
@@ -380,7 +398,24 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("40 slots replaced, each once", #replaced == 40 and not dupes, tostring(#replaced))
+  check("41 slots replaced, each once", #replaced == 41 and not dupes, tostring(#replaced))
+  -- The loader skips a replace the manifest does not declare, silently.
+  -- (Checked where the suite can read the pack's files: run from the repo,
+  -- not inside the engine's loader test.)
+  local toml = io and io.open("mods/examples/highlander/mod.toml")
+  if toml then
+    local manifest = toml:read("a")
+    toml:close()
+    local declared = {}
+    for name in manifest:match("replace = %[(.-)%]"):gmatch('"([%w_]+)"') do
+      declared[name] = true
+    end
+    local undeclared = {}
+    for _, r in ipairs(replaced) do
+      if not declared[r.weapon] then undeclared[#undeclared + 1] = r.weapon end
+    end
+    check("every replaced slot is declared in mod.toml", #undeclared == 0, table.concat(undeclared, ","))
+  end
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
@@ -1013,6 +1048,54 @@ do
   ammo[w.alliance].handgun = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   check("its own shot sound on firing", M.sounds[1] == "sounds/sniper_firing.wav")
+end
+
+print("double bazooka: a second shell carries on")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "bazooka" then spec = r end
+  end
+  local wep_file = io and io.open("mods/examples/highlander/weps/bazooka.wep", "rb")
+  if wep_file then
+    local wep = wep_file:read("a")
+    wep_file:close()
+    check("held as a plain bazooka: launcher 3 at +0x34, not the scheme's 7",
+      string.unpack("<i4", wep, 4 + 0x34 + 1) == 3)
+  end
+  check("the Double Bazooka on the bazooka slot, with its icon and an explode step", spec
+    and spec.wep == "weps/bazooka.wep" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
+    and type(spec.on_explode) == "function")
+  local w = worm(16)
+  w.weapon = "bazooka"
+  ammo[w.alliance].bazooka = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.missile({ id = 500, phase = "pre", weapon = "bazooka", x = 90 * P, y = 52 * P, vx = 0, vy = 0 })
+  M.missile({ id = 500, phase = "post", weapon = "bazooka", x = 100 * P, y = 50 * P, vx = 6 * P, vy = -P })
+  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 1, missile = 500 })
+  check("the first shell cuts PX's 50-pixel hole", M.digs and #M.digs == 1
+    and M.digs[1].x == 100 * P and M.digs[1].y == 50 * P and M.digs[1].radius == 50)
+  check("no second shell during the blast", not M.launched)
+  M.message(worm(32), wa.msg.FRAME_FINISH)
+  local l = M.launched and M.launched[1]
+  check("a second shell after it, at the first one's speed, for the shooter", l and #M.launched == 1
+    and l.weapon == "bazooka" and l.owner == w and l.x == 100 * P and l.y == 50 * P
+    and l.vx == 6 * P and l.vy == -P)
+  check("with PX's damage 40 and 5 s fuse, and the record's own bazooka shell (not PX's 54, a cluster bit here)",
+    l.damage == 40 and l.fuse == 5000 and l.sprite == nil)
+  M.message(worm(32), wa.msg.FRAME_FINISH)
+  check("launched once", #M.launched == 1)
+  M.missile({ id = 9001, phase = "post", weapon = "bazooka", x = 140 * P, y = 44 * P, vx = 6 * P, vy = 0 })
+  spec.on_explode({ x = 140 * P, y = 44 * P, slot = 1, missile = 9001 })
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the second shell's explosion ends it", #M.launched == 1 and #M.digs == 1)
+  spec.on_explode({ x = 1, y = 1, slot = 1 })
+  spec.on_explode({ x = 1, y = 1, slot = 1, missile = 777 })
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no missile id, or one never seen flying: nothing", #M.launched == 1 and #M.digs == 1)
 end
 
 print("helicopter: PX's script on WA's jet pack")

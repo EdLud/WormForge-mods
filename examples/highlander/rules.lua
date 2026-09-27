@@ -55,6 +55,8 @@ local PX_POSTURE = {
 local PX_HANDS = {
   "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad", "sprites/px_hold/hand_rad_upper",
 }
+-- Filled in by the Double Bazooka's section further down.
+local double_bazooka_explode
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -81,6 +83,14 @@ local PORTED = {
 -- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
 -- its sprite builder (p_sprite_builder), so does the pack (PX_HOLDS below).
 local PX_ART = {
+  { -- Double Bazooka: a second shell carries on from where the first
+    -- explodes (its section below). Held as a plain bazooka: the pack's
+    -- record has launcher 3 (wbaz) at +0x34 where the scheme's has 7, the
+    -- homing missile's recoloured wbaz2 (Weapon__hold_sheet, 0x51C060).
+    weapon = "bazooka",
+    panel_icon = "sprites/double_bazooka/double_bazooka_ico.png",
+    on_explode = function(ev) double_bazooka_explode(ev) end,
+  },
   { -- Burning Sheep Launcher
     weapon = "sheep_launcher",
     panel_icon = "sprites/launchers/burning_sheep_launcher_ico.png",
@@ -894,6 +904,73 @@ wa.on.missile_frame(function(m)
   -- WeapSprite::CalculateAngle, rotation 0.
   local rot = -math.atan(m.vx, m.vy) - math.pi
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
+end)
+
+-- ---------------------------------------------------------- Double Bazooka
+--
+-- PX's double_bazooka_script. A Double Bazooka shell does not end at the
+-- first thing it hits: WA's explosion goes off, a 50-pixel hole is cut
+-- (GG->land->MakeHole(50), WA's landscape "apply explosion", as
+-- wa.land.dig), and a second shell carries on from there at the first one's
+-- speed, a real WA missile of the same slot (new CMissile with the weapon's
+-- launch data), so WA flies it with wind and its smoke trail. PX changes
+-- three things for it: damage 40, sprite 54 and a 5 s fuse. The port takes
+-- the damage and fuse; 54 is a cluster bit (clustlet) in WA 3.8.1, so the
+-- second shell keeps the record's bazooka shell (48, missile), as the first
+-- does. Its own explosion ends it.
+--
+-- Not ported: PX's particle trail on top of WA's (pxparticles), and a plain
+-- 50/35 blast PX makes when a second shell explodes before its first frame.
+
+local DB_SECOND = { damage = 40, fuse = 5000 }
+local DB_HOLE = 50
+
+local db_speed = {}   -- missile id -> { vx, vy } at its last frame
+local db_second = {}  -- missile id -> true: a second shell, which ends it
+local db_pending = {} -- second shells to launch once the blast is over
+local db_shooter      -- the worm that fired it (PX's ClWT / ClWN)
+
+wa.on.missile_frame(function(m)
+  if m.weapon == "bazooka" and m.phase == "post" then
+    db_speed[m.id] = { m.vx, m.vy }
+  end
+end)
+
+double_bazooka_explode = function(ev)
+  local id = ev.missile
+  if not id then
+    return
+  end
+  local speed = db_speed[id]
+  db_speed[id] = nil
+  if db_second[id] then
+    db_second[id] = nil
+    return
+  end
+  if not speed then
+    return
+  end
+  wa.land.dig({ x = ev.x, y = ev.y, radius = DB_HOLE })
+  -- Launched after the blast, as PX's comes after super: WA's explosion
+  -- would otherwise push it.
+  db_pending[#db_pending + 1] = { x = ev.x, y = ev.y, vx = speed[1], vy = speed[2] }
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "bazooka" then
+    db_shooter = worm
+  elseif msg == wa.msg.FRAME_FINISH and #db_pending > 0 then
+    -- The first worm's frame after the blast; every worm gets one.
+    local owner = db_shooter or worm
+    for _, p in ipairs(db_pending) do
+      local id = wa.weapons.launch({
+        weapon = "bazooka", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
+        damage = DB_SECOND.damage, fuse = DB_SECOND.fuse,
+      })
+      db_second[id] = true
+    end
+    db_pending = {}
+  end
 end)
 
 -- -------------------------------------------------------------- Helicopter

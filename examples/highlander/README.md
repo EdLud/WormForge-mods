@@ -150,6 +150,7 @@ bazooka hold, as the Cow Launcher's.
 | longbow | Shadow-Bolt | icon, the hold, the bolt, its trail | the hold and the bolt drawn at run time |
 | handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png | the hold, the laser sight and its own shot sound |
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
+| bazooka | Double Bazooka | icon | a second shell from where the first explodes |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -229,6 +230,23 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   instead, over whatever pose WA fires in: the Sniper Rifle's `snipefire`
   poses are the worm lit by the muzzle, and the other two have none, so the
   worm would be empty-handed.
+
+**Double Bazooka.** PX's `double_bazooka_script`:
+
+- **The first shell** explodes as WA's own. PX then cuts a 50-pixel hole
+  there (`MakeHole`, as `wa.land.dig`) and fires a second shell from it at
+  the first one's speed.
+- **The second shell** is a real WA missile of the same slot, launched with
+  `wa.weapons.launch`, as PX's script creates a `CMissile` from the weapon's
+  launch data. So WA flies it with wind and its smoke trail. It takes PX's
+  damage 40 and 5 s fuse, and its own explosion ends it. PX also gives it
+  sprite 54, which is a cluster bit (`clustlet`) in WA 3.8.1, so it keeps
+  the record's bazooka shell instead.
+- **The worm holds a plain bazooka.** The scheme's record gives the Double
+  Bazooka the homing missile's recoloured launcher (`wbaz2`, 7 at +0x34);
+  the pack's copy has the bazooka's own (3).
+- **Not ported:** PX's particle trail on top of WA's, and a plain 50/35
+  blast PX makes when a second shell explodes before its first frame.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 
