@@ -270,14 +270,16 @@ local PX_ART = {
       wthrowd = "sprites/remote_roller/drawd",
     },
   },
-  { -- Igniter: PX draws its bullet on the missile at run time; here it is the
-    -- flight sprite.
+  { -- Igniter: PX sets the missile's own sprite to 0 and draws its bullet at
+    -- run time, animated and turned to its flight (PX_WEAP_SPRITES below).
+    -- WA still draws its homing missile's rocket under it for now.
     weapon = "homing_missile",
     panel_icon = "sprites/igniter/igniter_ico.png",
-    sprite = "sprites/igniter/flight",
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/igniter", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
-    params = { gpu_prefix = "sprites/px_hold/" },
+    sprites = {
+      "sprites/px_hold/igniter", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3], "sprites/igniter/flight",
+    },
+    params = { gpu_prefix = "sprites/" },
   },
   { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
     -- draws the bomb at run time. Here the bomb is the stock grenade sprite
@@ -803,6 +805,9 @@ local PX_WEAP_SPRITES = {
   longbow = { -- Shadow-Bolt
     sheet = "sprites/shadow_bolt/bolt", animate = true, anim_speed = 1.30, frames = 6,
   },
+  homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
+    sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
+  },
 }
 
 local flying = {} -- missile id -> { actor, phase, seen }
@@ -822,6 +827,16 @@ local function follow_missile(id)
   end
 end
 
+-- The worm whose turn it is: WeapSprite's owner (GetCurrentWorm()). A
+-- missile frame gives no spawn owner of its own.
+local function current_worm()
+  for _, w in ipairs(wa.worms.all()) do
+    if w.turn then
+      return w
+    end
+  end
+end
+
 wa.on.missile_frame(function(m)
   local p = m.phase == "post" and PX_WEAP_SPRITES[m.weapon]
   if not p then
@@ -829,10 +844,14 @@ wa.on.missile_frame(function(m)
   end
   local f = flying[m.id]
   if not f then
+    local owner = current_worm()
+    if not owner then
+      return
+    end
     f = { phase = 0 }
     f.actor = wa.actors.spawn({
       sprite = p.sheet, x = m.x, y = m.y, gravity = false, collide = false,
-      on = follow_missile(m.id),
+      owner = owner, on = follow_missile(m.id),
     })
     flying[m.id] = f
   end

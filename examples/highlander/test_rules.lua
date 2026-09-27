@@ -237,6 +237,11 @@ local function new_match(opts)
     },
     actors = {
       spawn = function(spec)
+        -- As the engine: outside a fire, click or actor callback, a spawn
+        -- needs its owner named.
+        if spec.owner == nil then
+          error("spawn needs an owner worm or actor", 2)
+        end
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y, dead = false, explode = spec.explode,
                     owner = spec.owner }
         function a:gfx(g) self.angle, self.scale, self.tint = g.angle, g.scale, g.tint end
@@ -1009,9 +1014,14 @@ do
   local PX = 0x10000
   local m = { id = 77, phase = "post", weapon = "longbow", x = 10 * PX, y = 20 * PX, vx = 3 * PX, vy = 0 }
   M.missile(m)
+  check("no current worm: nothing drawn (PX's WeapSprite needs one)", not M.spawned)
+  local shooter = worm(16)
+  shooter.turn = true
+  M.missile(m)
   local bolt = M.spawned and M.spawned[#M.spawned]
-  check("a bolt on the Shadow-Bolt's missile", bolt and bolt.sprite == "sprites/shadow_bolt/bolt"
-    and bolt.x == m.x and bolt.y == m.y)
+  check("a bolt on the Shadow-Bolt's missile, owned by the current worm", bolt
+    and bolt.sprite == "sprites/shadow_bolt/bolt" and bolt.x == m.x and bolt.y == m.y
+    and bolt.owner == shooter)
   check("flying right, turned to its flight", bolt.facing == 1 and math.abs(bolt.angle - 90) < 1e-6,
     tostring(bolt.angle))
   local before = #M.spawned
@@ -1029,6 +1039,21 @@ do
   m.phase, m.weapon, m.id = "post", "bazooka", 78
   M.missile(m)
   check("nothing for another weapon's missile", #M.spawned == before)
+
+  -- The Igniter's bullet, climbing up and to the left: turned, not upright.
+  m.weapon, m.id, m.vx, m.vy = "homing_missile", 79, -3 * PX, -3 * PX
+  M.missile(m)
+  local bullet = M.spawned[#M.spawned]
+  check("a bullet on the Igniter's missile", #M.spawned == before + 1
+    and bullet.sprite == "sprites/igniter/flight")
+  check("turned to its flight, mirrored flying left", bullet.facing == -1
+    and math.abs(bullet.angle - 315) < 1e-6, tostring(bullet.angle))
+  shown = {}
+  for _ = 1, 40 do
+    M.missile(m)
+    shown[bullet.shown] = true
+  end
+  check("steps through all sixteen frames", shown[0] and shown[15])
 end
 
 print("")

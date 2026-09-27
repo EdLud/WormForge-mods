@@ -143,7 +143,7 @@ bazooka hold, as the Cow Launcher's.
 |---|---|---|---|
 | holy_grenade | Hellish Hand-Grenade | icon, flight sprite, worm | none: PX draws its hold and grenade at run time, and the pack uses sheets |
 | skunk | Remote Roller | icon, flight sprite, worm | none: the library's script is empty in the extract |
-| homing_missile | Igniter | icon, flight sprite (PX's bullet) | the hold, drawn at run time |
+| homing_missile | Igniter | icon, the hold, PX's bullet | the hold and the bullet drawn at run time |
 | grenade | Sticky Bomb | icon, the bomb and its bits | the hold, drawn at run time |
 | fire_punch | Fire Jump | icon | PX's jump timeline |
 | pneumatic_drill | Super Drill | icon | a second hole each frame |
