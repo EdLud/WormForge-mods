@@ -151,6 +151,7 @@ bazooka hold, as the Cow Launcher's.
 | handgun | Sniper Rifle | icon, the hold, the firing poses, laser.png | the hold, the laser sight and its own shot sound |
 | jet_pack | Helicopter | icon, the helicopter, the climb-in, sounds | PX's flight, fuel and crashes on WA's jet pack |
 | bazooka | Double Bazooka | icon | a second shell from where the first explodes |
+| mine | Nuke Rocket | icon, the rocket, the hold, the launch sound | a nuke climbs out of the fusing rocket |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -247,6 +248,24 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   the pack's copy has the bazooka's own (3).
 - **Not ported:** PX's particle trail on top of WA's, and a plain 50/35
   blast PX makes when a second shell explodes before its first frame.
+
+**Nuke Rocket.** PX's `nuke_rocket_script`, on the mine slot:
+
+- **The rocket** is WA's own shot. The scheme's record is a placed weapon
+  that WA fires as a missile, and it already has what PX's `FireFinal`
+  gives the rocket: a 3 s fuse, no damage, WA's `Fuse` sound. It sits on
+  the ground fusing, and PX adds the hiss every 10 frames.
+- **The nuke** climbs out when it explodes: PX's launch sound, then a real
+  WA missile of the slot (`wa.weapons.launch`), silent, with a 1.6 s fuse,
+  bursting into the record's clustlets. For 53 frames it climbs, randomly
+  and jittering sideways, carrying worms and missiles within 17 pixels
+  along; then it brakes. Its explosion adds WA's sounds 85 and 70 and two
+  40/40 blasts.
+- **The hold** is PX's sprite builder with a fixed angle
+  (`dont_rotate_with_angle`): the rocket and a hand, placed as if aimed
+  level and turned by PX's fixed angles, whatever the aim.
+- **Not ported:** PX's particle trails, and carrying mines, crates, oil
+  drums and bowling balls.
 
 **Helicopter.** PX's `helicopter_user_script`, on WA's jet pack:
 

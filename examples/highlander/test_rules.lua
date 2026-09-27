@@ -398,7 +398,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("41 slots replaced, each once", #replaced == 41 and not dupes, tostring(#replaced))
+  check("42 slots replaced, each once", #replaced == 42 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -1096,6 +1096,106 @@ do
   spec.on_explode({ x = 1, y = 1, slot = 1, missile = 777 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("no missile id, or one never seen flying: nothing", #M.launched == 1 and #M.digs == 1)
+end
+
+print("nuke rocket: a nuke climbs out of the fusing rocket")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "mine" then spec = r end
+  end
+  check("the Nuke Rocket on the mine slot, its icon, its rocket, an explode step", spec
+    and spec.wep == "weps/mine.wep" and spec.panel_icon == "sprites/nuke_rocket/nuke_rocket_ico.png"
+    and spec.sprite == "sprites/nuke_rocket/nuke_rocket_bullet.png" and type(spec.on_explode) == "function")
+  check("its launch sound registered, so it can play", spec.sounds and spec.sounds[1] == "sounds/nuke_rocket_launch.wav")
+  for _, o in ipairs(worms) do
+    o.x, o.y, o.vx, o.vy = -5000 * P, 0, 0, 0
+  end
+  local w, near, far = worm(16), worm(17), worm(32)
+  w.weapon, w.x, w.y = "mine", 60 * P, 50 * P
+  near.x, near.y = 105 * P, 55 * P
+  far.x, far.y = 300 * P, 50 * P
+  M.message(w, wa.msg.FIRE_WEAPON)
+  -- WA's own shot is the first rocket: it fuses on the ground, hissing.
+  for _ = 1, 10 do
+    M.missile({ id = 600, phase = "post", weapon = "mine", x = 100 * P, y = 50 * P, vx = 0, vy = 0 })
+  end
+  check("the fusing rocket hisses every 10 frames", #M.sounds == 1 and M.sounds[1] == 66,
+    tostring(M.sounds[1]))
+  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 12, missile = 600 })
+  check("its explosion plays PX's launch sound", M.sounds[2] == "sounds/nuke_rocket_launch.wav")
+  check("no nuke during the blast", not M.launched)
+  M.message(far, wa.msg.FRAME_FINISH)
+  local l = M.launched and M.launched[1]
+  check("then a nuke from there, for the shooter", l and #M.launched == 1 and l.weapon == "mine"
+    and l.owner == w and l.x == 100 * P and l.y == 50 * P and l.vx == 0 and l.vy == 0)
+  check("silent, a 1.6 s fuse, bursting into clustlets", l.fuse == 1600 and l.sound == 0
+    and l.explode_into == "clustlets")
+  local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100 * P, y = 50 * P, vx = 0, vy = 0 }
+  local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110 * P, y = 45 * P, vx = P, vy = 0 }
+  local climb_ok, jitter = true, 0
+  for t = 0, 52 do
+    local vy, vx = nuke.vy, nuke.vx
+    M.missile(nuke)
+    local up = vy - nuke.vy
+    if up < 19661 or up > 52429 then climb_ok = false end
+    if nuke.vx ~= vx then
+      jitter = jitter + 1
+      if t % 2 == 0 then climb_ok = false end
+    end
+    if t == 0 then
+      M.missile(other)
+      check("a missile within 17 pixels is carried along", other.vx == nuke.vx and other.vy == nuke.vy)
+      check("so is a worm, but not one further off", near.vx == nuke.vx and near.vy == nuke.vy
+        and far.vx == 0 and far.vy == 0)
+    end
+  end
+  check("for 53 frames it climbs 0.3 to 0.8 a frame, jittering sideways on every other", climb_ok
+    and jitter > 0)
+  local vy = nuke.vy
+  M.missile(nuke)
+  check("then it brakes by 0.2 a frame", nuke.vy == vy + 13107, tostring((nuke.vy - vy) / P))
+  local sounds = #M.sounds
+  for _ = 1, 10 do
+    M.missile({ id = 800, phase = "post", weapon = "mine", x = 90 * P, y = 40 * P, vx = 0, vy = 0 })
+  end
+  check("later missiles of the slot (the cluster bits) are no fusing rocket: no hiss", #M.sounds == sounds)
+  M.sounds = {}
+  local before = M.spawned and #M.spawned or 0
+  spec.on_explode({ x = 100 * P, y = -200 * P, slot = 12, missile = 9001 })
+  M.message(far, wa.msg.FRAME_FINISH)
+  check("its explosion: sounds 85 and 70, and two 40/40 blasts", M.sounds[1] == 85 and M.sounds[2] == 70
+    and #M.spawned == before + 2 and M.spawned[before + 1].explode.damage == 40
+    and M.spawned[before + 1].explode.id == 40 and M.spawned[before + 2].explode.now)
+  check("and it ends there", #M.launched == 1)
+end
+
+print("nuke rocket: held at a fixed angle, as PX's sprite builder does")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "mine", 1, 100 * P, 50 * P, true, 0.2, true, nil
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local rocket, hand = M.spawned[#M.spawned - 1], M.spawned[#M.spawned]
+  check("the rocket and a hand", rocket.sprite == "sprites/px_hold/nuke_rocket"
+    and hand.sprite == "sprites/px_hold/hand_rad")
+  local function deg(a) return math.floor(a + 0.5) % 360 end
+  check("turned by PX's fixed angles: -0.1 pi and 0.4 pi", deg(rocket.angle) == 342 and deg(hand.angle) == 72,
+    rocket.angle .. " " .. hand.angle)
+  local x = rocket.x
+  w.aim = 0.9
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("whatever the aim", deg(rocket.angle) == 342 and rocket.x == x)
+  w.facing = -1
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("mirrored facing left", deg(rocket.angle) == 18 and deg(hand.angle) == 288 and rocket.facing == -1,
+    rocket.angle .. " " .. hand.angle)
 end
 
 print("helicopter: PX's script on WA's jet pack")
