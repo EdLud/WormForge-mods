@@ -503,6 +503,9 @@ local PX_HOLDS = {
     weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
   },
   homing_missile = { -- Igniter (igniter_anim)
+    -- Up through the shot too: it has no firing poses of its own, so WA
+    -- fires it in the aim posture, empty-handed without the hold. Not PX's.
+    keep_while_firing = true,
     sheet = "sprites/px_hold/igniter", hand_type = 2, hand_radius = -6.0,
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
@@ -642,6 +645,14 @@ local function update_hold(worm)
   local aim = p and aim_of(worm)
   if not aim or not worm.aiming then
     local h = held[worm.id]
+    -- Fired, in WA's firing states (no state name) with the weapon still
+    -- selected. Walking is unnamed too, hence the fire key.
+    if h and h.firing and PX_HOLDS[h.slot].keep_while_firing and worm.state == nil
+        and worm.weapon == h.slot then
+      h.shot_out = true
+      place_hold(worm, h)
+      return
+    end
     if h and not h.putting_away then
       put_away[worm.id] = { slot = h.slot, aim = h.aim, phase = h.phase }
       drop_hold(worm.id)
@@ -668,12 +679,20 @@ local function update_hold(worm)
   -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
   -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
   -- which WA also rewrites at render time, between sim frames.
+  -- The wind-up after the fire key still counts as aiming; the shot is
+  -- over only once the worm aims again after WA's firing states.
+  if h.shot_out then
+    h.firing, h.shot_out = false, false
+  end
   h.aim = aim
   place_hold(worm, h)
   h.counter = math.min(h.counter + 1, 20)
 end
 
 wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON and held[worm.id] then
+    held[worm.id].firing = true
+  end
   if msg == wa.msg.FRAME_FINISH then
     update_hold(worm)
   end

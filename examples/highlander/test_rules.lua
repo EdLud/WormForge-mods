@@ -833,6 +833,49 @@ do
   check("the same weapon, standing: gone at once", #M.spawned == before and M.spawned[before].dead)
 end
 
+print("px holds: the Igniter stays up through its shot")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn, w.state =
+    "homing_missile", 1, 100 * P, 50 * P, true, 0.5, true, "standing"
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local igniter = M.spawned[#M.spawned - 1]
+  check("the Igniter, grown in", igniter.sprite == "sprites/px_hold/igniter" and igniter.scale == 1)
+  local before = #M.spawned
+  ammo[w.alliance].homing_missile = 1
+  M.message(w, wa.msg.FIRE_WEAPON)
+  -- As WA does it: the wind-up still aims (0x68, unnamed; then prefiring),
+  -- then the firing states neither aim nor have a name.
+  w.state = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.aiming, w.state = false, nil
+  for _ = 1, 4 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("up through the wind-up and WA's firing states, at full size", not igniter.dead
+    and igniter.scale == 1 and #M.spawned == before)
+  -- Aiming again ends the shot; walking off after that is no shot: gone, as
+  -- in PX.
+  w.aiming = true
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("but not while walking off", igniter.dead)
+
+  -- The Sniper Rifle keeps PX's: hidden while it fires, for its snipefire poses.
+  w.weapon, w.aiming = "handgun", true
+  for _ = 1, 25 do M.message(w, wa.msg.FRAME_FINISH) end
+  local rifle = M.spawned[#M.spawned]
+  ammo[w.alliance].handgun = 3
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.aiming = false
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the Sniper Rifle is hidden while it fires", rifle.dead)
+end
+
 print("sniper rifle: PX's laser sight, drawn only")
 do
   new_match()
