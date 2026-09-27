@@ -18,5 +18,5 @@ replace = [
   "carpet_bomb", "air_strike", "mole_bomb", "mole_squadron", "aqua_sheep",
   "sheep", "mb_bomb", "shotgun", "holy_grenade", "skunk", "homing_missile",
   "grenade", "fire_punch", "pneumatic_drill", "longbow", "handgun", "jet_pack", "bungee",
-  "bazooka",
+  "bazooka", "mine",
 ]

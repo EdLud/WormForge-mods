@@ -55,8 +55,9 @@ local PX_POSTURE = {
 local PX_HANDS = {
   "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad", "sprites/px_hold/hand_rad_upper",
 }
--- Filled in by the Double Bazooka's section further down.
+-- Filled in by the Double Bazooka's and Nuke Rocket's sections further down.
 local double_bazooka_explode
+local nuke_rocket_explode
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -90,6 +91,23 @@ local PX_ART = {
     weapon = "bazooka",
     panel_icon = "sprites/double_bazooka/double_bazooka_ico.png",
     on_explode = function(ev) double_bazooka_explode(ev) end,
+  },
+  { -- Nuke Rocket: a rocket fuses on the ground, then a nuke climbs out of
+    -- it (its section below). PX draws both upright (a type 5 WeapSprite,
+    -- mirrored flying left), as WA draws a flight sprite.
+    weapon = "mine",
+    panel_icon = "sprites/nuke_rocket/nuke_rocket_ico.png",
+    sprite = "sprites/nuke_rocket/nuke_rocket_bullet.png",
+    on_explode = function(ev) nuke_rocket_explode(ev) end,
+    -- The worm holds it as PX's sprite builder draws it (PX_HOLDS below):
+    -- the record's own sprite is PX-only, which left WA no sheet to draw
+    -- the worm with.
+    worm_sprites = PX_POSTURE,
+    sprites = {
+      "sprites/px_hold/nuke_rocket", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3],
+    },
+    sounds = { "sounds/nuke_rocket_launch.wav" },
+    params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Burning Sheep Launcher
     weapon = "sheep_launcher",
@@ -526,6 +544,14 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
+  mine = { -- Nuke Rocket (nuke_rocket_anim): held at a fixed angle, not
+    -- the aim's (dont_rotate_with_angle), and placed, so never put away.
+    thrown = true,
+    sheet = "sprites/px_hold/nuke_rocket", hand_type = 2, hand_radius = 13.0,
+    hand_rotation = -0.6, hand_radial_rotation = -0.95, hand_scale = 1.0,
+    weap_rotation = 0.45, weap_radial_rotation = 1.0, weap_radius = 8.5,
+    static = { weap = -0.1, hand = 0.4 }, -- ang_if_static, hand_ang_if_static
+  },
   handgun = { -- Sniper Rifle (sniper_rifle_script): its hand at scale 0
     -- Up through each shot, with its laser, over the snipefire poses (the
     -- worm lit by the muzzle), so it does not flicker between the three.
@@ -628,21 +654,22 @@ end
 -- WormSprite::CalculateAngle: the hold at its aim, grown to PICK[counter].
 local function place_hold(worm, h)
   local p = PX_HOLDS[h.slot]
-  local aim = h.aim
+  -- dont_rotate_with_angle: placed as if aimed level, turned by fixed angles.
+  local aim = p.static and 0.5 or h.aim
   local pi = math.pi
   local rot = (1 - aim) * pi
   local rot_w = rot + pi * p.weap_radial_rotation
   local rot_h = rot - pi * p.hand_radial_rotation
   local grow = PICK[h.counter]
   place(h.weapon, worm, math.sin(rot_w) * p.weap_radius, -math.cos(rot_w) * p.weap_radius,
-    pi - pi * aim - pi * (1 - p.weap_rotation), grow)
+    p.static and p.static.weap * pi or pi - pi * aim - pi * (1 - p.weap_rotation), grow)
   if p.animate then
     h.phase = next_phase(h.phase, p.anim_speed)
     h.weapon:frame(frame_of(h.phase, p.frames))
   end
   if h.hand then
     place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
-      rot + pi * p.hand_rotation, grow * p.hand_scale)
+      p.static and p.static.hand * pi or rot + pi * p.hand_rotation, grow * p.hand_scale)
   end
   if h.flash then
     -- At the barrel's tip, pointing along the aim (the art points right).
@@ -1006,6 +1033,143 @@ wa.on.worm_message(function(worm, msg)
       db_second[id] = true
     end
     db_pending = {}
+  end
+end)
+
+-- ------------------------------------------------------------ Nuke Rocket
+--
+-- PX's nuke_rocket_script, on the mine slot. The scheme's record is a
+-- placed weapon that WA fires as a missile (fire type 2, method 2:
+-- CreateWeaponProjectile), and it already has every value PX's FireFinal
+-- gives its first rocket (a 3 s fuse, damage 0, bias 50, push 70, sound
+-- 66). So WA's own shot is PX's first rocket: it fuses on the ground,
+-- hissing (sound 66 every 10 frames). When it explodes, a nuke climbs out
+-- of it: a real WA missile of the same slot (wa.weapons.launch, as PX's
+-- MakeNuke creates a CMissile), silent, with a 1.6 s fuse, bursting into
+-- the record's clustlets. For 53 frames it climbs, randomly and jittering
+-- sideways, and carries worms and missiles within 17 pixels along; then
+-- it brakes. Its explosion adds PX's two 40/40 blasts and sounds 85, 70.
+--
+-- Not ported: PX's particle trails, and carrying mines, crates, oil drums
+-- and bowling balls (their speed is not writable from Lua).
+
+local P16 = 0x10000
+local NR_HISS = 66    -- the fusing rocket's hiss, every 10 frames
+local NR_CLIMB = 53   -- frames the nuke climbs (PX: "1.1-1.2 second")
+local NR_CARRY = 17   -- pixels: what the climbing nuke carries along
+local NUKE = { fuse = 1600, sound = 0, explode_into = "clustlets" }
+local NUKE_BLAST = { damage = 40, id = 40 } -- PX's DoExplosion(x, y, 40, 40), twice
+
+local nr_first = {}    -- missile id -> frames: a first rocket, fusing
+local nr_speed = {}    -- missile id -> { vx, vy } at its last frame
+local nr_nuke = {}     -- missile id -> frames flown: a nuke
+local nr_climbing = {} -- nuke id -> { x, y, vx, vy }, while it climbs
+local nr_pending = {}  -- nukes to launch once the rocket's blast is over
+local nr_shooter       -- the worm that fired (PX's ClWT / ClWN)
+local nr_expect        -- fired: the next mine-slot missile is the rocket
+
+local function near(ax, ay, bx, by)
+  local r = NR_CARRY * P16
+  return math.abs(ax - bx) < r and math.abs(ay - by) < r
+end
+
+wa.on.missile_frame(function(m)
+  local t = nr_nuke[m.id]
+  if t ~= nil then
+    -- Before WA moves it, as PX's M_FRAME runs before super.
+    if m.phase ~= "pre" then
+      return
+    end
+    if t < NR_CLIMB then
+      m.vy = m.vy - wa.random(19661, 52429) -- 0.3 to 0.8 a frame
+      if t % 2 == 1 then
+        m.vx = m.vx + wa.random(-19661, 19661) -- up to 0.3 either way
+      end
+      nr_climbing[m.id] = { x = m.x, y = m.y, vx = m.vx, vy = m.vy }
+      for _, w in ipairs(wa.worms.all()) do
+        if near(w.x, w.y, m.x, m.y) then
+          w.vx, w.vy = m.vx, m.vy
+        end
+      end
+    else
+      nr_climbing[m.id] = nil
+      if m.vy < 0 then
+        m.vy = m.vy + 13107 -- 0.2: slows the climb without faking gravity
+      end
+    end
+    nr_nuke[m.id] = t + 1
+    return
+  end
+  -- The rocket is the missile WA fires after the fire key. Later ones of
+  -- the slot (the nuke's cluster bits) are no rockets.
+  if nr_first[m.id] == nil and nr_expect and m.weapon == "mine" then
+    nr_first[m.id], nr_expect = 0, false
+  end
+  if nr_first[m.id] ~= nil then
+    if m.phase == "post" then
+      nr_speed[m.id] = { m.vx, m.vy }
+      local n = (nr_first[m.id] or 0) + 1
+      nr_first[m.id] = n
+      if n % 10 == 0 and nr_shooter then
+        wa.sound.play(nr_shooter, NR_HISS)
+      end
+    end
+    return
+  end
+  -- Any other missile a climbing nuke passes is carried along.
+  if m.phase == "pre" then
+    for _, c in pairs(nr_climbing) do
+      if near(m.x, m.y, c.x, c.y) then
+        m.vx, m.vy = c.vx, c.vy
+      end
+    end
+  end
+end)
+
+nuke_rocket_explode = function(ev)
+  local id = ev.missile
+  if not id then
+    return
+  end
+  if nr_nuke[id] then
+    nr_nuke[id], nr_climbing[id] = nil, nil
+    local owner = nr_shooter
+    if owner then
+      wa.sound.play(owner, 85)
+      wa.sound.play(owner, 70) -- "louder please :D"
+      for _ = 1, 2 do
+        wa.actors.spawn({
+          sprite = false, x = ev.x, y = ev.y, owner = owner,
+          explode = { damage = NUKE_BLAST.damage, id = NUKE_BLAST.id, now = true },
+        })
+      end
+    end
+    return
+  end
+  if nr_first[id] then
+    local speed = nr_speed[id] or { 0, 0 }
+    nr_first[id], nr_speed[id] = nil, nil
+    if nr_shooter then
+      wa.sound.play(nr_shooter, "sounds/nuke_rocket_launch.wav")
+    end
+    -- Launched after the blast, as PX's comes after super.
+    nr_pending[#nr_pending + 1] = { x = ev.x, y = ev.y, vx = speed[1], vy = speed[2] }
+  end
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "mine" then
+    nr_shooter, nr_expect = worm, true
+  elseif msg == wa.msg.FRAME_FINISH and #nr_pending > 0 then
+    local owner = nr_shooter or worm
+    for _, p in ipairs(nr_pending) do
+      local id = wa.weapons.launch({
+        weapon = "mine", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
+        fuse = NUKE.fuse, sound = NUKE.sound, explode_into = NUKE.explode_into,
+      })
+      nr_nuke[id] = 0
+    end
+    nr_pending = {}
   end
 end)
 
