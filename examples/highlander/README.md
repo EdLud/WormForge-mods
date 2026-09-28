@@ -322,7 +322,7 @@ Worn, a worm that falls into the water swims instead of drowning:
 - **Speed:** Fast Walk switches the swim speed between 2 and 6 for the turn.
 - **Missiles:** a missile in the water blows up on a swimming worm (100, 50).
 - **Looks:** the swim or float animation is drawn in its place, with a bubble
-  while it wears the suit.
+  drawn in `wa.on.draw` from live worm.x/y while the suit is worn (no ring actor).
 - **Engine pieces:** `worm.collision_mask` and `m.collision_mask`, and the
   `bungee` and `sinking` states.
 - **Not ported:** PX's ghost-jet and battyswim interplay, the Ninja Rope

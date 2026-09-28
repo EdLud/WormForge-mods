@@ -1905,10 +1905,12 @@ local SWIM_MISSILE_MASK = 0x40007C -- a missile in the water that hits worms
 local SWIM_SPLASH = 57        -- WA's sound
 local SWIM_BODY_DEPTH = 0x10000
 local SWIM_RING_DEPTH = 0x10001
+-- Ring sheet is 50×50; wa.draw.quad corners are centred on the worm like a:gfx.
+local SWIM_RING_HALF = 25 * 0x10000
 
 local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
 local swim_in_game = false    -- SwimInGame: someone has worn the suit
-local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, ring }
+local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body }
 
 local function swimmer_of(worm)
   local s = swimmers[worm.id]
@@ -1922,7 +1924,6 @@ end
 
 local function swim_drop_art(worm, s)
   if s.body then s.body:despawn(); s.body = nil end
-  if s.ring then s.ring:despawn(); s.ring = nil end
   worm.body_visible = true
 end
 
@@ -2046,17 +2047,14 @@ local function swim_frame(worm)
     suit_off(worm, s, false)
     return
   end
-  -- RenderWorm: the bubble while it wears the suit; in the water, the swim
-  -- or float animation in the worm's place (its art faces left).
+  -- RenderWorm: in the water, the swim or float animation in the worm's
+  -- place (its art faces left). The bubble is drawn at render time below.
   local function art(sheet)
     return wa.actors.spawn({
       sprite = sheet, x = worm.x, y = worm.y, gravity = false,
       collide = false, owner = worm, on = function() end,
     })
   end
-  s.ring = s.ring or art("sprites/swim_suit/ring")
-  s.ring.x, s.ring.y, s.ring.vx, s.ring.vy = worm.x, worm.y, 0, 0
-  s.ring:gfx({ depth = SWIM_RING_DEPTH })
   if s.plopped and worm.state ~= "teleporting" then
     local sheet = s.floating and "sprites/swim_suit/float" or "sprites/swim_suit/swim"
     if s.body and s.body_sheet ~= sheet then
@@ -2076,6 +2074,27 @@ local function swim_frame(worm)
     s.body = nil
     worm.body_visible = true
   end
+end
+
+-- Bubble while the suit is worn: draw-only, from the live worm position each
+-- rendered frame (keeps the 16.16 fraction). A follower LuaActor + a:gfx was
+-- pixel-snapped and could wobble when airborne.
+if wa.on.draw then
+  wa.on.draw(function()
+    for _, worm in ipairs(wa.worms.all()) do
+      local s = swimmers[worm.id]
+      if s and s.suit then
+        local x, y, h = worm.x, worm.y, SWIM_RING_HALF
+        wa.draw.quad({
+          points = {
+            { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h },
+          },
+          sprite = "sprites/swim_suit/ring",
+          depth = SWIM_RING_DEPTH,
+        })
+      end
+    end
+  end)
 end
 
 wa.on.worm_message(function(worm, msg)

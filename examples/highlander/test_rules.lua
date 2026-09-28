@@ -319,7 +319,13 @@ local function new_match(opts)
       end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
-      draw = function(f) M.draw = f end,
+      draw = function(f)
+        M.draws = M.draws or {}
+        M.draws[#M.draws + 1] = f
+        M.draw = function()
+          for _, h in ipairs(M.draws) do h() end
+        end
+      end,
       contact = function(f)
         M.contacts = M.contacts or {}
         M.contacts[#M.contacts + 1] = f
@@ -329,7 +335,7 @@ local function new_match(opts)
       end,
     },
   }
-  M.quads, M.sounds, M.trace_hit = {}, {}, nil
+  M.quads, M.sounds, M.trace_hit, M.draws = {}, {}, nil, nil
   dofile("mods/examples/highlander/rules.lua")
 end
 
@@ -1563,12 +1569,17 @@ do
   function w:clear_keys() self.keys = {} end
   local spent = 0
   function w:ammo(slot, n) if slot == "laser_sight" then spent = spent + n end end
-  M.spawned, M.sounds = {}, {}
+  M.spawned, M.sounds, M.quads = {}, {}, {}
   check("putting it on replaces WA's laser sight", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
   check("the suit's mask: without the bit WA's water acts on", w.collision_mask == 134342)
   check("its sound", M.sounds[#M.sounds] == "sounds/swim_suit/putting_on_ssuit.wav")
   M.message(w, wa.msg.FRAME_FINISH)
-  check("a bubble while worn", M.spawned[1] and M.spawned[1].sprite == "sprites/swim_suit/ring")
+  M.draw()
+  check("a bubble while worn", #M.quads == 1 and M.quads[1].sprite == "sprites/swim_suit/ring")
+  local bubble = M.quads[1]
+  local h = 25 * P
+  check("centred on the worm", bubble.points[1][1] == w.x - h and bubble.points[3][1] == w.x + h
+    and bubble.points[1][2] == w.y - h and bubble.points[3][2] == w.y + h)
   -- Into the water, falling fast: a splash, no gravity, the speed capped, a
   -- bungee's state.
   w.state, w.y, w.vx, w.vy = "sliding", 510 * P, 9 * P, 12 * P
