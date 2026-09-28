@@ -157,6 +157,7 @@ bazooka hold, as the Cow Launcher's.
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
+| ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
@@ -346,6 +347,17 @@ WA fires a utility that does nothing and the script does the work:
 - **Differences:** a HUD line shows the keys and the choice, in place of PX's
   team messages. PX also puts the gravity back after 10 s with the turn clock
   stopped; that isn't ported.
+
+**Jump.** PX's `jumpscript` (`utility_jump`), on the Ninja Rope's slot. Its
+record throws like a grenade, but nothing leaves the worm:
+- **Firing:** the worm itself leaves with the shot's speed, from the aim and
+  the charge, and says its team's "Jump" line.
+- **Aiming:** the worm looks along the aim (PX's `eyes` sheets) until it
+  jumps, charging included.
+- **Differences:** PX shows WA's `wjump` crouch while the charge builds, which
+  looks ahead rather than along the aim. PX also mutes the worm's "Fire!" and
+  "Watch this" lines while the Jump is selected, and stops a fuse or bounce
+  being chosen for it.
 
 **Hang-Glider.** PX's `paratest` (`utility_hangglider_render`), on WA's
 parachute. Opened with the Hang-Glider, the parachute flies as PX's glider:

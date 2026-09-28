@@ -58,6 +58,7 @@ local PX_HANDS = {
 local double_bazooka_explode
 local nuke_rocket_explode
 local chilli_bomb_explode
+local jump_fire
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -384,6 +385,15 @@ local PX_ART = {
     sprites = { "sprites/swim_suit/swim", "sprites/swim_suit/float", "sprites/swim_suit/ring" },
     sounds = { "sounds/swim_suit/putting_on_ssuit.wav" },
     params = { gpu_prefix = "sprites/swim_suit/" },
+  },
+  { -- Jump: on the ninja rope's slot; the worm leaves with the shot (below).
+    weapon = "ninja_rope",
+    panel_icon = "sprites/jump/jumpic.png",
+    worm_sprites = {
+      weaponlnk = "sprites/jump/aim", weaponlnku = "sprites/jump/aimu",
+      weaponlnkd = "sprites/jump/aimd",
+    },
+    on_fire = function(fire) jump_fire(fire) end,
   },
   { -- Wind Changer: on the surrender's slot; sets the wind (below).
     weapon = "surrender",
@@ -2240,6 +2250,29 @@ if wa.on.hud then
         or "choose 1-5") .. ", then Space")
     end
   end)
+end
+
+-- ------------------------------------------------------------------ Jump
+--
+-- PX's jumpscript (utility_jump). Its record throws like a grenade, but
+-- nothing leaves the worm: FireFinal gives the worm the shot's own speed --
+-- the aim and the charge -- and plays the team's "Jump" line. The worm keeps
+-- its aim posture, eyes on the crosshair, until it jumps.
+--
+-- Differences: PX shows WA's wjump while the charge builds
+-- (SetAnimEx(269, FirePower)), which looks ahead rather than along the aim;
+-- it also mutes the worm's "Fire!" and "Watch this" lines while the Jump is
+-- selected, and stops a fuse and bounce being chosen for it.
+
+-- The first team's "Jump1" speech: WA loads each team's 54 lines in turn
+-- after its own sounds, so a worm's is 54 on per team (PX's PlaySoundBank(150)).
+local JUMP_SPEECH, SPEECH_LINES = 150, 54
+
+jump_fire = function(fire)
+  local worm = fire.worm
+  worm:set_state("sliding")
+  worm.vx, worm.vy = fire.vx, fire.vy
+  wa.sound.play(worm, JUMP_SPEECH + SPEECH_LINES * (worm.team - 1))
 end
 
 -- ----------------------------------------------------------------- pools

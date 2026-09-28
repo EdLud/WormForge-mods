@@ -429,7 +429,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("48 slots replaced, each once", #replaced == 48 and not dupes, tostring(#replaced))
+  check("49 slots replaced, each once", #replaced == 49 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -1662,6 +1662,30 @@ do
     and M.gravity == math.floor(0x3AE * 2.4), tostring(M.gravity))
   M.turn_start({ worm = w, active = w })
   check("the next turn: the match's gravity", M.gravity == 0x3AE)
+end
+
+print("jump: the worm leaves with the shot")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "ninja_rope" then spec = r end
+  end
+  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.wep == "weps/ninja_rope.wep"
+    and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
+  local w = worm(33)
+  w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
+  w.x, w.y, w.vx, w.vy, w.state = 100 * P, 50 * P, 0, 0, "standing"
+  function w:set_state(s) self.state = s end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("charging: the worm keeps its aim posture", #M.spawned == 0 and w.body_visible)
+  spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3 * P, vy = -5 * P })
+  check("fired: the shot's speed, airborne", w.vx == 3 * P and w.vy == -5 * P and w.state == "sliding")
+  check("the team's Jump line: team 2's bank", M.sounds[#M.sounds] == 150 + 54, tostring(M.sounds[#M.sounds]))
 end
 
 print("px missile sprites: WeapSprite at run time")
