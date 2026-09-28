@@ -197,7 +197,7 @@ local function new_match(opts)
   end
   wa = {
     log = function(s) logs[#logs + 1] = s end,
-    hud = { line = function() end },
+    hud = { line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24 },
     world = {
       cavern = function() return cavern end,
@@ -205,7 +205,9 @@ local function new_match(opts)
       water = function() return M.water or 0x7FFFFFFF end,
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
-      keys = function() return { sprint = M.shift or false } end,
+      keys = function() return { sprint = M.shift or false, digit = M.digit } end,
+      set_gravity = function(v) M.gravity = v end,
+      set_wind = function(v) M.wind = v end,
     },
     -- A fixed LCG: the pack must not care which numbers, only that it draws
     -- through here.
@@ -433,7 +435,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("46 slots replaced, each once", #replaced == 46 and not dupes, tostring(#replaced))
+  check("49 slots replaced, each once", #replaced == 49 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -599,6 +601,7 @@ do
   ammo[0].bungee = 1 -- one left over from the last turn
   turn(16)
   check("the active team has 3 again", ammo[0].bungee == 3, tostring(ammo[0].bungee))
+  check("and a Wind Changer", ammo[0].surrender == 1, tostring(ammo[0].surrender))
 end
 
 print("turn: only the active worm's hand is usable, one of each")
@@ -1631,6 +1634,69 @@ do
   check("it blows up on the swimmer (100, 50) and is gone", boom and boom.explode and boom.explode.damage == 100
     and boom.explode.id == 50 and missile.y > M.water)
   M.turn_start({ worm = w, active = w })
+end
+
+print("wind changer and gravity control: 0-9 and 1-5, then fire")
+do
+  new_match()
+  M.gravity, M.wind, M.digit = 0x3AE, 0, nil
+  frame()
+  local P = 0x10000
+  M.sounds = {}
+  local w = worm(16)
+  for _, o in ipairs(worms) do o.turn = false end
+  w.turn, w.facing, w.weapon = true, -1, "surrender"
+  -- Choose 7: once, on the key going down.
+  M.digit = 7
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("a digit counts once, when it goes down", #M.sounds == 1 and M.sounds[1] == 107)
+  M.hud_lines = {}
+  M.hud()
+  check("the HUD says the force and the keys", M.hud_lines[1] and M.hud_lines[1]:find("force 7"))
+  M.digit = nil
+  check("firing it goes on to WA's no-op utility", M.message(w, wa.msg.FIRE_WEAPON) == nil)
+  check("wind 7 x 0.0317 towards where the worm faces, a strong wind (6 and up)",
+    M.wind == -math.floor(7 * 0.0317 * P) and M.sounds[#M.sounds] == "sounds/wind_changer/strong_wind.wav",
+    tostring(M.wind) .. " " .. tostring(M.sounds[#M.sounds]))
+  -- Gravity Control: nothing chosen, no shot.
+  w.weapon = "low_gravity"
+  check("nothing chosen: not fired, an error sound", M.message(w, wa.msg.FIRE_WEAPON) == "eat"
+    and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav" and M.gravity == 0x3AE)
+  M.digit = 9
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("5: very high gravity chosen (9 means nothing)", M.message(w, wa.msg.FIRE_WEAPON) == nil
+    and M.gravity == math.floor(0x3AE * 2.4), tostring(M.gravity))
+  M.turn_start({ worm = w, active = w })
+  check("the next turn: the match's gravity", M.gravity == 0x3AE)
+end
+
+print("jump: the worm leaves with the shot")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "ninja_rope" then spec = r end
+  end
+  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.wep == "weps/ninja_rope.wep"
+    and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
+  local w = worm(33)
+  w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
+  w.x, w.y, w.vx, w.vy, w.state = 100 * P, 50 * P, 0, 0, "standing"
+  function w:set_state(s) self.state = s end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("charging: the worm keeps its aim posture", #M.spawned == 0 and w.body_visible)
+  spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3 * P, vy = -5 * P })
+  check("fired: the shot's speed, airborne", w.vx == 3 * P and w.vy == -5 * P and w.state == "sliding")
+  check("the team's Jump line: team 2's bank", M.sounds[#M.sounds] == 150 + 54, tostring(M.sounds[#M.sounds]))
 end
 
 print("px missile sprites: WeapSprite at run time")
