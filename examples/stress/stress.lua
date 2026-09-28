@@ -15,9 +15,10 @@
 --   pulse    its scale breathing
 --   behind   behind the terrain, so the land hides it where they overlap
 --
--- and, every rendered frame (wa.on.draw), an additive halo with a colour per
--- corner and a trail of four fading glows behind each orb, and an additive
--- flash for a second where each one explodes.
+-- and, every rendered frame (wa.on.draw), a large additive halo with a colour
+-- per corner and a white-hot core, a trail of eight fading glows behind each
+-- orb (one every fourth frame, so it lingers), and an additive flash, growing to about 320 pixels across, for a
+-- second where each one explodes.
 --
 -- Both batches start from the same positions and speeds, so the two halves of
 -- the turn compare like for like. Everything that decides what happens runs
@@ -48,7 +49,8 @@ local STYLES = {
   { name = "pulse", blend = "normal", pulse = true },
   { name = "behind", blend = "normal", depth = 0x190000 }, -- terrain is 0x180000
 }
-local TRAIL = 4         -- glows behind each orb
+local TRAIL = 8         -- glows behind each orb
+local TRAIL_EVERY = 4   -- frames between them, so the trail lingers
 local FLASH = 50        -- frames an explosion's flash lasts
 
 wa.weapons.replace({
@@ -121,8 +123,10 @@ local function orb_brain(o)
       a:despawn()
       return
     end
-    table.insert(o.trail, 1, { x = a.x, y = a.y })
-    o.trail[TRAIL + 1] = nil
+    if now % TRAIL_EVERY == 0 then
+      table.insert(o.trail, 1, { x = a.x, y = a.y })
+      o.trail[TRAIL + 1] = nil
+    end
     spin = (spin + 12) % 360
     local scale = o.style.scale or 1.0
     if o.style.pulse then
@@ -220,18 +224,21 @@ end
 wa.on.draw(function()
   for _, o in pairs(orbs) do
     local x, y, t = o.a.x, o.a.y, o.tint
-    -- The halo: a colour per corner, the orb's own at the top left.
+    -- The halo: a colour per corner, the orb's own at the top left, and a
+    -- white-hot core over it.
     local c = TINTS[(o.a.id % #TINTS) + 1]
-    glow(x, y, 20 * FX, { argb(0xC0, t), argb(0xC0, c), argb(0x60, t), argb(0x60, c) })
+    glow(x, y, 48 * FX, { argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t) })
+    glow(x, y, 16 * FX, { argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF) })
     for i, p in ipairs(o.trail) do
-      local a = argb(0xA0 - i * 0x20, t)
-      glow(p.x, p.y, (10 - i) * FX, { a, a, a, a })
+      local a = argb(0xFF - (i - 1) * 0x1C, t)
+      glow(p.x, p.y, (30 - i * 2) * FX, { a, a, a, a })
     end
   end
   for _, f in ipairs(flashes) do
     local age = now - f.born
     local alpha = 0xFF * (FLASH - age) // FLASH
-    local a = argb(alpha, f.tint)
-    glow(f.x, f.y, (20 + age) * FX, { a, a, a, a })
+    local a, white = argb(alpha, f.tint), argb(alpha, 0xFFFFFF)
+    glow(f.x, f.y, (30 + age * 26 // 10) * FX, { a, a, a, a })
+    glow(f.x, f.y, (16 + age) * FX, { white, white, white, white })
   end
 end)
