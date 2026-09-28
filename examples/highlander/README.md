@@ -165,6 +165,7 @@ bazooka hold, as the Cow Launcher's.
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
+| uzi | Laser Gun | icon, the worm aiming and taking it out, its beam and glow, three sounds | PX's 5 s beam in place of the uzi's bullet |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
@@ -340,6 +341,20 @@ Worn, a worm that falls into the water swims instead of drowning:
 - **Not ported:** PX's ghost-jet and battyswim interplay, the Ninja Rope
   workaround (the Jump is on that slot), inverted controls, and the team
   message.
+
+**Laser Gun.** PX's `lasergun` (`CLaserRay`), on the Uzi's slot. Its record
+is an uzi firing one bullet; no bullet leaves, and a beam burns from the worm
+along its aim for 5 s, the worm held firing (aim live) for as long:
+- **Every fourth frame** it traces to the first land, up to 2048 px, cutting
+  4 px holes there, along the cut while the aim holds still.
+- **Damage:** everything within 5 px of it takes fire damage: a worm 2, then
+  1 once it has taken 10, and no more than 45 from one beam; an oil drum 4, a
+  crate 1.
+- **Looks:** a red strip pulsing from full width to half, glows at the muzzle
+  and the hit, red sparks from the muzzle, glows rising from the cut, yellow
+  sparks on what it touches.
+- **Differences:** a mine it touches is armed on its fuse once, rather than
+  taking PX's gun damage; the loop sound is replayed every 51 frames.
 
 **Wind Changer and Gravity Control.** PX's `wind_changer_script` (ravander,
 improved by 0rang3) and `gravity_control_script` (DabbyB, edited by 0rang3).
