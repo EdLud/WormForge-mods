@@ -33,8 +33,7 @@
 --     zero. Here the scheme can say anything, so the pack enforces it itself.
 --
 --   * PX's GiveWeapons also sets the Hot Air Balloon to 3 and the Wind
---     Changer to 1 each turn. The balloon is granted; the Wind Changer is
---     not ported yet, and its slot would hand out WA's stock Surrender.
+--     Changer to 1 each turn; so does start_turn.
 --
 -- Lockstep: dealing, turn_start and death are all dispatched from WA's own
 -- simulation messages, and every random choice is wa.random(). Two peers, or
@@ -385,6 +384,19 @@ local PX_ART = {
     sprites = { "sprites/swim_suit/swim", "sprites/swim_suit/float", "sprites/swim_suit/ring" },
     sounds = { "sounds/swim_suit/putting_on_ssuit.wav" },
     params = { gpu_prefix = "sprites/swim_suit/" },
+  },
+  { -- Wind Changer: on the surrender's slot; sets the wind (below).
+    weapon = "surrender",
+    panel_icon = "sprites/wind_changer/ico_windchanger.png",
+    sounds = {
+      "sounds/wind_changer/breeze.wav", "sounds/wind_changer/calm_wind.wav",
+      "sounds/wind_changer/strong_wind.wav",
+    },
+  },
+  { -- Gravity Control: on low gravity's slot; sets the gravity (below).
+    weapon = "low_gravity",
+    panel_icon = "sprites/gravity_control/gravity_control_ico.png",
+    sounds = { "sounds/gravity_control/activate.wav", "sounds/gravity_control/error.wav" },
   },
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
     weapon = "jet_pack",
@@ -2134,6 +2146,102 @@ if wa.on.contact then
   end)
 end
 
+-- ---------------------------------------------- Wind Changer, Gravity Control
+--
+-- PX's wind_changer_script (ravander, improved by 0rang3) and
+-- gravity_control_script (DabbyB, edited by 0rang3). Both records are one of
+-- WA's turn utilities (subtype 19) with an index WA does not use (8), so WA
+-- fires them as a utility that does nothing, spending the shot as usual, and
+-- the script does the work.
+--
+-- Wind Changer, on the surrender's slot: while it is selected, 0..9 choose
+-- the force; firing it sets the wind to force x 0.0317 towards where the
+-- worm faces, through WA's own wind change, so the clouds and the wind bar
+-- follow. Gravity Control, on low gravity's slot: 1..5 choose 0.3, 0.5, 1,
+-- 1.7 or 2.4 times the match's gravity; firing it holds WA's gravity there
+-- until the next turn. Fired with nothing chosen it does not fire (PX gives
+-- the shot back).
+--
+-- Differences: a HUD line says which keys to press and what is chosen, in
+-- place of PX's team messages; and PX also puts the gravity back after 10 s
+-- with the turn clock stopped, which needs the turn clock (not ported).
+
+local WIND_STEP = 0.0317       -- wind per point of force (PX's), a turn's wind is up to about 0.29
+local GRAVITY_FACTORS = { 0.3, 0.5, 1.0, 1.7, 2.4 }
+local GRAVITY_NAMES = { "Very Low Gravity", "Low Gravity", "Normal Gravity", "High Gravity", "Very High Gravity" }
+
+local wind_force = 0          -- wf
+local gravity_choice          -- TransformedGravity's index, until fired
+local gravity_initial         -- InitialGravity: the match's
+local gravity_factor          -- ModulatedGravity while Gravity Control is on
+local last_digit              -- KeyPressedNow: a digit counts when it goes down
+
+local function world_physics_frame(worm)
+  gravity_initial = gravity_initial or wa.world.gravity()
+  if not worm.turn then
+    return
+  end
+  local digit = wa.world.keys().digit
+  local pressed = digit ~= nil and digit ~= last_digit
+  last_digit = digit
+  if not pressed then
+    return
+  end
+  if worm.weapon == "surrender" then
+    wind_force = digit
+    wa.sound.play(worm, 107)
+  elseif worm.weapon == "low_gravity" and digit >= 1 and digit <= 5 then
+    gravity_choice = digit
+    wa.sound.play(worm, 92)
+  end
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FRAME_FINISH then
+    world_physics_frame(worm)
+  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == "surrender" then
+    -- FireFinal(Wind Changer): breeze for none, a calm wind up to 5, strong
+    -- above; towards where the worm faces.
+    local f = wind_force
+    wa.sound.play(worm, f == 0 and "sounds/wind_changer/breeze.wav"
+      or f < 6 and "sounds/wind_changer/calm_wind.wav" or "sounds/wind_changer/strong_wind.wav")
+    wa.world.set_wind(trunc(f * WIND_STEP * FX) * worm.facing)
+  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == "low_gravity" then
+    if not gravity_choice then
+      wa.sound.play(worm, "sounds/gravity_control/error.wav")
+      return "eat"
+    end
+    gravity_initial = gravity_initial or wa.world.gravity()
+    gravity_factor, gravity_choice = GRAVITY_FACTORS[gravity_choice], nil
+    wa.sound.play(worm, "sounds/gravity_control/activate.wav")
+    wa.world.set_gravity(trunc(gravity_initial * gravity_factor))
+  end
+end)
+
+-- M_TURNBEGIN: the match's gravity back.
+wa.on.turn_start(function()
+  if gravity_factor then
+    gravity_factor = nil
+    wa.world.set_gravity(gravity_initial)
+  end
+  gravity_choice = nil
+end)
+
+if wa.on.hud then
+  wa.on.hud(function()
+    local worm = current_worm()
+    if not worm then
+      return
+    end
+    if worm.weapon == "surrender" then
+      wa.hud.line(string.format("Wind Changer: force %d (keys 0-9), then Space", wind_force))
+    elseif worm.weapon == "low_gravity" then
+      wa.hud.line("Gravity Control: " .. (gravity_choice and GRAVITY_NAMES[gravity_choice]
+        or "choose 1-5") .. ", then Space")
+    end
+  end)
+end
+
 -- ----------------------------------------------------------------- pools
 
 -- Offensive: PX's `Weapons`, 29 entries.
@@ -2214,8 +2322,8 @@ local CAVE_SECOND = 16
 -- The slots Highlander never pools -- Kamikaze Rocket, Gravler, Hot Air
 -- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
 -- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
--- whatever ammo the scheme gives them, except the Hot Air Balloon, which
--- start_turn sets to 3.
+-- whatever ammo the scheme gives them, except the Hot Air Balloon and the
+-- Wind Changer, which start_turn sets to 3 and 1.
 
 -- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
 -- must not depend on pairs() order: Lua's string hashing is seeded per
@@ -2273,8 +2381,10 @@ end
 
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
-  -- GiveWeapons: three Hot Air Balloons for the turn, whatever is left.
+  -- GiveWeapons: three Hot Air Balloons and a Wind Changer for the turn,
+  -- whatever is left.
   worm:ammo("bungee", { set = 3 })
+  worm:ammo("surrender", { set = 1 })
 end
 
 local function on_death(event)

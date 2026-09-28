@@ -155,6 +155,8 @@ bazooka hold, as the Cow Launcher's.
 | mine | Nuke Rocket | icon, the rocket, the hold, the launch sound | a nuke climbs out of the fusing rocket |
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
+| surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
+| low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
@@ -329,6 +331,22 @@ Worn, a worm that falls into the water swims instead of drowning:
   workaround (the Jump is on that slot), inverted controls, and the team
   message.
 
+**Wind Changer and Gravity Control.** PX's `wind_changer_script` (ravander,
+improved by 0rang3) and `gravity_control_script` (DabbyB, edited by 0rang3).
+Both records are one of WA's turn utilities with an index WA doesn't use, so
+WA fires a utility that does nothing and the script does the work:
+- **Wind Changer:** while it is selected, 0-9 choose the force. Firing it sets
+  the wind to force × 0.0317 towards where the worm faces, through WA's own
+  wind change (the clouds and the wind bar follow). The rules grant one every
+  turn, as PX's GiveWeapons does.
+- **Gravity Control:** 1-5 choose 0.3, 0.5, 1, 1.7 or 2.4 times the match's
+  gravity. Firing it holds WA's gravity there until the next turn. Fired with
+  nothing chosen, it doesn't fire.
+- **Keys:** the digit keys are synced like the other keys.
+- **Differences:** a HUD line shows the keys and the choice, in place of PX's
+  team messages. PX also puts the gravity back after 10 s with the turn clock
+  stopped; that isn't ported.
+
 **Hang-Glider.** PX's `paratest` (`utility_hangglider_render`), on WA's
 parachute. Opened with the Hang-Glider, the parachute flies as PX's glider:
 gravity at 0.75, the wind along the wing's up side at 3x, a quarter of the
@@ -362,9 +380,7 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 
 These are deliberate, and each one is explained in `rules.lua`:
 
-- PX grants 3 Hot Air Balloons and 1 Wind Changer every turn. The balloons
-  are granted; the Wind Changer is not ported yet, so its slot (WA's
-  Surrender) is left to the scheme.
+- PX grants 3 Hot Air Balloons and 1 Wind Changer every turn; so does the pack.
 - There's no removal at turn end. The next turn start does the same job.
 - Every pooled slot is zeroed at each turn start, not only the previous
   worm's. PX left that to its own scheme; here any scheme works.
