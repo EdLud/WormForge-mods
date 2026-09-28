@@ -154,6 +154,7 @@ bazooka hold, as the Cow Launcher's.
 | bazooka | Double Bazooka | icon | a second shell from where the first explodes |
 | mine | Nuke Rocket | icon, the rocket, the hold, the launch sound | a nuke climbs out of the fusing rocket |
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
+| laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
@@ -308,6 +309,25 @@ because a thrown weapon's worm posture is picked by its sprite, and each
 missile's own copy is set to 0 in flight instead (`m.sprite`). Not ported: PX's particles, the five's smoke trail power
 of 20, and PX writing the five's changes into the weapon's own launch data,
 so that every later Chilli Bomb flies with them.
+
+**Swim Suit.** PX's `swimsuit_SCRIPT` (StepS), with `fastswim_SCRIPT` and
+`swim_suit_diving_s` (PyroMan), on WA's laser sight, which never switches on.
+Worn, a worm that falls into the water swims instead of drowning:
+- **Swimming:** it is held in WA's bungee state with no gravity and moved by
+  its own four keys, up to 2.5 pixels a frame times the swim speed, and glides
+  to a stop when they are let go. Left and right turn it unless Shift is held.
+  Enter does nothing while it swims.
+- **Leaving the water:** out of the water it flies on as from a jump. Too deep,
+  or knocked out of those states, the suit gives out and it sinks.
+- **Speed:** Fast Walk switches the swim speed between 2 and 6 for the turn.
+- **Missiles:** a missile in the water blows up on a swimming worm (100, 50).
+- **Looks:** the swim or float animation is drawn in its place, with a bubble
+  while it wears the suit.
+- **Engine pieces:** `worm.collision_mask` and `m.collision_mask`, and the
+  `bungee` and `sinking` states.
+- **Not ported:** PX's ghost-jet and battyswim interplay, the Ninja Rope
+  workaround (the Jump is on that slot), inverted controls, and the team
+  message.
 
 **Hang-Glider.** PX's `paratest` (`utility_hangglider_render`), on WA's
 parachute. Opened with the Hang-Glider, the parachute flies as PX's glider:

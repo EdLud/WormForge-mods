@@ -379,6 +379,13 @@ local PX_ART = {
     sounds = { "sounds/hang_glider/hangopen.wav", "sounds/hang_glider/hangclose.wav" },
     params = { gpu_prefix = "sprites/hang_glider/" },
   },
+  { -- Swim Suit: on the laser sight's slot; worn, the worm swims (below).
+    weapon = "laser_sight",
+    panel_icon = "sprites/swim_suit/ico_swimsuit.png",
+    sprites = { "sprites/swim_suit/swim", "sprites/swim_suit/float", "sprites/swim_suit/ring" },
+    sounds = { "sounds/swim_suit/putting_on_ssuit.wav" },
+    params = { gpu_prefix = "sprites/swim_suit/" },
+  },
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
     weapon = "jet_pack",
     panel_icon = "sprites/helicopter/heli_ico.png",
@@ -1856,6 +1863,273 @@ if wa.world.gravity and wa.world.wind then
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
       glider_frame(worm)
+    end
+  end)
+end
+
+-- --------------------------------------------------------------- Swim Suit
+--
+-- PX's swimsuit_SCRIPT (StepS; swim sprites by Team17) with fastswim_SCRIPT
+-- and swim_suit_diving_s (PyroMan), on WA's laser sight. Using it puts the
+-- suit on (or, out of the water, takes it off): WA's laser sight never
+-- switches on, as PX's FireFinal never calls super. A worm in the suit that
+-- falls into the water splashes and swims instead of drowning: held in WA's
+-- bungee state with no gravity, moved by its own four keys (up to 2.5 pixels
+-- a frame times the swim speed, gliding to a stop when they are let go),
+-- turned by left and right unless Shift is held. Enter does nothing while it
+-- swims. Out of the water it flies on as from a jump; too deep (180 pixels
+-- under the water, or the bottom of a cavern) or knocked out of those states,
+-- the suit gives out and it sinks. Fast Walk switches the swim speed between
+-- 2 and 6 for the turn. Missiles in the water can hit a swimming worm: they
+-- blow up on it (damage 100, blast 50).
+--
+-- Drawn in the worm's place: the swim or, when still, the float animation,
+-- and a bubble around the worm while it wears the suit.
+--
+-- Not ported: PX's ghost jet and battyswim interplay (other libraries), the
+-- Ninja Rope workaround after leaving the water (the Jump is on the rope's
+-- slot here), inverted controls, and the team message on putting it on.
+
+local SWIM_CAP = 2.5          -- pixels a frame, times the swim speed
+local SWIM_PUSH = 0.1
+local SWIM_DRAG = 1.05
+local SWIM_STILL = 0.05
+local SWIM_FLOAT_STEP = 0.0099
+local SWIM_DEPTH = 180        -- how far under the water the suit holds
+local SWIM_SUIT_MASK = 134342 -- 0x20CC6: the worm's 0x420CC6 without SWIM_WATER
+-- Bit 22 of a collision mask: WA's water acts on what has it (0x4FDE20), and
+-- sinks or drowns it. The suit takes it off; a missile sinking in the water
+-- has only it.
+local SWIM_WATER = 0x400000
+local SWIM_MISSILE_MASK = 0x40007C -- a missile in the water that hits worms
+local SWIM_SPLASH = 57        -- WA's sound
+local SWIM_BODY_DEPTH = 0x10000
+local SWIM_RING_DEPTH = 0x10001
+
+local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
+local swim_in_game = false    -- SwimInGame: someone has worn the suit
+local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, ring }
+
+local function swimmer_of(worm)
+  local s = swimmers[worm.id]
+  if not s then
+    s = { suit = false, plopready = false, plopped = false, floating = false,
+      plophase = 0, flophase = 0, fmult = 5, keys = {} }
+    swimmers[worm.id] = s
+  end
+  return s
+end
+
+local function swim_drop_art(worm, s)
+  if s.body then s.body:despawn(); s.body = nil end
+  if s.ring then s.ring:despawn(); s.ring = nil end
+  worm.body_visible = true
+end
+
+-- The suit comes off: gravity back, the water's bit back in its mask, and
+-- sinking if it gave out in the water.
+local function suit_off(worm, s, sink)
+  s.suit, s.plopready, s.plopped, s.floating = false, false, false, false
+  worm.gravity = FX
+  worm.collision_mask = worm.collision_mask | SWIM_WATER
+  swim_drop_art(worm, s)
+  if sink then
+    worm:set_state("sinking")
+  end
+end
+
+-- One step towards the cap on a held key, as PX's: while under it, a push;
+-- past it, back to it.
+local function swim_push(v, dir, cap)
+  if dir > 0 then
+    if v < cap then return v + SWIM_PUSH * swim_speed end
+    return cap
+  end
+  if v > -cap then return v - SWIM_PUSH * swim_speed end
+  return -cap
+end
+
+local function swim_frame(worm)
+  local s = swimmers[worm.id]
+  if not s or not s.suit then
+    return
+  end
+  local P = 0x10000
+  local water = wa.world.water()
+  local cap = SWIM_CAP * swim_speed
+  if worm.y >= water and s.plopready and worm.state ~= "teleporting" then
+    wa.sound.play(worm, SWIM_SPLASH)
+    s.plopready, s.plopped = false, true
+    worm.gravity = 0
+    worm.vx = math.min(worm.vx, trunc(cap * P))
+    worm.vy = math.min(worm.vy, trunc(cap * P))
+    worm:set_state("bungee")
+    s.plophase = 0
+  end
+  if s.plopped then
+    local vx, vy = math.min(worm.vx / P, cap), math.min(worm.vy / P, cap)
+    local held = s.keys
+    local still = math.abs(vx) <= SWIM_STILL * swim_speed and math.abs(vy) <= SWIM_STILL * swim_speed
+    if still and not (held.left or held.up or held.down or held.right) then
+      -- Floating: the float animation, back and forth.
+      s.floating = true
+      s.flophase = s.flophase + SWIM_FLOAT_STEP * s.fmult
+      if s.flophase >= 0.99 and s.fmult == 5 then
+        s.flophase, s.fmult = 0.99, -5
+      elseif s.flophase <= 0 and s.fmult == -5 then
+        s.flophase, s.fmult = 0, 5
+      end
+    elseif vx ~= 0 and vy ~= 0 then
+      -- Swimming: the stroke follows the faster of the two directions.
+      s.floating = false
+      if math.abs(vx) >= math.abs(vy) then
+        s.plophase = s.plophase + SWIM_FLOAT_STEP * vx * worm.facing
+      else
+        s.plophase = s.plophase - SWIM_FLOAT_STEP * vy
+      end
+    elseif vx ~= 0 then
+      s.floating = false
+      s.plophase = s.plophase + SWIM_FLOAT_STEP * vx
+    elseif vy ~= 0 then
+      s.floating = false
+      s.plophase = s.plophase - SWIM_FLOAT_STEP * vy
+    end
+    if s.plophase >= 1 or s.plophase <= -1 then
+      s.plophase = 0
+    end
+    local k = worm.keys
+    local up, down, left, right = k.up, k.down, k.left, k.right
+    if up == down then vy = vy / SWIM_DRAG end
+    if left == right then vx = vx / SWIM_DRAG end
+    if up then vy = swim_push(vy, -1, cap) end
+    if down then vy = swim_push(vy, 1, cap) end
+    local shift = wa.world.keys().sprint
+    if left then
+      if not shift then worm.facing = -1 end
+      vx = swim_push(vx, -1, cap)
+    end
+    if right then
+      if not shift then worm.facing = 1 end
+      vx = swim_push(vx, 1, cap)
+    end
+    s.keys = { up = up, down = down, left = left, right = right }
+    worm:clear_keys()
+    worm.vx, worm.vy = trunc(vx * P), trunc(vy * P)
+    -- Out of the water: on through the air, as from a jump.
+    if worm.y < water then
+      if worm.state ~= "teleporting" then
+        worm:set_state("sliding")
+      end
+      s.floating = false
+      worm.gravity = FX
+      s.plopready, s.plopped = true, false
+    end
+    -- Knocked out of its states, or too deep: the suit gives out.
+    local state = worm.state
+    local y, w = worm.y / P, water / P
+    local deep
+    if not wa.world.cavern() then
+      deep = y > w + SWIM_DEPTH
+    elseif w > 610 then
+      deep = y > w + SWIM_DEPTH
+    else
+      deep = y > 768
+    end
+    if (state ~= "bungee" and state ~= "parachuting" and state ~= "sliding" and state ~= "teleporting")
+        or deep then
+      suit_off(worm, s, true)
+      return
+    end
+  end
+  -- Between turns, a worm out of the water takes the suit off.
+  if not current_worm() and worm.y < water then
+    suit_off(worm, s, false)
+    return
+  end
+  -- RenderWorm: the bubble while it wears the suit; in the water, the swim
+  -- or float animation in the worm's place (its art faces left).
+  local function art(sheet)
+    return wa.actors.spawn({
+      sprite = sheet, x = worm.x, y = worm.y, gravity = false,
+      collide = false, owner = worm, on = function() end,
+    })
+  end
+  s.ring = s.ring or art("sprites/swim_suit/ring")
+  s.ring.x, s.ring.y, s.ring.vx, s.ring.vy = worm.x, worm.y, 0, 0
+  s.ring:gfx({ depth = SWIM_RING_DEPTH })
+  if s.plopped and worm.state ~= "teleporting" then
+    local sheet = s.floating and "sprites/swim_suit/float" or "sprites/swim_suit/swim"
+    if s.body and s.body_sheet ~= sheet then
+      s.body:despawn()
+      s.body = nil
+    end
+    s.body = s.body or art(sheet)
+    s.body_sheet = sheet
+    local phase = s.floating and s.flophase or s.plophase
+    s.body.x, s.body.y, s.body.vx, s.body.vy = worm.x, worm.y, 0, 0
+    s.body.facing = -worm.facing
+    s.body:frame(math.floor((phase % 1) * 20) % 20)
+    s.body:gfx({ depth = SWIM_BODY_DEPTH })
+    worm.body_visible = false
+  elseif s.body then
+    s.body:despawn()
+    s.body = nil
+    worm.body_visible = true
+  end
+end
+
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FRAME_FINISH then
+    swim_frame(worm)
+  elseif msg == wa.msg.JUMP then
+    -- M_ENTER: no jumping while it swims.
+    local s = swimmers[worm.id]
+    if s and s.plopped then
+      return "eat"
+    end
+  elseif msg == wa.msg.FIRE_WEAPON then
+    if worm.weapon == "fast_walk" then
+      swim_speed = swim_speed ~= 6 and 6 or 2
+    elseif worm.weapon == "laser_sight" then
+      -- FireFinal(Swim Suit), in place of WA's laser sight.
+      local s = swimmer_of(worm)
+      if not s.suit then
+        wa.sound.play(worm, "sounds/swim_suit/putting_on_ssuit.wav")
+        s.suit, s.plopready = true, true
+        swim_in_game = true
+        worm.collision_mask = SWIM_SUIT_MASK
+      elseif worm.y < wa.world.water() then
+        suit_off(worm, s, false)
+      end
+      worm:ammo("laser_sight", -1)
+      return "eat"
+    end
+  end
+end)
+
+-- fastswim: the swim speed is 2 again every turn.
+wa.on.turn_start(function()
+  swim_speed = 2
+end)
+
+-- A missile in the water hits worms too, once anyone has worn the suit.
+wa.on.missile_frame(function(m)
+  if swim_in_game and m.phase == "pre" and m.collision_mask == SWIM_WATER then
+    m.collision_mask = SWIM_MISSILE_MASK
+  end
+end)
+
+-- CMissile::Collide: such a missile blows up on a swimming worm, and is gone
+-- (sent below the water, where WA frees it).
+if wa.on.contact then
+  wa.on.contact(function(worm, other)
+    local s = swimmers[worm.id]
+    if s and s.plopped and other.kind == "missile" then
+      wa.actors.spawn({
+        sprite = false, x = other.x, y = other.y, gravity = false, collide = false,
+        owner = worm, explode = { damage = 100, id = 50, now = true },
+      })
+      other.y = wa.world.water() + 0x10000 * 4096
     end
   end)
 end

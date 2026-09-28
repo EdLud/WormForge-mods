@@ -198,7 +198,7 @@ local function new_match(opts)
   wa = {
     log = function(s) logs[#logs + 1] = s end,
     hud = { line = function() end },
-    msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26 },
+    msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24 },
     world = {
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
@@ -293,8 +293,13 @@ local function new_match(opts)
       worm_message = function(f)
         M.handlers = M.handlers or {}
         M.handlers[#M.handlers + 1] = f
+        -- "eat" from any handler swallows the message, as the engine's.
         M.message = function(w, msg)
-          for _, h in ipairs(M.handlers) do h(w, msg) end
+          local eat
+          for _, h in ipairs(M.handlers) do
+            if h(w, msg) == "eat" then eat = "eat" end
+          end
+          return eat
         end
       end,
       -- Every handler, as for worm_message: the balloon's and the rules'.
@@ -315,7 +320,13 @@ local function new_match(opts)
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
       draw = function(f) M.draw = f end,
-      contact = function(f) M.contact = f end,
+      contact = function(f)
+        M.contacts = M.contacts or {}
+        M.contacts[#M.contacts + 1] = f
+        M.contact = function(...)
+          for _, h in ipairs(M.contacts) do h(...) end
+        end
+      end,
     },
   }
   M.quads, M.sounds, M.trace_hit = {}, {}, nil
@@ -416,7 +427,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("45 slots replaced, each once", #replaced == 45 and not dupes, tostring(#replaced))
+  check("46 slots replaced, each once", #replaced == 46 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -1534,6 +1545,81 @@ do
     if M.spawned[i].sprite == "sprites/hang_glider/glider" then glider = true end
   end
   check("the Hot Air Balloon's parachute is left alone", not glider)
+end
+
+print("swim suit: PX's swimming on WA's laser sight")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  M.water = 500 * P
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * P * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100 * P, 400 * P, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = P, true, {}, 0x420CC6
+  function w:set_state(s) self.state = s end
+  function w:clear_keys() self.keys = {} end
+  local spent = 0
+  function w:ammo(slot, n) if slot == "laser_sight" then spent = spent + n end end
+  M.spawned, M.sounds = {}, {}
+  check("putting it on replaces WA's laser sight", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
+  check("the suit's mask: without the bit WA's water acts on", w.collision_mask == 134342)
+  check("its sound", M.sounds[#M.sounds] == "sounds/swim_suit/putting_on_ssuit.wav")
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("a bubble while worn", M.spawned[1] and M.spawned[1].sprite == "sprites/swim_suit/ring")
+  -- Into the water, falling fast: a splash, no gravity, the speed capped, a
+  -- bungee's state.
+  w.state, w.y, w.vx, w.vy = "sliding", 510 * P, 9 * P, 12 * P
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("splash, no gravity, swimming", M.sounds[#M.sounds] == 57 and w.gravity == 0 and w.state == "bungee")
+  check("the speed capped at 5 (2.5 times the swim speed 2), then eased", w.vx < 5 * P and w.vy < 5 * P
+    and w.vx > 4 * P, w.vx .. " " .. w.vy)
+  check("the swim animation in its place, facing left art mirrored", w.body_visible == false
+    and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim" and M.spawned[#M.spawned].facing == -1)
+  -- Swimming left: a push, turned, and the key used up.
+  w.vx, w.vy, w.keys = 0, 0, { left = true }
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("left: 0.2 a frame that way, facing it, the key taken", w.vx == -13107 and w.facing == -1
+    and not w.keys.left, tostring(w.vx))
+  check("no jumping while it swims", M.message(w, wa.msg.JUMP) == "eat")
+  -- Still, no key: the float animation.
+  w.vx, w.vy = 0, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("still: floating", M.spawned[#M.spawned].sprite == "sprites/swim_suit/float")
+  -- Out of the water: on as from a jump, gravity back.
+  w.y, w.vy = 490 * P, -2 * P
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("out: airborne, gravity back, the suit still on", w.state == "sliding" and w.gravity == P
+    and w.collision_mask == 134342)
+  -- Back in, then too deep: it gives out and the worm sinks.
+  w.y = 510 * P
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.y = 700 * P
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("too deep: sinking, the water's bit back in its mask, drawn as itself", w.state == "sinking"
+    and w.collision_mask == 134342 | 0x400000 and w.body_visible == true)
+  -- Fast Walk: swim speed 6 for the turn.
+  w.weapon = "fast_walk"
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "sliding", 400 * P, 0, 0
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.y, w.vx, w.vy = 510 * P, 20 * P, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("Fast Walk: capped at 15", w.vx > 14 * P and w.vx <= 15 * P, tostring(w.vx / P))
+  -- A missile in the water hits worms, and blows up on a swimmer.
+  local m = { id = 1, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 0, vy = 0, collision_mask = 0x400000 }
+  M.missile(m)
+  check("a missile in the water also hits worms", m.collision_mask == 0x40007C)
+  local n = #M.spawned
+  local missile = { kind = "missile", x = 120 * P, y = 520 * P }
+  M.contact(w, missile, { vx = 0, vy = 0, flags = 0 })
+  local boom = M.spawned[n + 1]
+  check("it blows up on the swimmer (100, 50) and is gone", boom and boom.explode and boom.explode.damage == 100
+    and boom.explode.id == 50 and missile.y > M.water)
+  M.turn_start({ worm = w, active = w })
 end
 
 print("px missile sprites: WeapSprite at run time")
