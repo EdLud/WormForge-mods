@@ -45,11 +45,23 @@ Crate Strike and Lightning Strike.
 
 ## Ported weapons
 
-Each starts from the stock WA table entry (`copy_from = "<slot>"`) with a
-named `patch` for the fields PX's scheme changed — the same form the web
-weapon editor downloads. The patches were cut once from
-`HL - 0rang3 - 1.1.pxs` (via `tools/px_scheme_weps.py` then
-`tools/tmp/embed_weps.py`); the pack no longer ships `.wep` files.
+Most start from the stock WA table entry (`copy_from = "<slot>"`) with a
+named `patch` for the fields PX's scheme changed. Lightning Strike and
+Electric Grenade use the scheme's full `.wep` records, extracted with
+`tools/px_scheme_weps.py` from `HL - 0rang3 - 1.1.pxs`.
+
+### Electrical weapons
+
+| Slot | Weapon | Behavior |
+|---|---|---|
+| napalm_strike | Lightning Strike | Cursor-aimed 30° beam, 150-frame warning, 16-frame strike, 60-frame tail; heals live worms, revives linked graves at 10 HP, arms mines, and hits crates/oil drums. |
+| earthquake | Electric Grenade | WA grenade flight and explosion followed by PX's seeking, terrain-following, chaining tazer arc; delayed 24 damage to worms and 12 to objects, mine arming, and a temporary tazed pose. |
+
+The beams, glows, and explosion use the GPU atlas. Gameplay runs in simulation
+callbacks; drawing only varies presentation. A grave records its original worm
+ID when WA creates it. On revival, Highlander restores the dead worm's saved
+hand while the active worm keeps the weapons it gained at death. PX's sentry
+ownership transfer is deferred.
 ### WA's own weapons
 
 | Slot | Weapon | Notes |
@@ -432,7 +444,9 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (39)
+- all 51 slot claims, including the two full scheme records
+- strike timing, grave identity, revival and restored Highlander hand
+- tazer seeking, delayed zap, stun, mine fuse, object damage and terrain trace
 - the Fire Jump's timeline, counted from the punch, not the fire key
 - the run-time holds: placed from the aim, mirrored, grown in, and dropped;
   animated, and with no hand
