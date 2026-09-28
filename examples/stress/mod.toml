@@ -1,0 +1,13 @@
+id = "example.stress"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+kind = "gameplay"
+entry = "stress.lua"
+
+# Fires two batches of projectiles in the first turn, stock then custom, and
+# turns on the FPS counter and profiler. Nuclear Test is claimed only to carry
+# the pack's sheets into the GPU atlas; the weapon stays WA's.
+[weapons]
+register = []
+replace = ["nuclear_test"]

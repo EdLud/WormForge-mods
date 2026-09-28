@@ -45,11 +45,23 @@ Crate Strike and Lightning Strike.
 
 ## Ported weapons
 
-Each starts from the stock WA table entry (`copy_from = "<slot>"`) with a
-named `patch` for the fields PX's scheme changed — the same form the web
-weapon editor downloads. The patches were cut once from
-`HL - 0rang3 - 1.1.pxs` (via `tools/px_scheme_weps.py` then
-`tools/tmp/embed_weps.py`); the pack no longer ships `.wep` files.
+Most start from the stock WA table entry (`copy_from = "<slot>"`) with a
+named `patch` for the fields PX's scheme changed. Lightning Strike and
+Electric Grenade use the scheme's full `.wep` records, extracted with
+`tools/px_scheme_weps.py` from `HL - 0rang3 - 1.1.pxs`.
+
+### Electrical weapons
+
+| Slot | Weapon | Behavior |
+|---|---|---|
+| napalm_strike | Lightning Strike | Cursor-aimed 30° beam, 150-frame warning, 16-frame strike, 60-frame tail; heals live worms, revives linked graves at 10 HP, arms mines, and hits crates/oil drums. |
+| earthquake | Electric Grenade | WA grenade flight and explosion followed by PX's seeking, terrain-following, chaining tazer arc; delayed 24 damage to worms and 12 to objects, mine arming, and a temporary tazed pose. |
+
+The beams, glows, and explosion use the GPU atlas. Gameplay runs in simulation
+callbacks; drawing only varies presentation. A grave records its original worm
+ID when WA creates it. On revival, Highlander restores the dead worm's saved
+hand while the active worm keeps the weapons it gained at death. PX's sentry
+ownership transfer is deferred.
 ### WA's own weapons
 
 | Slot | Weapon | Notes |
@@ -153,6 +165,7 @@ bazooka hold, as the Cow Launcher's.
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
+| uzi | Laser Gun | icon, the worm aiming and taking it out, its beam and glow, three sounds | PX's 5 s beam in place of the uzi's bullet |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
@@ -329,6 +342,20 @@ Worn, a worm that falls into the water swims instead of drowning:
   workaround (the Jump is on that slot), inverted controls, and the team
   message.
 
+**Laser Gun.** PX's `lasergun` (`CLaserRay`), on the Uzi's slot. Its record
+is an uzi firing one bullet; no bullet leaves, and a beam burns from the worm
+along its aim for 5 s, the worm held firing (aim live) for as long:
+- **Every fourth frame** it traces to the first land, up to 2048 px, cutting
+  4 px holes there, along the cut while the aim holds still.
+- **Damage:** everything within 5 px of it takes fire damage: a worm 2, then
+  1 once it has taken 10, and no more than 45 from one beam; an oil drum 4, a
+  crate 1.
+- **Looks:** a red strip pulsing from full width to half, glows at the muzzle
+  and the hit, red sparks from the muzzle, glows rising from the cut, yellow
+  sparks on what it touches.
+- **Differences:** a mine it touches is armed on its fuse once, rather than
+  taking PX's gun damage; the loop sound is replayed every 51 frames.
+
 **Wind Changer and Gravity Control.** PX's `wind_changer_script` (ravander,
 improved by 0rang3) and `gravity_control_script` (DabbyB, edited by 0rang3).
 Both records are one of WA's turn utilities with an index WA doesn't use, so
@@ -432,7 +459,9 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- the ported slots, each from its own scheme record, with PX's art (39)
+- all 51 slot claims, including the two full scheme records
+- strike timing, grave identity, revival and restored Highlander hand
+- tazer seeking, delayed zap, stun, mine fuse, object damage and terrain trace
 - the Fire Jump's timeline, counted from the punch, not the fire key
 - the run-time holds: placed from the aim, mirrored, grown in, and dropped;
   animated, and with no hand

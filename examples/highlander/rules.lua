@@ -58,7 +58,12 @@ local PX_HANDS = {
 local double_bazooka_explode
 local nuke_rocket_explode
 local chilli_bomb_explode
-local jump_fire
+-- Weapons' on_fire, filled in by their sections below (jump, laser); one
+-- table, the file being at Lua's 200 locals for one chunk.
+local fires = {}
+local lightning_click
+local electric_grenade_explode
+local restore_lightning_inventory
 -- Ported weapons. Each takes its scheme record, cut from the .pxs with
 -- tools/px_scheme_weps.py: how it fires, and its PX name. Anything else in an
 -- entry goes to wa.weapons.replace as it is.
@@ -86,6 +91,58 @@ local PORTED = {
 -- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
 -- its sprite builder (p_sprite_builder), so does the pack (PX_HOLDS below).
 local PX_ART = {
+  { -- Laser Gun: a 5 s beam in place of the uzi's bullet (its section below).
+    weapon = "uzi",
+    wep = "weps/uzi.wep",
+    panel_icon = "sprites/laser_gun/ico_lasergun.png",
+    worm_sprites = {
+      weaponlnk = "sprites/laser_gun/aim", weaponlnku = "sprites/laser_gun/aimu",
+      weaponlnkd = "sprites/laser_gun/aimd",
+      wthrow = "sprites/laser_gun/draw", wthrowu = "sprites/laser_gun/drawu",
+      wthrowd = "sprites/laser_gun/drawd",
+    },
+    sprites = { "sprites/laser_gun/laser_beam.png", "sprites/laser_gun/laser_glow.png" },
+    sounds = {
+      "sounds/laser_gun/laser_start.wav", "sounds/laser_gun/laser_loop.wav",
+      "sounds/laser_gun/laser_end.wav",
+    },
+    params = { gpu_prefix = "sprites/laser_gun/" },
+    on_fire = function(fire) fires.laser(fire) end,
+  },
+  { -- Electric Grenade: stock flight and explosion, then PX's chaining arc.
+    -- PX's record leaves the flight sprite 0 and PX draws the grenade at run
+    -- time (electric_grenade_anim, PX_WEAP_SPRITES below). A grenade-type
+    -- slot picks the worm's throw sheet from its flight sprite, and 0 has
+    -- none, so the worm vanished: here the stock grenade, hidden in flight,
+    -- as for the Sticky Bomb. The arc's sheets come with the Lightning
+    -- Strike's (its entry below), this prefix being the hold's.
+    weapon = "earthquake",
+    wep = "weps/earthquake.wep",
+    panel_icon = "sprites/electric_grenade/icon.png",
+    sprite = "grenade",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/electric_grenade.png", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    sounds = { "sounds/lightning/tazer_loop.wav" },
+    params = { gpu_prefix = "sprites/px_hold/" },
+    on_explode = function(ev) electric_grenade_explode(ev) end,
+  },
+  { -- Lightning Strike: the PX strike is an effect, not WA's napalm plane.
+    weapon = "napalm_strike",
+    wep = "weps/napalm_strike.wep",
+    panel_icon = "sprites/lightning/icon.png",
+    -- With the Electric Grenade's arc and zap sheets: both weapons' effects
+    -- are GPU sheets under this prefix.
+    sprites = {
+      "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
+      "sprites/electric_grenade/explosion", "sprites/electric_grenade/tazed1",
+      "sprites/electric_grenade/tazed2",
+    },
+    sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav" },
+    params = { gpu_prefix = "sprites/" },
+    -- Click-only dispatch keeps the strike's cursor and turn handling.
+    on_select = { cursor = true },
+    on_click = function(ev) lightning_click(ev) end,
+  },
   { -- Double Bazooka: a second shell carries on from where the first
     -- explodes (its section below). Held as a plain bazooka: the pack's
     -- record has launcher 3 (wbaz) at +0x34 where the scheme's has 7, the
@@ -393,7 +450,7 @@ local PX_ART = {
       weaponlnk = "sprites/jump/aim", weaponlnku = "sprites/jump/aimu",
       weaponlnkd = "sprites/jump/aimd",
     },
-    on_fire = function(fire) jump_fire(fire) end,
+    on_fire = function(fire) fires.jump(fire) end,
   },
   { -- Wind Changer: on the surrender's slot; sets the wind (below).
     weapon = "surrender",
@@ -1391,8 +1448,8 @@ local WEP_PATCH = {
 for _, list in ipairs({ PORTED, PX_ART }) do
   for _, w in ipairs(list) do
     -- copy_from + name + named patch (stock base); was weps/<slot>.wep
-    local spec = { copy_from = w.weapon, name = WEP_NAME[w.weapon] }
-    if WEP_PATCH[w.weapon] then
+    local spec = w.wep and { wep = w.wep } or { copy_from = w.weapon, name = WEP_NAME[w.weapon] }
+    if not w.wep and WEP_PATCH[w.weapon] then
       spec.patch = WEP_PATCH[w.weapon]
     end
     for key, value in pairs(w) do
@@ -1528,6 +1585,12 @@ end
 
 -- Slot -> the weapon's CWormAnimParams, as its PX script states them.
 local PX_HOLDS = {
+  earthquake = { -- Electric Grenade (electric_grenade_anim)
+    thrown = true,
+    sheet = "sprites/px_hold/electric_grenade.png", hand_type = 1,
+    hand_radius = 15, hand_scale = 0.8,
+    weap_rotation = 0.5, weap_radius = 9,
+  },
   grenade = { -- Sticky Bomb (sb_script)
     -- Thrown: once fired it has left the worm's hands, and WA puts nothing
     -- away (as for its own grenades), so neither does the rule.
@@ -1923,6 +1986,11 @@ end
 -- matches and nothing is drawn. With `hide`, WA draws nothing for the
 -- missile (m.sprite = 0), as PX's sprite 0 does; its record keeps its
 -- sprite, which a thrown weapon's worm posture is picked by.
+--
+-- How it turns follows the record's animation type (the entry's +0x64,
+-- PX's launchdata.anim.type): 2, WAT_TrackMovement, faces its flight
+-- (WeapSprite type 2, as a bazooka shell); 1, WAT_Rotation, spins with its
+-- speed (type 3, as a grenade), which `spin` asks for.
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = {
@@ -1931,11 +1999,19 @@ local PX_WEAP_SPRITES = {
   },
   super_banana = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
     sheet = "sprites/px_hold/chilli_bomb", frames = 1,
+    spin = true, -- its record's WAT_Rotation
     -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
     hide = true,
   },
   homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
     sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
+  },
+  earthquake = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
+    sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
+    spin = true, -- its record's WAT_Rotation
+    -- PX's record has sprite 0; the pack's stock grenade is only for the
+    -- worm's throw sheet.
+    hide = true,
   },
 }
 
@@ -1981,7 +2057,7 @@ wa.on.missile_frame(function(m)
     if not owner then
       return
     end
-    f = { phase = 0 }
+    f = { phase = 0, rot = 0 }
     f.actor = wa.actors.spawn({
       sprite = p.sheet, x = m.x, y = m.y, gravity = false, collide = false,
       owner = owner, on = follow_missile(m.id),
@@ -1996,8 +2072,18 @@ wa.on.missile_frame(function(m)
     f.phase = next_phase(f.phase, p.anim_speed)
     a:frame(frame_of(f.phase, p.frames))
   end
-  -- WeapSprite::CalculateAngle, rotation 0.
-  local rot = -math.atan(m.vx, m.vy) - math.pi
+  local rot
+  if p.spin then
+    -- WeapSprite type 3: 0.5 * (vx * 0.15 + |vy| * 0.01, towards vx) a
+    -- frame, in pixels a frame and radians.
+    local vx, vy = m.vx / 0x10000, m.vy / 0x10000
+    local sign = vx > 0 and 1 or vx < 0 and -1 or 0
+    f.rot = f.rot + 0.5 * (vx * 0.15 + math.abs(vy * 0.01) * sign)
+    rot = f.rot
+  else
+    -- WeapSprite::CalculateAngle, rotation 0.
+    rot = -math.atan(m.vx, m.vy) - math.pi
+  end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)
 
@@ -3222,11 +3308,273 @@ end
 -- after its own sounds, so a worm's is 54 on per team (PX's PlaySoundBank(150)).
 local JUMP_SPEECH, SPEECH_LINES = 150, 54
 
-jump_fire = function(fire)
+fires.jump = function(fire)
   local worm = fire.worm
   worm:set_state("sliding")
   worm.vx, worm.vy = fire.vx, fire.vy
   wa.sound.play(worm, JUMP_SPEECH + SPEECH_LINES * (worm.team - 1))
+end
+
+-- ------------------------------------------------------------- Laser Gun
+--
+-- PX's lasergun (CLaserRay). The record is an uzi firing one bullet; PX
+-- fires none (FireFinal without super), and each frame sets the worm's shot
+-- counters to 0 of 1, so WA keeps the worm in its repeat-fire state, aim
+-- live, while a beam burns for 5 s (250 frames) from the worm along its aim.
+-- Every fourth frame the beam traces: to the first land, 2048 px at most,
+-- cutting 4 px holes there (along the cut when the aim held still); and
+-- every worm, mine, crate and oil drum within 5 px of it takes fire damage:
+-- a worm 2, then 1 once it has taken 10, and no more after 45 from this beam;
+-- an oil drum 4, a crate 1. Drawn: a red strip, its width pulsing from 1.0
+-- to 0.5, and glows at the muzzle and where it hits; red sparks from the
+-- muzzle, glows rising from the cut, yellow sparks where it touches things.
+--
+-- Here the engine hands each of WA's shots to on_fire and skips WA's bullet
+-- (a gun slot with an on_fire), and the pack holds worm.shots_fired and
+-- worm.shots_to_fire as PX does.
+--
+-- Differences: a mine the beam touches is armed on its fuse, once, rather
+-- than sent PX's gun damage (object:hit takes crates and oil drums); the
+-- beam's loop sound is played again every 51 frames, not looped.
+
+-- Its own block: the file is at Lua's 200 locals for one chunk.
+do
+  local LASER_FX = 0x10000
+  local LASER_LIFE = 250
+  local LASER_REACH = 2048
+  local LASER_LOOP_FRAMES = 51 -- laser_loop.wav is 1.02 s
+  local LASER_GLOW = "sprites/laser_gun/laser_glow.png"
+  local LASER_BEAM = "sprites/laser_gun/laser_beam.png"
+  local LASER_DEPTH = 0x10000
+  -- States a worm is not firing in: the beam stops (PX keeps it only in
+  -- repeat fire, firing, aiming and fired).
+  local LASER_STOPS = { standing = true, sliding = true, jetpacking = true, parachuting = true,
+    bungee = true, sinking = true, teleporting = true, drilling = true, punching = true }
+  local lasers = {} -- worm id -> the beam
+
+  local function laser_rand(r)
+    r.seed = (r.seed * 1103515245 + 12345) % 0x80000000
+    return r.seed / 0x80000000
+  end
+
+  local function laser_between(r, lo, hi)
+    return lo + (hi - lo) * laser_rand(r)
+  end
+
+  -- A PX particle: moved, pulled and slowed each game frame, drawn additive.
+  local function laser_particle(r, p)
+    p.age, p.vx, p.vy = 0, p.vx or 0, p.vy or 0
+    r.fx[#r.fx + 1] = p
+  end
+
+  -- UpdatePosDir: the beam's direction from the worm's aim (0 down, 1 up)
+  -- and side; it starts at the worm and draws from 24 px out.
+  local function laser_aim(r, w)
+    local ang = (1 - w.aim) * math.pi
+    if w.facing < 0 then ang = 2 * math.pi - ang end
+    r.dx, r.dy = math.sin(ang), -math.cos(ang)
+    r.x = w.x + math.floor((2 * w.facing * r.dy - r.dx) * LASER_FX)
+    r.y = w.y + math.floor((-2 - r.dy) * LASER_FX)
+    r.gx = r.x + math.floor(24 * r.dx * LASER_FX)
+    r.gy = r.y + math.floor(24 * r.dy * LASER_FX)
+  end
+
+  local function laser_sparks(r, n, v0, v1, s0, s1)
+    local base = (1 - r.aim) * math.pi
+    if r.facing < 0 then base = 2 * math.pi - base end
+    for _ = 1, n do
+      local ang = base + laser_between(r, -0.8, 0.8)
+      local v = laser_between(r, v0, v1)
+      local s = laser_between(r, s0, s1)
+      laser_particle(r, { x = r.gx, y = r.gy, vx = v * math.sin(ang) * LASER_FX,
+        vy = -v * math.cos(ang) * LASER_FX, life = 30, drag = 0.3, grav = 0.8,
+        s0 = s, s1 = 0.01, c0 = { 255, 0, 0 }, c1 = { 80, 0, 0 } })
+    end
+  end
+
+  local function laser_objects()
+    local out = {}
+    for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
+      if group then
+        for _, obj in ipairs(group.all()) do out[#out + 1] = obj end
+      end
+    end
+    return out
+  end
+
+  local LASER_RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9 }
+
+  -- PerformTrace with damage: the cut, then everything touching the beam.
+  local function laser_trace(r, w)
+    local x1 = r.x + math.floor(LASER_REACH * r.dx * LASER_FX)
+    local y1 = r.y + math.floor(LASER_REACH * r.dy * LASER_FX)
+    local land = wa.land.trace(r.x, r.y, x1, y1)
+    local hx, hy = land and land.x or x1, land and land.y or y1
+    if land then
+      if r.hit and r.dx == r.last_dx and r.dy == r.last_dy then
+        -- The aim held: a clean cut from the last hit to this one.
+        local steps = math.max(1, math.floor(math.sqrt(((hx - r.hx) / LASER_FX) ^ 2 + ((hy - r.hy) / LASER_FX) ^ 2) / 2))
+        for i = 0, steps do
+          wa.land.dig({ x = r.hx + (hx - r.hx) * i // steps, y = r.hy + (hy - r.hy) * i // steps, radius = 4 })
+        end
+      else
+        wa.land.dig({ x = hx, y = hy, radius = 4 })
+      end
+      local s = laser_between(r, 0.6, 0.9)
+      laser_particle(r, { x = hx, y = hy, life = 60, drag = 0.2, grav = -0.4, jitter = 0.6,
+        s0 = s, s1 = 0.01, c0 = { 255, 0, 0 }, c1 = { 255, 0, 0 } })
+      laser_particle(r, { x = hx, y = hy, life = 80, drag = 0, grav = 0,
+        s0 = 0.6, s1 = 0.1, c0 = { 200, 0, 0 }, c1 = { 0, 0, 0 } })
+    end
+    r.hx, r.hy, r.hit = hx, hy, land ~= nil
+    local lx, ly = (hx - r.x) / LASER_FX, (hy - r.y) / LASER_FX
+    r.draw_beam = lx * lx + ly * ly > 24 * 24
+    local length = math.sqrt(lx * lx + ly * ly)
+    for _, obj in ipairs(laser_objects()) do
+      local ox, oy = (obj.x - r.x) / LASER_FX, (obj.y - r.y) / LASER_FX
+      local along = ox * r.dx + oy * r.dy
+      local across = math.abs(ox * r.dy - oy * r.dx)
+      if along >= 0 and along <= length and across <= 5 + (LASER_RADIUS[obj.kind] or 6)
+          and not (obj.kind == "worm" and obj.id == w.id) then
+        local key = obj.kind .. ":" .. obj.id
+        if obj.kind == "worm" then
+          if obj.hp > 0 then
+            local taken = r.taken[key] or 0
+            local amount = taken >= 45 and 0 or taken >= 10 and 1 or 2
+            if amount > 0 then obj:hurt(amount) end
+            r.taken[key] = taken + amount
+          end
+        elseif obj.kind == "oil" or obj.kind == "crate" then
+          obj:hit(obj.kind == "oil" and 4 or 1, math.floor(r.dx * LASER_FX), math.floor(r.dy * LASER_FX))
+        elseif obj.kind == "mine" and not r.armed[key] then
+          r.armed[key] = true
+          obj:arm(obj.fuse < 0 and wa.random(1000, 5000) or obj.fuse)
+        end
+        -- FX_HitObject: a yellow flash and two sparks.
+        local px, py = obj.x - math.floor(3 * r.dx * LASER_FX), obj.y - math.floor(3 * r.dy * LASER_FX)
+        local tone = math.floor(laser_between(r, 0, 50))
+        laser_particle(r, { x = px, y = py, life = 10, drag = 0, grav = 0,
+          s0 = laser_between(r, 0.4, 0.8), s1 = 0.01, c0 = { 210, 210 - tone, 0 }, c1 = { 210, 50 - tone, 0 } })
+        for _ = 1, 2 do
+          local a, v = laser_between(r, 0, 2 * math.pi), laser_between(r, 0.5, 1.8)
+          laser_particle(r, { x = px, y = py, vx = v * math.cos(a) * LASER_FX, vy = v * math.sin(a) * LASER_FX,
+            life = 30, drag = 0.05, grav = 1, s0 = laser_between(r, 0.2, 0.4), s1 = 0.01,
+            c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } })
+        end
+      end
+    end
+  end
+
+  local function laser_particles(r)
+    for i = #r.fx, 1, -1 do
+      local p = r.fx[i]
+      p.age = p.age + 1
+      if p.age >= p.life then
+        table.remove(r.fx, i)
+      else
+        if p.jitter then
+          p.vx = p.vx + math.floor(laser_between(r, -p.jitter, p.jitter) * LASER_FX)
+        end
+        p.vy = p.vy + math.floor(p.grav * LASER_FX / 10)
+        p.vx, p.vy = math.floor(p.vx * (1 - p.drag)), math.floor(p.vy * (1 - p.drag))
+        p.x, p.y = p.x + p.vx, p.y + p.vy
+      end
+    end
+  end
+
+  local function laser_stop(r, w)
+    r.dead = true
+    if w then
+      -- WA ends the repeat fire, as when its shots run out.
+      w.shots_fired = w.shots_to_fire
+      wa.sound.play(w, "sounds/laser_gun/laser_end.wav")
+    end
+  end
+
+  fires.laser = function(fire)
+    local w = fire.worm
+    -- Each of WA's shots comes here; one beam per worm, as PX's LaserRayObj.
+    if lasers[w.id] then return end
+    local r = { worm_id = w.id, life = LASER_LIFE, counter = 0, size = 1.0, first = true,
+      taken = {}, armed = {}, fx = {}, seed = (w.x // LASER_FX * 7919 + w.y // LASER_FX) % 0x80000000 }
+    r.aim, r.facing = w.aim, w.facing
+    laser_aim(r, w)
+    r.hx, r.hy, r.last_dx, r.last_dy = r.x, r.y, r.dx, r.dy
+    lasers[w.id] = r
+    wa.sound.play(w, "sounds/laser_gun/laser_start.wav")
+    wa.sound.play(w, "sounds/laser_gun/laser_loop.wav")
+    wa.actors.spawn({
+      sprite = false, x = w.x, y = w.y, gravity = false, collide = false, owner = w,
+      on = function(a)
+        r.life = r.life - 1
+        laser_particles(r)
+        if r.dead then
+          if r.life <= -10 and #r.fx == 0 then
+            lasers[r.worm_id] = nil
+            a:despawn()
+          end
+          return
+        end
+        if r.life <= 0 or w.hp <= 0 or not w.turn or w.weapon ~= "uzi" or LASER_STOPS[w.state or ""] then
+          laser_stop(r, w.hp > 0 and w or nil)
+          return
+        end
+        w.shots_fired, w.shots_to_fire = 0, 1
+        r.size = r.size - 0.07
+        if r.size < 0.5 then r.size = 1.0 end
+        r.aim, r.facing = w.aim, w.facing
+        laser_aim(r, w)
+        if r.first then
+          r.first = false
+          laser_sparks(r, 8, 5, 9, 0.4, 0.7) -- FX_InitialBurst
+        end
+        if (LASER_LIFE - r.life) % LASER_LOOP_FRAMES == 0 then
+          wa.sound.play(w, "sounds/laser_gun/laser_loop.wav")
+        end
+        if r.counter <= 0 then
+          r.counter = 3
+          laser_trace(r, w)
+          laser_sparks(r, 1, 2, 5, 0.2, 0.5) -- FX_MuzzleSparks
+        else
+          r.counter = r.counter - 1
+        end
+        r.last_dx, r.last_dy = r.dx, r.dy
+      end,
+    })
+  end
+
+  if wa.on.draw and wa.draw.ribbon then
+    local function red(a, rgb)
+      return (math.floor(math.max(0, math.min(255, a))) << 24)
+        | (math.floor(rgb[1]) << 16) | (math.floor(rgb[2]) << 8) | math.floor(rgb[3])
+    end
+    local function laser_glow(x, y, px, color)
+      local h = px * LASER_FX / 2
+      wa.draw.quad({ sprite = LASER_GLOW, blend = "add", color = color, depth = LASER_DEPTH,
+        points = { { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h } } })
+    end
+    wa.on.draw(function()
+      for _, r in pairs(lasers) do
+        for _, p in ipairs(r.fx) do
+          local t = p.age / p.life
+          local c = { p.c0[1] + (p.c1[1] - p.c0[1]) * t, p.c0[2] + (p.c1[2] - p.c0[2]) * t,
+            p.c0[3] + (p.c1[3] - p.c0[3]) * t }
+          laser_glow(p.x, p.y, 32 * (p.s0 + (p.s1 - p.s0) * t), red(255, c))
+        end
+        if not r.dead then
+          local c = red(255, { 255, 0, 0 })
+          laser_glow(r.gx, r.gy, 32 * 0.5 * r.size, c)
+          if r.draw_beam then
+            wa.draw.ribbon({ sprite = LASER_BEAM, blend = "add", depth = LASER_DEPTH, points = {
+              { x = r.gx, y = r.gy, width = 2 * 8 * r.size, u = 0, color = c },
+              { x = r.hx, y = r.hy, width = 2 * 8 * r.size, u = 1, color = c },
+            } })
+          end
+          if r.hit then laser_glow(r.hx, r.hy, 32 * 0.75 * r.size, c) end
+        end
+      end
+    end)
+  end
 end
 
 -- ----------------------------------------------------------------- pools
@@ -3330,6 +3678,20 @@ end
 -- and is materialized from one worm's inventory at turn start.
 local arsenal = wa.inventory.create({ id = "arsenal", slots = POOLED })
 local dealt = {}
+local dead_hands = {}
+local revived_by_lightning = {}
+
+-- The current Highlander port moves a dead worm's hand to the active worm.
+-- A grave revived by Lightning also gets that original hand back. This is a
+-- copy: the active worm keeps the weapons it already stole.
+restore_lightning_inventory = function(worm)
+  local hand = dead_hands[worm.id]
+  if not hand then return end
+  arsenal:clear(worm)
+  for _, weapon in ipairs(hand) do arsenal:add(worm, weapon, 1) end
+  dealt[worm.id] = true
+  dead_hands[worm.id] = nil
+end
 
 local function describe(list)
   if not list or #list == 0 then
@@ -3377,7 +3739,9 @@ end
 local function on_death(event)
   local victim = event.victim
   local active = event.active
+  revived_by_lightning[victim.id] = nil
   local mine = arsenal:list(victim)
+  dead_hands[victim.id] = mine
 
   if active and active.id == victim.id then
     -- Died on its own turn: nothing to hand on, just take its weapons away.
@@ -3412,3 +3776,501 @@ wa.on.turn_start(function(event)
 end)
 
 wa.on.death(on_death)
+
+-- --------------------------------------------------------- electrical weapons
+-- PX's lightningstrike.txt and tazer.txt share these target classes and beam
+-- textures. Only gameplay advances in the actor brains. Drawing below may run
+-- at any frame rate and consumes only wa.draw.random(), never WA's sim RNG.
+local EP = 0x10000
+local ELECTRIC_DEPTH = 0x00190000 -- behind WA terrain, in the GPU occlusion mask
+local BEAM = "sprites/lightning/beam.png"
+local GLOW = "sprites/lightning/glow.png"
+local CLOUD = "sprites/lightning/cloud.png" -- a puff made for the pack, in place of WA's cloudl
+local CLOUD_DEPTH = ELECTRIC_DEPTH - 0x1000  -- in front of the beam's top, behind the terrain
+local GRENADE_BURST = "sprites/electric_grenade/explosion"
+local strikes, arcs, tazed = {}, {}, {}
+
+local function effect_actor(x, y, owner, frame)
+  return wa.actors.spawn({
+    sprite = GLOW, visible = false, gravity = false, collide = false,
+    owner = owner, x = x, y = y, on = frame,
+  })
+end
+
+local function electrical_targets(graves)
+  local out = {}
+  for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
+    for _, obj in ipairs(group.all()) do out[#out + 1] = obj end
+  end
+  if graves and wa.graves then
+    for _, obj in ipairs(wa.graves.all()) do out[#out + 1] = obj end
+  end
+  return out
+end
+
+local function target_radius(obj)
+  if obj.kind == "worm" then return 6 end
+  if obj.kind == "grave" then return 8 end
+  if obj.kind == "mine" then return 5 end
+  return 9
+end
+
+-- A ray against terrain and the objects PX's collision mask names. Projection
+-- is done in world pixels; the chosen endpoint is converted back to 16.16.
+-- Equal-distance objects retain the engine's entity traversal order.
+local function electrical_trace(x0, y0, dx, dy)
+  local far = 10000
+  if wa.world.electrical_trace then
+    return wa.world.electrical_trace(math.floor(x0), math.floor(y0),
+      math.floor(x0 + dx * far * EP), math.floor(y0 + dy * far * EP))
+  end
+  local land = wa.land.trace(math.floor(x0), math.floor(y0),
+    math.floor(x0 + dx * far * EP), math.floor(y0 + dy * far * EP))
+  local best = land and math.sqrt(((land.x - x0) / EP) ^ 2 + ((land.y - y0) / EP) ^ 2) or far
+  local hit = land and { x = land.x, y = land.y, obj = nil } or nil
+  for _, obj in ipairs(electrical_targets(true)) do
+    local ox, oy = (obj.x - x0) / EP, (obj.y - y0) / EP
+    local along = ox * dx + oy * dy
+    local across = math.abs(ox * dy - oy * dx)
+    if along > 0 and along < best and across <= target_radius(obj) then
+      best = along
+      hit = { x = obj.x, y = obj.y, obj = obj }
+    end
+  end
+  return hit
+end
+
+local function strike_hit(s)
+  if not s.hit then return end
+  local radius2 = (6 * EP) ^ 2
+  local targets = wa.world.electrical_nearby
+    and wa.world.electrical_nearby(s.ex, s.ey, 24, true) or electrical_targets(true)
+  for _, obj in ipairs(targets) do
+    local dx, dy = obj.x - s.ex, obj.y - s.ey
+    local r = (target_radius(obj) + 6) * EP
+    if dx * dx + dy * dy <= math.max(radius2, r * r) then
+      if obj.kind == "worm" then
+        if not revived_by_lightning[obj.id] then obj:heal(25) end
+      elseif obj.kind == "grave" then
+        if obj.worm_id ~= 0 then
+          local id = obj.worm_id
+          local worm = obj:revive(id, 10)
+          if worm then
+            revived_by_lightning[worm.id] = true
+            restore_lightning_inventory(worm)
+          end
+        end
+      elseif obj.kind == "mine" then
+        obj:arm(obj.fuse < 0 and wa.random(1000, 5000) or obj.fuse)
+      elseif obj.kind == "crate" or obj.kind == "oil" then
+        obj:hit(100, 0, 0)
+      end
+    end
+  end
+end
+
+-- PX's cloud: every second frame of the strike's life a puff of WA's large
+-- cloud, tinted a dark bluish grey, is thrown out from the top of the beam
+-- and slowed by the air; a core puff (100 frames, 1.2x to 0.6x) until the
+-- strike is spent, a surrounding one (140 frames, 1x to nothing) until the
+-- strike is gone. Each fades in from nothing. Also PX's sparks: while the
+-- beam holds, a glow thrown from where it hit, falling. Both are advanced
+-- here, once per game frame, from the strike's own generator, and only drawn
+-- below; nothing else reads them.
+local function strike_rand(s)
+  s.seed = (s.seed * 1103515245 + 12345) % 0x80000000
+  return s.seed / 0x80000000
+end
+
+local function strike_puff(s, life, drag, s0, s1)
+  local xvel = strike_rand(s) * 2 - 1
+  local yvel = 1 - xvel * xvel
+  s.cloud[#s.cloud + 1] = { x = s.sx, y = s.sy, vx = 16 * xvel * EP,
+    vy = (strike_rand(s) * 9 - 8) * yvel * EP, drag = drag, age = 0, life = life, s0 = s0, s1 = s1 }
+end
+
+local function strike_particles(s)
+  if s.tail > 0 then
+    s.cloud_timer = s.cloud_timer - 1
+    if s.cloud_timer <= 0 then
+      if s.life > 0 then strike_puff(s, 100, 0.3, 1.2, 0.6) end
+      strike_puff(s, 140, 0.15, 1.0, 0.01)
+      s.cloud_timer = 2
+    end
+    if s.delay == 0 and s.life > 0 and s.hit then
+      local a = strike_rand(s) * 2 * math.pi
+      local v = (1 + strike_rand(s) * 2) * EP
+      s.sparks[#s.sparks + 1] = { x = s.ex, y = s.ey, vx = math.cos(a) * v, vy = math.sin(a) * v, age = 0 }
+    end
+  end
+  for i = #s.cloud, 1, -1 do
+    local p = s.cloud[i]
+    p.age = p.age + 1
+    if p.age >= p.life then
+      table.remove(s.cloud, i)
+    else
+      p.x, p.y = p.x + p.vx, p.y + p.vy
+      p.vx, p.vy = p.vx * (1 - p.drag), p.vy * (1 - p.drag)
+    end
+  end
+  for i = #s.sparks, 1, -1 do
+    local p = s.sparks[i]
+    p.age = p.age + 1
+    if p.age >= 50 then
+      table.remove(s.sparks, i)
+    else
+      p.x, p.y, p.vy = p.x + p.vx, p.y + p.vy, p.vy + EP // 8
+    end
+  end
+end
+
+lightning_click = function(ev)
+  local dirx = 0.5 * ev.worm.facing
+  local diry = math.sqrt(3) / 2
+  local sy = -270 * EP
+  local sx = math.floor(ev.x - ((ev.y - sy) / EP) * dirx / diry * EP)
+  local hit = electrical_trace(sx, sy, dirx, diry)
+  local ex, ey = hit and hit.x or sx + math.floor(300 * dirx * EP),
+    hit and hit.y or sy + math.floor(300 * diry * EP)
+  local distance = math.sqrt(((ex - sx) / EP) ^ 2 + ((ey - sy) / EP) ^ 2)
+  if hit and distance > 300 then
+    sx, sy = ex - math.floor(300 * dirx * EP), ey - math.floor(300 * diry * EP)
+  end
+  local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit, dirx = dirx, diry = diry,
+    delay = 150, life = 16, tail = 60, owner = ev.worm, ticks = 0,
+    seed = (ex // EP * 7919 + ey // EP) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
+  strikes[#strikes + 1] = s
+  wa.sound.play(ev.worm, "sounds/lightning/thunder.wav")
+  effect_actor(ex, ey, ev.worm, function(a)
+    s.ticks = s.ticks + 1
+    strike_particles(s)
+    if s.delay > 0 then
+      s.delay = s.delay - 1
+      if s.delay == 0 then wa.sound.play(a, "sounds/lightning/hit.wav") end
+    elseif s.life > 0 then
+      s.life = s.life - 1
+      if s.life == 0 then strike_hit(s) end
+    elseif s.tail > 0 then
+      s.tail = s.tail - 1
+    elseif #s.cloud == 0 and #s.sparks == 0 then
+      for i, held in ipairs(strikes) do
+        if held == s then table.remove(strikes, i); break end
+      end
+      a:despawn()
+    end
+  end)
+end
+
+local function target_key(obj)
+  return obj.kind .. ":" .. obj.id
+end
+
+local function find_target(key)
+  for _, obj in ipairs(electrical_targets(false)) do
+    if target_key(obj) == key then return obj end
+  end
+end
+
+local function closest_target(arc)
+  local best, distance = nil, (200 * EP) ^ 2
+  local targets = wa.world.electrical_nearby
+    and wa.world.electrical_nearby(arc.x, arc.y, 200, false) or electrical_targets(false)
+  for _, obj in ipairs(targets) do
+    local key = target_key(obj)
+    if not arc.ignore[key] and (obj.kind ~= "worm" or obj.hp > 0) then
+      local dx, dy = obj.x - arc.x, obj.y - arc.y
+      local d = dx * dx + dy * dy
+      if d < distance then best, distance = obj, d end
+    end
+  end
+  return best, distance
+end
+
+local function release_taze(key)
+  local hold = tazed[key]
+  if not hold then return end
+  hold.count = hold.count - 1
+  if hold.count > 0 then return end
+  local worm = find_target(key)
+  if worm then
+    worm:drop()
+    worm.body_visible = true
+  end
+  tazed[key] = nil
+end
+
+local function zap_target(arc, pending)
+  local obj = find_target(pending.key)
+  release_taze(pending.key)
+  if not obj then return end
+  if obj.kind == "worm" then
+    obj:hurt(24)
+    obj.vx, obj.vy = pending.side * 1.2 * EP, -4 * EP
+  elseif obj.kind == "mine" then
+    obj:arm(400)
+  elseif obj.kind == "crate" or obj.kind == "oil" then
+    obj:hit(12, pending.side * 1.2 * EP, -4 * EP)
+  end
+end
+
+local function progress_arc(arc)
+  arc.explosion = arc.explosion + 1
+  for i = #arc.pending, 1, -1 do
+    local p = arc.pending[i]
+    p.time = p.time - 1
+    if p.time <= 0 then
+      zap_target(arc, p)
+      table.remove(arc.pending, i)
+    end
+  end
+  for _, key in ipairs(wa.sorted(tazed)) do
+    local hold = tazed[key]
+    local worm = find_target(key)
+    if worm then
+      worm:clear_keys()
+      worm:set_state("standing")
+      worm:carry(hold.x, hold.y)
+    end
+  end
+  if arc.pause > 0 then arc.pause = arc.pause - 1; return end
+  if arc.life <= 0 then
+    if #arc.points > 0 then table.remove(arc.points, 1) end
+    return
+  end
+  arc.life = arc.life - 1
+  local target, distance = closest_target(arc)
+  if target then
+    local dx, dy = target.x - arc.x, target.y - arc.y
+    local d = math.sqrt(distance)
+    if d <= 10 * EP then
+      local key = target_key(target)
+      arc.ignore[key] = true
+      arc.pending[#arc.pending + 1] = { key = key, side = dx < 0 and -1 or 1, time = 24 }
+      if target.kind == "worm" then
+        if tazed[key] then
+          tazed[key].count = tazed[key].count + 1
+        else
+          tazed[key] = { x = target.x, y = target.y, count = 1,
+            sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1" or "sprites/electric_grenade/tazed2" }
+        end
+        target.body_visible = false
+        target:carry(target.x, target.y)
+      end
+      arc.x, arc.y = target.x, target.y
+      arc.life = 20
+      arc.pause = 14
+      for i = #arc.points, 2, -1 do table.remove(arc.points, i) end
+      arc.points[#arc.points + 1] = { arc.x, arc.y }
+      return
+    end
+    local pull = math.min(1, math.sqrt(10 * EP / d))
+    arc.dx = arc.dx + ((dx / d) - arc.dx) * pull
+    arc.dy = arc.dy + ((dy / d) - arc.dy) * pull
+  else
+    arc.dx = arc.dx + wa.random(-100, 100) / 100
+    arc.dy = arc.dy + wa.random(-100, 100) / 100
+  end
+  local norm = math.sqrt(arc.dx * arc.dx + arc.dy * arc.dy)
+  if norm < 0.01 then arc.dx, arc.dy = 0, -1 else arc.dx, arc.dy = arc.dx / norm, arc.dy / norm end
+  local nx, ny = arc.x + arc.dx * 20 * EP, arc.y + arc.dy * 20 * EP
+  local land = wa.land.trace(math.floor(arc.x), math.floor(arc.y), math.floor(nx), math.floor(ny))
+  if land then
+    if land.starts_solid then arc.life = 0; return end
+    -- Follow the tangent that moves closer to the target, as PX's arc does.
+    local tx, ty = land.tx or 1, land.ty or 0
+    if target then
+      local a = (target.x - (land.x + tx * 10 * EP)) ^ 2 + (target.y - (land.y + ty * 10 * EP)) ^ 2
+      local b = (target.x - (land.x - tx * 10 * EP)) ^ 2 + (target.y - (land.y - ty * 10 * EP)) ^ 2
+      if b < a then tx, ty = -tx, -ty end
+    end
+    arc.dx, arc.dy = tx, ty
+    arc.x, arc.y = land.x + (land.nx or 0) * 10 * EP + tx * 10 * EP,
+      land.y + (land.ny or -1) * 10 * EP + ty * 10 * EP
+  else
+    arc.x, arc.y = arc.x + arc.dx * 10 * EP, arc.y + arc.dy * 10 * EP
+  end
+  arc.points[#arc.points + 1] = { arc.x, arc.y }
+  if #arc.points > 33 then table.remove(arc.points, 1) end
+end
+
+electric_grenade_explode = function(ev)
+  local arc = { x = ev.x, y = ev.y, dx = 0, dy = -1, life = 16, pause = 0,
+    points = { { ev.x, ev.y } }, ignore = {}, pending = {}, explosion = 0,
+    burst_x = ev.x, burst_y = ev.y, sound_age = 0 }
+  if ev.worm then arc.ignore[target_key(ev.worm)] = true end
+  arcs[#arcs + 1] = arc
+  local driver = effect_actor(ev.x, ev.y, ev.worm, function(a)
+    arc.sound_age = arc.sound_age + 1
+    if arc.life > 0 and arc.sound_age % 46 == 0 then
+      wa.sound.play(a, "sounds/lightning/tazer_loop.wav")
+    end
+    progress_arc(arc)
+    if arc.life <= 0 and #arc.points == 0 and #arc.pending == 0 then
+      for i, held in ipairs(arcs) do
+        if held == arc then table.remove(arcs, i); break end
+      end
+      a:despawn()
+    end
+  end)
+  wa.sound.play(driver, "sounds/lightning/tazer_loop.wav")
+end
+
+if wa.on.draw and wa.draw.ribbon then
+  local function colour(a, r, g, b)
+    return (math.floor(a) << 24) | (r << 16) | (g << 8) | b
+  end
+  local function glow(x, y, size, color)
+    local h = size * EP / 2
+    wa.draw.quad({ sprite = GLOW, blend = "add", color = color, depth = ELECTRIC_DEPTH,
+      points = { {x-h,y-h}, {x+h,y-h}, {x+h,y+h}, {x-h,y+h} } })
+  end
+  -- PX's lightningstrike RenderLightning. Its shape is fractal noise, made
+  -- afresh each game frame while the beam holds: each point is the middle of
+  -- its two neighbours plus a random nudge, halving the span each pass. A
+  -- look, so from wa.draw.random, never WA's generator.
+  local LR, LG, LB = 120, 140, 255
+  local function lerp(t, a, b) return a + (b - a) * t end
+  local function noise_span(noise, off, divs, scale, first, last)
+    for i = 0, divs - 1 do noise[off + i] = 0 end
+    noise[off], noise[off + divs - 1] = first, last
+    local k = divs
+    local l = k >> 1
+    while l > 0 do
+      for i = l, divs - 1 - l, k do
+        noise[off + i] = (noise[off + i - l] + noise[off + i + l]) * 0.5 + (wa.draw.random() * 2 - 1) * scale
+      end
+      k = l
+      l = k >> 1
+    end
+  end
+  -- The main beam's 9 points, and 6 branches of 9 at random points on it.
+  local function new_shape(s)
+    s.noise, s.attach = {}, {}
+    noise_span(s.noise, 0, 9, 1.0, 0, 0)
+    for _ = 1, 6 do s.attach[1 + math.floor(wa.draw.random() * 8)] = true end
+    for i = 0, 5 do
+      local off = 2 + wa.draw.random() * 4
+      if wa.draw.random() < 0.5 then off = -off end
+      noise_span(s.noise, 9 + 9 * i, 9, 0.5, 0, off)
+    end
+    s.ground = 0.5 + wa.draw.random() * 0.3
+    s.shape_tick = s.ticks
+  end
+  -- PX's RenderBeam: one textured strip through the noise, `width` (a half
+  -- width, as PX's) tapering to `endwidth`, and a glow at every point fading
+  -- towards the end.
+  local function beam(noise, off, divs, width, endwidth, scale, x1, y1, x2, y2, glowalpha)
+    if divs < 2 then return end
+    local dx, dy = (x2 - x1) / EP, (y2 - y1) / EP
+    local dd = math.sqrt(dx * dx + dy * dy)
+    if dd <= 0 then return end
+    dx, dy = dx / dd, dy / dd
+    local pts, d = {}, divs - 1
+    for i = 0, divs - 1 do
+      local f = i / d
+      local n = noise[off + i] or 0
+      local x = lerp(f, x1, x2) + scale * dy * n * EP
+      local y = lerp(f, y1, y2) - scale * dx * n * EP
+      pts[#pts + 1] = { x = x, y = y, width = 2 * lerp(f, width, endwidth), u = f,
+        color = colour(255, LR, LG, LB) }
+      local a = 255 * glowalpha * (1 - f)
+      if a >= 1 then glow(x, y, 64, colour(a, LR, LG, LB)) end
+    end
+    wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = pts })
+  end
+  local function draw_strike(s)
+    -- The cloud, dark and alpha-blended over the sky.
+    for _, p in ipairs(s.cloud) do
+      local t = p.age / p.life
+      local size = lerp(t, p.s0, p.s1)
+      local hw, hh = 64 * size * EP, 40 * size * EP
+      wa.draw.quad({ sprite = CLOUD, blend = "alpha", depth = CLOUD_DEPTH,
+        color = colour(255 * t, 45, 40, 60),
+        points = { { p.x - hw, p.y - hh }, { p.x + hw, p.y - hh }, { p.x + hw, p.y + hh }, { p.x - hw, p.y + hh } } })
+    end
+    for _, p in ipairs(s.sparks) do
+      local t = p.age / 50
+      glow(p.x, p.y, 13 * (1 - t) + 1, colour(255, LR, LG, LB))
+    end
+    if s.life <= 0 or s.delay >= 8 then return end
+    if not s.noise or (s.delay == 0 and s.shape_tick ~= s.ticks) then new_shape(s) end
+    -- Before it lands the beam grows down from the cloud over 8 frames.
+    local divs, ex, ey = 9, s.ex, s.ey
+    if s.delay > 0 then
+      local fr = (8 - s.delay) / 8
+      divs = math.floor(9 * fr)
+      ex, ey = lerp(fr, s.sx, s.ex), lerp(fr, s.sy, s.ey)
+    end
+    beam(s.noise, 0, divs, 35, 3, 15, s.sx, s.sy, ex, ey, 1.0)
+    local sub, d = 0, divs - 1
+    for i = 0, divs - 1 do
+      if s.attach[i] and d > 0 then
+        local f = i / d
+        local x = lerp(f, s.sx, ex) + 10 * s.diry * s.noise[i] * EP
+        local y = lerp(f, s.sy, ey) - 10 * s.dirx * s.noise[i] * EP
+        beam(s.noise, 9 + 9 * sub, 9, lerp(f, 10, 1), 0.1, 15 * (1 - f), x, y,
+          x + s.dirx * 100 * (1 - f) * EP, y + s.diry * 100 * (1 - f) * EP, 0.5 * (1 - f))
+        sub = sub + 1
+      end
+    end
+    glow(s.sx + 10 * s.dirx * EP, s.sy + 10 * s.diry * EP, 230, colour(255, LR, LG, LB))
+    if s.delay == 0 and s.hit then glow(s.ex, s.ey, 128 * s.ground, colour(255, LR, LG, LB)) end
+  end
+  wa.on.draw(function()
+    for _, s in ipairs(strikes) do
+      draw_strike(s)
+    end
+    for _, arc in ipairs(arcs) do
+      if arc.explosion < 10 then
+        local h = 75 * EP
+        wa.draw.quad({ sprite=GRENADE_BURST, frame=arc.explosion,
+          blend="add", color=0x551E14EB, depth=ELECTRIC_DEPTH,
+          points={{arc.burst_x-h,arc.burst_y-h},{arc.burst_x+h,arc.burst_y-h},
+            {arc.burst_x+h,arc.burst_y+h},{arc.burst_x-h,arc.burst_y+h}} })
+      end
+      if #arc.points >= 2 then
+        -- PX's CTazerShot: one strip through the arc's points, thickest in
+        -- the middle (9, a half width, as PX's), wobbling up to 10 px across
+        -- its path by fractal noise made afresh each game frame, a glow at
+        -- every point and a big one at the tip; all fading as the arc dies.
+        if arc.shape_tick ~= arc.sound_age then
+          arc.noise = {}
+          noise_span(arc.noise, 0, 33, 1.0, 0, 0)
+          arc.shape_tick = arc.sound_age
+        end
+        local pts, num = {}, #arc.points - 1
+        local fade = math.min(1, arc.life / 6)
+        for i = 0, num do
+          local t = i / num
+          local x, y = arc.points[i + 1][1], arc.points[i + 1][2]
+          if i > 0 and i < num then
+            local px, py = arc.points[i][1], arc.points[i][2]
+            local nx, ny = (y - py) / EP, (px - x) / EP
+            local d = math.sqrt(nx * nx + ny * ny)
+            if d > 0 then
+              local n = 10 * (arc.noise[i - 1] or 0) / d * EP
+              x, y = x + n * nx, y + n * ny
+            end
+          end
+          local f = math.min(1, 4 * t * (1 - t) + 0.1)
+          local f2 = f * fade
+          local c = colour(255, math.floor(80 * f2), math.floor(100 * f2), math.floor(255 * f2))
+          pts[i + 1] = { x = x, y = y, width = 2 * 9 * f, u = t, color = c }
+          glow(x, y, i == num - 1 and 115 or 38, c)
+        end
+        wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = pts })
+      end
+    end
+    for key, hold in pairs(tazed) do
+      local worm = find_target(key)
+      if worm then
+        local x, y = worm.x, worm.y
+        local h = 30 * EP
+        wa.draw.quad({ sprite=hold.sheet, frame=math.floor(wa.draw.random()*4), blend="alpha", depth=ELECTRIC_DEPTH,
+          points={{x-h,y-h},{x+h,y-h},{x+h,y+h},{x-h,y+h}} })
+        -- PX's tazed worm: a glow 0.4 to 0.7 of the sheet, flickering.
+        glow(x, y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255))
+      end
+    end
+  end)
+end
