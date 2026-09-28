@@ -1,0 +1,11 @@
+id = "example.perf"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+kind = "gameplay"
+entry = "perf.lua"
+
+# No weapons: turns on the FPS counter and the profiler.
+[weapons]
+register = []
+replace = []
