@@ -454,7 +454,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("51 slots replaced, each once", #replaced == 51 and not dupes, tostring(#replaced))
+  check("52 slots replaced, each once", #replaced == 52 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -474,11 +474,11 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if slot == "earthquake" or slot == "napalm_strike" then
+    if slot == "earthquake" or slot == "napalm_strike" or slot == "uzi" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
-  check("PX lightning slots use scheme records; others copy stock", own_file)
+  check("the lightning and Laser Gun slots use scheme records; others copy stock", own_file)
   check("Lightning Strike claims the stock land cursor and click dispatch",
     by_slot.napalm_strike and by_slot.napalm_strike.on_select.cursor
       and type(by_slot.napalm_strike.on_click) == "function")
@@ -1716,6 +1716,53 @@ do
   spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3 * P, vy = -5 * P })
   check("fired: the shot's speed, airborne", w.vx == 3 * P and w.vy == -5 * P and w.state == "sliding")
   check("the team's Jump line: team 2's bank", M.sounds[#M.sounds] == 150 + 54, tostring(M.sounds[#M.sounds]))
+end
+
+print("laser gun: PX's 5 s beam in place of the uzi's bullet")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do if r.weapon == "uzi" then spec = r end end
+  local shooter, target = worm(16), worm(32)
+  for _, o in ipairs(worms) do o.turn = false end
+  shooter.turn, shooter.weapon, shooter.aim, shooter.facing = true, "uzi", 0.5, 1
+  shooter.x, shooter.y = 100 * P, 100 * P
+  target.x, target.y = 160 * P, 100 * P
+  local drum = { kind = "oil", id = 1, x = 200 * P, y = 100 * P, taken = 0 }
+  function drum:hit(damage) self.taken = self.taken + damage end
+  M.oil = { drum }
+  M.trace_hit = { x = 300 * P, y = 100 * P }
+  M.spawned, M.sounds, M.digs = {}, {}, {}
+  spec.on_fire({ worm = shooter, x = shooter.x, y = shooter.y, vx = 0, vy = 0 })
+  spec.on_fire({ worm = shooter, x = shooter.x, y = shooter.y, vx = 0, vy = 0 })
+  check("one beam per worm, with its start and loop sounds", #M.spawned == 1
+    and M.sounds[1] == "sounds/laser_gun/laser_start.wav" and M.sounds[2] == "sounds/laser_gun/laser_loop.wav")
+  local beam = M.spawned[1]
+  local function tick(n) for _ = 1, n do if not beam.dead then beam.on(beam) end end end
+  tick(1)
+  check("the worm is held firing: 0 of 1 shots", shooter.shots_fired == 0 and shooter.shots_to_fire == 1)
+  check("the first trace: 2 to the worm, 4 to the drum, a 4 px cut where it hits land",
+    target.hp == 98 and drum.taken == 4 and M.digs[1] and M.digs[1].x == 300 * P and M.digs[1].radius == 4,
+    tostring(target.hp) .. " " .. tostring(drum.taken))
+  tick(39)
+  check("every fourth frame: 2 until 10 taken, then 1", target.hp == 85, tostring(target.hp))
+  M.quads, M.ribbons = {}, {}
+  M.draw()
+  local strip = M.ribbons[1]
+  check("a red strip from 24 px out to where it hits, PX's width", strip
+    and strip.sprite == "sprites/laser_gun/laser_beam.png" and (strip.points[1].color & 0xFFFFFF) == 0xFF0000
+    and strip.points[2].x == 300 * P and strip.points[1].width <= 16 and strip.points[1].width >= 8)
+  tick(210)
+  check("no more than 45 from one beam", target.hp == 55, tostring(target.hp))
+  check("after 250 frames it stops and lets WA end the shot", shooter.shots_fired == shooter.shots_to_fire
+    and M.sounds[#M.sounds] == "sounds/laser_gun/laser_end.wav")
+  tick(200)
+  check("its sparks gone, the beam is released", beam.dead)
+  M.spawned = {}
+  spec.on_fire({ worm = shooter, x = shooter.x, y = shooter.y, vx = 0, vy = 0 })
+  check("the next shot starts a new beam", #M.spawned == 1)
 end
 
 print("px missile sprites: WeapSprite at run time")
