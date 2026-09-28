@@ -1791,8 +1791,19 @@ do
   check("beam stays active for 16 frames", target.hp == 100)
   effect.on(effect)
   check("final hit heals the living worm by 25", target.hp == 125)
+  M.quads = {}
+  M.draw()
+  local puffs = 0
+  for _, q in ipairs(M.quads) do
+    if q.sprite == "sprites/lightning/cloud.png" and q.blend == "alpha" and (q.color & 0xFFFFFF) == 0x2D283C then
+      puffs = puffs + 1
+    end
+  end
+  check("PX's cloud: dark puffs built up over the warning, drawn behind the terrain", puffs > 60, tostring(puffs))
   for _ = 1, 60 do effect.on(effect) end
-  check("60 frame tail releases the effect", effect.dead)
+  check("after the 60 frame tail the effect waits for its last puff", not effect.dead)
+  for _ = 1, 140 do effect.on(effect) end
+  check("the last puff gone, the effect is released", effect.dead)
 
   -- The grave is matched to the dead worm before the strike; revival returns
   -- the same stable ID and restores the copied inventory to that worm.

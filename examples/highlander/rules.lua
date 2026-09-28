@@ -107,7 +107,7 @@ local PX_ART = {
     weapon = "napalm_strike",
     wep = "weps/napalm_strike.wep",
     panel_icon = "sprites/lightning/icon.png",
-    sprites = { "sprites/lightning/beam.png", "sprites/lightning/glow.png" },
+    sprites = { "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png" },
     sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav" },
     params = { gpu_prefix = "sprites/" },
     -- Click-only dispatch keeps the strike's cursor and turn handling.
@@ -3453,6 +3453,8 @@ local EP = 0x10000
 local ELECTRIC_DEPTH = 0x00190000 -- behind WA terrain, in the GPU occlusion mask
 local BEAM = "sprites/lightning/beam.png"
 local GLOW = "sprites/lightning/glow.png"
+local CLOUD = "sprites/lightning/cloud.png" -- a puff made for the pack, in place of WA's cloudl
+local CLOUD_DEPTH = ELECTRIC_DEPTH - 0x1000  -- in front of the beam's top, behind the terrain
 local GRENADE_BURST = "sprites/electric_grenade/explosion"
 local strikes, arcs, tazed = {}, {}, {}
 
@@ -3535,6 +3537,61 @@ local function strike_hit(s)
   end
 end
 
+-- PX's cloud: every second frame of the strike's life a puff of WA's large
+-- cloud, tinted a dark bluish grey, is thrown out from the top of the beam
+-- and slowed by the air; a core puff (100 frames, 1.2x to 0.6x) until the
+-- strike is spent, a surrounding one (140 frames, 1x to nothing) until the
+-- strike is gone. Each fades in from nothing. Also PX's sparks: while the
+-- beam holds, a glow thrown from where it hit, falling. Both are advanced
+-- here, once per game frame, from the strike's own generator, and only drawn
+-- below; nothing else reads them.
+local function strike_rand(s)
+  s.seed = (s.seed * 1103515245 + 12345) % 0x80000000
+  return s.seed / 0x80000000
+end
+
+local function strike_puff(s, life, drag, s0, s1)
+  local xvel = strike_rand(s) * 2 - 1
+  local yvel = 1 - xvel * xvel
+  s.cloud[#s.cloud + 1] = { x = s.sx, y = s.sy, vx = 16 * xvel * EP,
+    vy = (strike_rand(s) * 9 - 8) * yvel * EP, drag = drag, age = 0, life = life, s0 = s0, s1 = s1 }
+end
+
+local function strike_particles(s)
+  if s.tail > 0 then
+    s.cloud_timer = s.cloud_timer - 1
+    if s.cloud_timer <= 0 then
+      if s.life > 0 then strike_puff(s, 100, 0.3, 1.2, 0.6) end
+      strike_puff(s, 140, 0.15, 1.0, 0.01)
+      s.cloud_timer = 2
+    end
+    if s.delay == 0 and s.life > 0 and s.hit then
+      local a = strike_rand(s) * 2 * math.pi
+      local v = (1 + strike_rand(s) * 2) * EP
+      s.sparks[#s.sparks + 1] = { x = s.ex, y = s.ey, vx = math.cos(a) * v, vy = math.sin(a) * v, age = 0 }
+    end
+  end
+  for i = #s.cloud, 1, -1 do
+    local p = s.cloud[i]
+    p.age = p.age + 1
+    if p.age >= p.life then
+      table.remove(s.cloud, i)
+    else
+      p.x, p.y = p.x + p.vx, p.y + p.vy
+      p.vx, p.vy = p.vx * (1 - p.drag), p.vy * (1 - p.drag)
+    end
+  end
+  for i = #s.sparks, 1, -1 do
+    local p = s.sparks[i]
+    p.age = p.age + 1
+    if p.age >= 50 then
+      table.remove(s.sparks, i)
+    else
+      p.x, p.y, p.vy = p.x + p.vx, p.y + p.vy, p.vy + EP // 8
+    end
+  end
+end
+
 lightning_click = function(ev)
   local dirx = 0.5 * ev.worm.facing
   local diry = math.sqrt(3) / 2
@@ -3547,25 +3604,27 @@ lightning_click = function(ev)
   if hit and distance > 300 then
     sx, sy = ex - math.floor(300 * dirx * EP), ey - math.floor(300 * diry * EP)
   end
-  local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit,
-    delay = 150, life = 16, tail = 60, owner = ev.worm }
+  local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit, dirx = dirx, diry = diry,
+    delay = 150, life = 16, tail = 60, owner = ev.worm, ticks = 0,
+    seed = (ex // EP * 7919 + ey // EP) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
   strikes[#strikes + 1] = s
   wa.sound.play(ev.worm, "sounds/lightning/thunder.wav")
   effect_actor(ex, ey, ev.worm, function(a)
+    s.ticks = s.ticks + 1
+    strike_particles(s)
     if s.delay > 0 then
       s.delay = s.delay - 1
       if s.delay == 0 then wa.sound.play(a, "sounds/lightning/hit.wav") end
     elseif s.life > 0 then
       s.life = s.life - 1
       if s.life == 0 then strike_hit(s) end
-    else
+    elseif s.tail > 0 then
       s.tail = s.tail - 1
-      if s.tail <= 0 then
-        for i, held in ipairs(strikes) do
-          if held == s then table.remove(strikes, i); break end
-        end
-        a:despawn()
+    elseif #s.cloud == 0 and #s.sparks == 0 then
+      for i, held in ipairs(strikes) do
+        if held == s then table.remove(strikes, i); break end
       end
+      a:despawn()
     end
   end)
 end
@@ -3733,42 +3792,101 @@ if wa.on.draw and wa.draw.ribbon then
     wa.draw.quad({ sprite = GLOW, blend = "add", color = color, depth = ELECTRIC_DEPTH,
       points = { {x-h,y-h}, {x+h,y-h}, {x+h,y+h}, {x-h,y+h} } })
   end
+  -- PX's lightningstrike RenderLightning. Its shape is fractal noise, made
+  -- afresh each game frame while the beam holds: each point is the middle of
+  -- its two neighbours plus a random nudge, halving the span each pass. A
+  -- look, so from wa.draw.random, never WA's generator.
+  local LR, LG, LB = 120, 140, 255
+  local function lerp(t, a, b) return a + (b - a) * t end
+  local function noise_span(noise, off, divs, scale, first, last)
+    for i = 0, divs - 1 do noise[off + i] = 0 end
+    noise[off], noise[off + divs - 1] = first, last
+    local k = divs
+    local l = k >> 1
+    while l > 0 do
+      for i = l, divs - 1 - l, k do
+        noise[off + i] = (noise[off + i - l] + noise[off + i + l]) * 0.5 + (wa.draw.random() * 2 - 1) * scale
+      end
+      k = l
+      l = k >> 1
+    end
+  end
+  -- The main beam's 9 points, and 6 branches of 9 at random points on it.
+  local function new_shape(s)
+    s.noise, s.attach = {}, {}
+    noise_span(s.noise, 0, 9, 1.0, 0, 0)
+    for _ = 1, 6 do s.attach[1 + math.floor(wa.draw.random() * 8)] = true end
+    for i = 0, 5 do
+      local off = 2 + wa.draw.random() * 4
+      if wa.draw.random() < 0.5 then off = -off end
+      noise_span(s.noise, 9 + 9 * i, 9, 0.5, 0, off)
+    end
+    s.ground = 0.5 + wa.draw.random() * 0.3
+    s.shape_tick = s.ticks
+  end
+  -- PX's RenderBeam: one textured strip through the noise, `width` (a half
+  -- width, as PX's) tapering to `endwidth`, and a glow at every point fading
+  -- towards the end.
+  local function beam(noise, off, divs, width, endwidth, scale, x1, y1, x2, y2, glowalpha)
+    if divs < 2 then return end
+    local dx, dy = (x2 - x1) / EP, (y2 - y1) / EP
+    local dd = math.sqrt(dx * dx + dy * dy)
+    if dd <= 0 then return end
+    dx, dy = dx / dd, dy / dd
+    local pts, d = {}, divs - 1
+    for i = 0, divs - 1 do
+      local f = i / d
+      local n = noise[off + i] or 0
+      local x = lerp(f, x1, x2) + scale * dy * n * EP
+      local y = lerp(f, y1, y2) - scale * dx * n * EP
+      pts[#pts + 1] = { x = x, y = y, width = 2 * lerp(f, width, endwidth), u = f,
+        color = colour(255, LR, LG, LB) }
+      local a = 255 * glowalpha * (1 - f)
+      if a >= 1 then glow(x, y, 64, colour(a, LR, LG, LB)) end
+    end
+    wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = pts })
+  end
+  local function draw_strike(s)
+    -- The cloud, dark and alpha-blended over the sky.
+    for _, p in ipairs(s.cloud) do
+      local t = p.age / p.life
+      local size = lerp(t, p.s0, p.s1)
+      local hw, hh = 64 * size * EP, 40 * size * EP
+      wa.draw.quad({ sprite = CLOUD, blend = "alpha", depth = CLOUD_DEPTH,
+        color = colour(255 * t, 45, 40, 60),
+        points = { { p.x - hw, p.y - hh }, { p.x + hw, p.y - hh }, { p.x + hw, p.y + hh }, { p.x - hw, p.y + hh } } })
+    end
+    for _, p in ipairs(s.sparks) do
+      local t = p.age / 50
+      glow(p.x, p.y, 13 * (1 - t) + 1, colour(255, LR, LG, LB))
+    end
+    if s.life <= 0 or s.delay >= 8 then return end
+    if not s.noise or (s.delay == 0 and s.shape_tick ~= s.ticks) then new_shape(s) end
+    -- Before it lands the beam grows down from the cloud over 8 frames.
+    local divs, ex, ey = 9, s.ex, s.ey
+    if s.delay > 0 then
+      local fr = (8 - s.delay) / 8
+      divs = math.floor(9 * fr)
+      ex, ey = lerp(fr, s.sx, s.ex), lerp(fr, s.sy, s.ey)
+    end
+    beam(s.noise, 0, divs, 35, 3, 15, s.sx, s.sy, ex, ey, 1.0)
+    local sub, d = 0, divs - 1
+    for i = 0, divs - 1 do
+      if s.attach[i] and d > 0 then
+        local f = i / d
+        local x = lerp(f, s.sx, ex) + 10 * s.diry * s.noise[i] * EP
+        local y = lerp(f, s.sy, ey) - 10 * s.dirx * s.noise[i] * EP
+        beam(s.noise, 9 + 9 * sub, 9, lerp(f, 10, 1), 0.1, 15 * (1 - f), x, y,
+          x + s.dirx * 100 * (1 - f) * EP, y + s.diry * 100 * (1 - f) * EP, 0.5 * (1 - f))
+        sub = sub + 1
+      end
+    end
+    glow(s.sx + 10 * s.dirx * EP, s.sy + 10 * s.diry * EP, 230, colour(255, LR, LG, LB))
+    if s.delay == 0 and s.hit then glow(s.ex, s.ey, 128 * s.ground, colour(255, LR, LG, LB)) end
+  end
   wa.on.draw(function()
     for _, s in ipairs(strikes) do
-      if s.life > 0 and s.delay < 8 then
-        local fraction = s.delay > 0 and (8 - s.delay) / 8 or 1
-        local count = math.max(2, math.floor(8 * fraction) + 1)
-        local ex, ey = s.sx + (s.ex - s.sx) * fraction, s.sy + (s.ey - s.sy) * fraction
-        local dx, dy = ex - s.sx, ey - s.sy
-        local len = math.sqrt(dx*dx + dy*dy)
-        if len > 0 then
-          local points = {}
-          for i = 0, count - 1 do
-            local t = i / (count - 1)
-            local n = (i == 0 or i == count - 1) and 0 or (wa.draw.random() * 2 - 1) * 15
-            points[#points + 1] = { x = s.sx + dx*t - dy/len*n*EP,
-              y = s.sy + dy*t + dx/len*n*EP, width = 35*(1-t)+3*t,
-              u = t, color = colour(220*(1-t)+35,120,140,255) }
-          end
-          wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = points })
-          for i = 2, count - 1 do
-            local p = points[i]
-            glow(p.x, p.y, 18*(1-(i-1)/(count-1)), colour(90,120,140,255))
-            if i % 2 == 0 then
-              local side = wa.draw.random() < 0.5 and -1 or 1
-              local bx = p.x + side * 60 * EP
-              local by = p.y + 35 * EP
-              wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = {
-                { x=p.x, y=p.y, width=8, u=0, color=colour(130,120,140,255) },
-                { x=bx, y=by, width=0.2, u=1, color=colour(5,120,140,255) },
-              } })
-            end
-          end
-          glow(s.sx, s.sy, 92, colour(170,120,140,255))
-          if s.delay == 0 and s.hit then glow(s.ex, s.ey, 65, colour(130,120,140,255)) end
-        end
-      end
-      if s.life > 0 then glow(s.sx, s.sy, 110, colour(28,80,70,115)) end
+      draw_strike(s)
     end
     for _, arc in ipairs(arcs) do
       if arc.explosion < 10 then
