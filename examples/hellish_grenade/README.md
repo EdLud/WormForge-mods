@@ -4,9 +4,8 @@ Project X's Hellish Hand-Grenade on the Holy Hand Grenade's slot: PX's panel
 icon, the worm holding and taking out the horned grenade on flat ground and
 slopes, and the thrown grenade spinning in flight.
 
-How it fires comes from PX's own weapon file, `hellish.wep`, which the pack
-loads with `wep = "hellish.wep"`. A PX `.wep` is WA's weapon table entry
-behind a 4-byte PX tag, so it carries PX's exact numbers. Against the stock
+How it fires: `copy_from = "holy_grenade"` plus a named `patch` for the
+fields PX's hellish weapon changed (web editor style). Against the stock
 Holy Hand Grenade, the Hellish one:
 
 - has a weaker blast: 70 damage and 80 power instead of 100 and 100;

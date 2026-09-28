@@ -45,14 +45,11 @@ Crate Strike and Lightning Strike.
 
 ## Ported weapons
 
-Each takes its record from the scheme itself (`weps/<slot>.wep`), which
-carries PX's tuning for this scheme and its name. They are cut from
-`HL - 0rang3 - 1.1.pxs` with:
-
-```sh
-python3 tools/px_scheme_weps.py "HL - 0rang3 - 1.1.pxs" mods/examples/highlander/weps <slot> ...
-```
-
+Each starts from the stock WA table entry (`copy_from = "<slot>"`) with a
+named `patch` for the fields PX's scheme changed — the same form the web
+weapon editor downloads. The patches were cut once from
+`HL - 0rang3 - 1.1.pxs` (via `tools/px_scheme_weps.py` then
+`tools/tmp/embed_weps.py`); the pack no longer ships `.wep` files.
 ### WA's own weapons
 
 | Slot | Weapon | Notes |

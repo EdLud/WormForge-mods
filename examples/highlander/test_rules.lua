@@ -455,9 +455,9 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
+    if spec.copy_from ~= slot or spec.wep then own_file = false end
   end
-  check("each from its own scheme record", own_file)
+  check("each from stock via copy_from (no .wep file)", own_file)
   check("Baseball Bat on the girder slot, with its own icon",
     by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
   check("a weapon on its own slot keeps its icon",
@@ -1179,15 +1179,10 @@ do
   for _, r in ipairs(replaced) do
     if r.weapon == "bazooka" then spec = r end
   end
-  local wep_file = io and io.open("mods/examples/highlander/weps/bazooka.wep", "rb")
-  if wep_file then
-    local wep = wep_file:read("a")
-    wep_file:close()
-    check("held as a plain bazooka: launcher 3 at +0x34, not the scheme's 7",
-      string.unpack("<i4", wep, 4 + 0x34 + 1) == 3)
-  end
+  check("held as a plain bazooka: subtype_param stays stock (3), not the scheme's 7",
+    not (spec.patch and spec.patch.subtype_param))
   check("the Double Bazooka on the bazooka slot, with its icon and an explode step", spec
-    and spec.wep == "weps/bazooka.wep" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
+    and spec.copy_from == "bazooka" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
     and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "bazooka"
@@ -1228,7 +1223,7 @@ do
     if r.weapon == "super_banana" then spec = r end
   end
   check("the Chilli Bomb on the super banana slot, with its icon, the banana kept, and an explode step", spec
-    and spec.wep == "weps/super_banana.wep" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
+    and spec.copy_from == "super_banana" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
     and spec.sprite == "banana" and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "super_banana"
@@ -1277,7 +1272,7 @@ do
     if r.weapon == "mine" then spec = r end
   end
   check("the Nuke Rocket on the mine slot, its icon, its rocket, an explode step", spec
-    and spec.wep == "weps/mine.wep" and spec.panel_icon == "sprites/nuke_rocket/nuke_rocket_ico.png"
+    and spec.copy_from == "mine" and spec.panel_icon == "sprites/nuke_rocket/nuke_rocket_ico.png"
     and spec.sprite == "sprites/nuke_rocket/nuke_rocket_bullet.png" and type(spec.on_explode) == "function")
   check("its launch sound registered, so it can play", spec.sounds and spec.sounds[1] == "sounds/nuke_rocket_launch.wav")
   for _, o in ipairs(worms) do
@@ -1684,7 +1679,7 @@ do
   for _, r in ipairs(replaced) do
     if r.weapon == "ninja_rope" then spec = r end
   end
-  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.wep == "weps/ninja_rope.wep"
+  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.copy_from == "ninja_rope"
     and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
   local w = worm(33)
   w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true

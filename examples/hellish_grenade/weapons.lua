@@ -1,12 +1,10 @@
 -- Project X's Hellish Hand-Grenade, on the Holy Hand Grenade's slot.
 --
--- How it fires comes from PX's own weapon file, hellish.wep, copied byte for
--- byte from weapon_hellish_hand_grenade: WA's weapon table entry behind a PX
--- tag (weapons::wep). Against the stock Holy Hand Grenade it has a weaker
+-- How it fires: copy_from the stock Holy Hand Grenade, then named patch for
+-- the PX hellish.wep diffs (web editor style). Against stock it has a weaker
 -- blast (70 damage, 80 power, not 100/100), bursts into fire on detonation
--- as the Petrol Bomb does, gives a 3 s retreat, and swaps the Hallelujah and
--- its bounce for two of the team's voice lines. The rest -- the fixed 3 s
--- fuse, bounce, gravity, spin -- is the Holy Grenade's.
+-- as the Petrol Bomb does, and the rest -- fixed 3 s fuse, bounce, gravity,
+-- spin -- stays the Holy Grenade's.
 --
 -- PX's script only draws it: the worm holds the horned grenade, and the
 -- thrown grenade spins with it.
@@ -19,8 +17,17 @@
 -- The icon is PX's hhh_ico.png byte for byte, so replays share its asset.
 wa.weapons.replace({
   weapon = "holy_grenade",
-  wep = "hellish.wep",
+  copy_from = "holy_grenade",
   name = "Hellish Hand-Grenade",
+  patch = {
+    damage = 70,
+    blast = 80,
+    detonation = 2,
+    cluster_count = 150,
+    cluster_speed = 70,
+    cluster_power = 1000,
+    cluster_angle = 1,
+  },
   panel_icon = "sprites/hhh_ico.png",
   sprite = "sprites/grenade",
   worm_sprites = {
