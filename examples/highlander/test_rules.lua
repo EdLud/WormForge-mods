@@ -1883,11 +1883,42 @@ do
     for _ = 1, n do if not a.dead then a.on(a) end end
   end
   local spec, owner = setup()
+  check("a stock grenade for the worm's throw sheet, PX's hold over it",
+    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim"
+    and spec.params.gpu_prefix == "sprites/px_hold/")
+  -- In flight: the stock grenade hidden, PX's grenade drawn in its place.
+  M.spawned = {}
+  owner.turn = true
+  local m = { id = 501, phase = "pre", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 50 }
+  M.missile(m)
+  m.phase = "post"
+  M.missile(m)
+  check("thrown: WA's sprite hidden, PX's grenade follows it", m.sprite == 0
+    and M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/electric_grenade.png")
+  -- It spins as a grenade (its record's WAT_Rotation), not faces its flight:
+  -- flying right at 4 px a frame, 0.5 * 4 * 0.15 = 0.3 rad a frame.
+  m.vx, m.vy = 4*P, 0
+  local before = M.spawned[1].angle
+  M.missile(m)
+  local turned = (M.spawned[1].angle - before) % 360
+  check("thrown: it spins with its speed, as PX's grenade", math.abs(turned - math.deg(0.3)) < 1e-6,
+    tostring(turned))
+  owner.turn = false
   local target = worm(17)
   target.x, target.y = 5*P, 0
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(1)
   check("near worm is held in tazed pose", target.carried and target.body_visible == false)
+  -- The current, drawn: a glow at every point of the strip, and PX's
+  -- widths (9 at the thickest, a half width).
+  M.quads, M.ribbons = {}, {}
+  M.draw()
+  local glows = 0
+  for _, q in ipairs(M.quads) do if q.sprite == "sprites/lightning/glow.png" then glows = glows + 1 end end
+  local strip = M.ribbons[1]
+  check("the current glows at every point, PX's width at its ends",
+    strip and glows >= #strip.points and math.abs(strip.points[1].width - 2 * 9 * 0.1) < 1e-9,
+    tostring(glows) .. " glows")
   tick(23)
   check("zap waits 24 frames", target.hp == 100)
   tick(1)

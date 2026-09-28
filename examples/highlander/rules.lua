@@ -90,24 +90,33 @@ local PORTED = {
 -- its sprite builder (p_sprite_builder), so does the pack (PX_HOLDS below).
 local PX_ART = {
   { -- Electric Grenade: stock flight and explosion, then PX's chaining arc.
+    -- PX's record leaves the flight sprite 0 and PX draws the grenade at run
+    -- time (electric_grenade_anim, PX_WEAP_SPRITES below). A grenade-type
+    -- slot picks the worm's throw sheet from its flight sprite, and 0 has
+    -- none, so the worm vanished: here the stock grenade, hidden in flight,
+    -- as for the Sticky Bomb. The arc's sheets come with the Lightning
+    -- Strike's (its entry below), this prefix being the hold's.
     weapon = "earthquake",
     wep = "weps/earthquake.wep",
     panel_icon = "sprites/electric_grenade/icon.png",
-    sprite = "sprites/electric_grenade/bullet.png",
-    sprites = {
-      "sprites/lightning/beam.png", "sprites/lightning/glow.png",
-      "sprites/electric_grenade/explosion", "sprites/electric_grenade/tazed1",
-      "sprites/electric_grenade/tazed2",
-    },
+    sprite = "grenade",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/electric_grenade.png", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
     sounds = { "sounds/lightning/tazer_loop.wav" },
-    params = { gpu_prefix = "sprites/" },
+    params = { gpu_prefix = "sprites/px_hold/" },
     on_explode = function(ev) electric_grenade_explode(ev) end,
   },
   { -- Lightning Strike: the PX strike is an effect, not WA's napalm plane.
     weapon = "napalm_strike",
     wep = "weps/napalm_strike.wep",
     panel_icon = "sprites/lightning/icon.png",
-    sprites = { "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png" },
+    -- With the Electric Grenade's arc and zap sheets: both weapons' effects
+    -- are GPU sheets under this prefix.
+    sprites = {
+      "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
+      "sprites/electric_grenade/explosion", "sprites/electric_grenade/tazed1",
+      "sprites/electric_grenade/tazed2",
+    },
     sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav" },
     params = { gpu_prefix = "sprites/" },
     -- Click-only dispatch keeps the strike's cursor and turn handling.
@@ -1540,7 +1549,7 @@ end
 local PX_HOLDS = {
   earthquake = { -- Electric Grenade (electric_grenade_anim)
     thrown = true,
-    sheet = "sprites/electric_grenade/bullet.png", hand_type = 1,
+    sheet = "sprites/px_hold/electric_grenade.png", hand_type = 1,
     hand_radius = 15, hand_scale = 0.8,
     weap_rotation = 0.5, weap_radius = 9,
   },
@@ -1939,6 +1948,11 @@ end
 -- matches and nothing is drawn. With `hide`, WA draws nothing for the
 -- missile (m.sprite = 0), as PX's sprite 0 does; its record keeps its
 -- sprite, which a thrown weapon's worm posture is picked by.
+--
+-- How it turns follows the record's animation type (the entry's +0x64,
+-- PX's launchdata.anim.type): 2, WAT_TrackMovement, faces its flight
+-- (WeapSprite type 2, as a bazooka shell); 1, WAT_Rotation, spins with its
+-- speed (type 3, as a grenade), which `spin` asks for.
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = {
@@ -1947,11 +1961,19 @@ local PX_WEAP_SPRITES = {
   },
   super_banana = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
     sheet = "sprites/px_hold/chilli_bomb", frames = 1,
+    spin = true, -- its record's WAT_Rotation
     -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
     hide = true,
   },
   homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
     sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
+  },
+  earthquake = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
+    sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
+    spin = true, -- its record's WAT_Rotation
+    -- PX's record has sprite 0; the pack's stock grenade is only for the
+    -- worm's throw sheet.
+    hide = true,
   },
 }
 
@@ -1997,7 +2019,7 @@ wa.on.missile_frame(function(m)
     if not owner then
       return
     end
-    f = { phase = 0 }
+    f = { phase = 0, rot = 0 }
     f.actor = wa.actors.spawn({
       sprite = p.sheet, x = m.x, y = m.y, gravity = false, collide = false,
       owner = owner, on = follow_missile(m.id),
@@ -2012,8 +2034,18 @@ wa.on.missile_frame(function(m)
     f.phase = next_phase(f.phase, p.anim_speed)
     a:frame(frame_of(f.phase, p.frames))
   end
-  -- WeapSprite::CalculateAngle, rotation 0.
-  local rot = -math.atan(m.vx, m.vy) - math.pi
+  local rot
+  if p.spin then
+    -- WeapSprite type 3: 0.5 * (vx * 0.15 + |vy| * 0.01, towards vx) a
+    -- frame, in pixels a frame and radians.
+    local vx, vy = m.vx / 0x10000, m.vy / 0x10000
+    local sign = vx > 0 and 1 or vx < 0 and -1 or 0
+    f.rot = f.rot + 0.5 * (vx * 0.15 + math.abs(vy * 0.01) * sign)
+    rot = f.rot
+  else
+    -- WeapSprite::CalculateAngle, rotation 0.
+    rot = -math.atan(m.vx, m.vy) - math.pi
+  end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)
 
@@ -3897,15 +3929,36 @@ if wa.on.draw and wa.draw.ribbon then
             {arc.burst_x+h,arc.burst_y+h},{arc.burst_x-h,arc.burst_y+h}} })
       end
       if #arc.points >= 2 then
-        local pts = {}
-        for i, p in ipairs(arc.points) do
-          local t = (i-1) / (#arc.points-1)
-          local fade = math.min(1, arc.life / 6)
-          pts[i] = { x=p[1], y=p[2], width=9*math.min(1,4*t*(1-t)+0.1)*fade,
-            u=t, color=colour(210*fade,80,100,255) }
+        -- PX's CTazerShot: one strip through the arc's points, thickest in
+        -- the middle (9, a half width, as PX's), wobbling up to 10 px across
+        -- its path by fractal noise made afresh each game frame, a glow at
+        -- every point and a big one at the tip; all fading as the arc dies.
+        if arc.shape_tick ~= arc.sound_age then
+          arc.noise = {}
+          noise_span(arc.noise, 0, 33, 1.0, 0, 0)
+          arc.shape_tick = arc.sound_age
         end
-        wa.draw.ribbon({ sprite=BEAM, blend="add", depth=ELECTRIC_DEPTH, points=pts })
-        glow(arc.x, arc.y, 35, colour(95,80,100,255))
+        local pts, num = {}, #arc.points - 1
+        local fade = math.min(1, arc.life / 6)
+        for i = 0, num do
+          local t = i / num
+          local x, y = arc.points[i + 1][1], arc.points[i + 1][2]
+          if i > 0 and i < num then
+            local px, py = arc.points[i][1], arc.points[i][2]
+            local nx, ny = (y - py) / EP, (px - x) / EP
+            local d = math.sqrt(nx * nx + ny * ny)
+            if d > 0 then
+              local n = 10 * (arc.noise[i - 1] or 0) / d * EP
+              x, y = x + n * nx, y + n * ny
+            end
+          end
+          local f = math.min(1, 4 * t * (1 - t) + 0.1)
+          local f2 = f * fade
+          local c = colour(255, math.floor(80 * f2), math.floor(100 * f2), math.floor(255 * f2))
+          pts[i + 1] = { x = x, y = y, width = 2 * 9 * f, u = t, color = c }
+          glow(x, y, i == num - 1 and 115 or 38, c)
+        end
+        wa.draw.ribbon({ sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = pts })
       end
     end
     for key, hold in pairs(tazed) do
@@ -3915,7 +3968,8 @@ if wa.on.draw and wa.draw.ribbon then
         local h = 30 * EP
         wa.draw.quad({ sprite=hold.sheet, frame=math.floor(wa.draw.random()*4), blend="alpha", depth=ELECTRIC_DEPTH,
           points={{x-h,y-h},{x+h,y-h},{x+h,y+h},{x-h,y+h}} })
-        glow(x, y, 70, colour(70,80,100,255))
+        -- PX's tazed worm: a glow 0.4 to 0.7 of the sheet, flickering.
+        glow(x, y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255))
       end
     end
   end)
