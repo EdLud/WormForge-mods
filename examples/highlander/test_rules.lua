@@ -244,6 +244,7 @@ local function new_match(opts)
     graves = { all = function() return M.graves end },
     inventory = inventory_api(),
     land = {
+      stamp = function(spec) M.stamps = M.stamps or {}; M.stamps[#M.stamps + 1] = spec end,
       cut = function(spec)
         M.cuts = M.cuts or {}
         M.cuts[#M.cuts + 1] = spec
@@ -261,6 +262,8 @@ local function new_match(opts)
     },
     sound = {
       play = function(target, name, flags)
+        M.sound_targets = M.sound_targets or {}
+        M.sound_targets[#M.sound_targets + 1] = target
         M.sounds[#M.sounds + 1] = name
         M.sound_flags[#M.sound_flags + 1] = flags
         -- A pack WAV plays only once an entry registers it (`sounds`);
@@ -475,11 +478,11 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" then
+    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
-  check("the lightning, Super Tele and Laser Gun slots use scheme records; others copy stock", own_file)
+  check("the lightning, Super Tele, Laser Gun and Javelin slots use scheme records; others copy stock", own_file)
   check("Super Tele owns the teleport cursor and click dispatch",
     by_slot.teleport and by_slot.teleport.on_select.cursor
       and type(by_slot.teleport.on_click) == "function"
@@ -2137,6 +2140,75 @@ do
   M.spawned = {}
   spec.on_explode({ x=0, y=0 })
   check("an explosion without a worm: the turn's worm owns the arc", M.spawned[1] and M.spawned[1].owner == owner)
+end
+
+print("Javelin: ordered thrusts and terrain stamps")
+do
+  new_match()
+  local spec
+  for _, r in ipairs(replaced) do if r.weapon == "prod" then spec = r end end
+  check("prod uses Javelin's record and GPU art", spec.wep == "weps/prod.wep"
+    and spec.params.gpu_prefix == "sprites/javelin/" and type(spec.on_explode) == "function")
+  local P = 0x10000
+  local owner = worms[1]
+  owner.x, owner.y, owner.turn = 1000 * P, 1000 * P, true
+  local nearby = {}
+  wa.world.electrical_nearby = function(x, y, r, graves)
+    assert(r == 29 and not graves)
+    return nearby
+  end
+  local id = 0
+  local function impact(vx, vy)
+    id = id + 1
+    M.missile({ weapon = "prod", id = id, phase = "pre", vx = vx, vy = vy })
+    -- WA's explosion reports the missile's owner, which is not a worm.
+    spec.on_explode({ x = 100 * P, y = 100 * P, missile = id, worm = { owner_object = true } })
+  end
+  local a, b = worms[2], worms[3]
+  a.x, a.y, b.x, b.y = 119 * P, 119 * P, 100 * P, 100 * P
+  nearby = { a, b }
+  impact(8 * P, -4 * P)
+  check("first target wins, including square corners outside a 20px circle", a.hp == 80 and b.hp == 100)
+  check("worm thrust uses quarter incoming velocity", a.vx == 2 * P and a.vy == -P)
+  check("hitting an object never stamps", M.stamps == nil)
+  a.x, a.y = 120 * P, 100 * P
+  nearby = { a }
+  impact(P, 0)
+  check("20px boundary is excluded", a.hp == 80 and #M.stamps == 1)
+  nearby = {}
+  owner.x, owner.y = 124 * P, 124 * P
+  impact(-7, 7)
+  check("active worm has PX's 25px fallback and truncates towards zero", owner.hp == 80
+    and owner.vx == -1 and owner.vy == 1 and #M.stamps == 1)
+  owner.x, owner.y = 125 * P, 100 * P
+  impact(0, 0)
+  check("25px fallback boundary is excluded; zero speed points up", owner.hp == 80 and M.stamps[2].frame == 0)
+  owner.x, owner.y = 1000 * P, 1000 * P
+  for _, kind in ipairs({"mine", "crate", "oil"}) do
+    local o = { kind = kind, x = 100 * P, y = 100 * P }
+    function o:hit(damage, vx, vy, mode) self.hit_args = { damage, vx, vy, mode } end
+    nearby = { o }
+    impact(-8 * P, 4 * P)
+    check(kind .. " receives 20 projectile damage and thrust", o.hit_args[1] == 20
+      and o.hit_args[2] == -4 * P and o.hit_args[3] == 2 * P and o.hit_args[4] == "projectile"
+      and o.vx == -2 * P and o.vy == P and #M.stamps == 2)
+  end
+  nearby = {}
+  local cases = { {0,-1,0}, {1,0,8}, {0,1,16}, {-1,0,24}, {1,-1,3}, {1,1,11},
+    {-1,1,19}, {-1,-1,27}, {100,-1,7}, {1,100,15}, {-100,1,23}, {-1,-100,31} }
+  local good = true
+  for _, c in ipairs(cases) do
+    impact(c[1] * P, c[2] * P)
+    local stamp = M.stamps[#M.stamps]
+    good = good and stamp.frame == c[3] and stamp.sprite == "sprites/javelin/stamp"
+      and stamp.x == 100 * P and stamp.y == 100 * P
+  end
+  check("cardinals, ratio bins and clamps choose PX's centered 60px stamp", good)
+  check("sticking plays the registered impact sound on the turn's worm, never the missile's owner",
+    M.sounds[#M.sounds] == "sounds/javelin_impact.wav" and M.sound_targets[#M.sound_targets] == owner)
+  local n = #M.stamps
+  M.draw()
+  check("drawing never writes terrain", #M.stamps == n)
 end
 
 print("pack sounds: every WAV registered")

@@ -497,3 +497,19 @@ the engine's job, and the mock can't test it. They cover:
 
 The inventory/rule-event refactor is covered by this mock suite and still
 needs an in-game validation after deploying the matching DLL and pack.
+
+### Javelin (prod)
+
+Uses Highlander 0rang3 1.1's weapon record and the sprite-builder edition's
+12-frame hold and flight animations. Stock WA flies the projectile. On impact,
+Lua thrusts the first worm, mine, crate or oil drum in PX's strict 20-pixel
+square, with 20 damage and a quarter of the incoming velocity. Mines handle
+the impact through WA's mine handler. The active worm has PX's 25-pixel fallback.
+
+If nothing is hit, `wa.land.stamp` embeds one of the 32 oriented 60×60 frames
+into actual terrain. It stays solid, can be walked on and destroyed, and needs
+no persistent actor. PX's ratio-based orientation bins are preserved. The
+stamp uses source alpha and the colours the terrain already holds; airborne
+art uses GPU sheets. Terrain writes and target selection run only during
+simulation. The impact sound plays on the turn's worm (PX plays it unplaced):
+an explosion's `ev.worm` is the missile's owner, not necessarily a worm.
