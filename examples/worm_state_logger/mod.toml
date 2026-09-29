@@ -1,0 +1,10 @@
+id = "example.worm_state_logger"
+version = "0.1.0"
+author = "WormForge"
+api_version = 1
+kind = "gameplay"
+entry = "init.lua"
+
+[weapons]
+register = []
+replace = []

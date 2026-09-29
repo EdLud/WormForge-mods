@@ -1,5 +1,6 @@
 Example packs. Copy a folder to `Mods/` next to `WA.exe`.
 
+- `worm_state_logger` — no weapon slot. Shows one updating HUD line for the active worm and logs transitions to `wkLua.log`. The line includes the state field address, raw hex value, and a provisional WA 3.8.1 name (or `?`). The pack's name table can be checked in game without changing the engine's state semantics. Requires a DLL with `worm.state_id` and `worm.state_address`.
 - `highlander` — Project X Highlander rules and ported weapons, including Super Tele on the teleport slot. Deals each worm a deterministic virtual arsenal, materializes only the active worm's hand, and transfers a dead worm's weapons to the turn worm. Demonstrates `wa.inventory`, `wa.on.turn_start`, and `wa.on.death`.
 - `highlander_pure_lua` — the same rules before those verbs existed: per-worm tables, turn filtering, death polling, and transfers are all written by hand. Educational comparison only; enable one Highlander edition at a time.
 - `mask_lab` — overlays **prod**. **Experimental** actor masks: click places an animated GIF whose walk/hit solid tracks each frame (`mask = true` + worm/land/weapon/actor checkboxes). Also ships `sprites/fox.png` for a static silhouette. Needs no other prod overlay.
