@@ -1818,6 +1818,17 @@ print("lightning strike: warning, hit, grave identity and copied hand")
 do
   local P = 0x10000
   new_match()
+  local click
+  for _, spec in ipairs(replaced) do
+    if spec.weapon == "napalm_strike" then click = spec.on_click; break end
+  end
+  local jumper = worm(16)
+  jumper.turn, jumper.weapon = true, "napalm_strike"
+  jumper.state = "prefiring"
+  click({ worm=jumper, x=100*P, y=100*P })
+  check("click releases WA's prefiring pose so Jump can run", jumper.state == "standing")
+
+  new_match()
   local by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
   local owner, target = worm(16), worm(17)

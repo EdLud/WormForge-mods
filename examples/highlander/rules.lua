@@ -141,7 +141,12 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/" },
     -- Click-only dispatch keeps the strike's cursor and turn handling.
     on_select = { cursor = true },
-    on_click = function(ev) lightning_click(ev) end,
+    on_click = function(ev)
+      lightning_click(ev)
+      -- WA's click-only FireWeapon has no stock finish: PreFiring would keep
+      -- the worm in its handoff pose and prevent the next jump.
+      if ev.worm.state == "prefiring" then ev.worm:set_state("standing") end
+    end,
   },
   { -- Double Bazooka: a second shell carries on from where the first
     -- explodes (its section below). Held as a plain bazooka: the pack's
