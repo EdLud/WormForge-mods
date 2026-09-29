@@ -1698,6 +1698,9 @@ wa.on.worm_message(function(worm, msg)
 end)
 
 -- ------------------------------------------ PX's sprite builder, at run time
+-- Shared with later sections; the rest of this section is local to it.
+local HOLD_DEPTH, next_phase, frame_of, held
+do
 --
 -- PX draws many weapons' holds at run time (p_sprite_builder, WormSprite).
 -- Over a worm posture with no weapon in it -- def_shot_aim_*, the sheets
@@ -1712,7 +1715,7 @@ end)
 -- nothing.
 
 -- In front of worms and terrain, as the sentry's gun.
-local HOLD_DEPTH = 0x10000
+HOLD_DEPTH = 0x10000
 
 -- WormSprite's grow-in, counter 0..20: to 2.7 * c/20 up to 9, then 0.025
 -- smaller a frame, then 0.9, 0.95, and full size from 20.
@@ -1814,18 +1817,18 @@ end
 
 -- WormSprite::CalculateFrame and WeapSprite::CalculateFrame: a phase from 0
 -- to 1 through the sheet, anim_speed * 0.03 a frame, back to 0 past 0.99.
-local function next_phase(phase, anim_speed)
+function next_phase(phase, anim_speed)
   if phase > 0.99 then
     return 0
   end
   return phase + anim_speed * 30 / 1000
 end
 
-local function frame_of(phase, frames)
+function frame_of(phase, frames)
   return math.min(math.floor(phase * frames), frames - 1)
 end
 
-local held = {} -- worm id -> { slot, weapon, hand, counter, phase, aim }
+held = {} -- worm id -> { slot, weapon, hand, counter, phase, aim }
 
 local function drop_hold(id)
   local h = held[id]
@@ -2015,8 +2018,12 @@ wa.on.worm_message(function(worm, msg)
     update_hold(worm)
   end
 end)
+end
 
 -- ------------------------------------------ the Sniper Rifle's laser sight
+-- Shared with later sections; the rest of this section is local to it.
+local STOPPERS
+do
 --
 -- PX's LaserSight (weapon_gun_sniper_rifle_sb, on utility_laser_pointer's
 -- laserray): while the current worm aims the rifle, a red ray from 12 pixels
@@ -2039,7 +2046,7 @@ local LASER_RED, LASER_START, LASER_TIP =
   argb(255, 255, 48, 48), argb(192, 255, 96, 96), argb(16, 255, 48, 48)
 -- PX's Trace stops at anything its 2x2 mask touches. Terrain is traced
 -- exactly; objects by these radii in pixels, an estimate of their masks.
-local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
+STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
 
 local function laser_length(x, y, dx, dy, shooter)
   local P = 0x10000
@@ -2126,8 +2133,12 @@ if wa.on.draw then
     end
   end)
 end
+end
 
 -- ------------------------------------ PX's missile sprites, at run time
+-- Shared with later sections; the rest of this section is local to it.
+local flying, current_worm
+do
 --
 -- For some weapons PX draws the missile itself (p_sprite_builder,
 -- WeapSprite) and leaves WA's sprite 0: a sprite that follows the missile,
@@ -2171,7 +2182,7 @@ local PX_WEAP_SPRITES = {
   },
 }
 
-local flying = {} -- missile id -> { actor, phase, seen }
+flying = {} -- missile id -> { actor, phase, seen }
 
 -- The actor goes when its missile stops reporting: WA has freed it.
 local function follow_missile(id)
@@ -2190,7 +2201,7 @@ end
 
 -- The worm whose turn it is: WeapSprite's owner (GetCurrentWorm()). A
 -- missile frame gives no spawn owner of its own.
-local function current_worm()
+function current_worm()
   for _, w in ipairs(wa.worms.all()) do
     if w.turn then
       return w
@@ -2242,8 +2253,10 @@ wa.on.missile_frame(function(m)
   end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)
+end
 
 -- ---------------------------------------------------------- Double Bazooka
+do
 --
 -- PX's double_bazooka_script. A Double Bazooka shell does not end at the
 -- first thing it hits: WA's explosion goes off, a 50-pixel hole is cut
@@ -2309,8 +2322,10 @@ wa.on.worm_message(function(worm, msg)
     db_pending = {}
   end
 end)
+end
 
 -- ------------------------------------------------------------- Chilli Bomb
+do
 --
 -- PX's pyro_grenades_script (PyroMan), on WA's super banana. When a Chilli
 -- Bomb explodes, five more Chillis burst out of it, straight up with a
@@ -2367,8 +2382,10 @@ wa.on.worm_message(function(worm, msg)
     chilli_pending = {}
   end
 end)
+end
 
 -- ------------------------------------------------------------ Nuke Rocket
+do
 --
 -- PX's nuke_rocket_script, on the mine slot. The scheme's record is a
 -- placed weapon that WA fires as a missile (fire type 2, method 2:
@@ -2504,8 +2521,12 @@ wa.on.worm_message(function(worm, msg)
     nr_pending = {}
   end
 end)
+end
 
 -- -------------------------------------------------------------- Helicopter
+-- Shared with later sections; the rest of this section is local to it.
+local FX, trunc
+do
 --
 -- PX's helicopter_user_script, on WA's jet pack. While the jet pack runs,
 -- the script flies the worm itself from the worm's own move keys, which it
@@ -2526,11 +2547,11 @@ local HELI_FUEL = 100            -- FuelAmount
 local HELI_REALISTIC = true      -- gravity and wind act on it, at 0.2
 local HELI_EXPLODE_ON_TURN_END = true
 local HELI_DEPTH = 0x10000       -- in front of worms and terrain
-local FX = 0x10000
+FX = 0x10000
 
 local helis = {} -- worm id -> { flying, launch, jumpin, jump_phase, frame, ticks, body, climb }
 
-local function trunc(v)
+function trunc(v)
   return v >= 0 and math.floor(v) or math.ceil(v)
 end
 
@@ -2734,8 +2755,12 @@ if wa.on.contact then
     end
   end)
 end
+end
 
 -- --------------------------------------------------------- Hot Air Balloon
+-- Shared with later sections; the rest of this section is local to it.
+local balloons
+do
 --
 -- PX's balloon_s (r2_balloon by rafa''2, modified by 0rang3), on WA's
 -- parachute. While the parachute is open, the worm's gravity is turned
@@ -2754,7 +2779,7 @@ local TEAM_RGB = { 0xFF8080, 0x0096FF, 0x00D000, 0xFFFF40, 0xE800E8, 0x50FFFF }
 
 -- Also records the weapon equipped before WA changes the visible slot while
 -- opening a parachute, for both the balloon and glider handlers.
-local balloons = {} -- worm id -> { active, gravity, ticks, equipped_weapon, balloon, basket }
+balloons = {} -- worm id -> { active, gravity, ticks, equipped_weapon, balloon, basket }
 
 local function balloon_of(worm)
   local b = balloons[worm.id]
@@ -2849,8 +2874,10 @@ wa.on.turn_start(function()
     end
   end
 end)
+end
 
 -- ------------------------------------------------------------- Hang-Glider
+do
 --
 -- PX's paratest (utility_hangglider_render), on WA's parachute. A worm that
 -- opens the parachute with the Hang-Glider flies PX's glider: gravity at
@@ -3070,8 +3097,10 @@ if wa.world.gravity and wa.world.wind then
     end
   end)
 end
+end
 
 -- --------------------------------------------------------------- Swim Suit
+do
 --
 -- PX's swimsuit_SCRIPT (StepS; swim sprites by Team17) with fastswim_SCRIPT
 -- and swim_suit_diving_s (PyroMan), on WA's laser sight. Using it puts the
@@ -3356,8 +3385,10 @@ if wa.on.contact then
     end
   end)
 end
+end
 
 -- ---------------------------------------------- Wind Changer, Gravity Control
+do
 --
 -- PX's wind_changer_script (ravander, improved by 0rang3) and
 -- gravity_control_script (DabbyB, edited by 0rang3). Both records are one of
@@ -3452,8 +3483,10 @@ if wa.on.hud then
     end
   end)
 end
+end
 
 -- ------------------------------------------------------------------ Jump
+do
 --
 -- PX's jumpscript (utility_jump). Its record throws like a grenade, but
 -- nothing leaves the worm: FireFinal gives the worm the shot's own speed --
@@ -3474,6 +3507,7 @@ fires.jump = function(fire)
   worm:set_state("sliding")
   worm.vx, worm.vy = fire.vx, fire.vy
   wa.sound.play(worm, JUMP_SPEECH + SPEECH_LINES * (worm.team - 1))
+end
 end
 
 -- ------------------------------------------------------------- Laser Gun
@@ -3939,6 +3973,7 @@ end)
 wa.on.death(on_death)
 
 -- --------------------------------------------------------------- Super Tele
+do
 -- PX's FireFinal arms the teleport, the next M_FRAME starts its pose and
 -- sound, and M_FRAME moves the worm 50 frames after that. Keep the click
 -- from WA's fire context: the live pointer
@@ -3989,8 +4024,10 @@ wa.on.worm_message(function(worm, msg)
     wa.land.dig({ x = tele.x, y = tele.y - rise * 0x10000, radius = 12 })
   end
 end)
+end
 
 -- --------------------------------------------------------- electrical weapons
+do
 -- PX's lightningstrike.txt and tazer.txt share these target classes and beam
 -- textures. Only gameplay advances in the actor brains. Drawing below may run
 -- at any frame rate and consumes only wa.draw.random(), never WA's sim RNG.
@@ -4488,6 +4525,7 @@ if wa.on.draw and wa.draw.ribbon then
       end
     end
   end)
+end
 end
 
 -- ---------------------------------------------------------------- Javelin
