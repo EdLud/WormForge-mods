@@ -260,8 +260,9 @@ local function new_match(opts)
       random = function() return 0.5 end,
     },
     sound = {
-      play = function(target, name)
+      play = function(target, name, flags)
         M.sounds[#M.sounds + 1] = name
+        M.sound_flags[#M.sound_flags + 1] = flags
         -- A pack WAV plays only once an entry registers it (`sounds`);
         -- otherwise the engine plays nothing, without a word.
         if type(name) == "string" then
@@ -355,7 +356,7 @@ local function new_match(opts)
       end,
     },
   }
-  M.quads, M.ribbons, M.sounds, M.trace_hit, M.draws = {}, {}, {}, nil, nil
+  M.quads, M.ribbons, M.sounds, M.sound_flags, M.trace_hit, M.draws = {}, {}, {}, {}, nil, nil
   M.mines, M.crates, M.oil, M.graves = {}, {}, {}, {}
   dofile("mods/examples/highlander/rules.lua")
 end
@@ -454,7 +455,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("52 slots replaced, each once", #replaced == 52 and not dupes, tostring(#replaced))
+  check("53 slots replaced, each once", #replaced == 53 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -474,11 +475,15 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if slot == "earthquake" or slot == "napalm_strike" or slot == "uzi" then
+    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
-  check("the lightning and Laser Gun slots use scheme records; others copy stock", own_file)
+  check("the lightning, Super Tele and Laser Gun slots use scheme records; others copy stock", own_file)
+  check("Super Tele owns the teleport cursor and click dispatch",
+    by_slot.teleport and by_slot.teleport.on_select.cursor
+      and type(by_slot.teleport.on_click) == "function"
+      and by_slot.teleport.panel_icon == "sprites/super_tele/icon.png")
   check("Lightning Strike claims the stock land cursor and click dispatch",
     by_slot.napalm_strike and by_slot.napalm_strike.on_select.cursor
       and type(by_slot.napalm_strike.on_click) == "function")
@@ -1875,6 +1880,59 @@ do
     shown[bullet.shown] = true
   end
   check("steps through all sixteen frames", shown[0] and shown[15])
+end
+
+print("Super Tele: frozen click, 50-frame delay, three cuts and cavern ceiling")
+do
+  local P = 0x10000
+  new_match()
+  local spec
+  for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
+  local w = worm(16)
+  w.x, w.y, w.hp = 40 * P, 70 * P, 100
+  local target_x, target_y = 190 * P + 1234, 100 * P + 2345
+  spec.on_click({ worm = w, x = target_x, y = target_y })
+  local marker = M.spawned[#M.spawned]
+  check("target marker stays at the frozen click position",
+    marker.sprite == "markerr" and marker.x == target_x and marker.y == target_y and not marker.dead)
+  check("click confirms target with PX sound and flags",
+    w.state ~= "teleporting" and M.sounds[1] == 68 and M.sound_flags[1] == 0)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the next frame enters WA's teleport pose and plays PX's start sound",
+    w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 0)
+  for _ = 1, 49 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("worm and marker remain in place for 49 frames after starting",
+    w.x == 40 * P and w.y == 70 * P and not M.digs and not marker.dead)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("frame 50 arrives at the saved target and removes its marker",
+    w.x == target_x and w.y == target_y and marker.dead)
+  local cuts = M.digs or {}
+  check("arrival cuts three overlapping holes at and above the destination",
+    #cuts == 3 and cuts[1].x == target_x and cuts[1].y == target_y
+      and cuts[2].y == target_y - 10 * P and cuts[3].y == target_y - 22 * P
+      and cuts[1].radius == 12 and cuts[2].radius == 12 and cuts[3].radius == 12)
+  for _ = 1, 5 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("arrival runs once", #M.digs == 3)
+
+  new_match({ cavern = true })
+  spec = nil
+  for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
+  w = worm(16)
+  spec.on_click({ worm = w, x = 50 * P, y = 2 * P })
+  for _ = 1, 51 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("cavern clicks stay at least 19 pixels below the ceiling", w.y == 19 * P)
+
+  new_match()
+  spec = nil
+  for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
+  w = worm(16)
+  w.x, w.y = 40 * P, 70 * P
+  spec.on_click({ worm = w, x = 200 * P, y = 150 * P })
+  marker = M.spawned[#M.spawned]
+  w.hp = 0
+  for _ = 1, 50 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("a dead worm is never moved or carved in and its marker is removed",
+    w.x == 40 * P and w.y == 70 * P and not M.digs and marker.dead)
 end
 
 print("lightning strike: warning, hit, grave identity and copied hand")

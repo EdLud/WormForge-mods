@@ -1,5 +1,5 @@
 id = "example.highlander"
-version = "0.7.0"
+version = "0.8.0"
 author = "wkLua"
 api_version = 1
 kind = "gameplay"
@@ -10,7 +10,7 @@ entry = "rules.lua"
 [weapons]
 register = []
 replace = [
-  "earthquake", "napalm_strike", "uzi",
+  "earthquake", "napalm_strike", "uzi", "teleport",
   "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
   "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
   "damage_x2", "double_turn_time", "ming_vase",
