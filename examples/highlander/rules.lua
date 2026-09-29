@@ -4099,7 +4099,9 @@ electric_grenade_explode = function(ev)
     burst_x = ev.x, burst_y = ev.y, sound_age = 0 }
   if ev.worm then arc.ignore[target_key(ev.worm)] = true end
   arcs[#arcs + 1] = arc
-  local driver = effect_actor(ev.x, ev.y, ev.worm, function(a)
+  -- An explosion without a worm would leave the driver owned by the exploding
+  -- grenade: the turn's worm owns it then, as every other effect's.
+  local driver = effect_actor(ev.x, ev.y, ev.worm or current_worm(), function(a)
     arc.sound_age = arc.sound_age + 1
     if arc.life > 0 and arc.sound_age % 46 == 0 then
       wa.sound.play(a, "sounds/lightning/tazer_loop.wav")

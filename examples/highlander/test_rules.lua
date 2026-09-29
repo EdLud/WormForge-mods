@@ -1997,6 +1997,14 @@ do
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(1)
   check("terrain trace can redirect the arc", #M.spawned > 0 and not M.spawned[#M.spawned].dead)
+  -- An explosion WA reports without a worm: the turn's worm owns the arc's
+  -- driver, not the exploding grenade (which lends no collision helper).
+  spec, owner = setup()
+  for _, w in ipairs(worms) do w.turn = false end
+  owner.turn = true
+  M.spawned = {}
+  spec.on_explode({ x=0, y=0 })
+  check("an explosion without a worm: the turn's worm owns the arc", M.spawned[1] and M.spawned[1].owner == owner)
 end
 
 print("pack sounds: every WAV registered")
