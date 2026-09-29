@@ -1510,6 +1510,67 @@ do
   check("another slot's parachute is left alone", w.gravity == P)
 end
 
+print("automatic parachute: only the equipped weapon opens")
+do
+  new_match()
+  frame()
+  local P = 0x10000
+  local w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
+    "bungee", "sliding", 100 * P, 50 * P, 0, P, true
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  -- WA has replaced the selected slot with stock Parachute while opening.
+  w.weapon, w.state = "parachute", "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("equipped balloon owns the auto opening despite WA's slot change",
+    w.gravity == -P and M.spawned[1] and M.spawned[1].sprite == "sprites/balloon/balloon")
+  local glider = false
+  for _, a in ipairs(M.spawned) do
+    if a.sprite == "sprites/hang_glider/glider" then glider = true end
+  end
+  check("equipped balloon does not start the glider", not glider)
+
+  new_match()
+  frame()
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
+    "parachute", "sliding", 100 * P, 50 * P, 0, P, true
+  w.keys = {}
+  M.spawned = {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.weapon, w.state = "none", "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("equipped glider owns its auto opening",
+    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider" and w.gravity == P)
+
+  new_match()
+  frame()
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
+    "shotgun", "sliding", 100 * P, 50 * P, 0, P, true
+  M.spawned = {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("another equipped weapon keeps falling", w.state == "sliding" and #M.spawned == 0)
+  -- Even an unexpected stock parachute state must not turn into either mod.
+  w.weapon, w.state = "none", "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("another equipped weapon claims neither parachute replacement", #M.spawned == 0)
+
+  new_match()
+  frame()
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
+    "parachute", "sliding", 100 * P, 50 * P, 0, P, true
+  M.spawned = {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.weapon = "shotgun"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.weapon, w.state = "none", "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("putting the glider away removes its automatic claim", #M.spawned == 0)
+end
+
 print("hang-glider: PX's glider on WA's parachute")
 do
   new_match()
@@ -1550,8 +1611,10 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("closed: the sound, the art gone, the body back, no pack-away",
     M.sounds[#M.sounds]:find("hangclose") and art.dead and w.body_visible == true and #M.spawned == 1)
-  -- Up again (the weapon was the glider), then a landing on its feet.
-  w.state = "parachuting"
+  -- Equip the glider again for the next opening, then land on its feet.
+  w.weapon = "parachute"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state, w.weapon = "parachuting", "none"
   M.message(w, wa.msg.FRAME_FINISH)
   w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)

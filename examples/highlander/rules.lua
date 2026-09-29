@@ -2725,7 +2725,9 @@ local BASKET_DEPTH = 0x10000
 -- team colour shows at full strength.
 local TEAM_RGB = { 0xFF8080, 0x0096FF, 0x00D000, 0xFFFF40, 0xE800E8, 0x50FFFF }
 
-local balloons = {} -- worm id -> { active, gravity, ticks, last_weapon, balloon, basket }
+-- Also records the weapon equipped before WA changes the visible slot while
+-- opening a parachute, for both the balloon and glider handlers.
+local balloons = {} -- worm id -> { active, gravity, ticks, equipped_weapon, balloon, basket }
 
 local function balloon_of(worm)
   local b = balloons[worm.id]
@@ -2756,20 +2758,17 @@ end
 local function balloon_frame(worm)
   local b = balloon_of(worm)
   local state = worm.state
-  -- FireFinal(Hot Air Balloon): WA opens its parachute straight away and
-  -- clears the selection as it does ("none"), so it is the one the worm had
-  -- the frame before.
-  local weapon = worm.weapon
-  if weapon == nil or weapon == "none" then
-    weapon = b.last_weapon
-  end
+  -- WA may change the selected slot to Parachute (or none) as Bungee fires.
+  -- The weapon equipped before that transition identifies the auto trigger;
+  -- an unrelated parachute opening must not become a Hot Air Balloon.
+  local equipped = b.equipped_weapon
   if not b.active and state == "parachuting" and not b.was_parachuting
-      and weapon == "bungee" then
+      and equipped == "bungee" then
     b.active, b.ticks = true, 0
     balloon_sound(worm, "inflate", 3)
   end
   b.was_parachuting = state == "parachuting"
-  b.last_weapon = worm.weapon
+  if state ~= "parachuting" then b.equipped_weapon = worm.weapon end
   if b.active then
     if state == "parachuting" and worm.turn and worm.y < wa.world.water() then
       worm.gravity = b.gravity
@@ -2965,24 +2964,29 @@ local function glider_think(worm, g)
 end
 
 local function glider_frame(worm)
-  -- Only worms that have held the Hang-Glider.
+  local state = worm.state
+  local b = balloons[worm.id]
+  local equipped = b and b.equipped_weapon
+  if b and b.active then
+    local g = gliders[worm.id]
+    if g then g.enabled = false end
+    return
+  end
+  -- A glider may have auto-opened and cleared its selected slot before its
+  -- first frame. The slot equipped before opening is authoritative.
   local g = gliders[worm.id]
   if not g then
-    if worm.weapon ~= "parachute" then
+    if (state == "parachuting" and equipped ~= "parachute")
+        or (state ~= "parachuting" and worm.weapon ~= "parachute") then
       return
     end
     g = glider_of(worm)
   end
-  local state = worm.state
   local P = 0x10000
   if state ~= "parachuting" then
     -- Which parachute the worm opens next: PX checks the weapon only while
     -- the worm is not already under one.
-    if worm.weapon == "parachute" then
-      g.enabled = true
-    elseif worm.weapon == "bungee" then
-      g.enabled = false -- the Hot Air Balloon
-    end
+    g.enabled = worm.weapon == "parachute"
     if g.deployed then
       g.deployed = false
       glider_drop_art(worm, g)
@@ -3011,6 +3015,7 @@ local function glider_frame(worm)
     g.sx, g.sy = worm.vx / P, worm.vy / P
     return
   end
+  g.enabled = equipped == "parachute"
   if not g.enabled then
     return -- a plain parachute, or the balloon
   end
