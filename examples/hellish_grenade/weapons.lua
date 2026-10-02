@@ -22,6 +22,8 @@ wa.weapons.replace({
   patch = {
     damage = 70,
     blast = 80,
+    glow_sprite = 154,
+    homing_sprite = 161,
     detonation = 2,
     cluster_count = 150,
     cluster_speed = 70,
