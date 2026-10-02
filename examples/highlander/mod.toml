@@ -5,6 +5,10 @@ api_version = 1
 kind = "gameplay"
 entry = "rules.lua"
 
+# Still calls worm:set_state while its weapons move to the engine's handoff
+# verbs (worm-handoff plan); remove once none does.
+debug_worm_state = true
+
 # Verb-based edition: wa.inventory + turn_start + death, on PX's weapon
 # layout. The slots below carry the weapons ported so far.
 [weapons]
