@@ -187,12 +187,11 @@ Shadow-Bolt, the Sniper Rifle and the Helicopter.
 **Holds drawn at run time.** For some weapons PX draws the worm holding it
 with its sprite builder, not from a sheet. It takes a posture with no weapon
 in it, then draws the weapon and a hand over it, placed and turned from the
-aim each frame, and grows the weapon in as aiming starts. The pack does the
-same with two GPU actors per aiming worm, from each weapon's numbers in its
-PX script (`PX_HOLDS` in `rules.lua`). This needs `worm.aim` and
-`worm.aiming` (engine branch `worm-aim-reads`), and without them it does
-nothing. For the weapon to draw in front of the worm, it also needs
-`gpu-depth-order`.
+aim each frame, and grows the weapon in as aiming starts. Each replacement
+declares its PX numbers as `hold = {…}` (`PX_HOLDS` in `rules.lua`); the engine
+draws the GPU weapon and optional hand over WA's worm pose. Walking hides the
+hold immediately, and aiming restores it. Holds are presentation only and do
+not spawn simulation actors.
 
 **Sticky Bomb.** PX's record leaves the bomb's sprite 0. That gives a
 grenade-type slot no throw sheet, so the pack keeps the stock grenade sprite

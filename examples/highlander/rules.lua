@@ -43,8 +43,8 @@
 -- ---------------------------------------------------------------- weapons
 
 -- PX's sprite builder, for the weapons below whose hold PX draws at run
--- time: the worm posture with no weapon in it, and its hands. The helper
--- further down draws the weapon and a hand over it.
+-- time: the worm posture with no weapon in it, and its hands. The engine
+-- draws the weapon and optional hand from the hold claim below.
 local PX_POSTURE = {
   weaponlnk = "sprites/px_hold/aim", weaponlnku = "sprites/px_hold/aimu",
   weaponlnkd = "sprites/px_hold/aimd",
@@ -54,6 +54,79 @@ local PX_POSTURE = {
 local PX_HANDS = {
   "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad", "sprites/px_hold/hand_rad_upper",
 }
+local PX_HOLDS = {
+  prod = {
+    keep_while_firing = true,
+    sheet = "sprites/javelin/hold", draw_hand = false,
+    hand_radius = 0, hand_rotation = 0, hand_radial_rotation = 0,
+    weap_radial_rotation = 0, weap_rotation = 1, weap_radius = -11.8,
+    animate = true, anim_speed = 1.25, frames = 12,
+  },
+  earthquake = { -- Electric Grenade (electric_grenade_anim)
+    thrown = true,
+    sheet = "sprites/px_hold/electric_grenade.png", hand_type = 1,
+    hand_radius = 15, hand_scale = 0.8,
+    weap_rotation = 0.5, weap_radius = 9,
+  },
+  grenade = { -- Sticky Bomb (sb_script)
+    -- Thrown: once fired it has left the worm's hands, and WA puts nothing
+    -- away (as for its own grenades), so neither does the rule.
+    thrown = true,
+    sheet = "sprites/px_hold/sticky_bomb", hand_type = 1, hand_radius = 24,
+    hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
+    weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
+  },
+  super_banana = { -- Chilli Bomb (chilli_bomb_anim)
+    thrown = true,
+    sheet = "sprites/px_hold/chilli_bomb", hand_type = 1, hand_radius = 13,
+    hand_scale = 0.8, weap_rotation = 0.5, weap_radius = 9,
+  },
+  homing_missile = { -- Igniter (igniter_anim)
+    -- Up through the shot too: it has no firing poses of its own, so WA
+    -- fires it in the aim posture, empty-handed without the hold. Not PX's.
+    keep_while_firing = true,
+    sheet = "sprites/px_hold/igniter", hand_type = 2, hand_radius = -6.0,
+    hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
+  },
+  mine = { -- Nuke Rocket (nuke_rocket_anim): held at a fixed angle, not
+    -- the aim's (dont_rotate_with_angle), and placed, so never put away.
+    thrown = true,
+    sheet = "sprites/px_hold/nuke_rocket", hand_type = 2, hand_radius = 13.0,
+    hand_rotation = -0.6, hand_radial_rotation = -0.95, hand_scale = 1.0,
+    weap_rotation = 0.45, weap_radial_rotation = 1.0, weap_radius = 8.5,
+    static = { weap = -0.1, hand = 0.4 }, -- ang_if_static, hand_ang_if_static
+  },
+  handgun = { -- Sniper Rifle (sniper_rifle_script): its hand at scale 0
+    -- Up through each shot, with its laser, over the snipefire poses (the
+    -- worm lit by the muzzle), so it does not flicker between the three.
+    -- Not PX's: PX hides it until the worm aims again.
+    keep_while_firing = true,
+    -- A muzzle flash on each shot. Not PX's: its rifle and snipefire poses
+    -- have none. The sentry gun's flare, smaller, at the barrel's tip (30
+    -- pixels out, on the barrel 2 to the side, as the laser leaves it).
+    flash = { sheet = "sprites/sniper_rifle/flash", out = 30, side = 2, scale = 0.45, frames = 3 },
+    sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
+    hand_rotation = 1.0, hand_radial_rotation = 0.9,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
+  },
+  longbow = { -- Shadow-Bolt (shadow_bolt_script): no hand, the bolt animated
+    -- The crossbow stays up through the shot: it has no firing poses of
+    -- its own, so WA fires it in the aim posture. Not PX's.
+    keep_while_firing = true,
+    sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
+    hand_rotation = 0.0, hand_radial_rotation = 0.0,
+    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 3.5,
+    animate = true, anim_speed = 1.30, frames = 6,
+  },
+}
+
+-- Each replace claim carries its own hold data. The engine draws it and
+-- handles walking/aim/firing; no simulation actors are created for it.
+for _, p in pairs(PX_HOLDS) do
+  if p.draw_hand ~= false then p.hand = PX_HANDS[p.hand_type or 2] end
+end
+
 -- Filled in by the Double Bazooka's and Nuke Rocket's sections further down.
 local double_bazooka_explode
 local nuke_rocket_explode
@@ -89,7 +162,7 @@ local PORTED = {
 -- PX weapons that need only PX's art: its icons, copied byte for byte so
 -- replays share them, and its strips split into frame folders with
 -- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
--- its sprite builder (p_sprite_builder), so does the pack (PX_HOLDS below).
+-- its sprite builder (p_sprite_builder), so does the engine from PX_HOLDS.
 local PX_ART = {
   { -- Super Tele: the PX record is a type-3 cursor weapon on teleport's slot.
     weapon = "teleport",
@@ -137,7 +210,7 @@ local PX_ART = {
     panel_icon = "sprites/electric_grenade/icon.png",
     sprite = "grenade",
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/electric_grenade.png", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    sprites = { "sprites/px_hold/electric_grenade.png" },
     sounds = { "sounds/lightning/tazer_loop.wav" },
     params = { gpu_prefix = "sprites/px_hold/" },
     on_explode = function(ev) electric_grenade_explode(ev) end,
@@ -176,12 +249,12 @@ local PX_ART = {
     panel_icon = "sprites/nuke_rocket/nuke_rocket_ico.png",
     sprite = "sprites/nuke_rocket/nuke_rocket_bullet.png",
     on_explode = function(ev) nuke_rocket_explode(ev) end,
-    -- The worm holds it as PX's sprite builder draws it (PX_HOLDS below):
+    -- The engine draws its PX sprite-builder hold from PX_HOLDS:
     -- the record's own sprite is PX-only, which left WA no sheet to draw
     -- the worm with.
     worm_sprites = PX_POSTURE,
     sprites = {
-      "sprites/px_hold/nuke_rocket", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3],
+      "sprites/px_hold/nuke_rocket",
     },
     sounds = { "sounds/nuke_rocket_launch.wav" },
     params = { gpu_prefix = "sprites/px_hold/" },
@@ -382,7 +455,7 @@ local PX_ART = {
     panel_icon = "sprites/igniter/igniter_ico.png",
     worm_sprites = PX_POSTURE,
     sprites = {
-      "sprites/px_hold/igniter", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3], "sprites/igniter/flight",
+      "sprites/px_hold/igniter", "sprites/igniter/flight",
     },
     params = { gpu_prefix = "sprites/" },
   },
@@ -396,7 +469,7 @@ local PX_ART = {
     sprite = "banana",
     on_explode = function(ev) chilli_bomb_explode(ev) end,
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/chilli_bomb", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    sprites = { "sprites/px_hold/chilli_bomb" },
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
@@ -414,7 +487,7 @@ local PX_ART = {
       wsvclnku = "sprites/sticky_bomb/bomb",                               -- 467
     },
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/sticky_bomb", PX_HANDS[1], PX_HANDS[2], PX_HANDS[3] },
+    sprites = { "sprites/px_hold/sticky_bomb" },
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Fire Jump: a fire punch, then a jump and a glide (below).
@@ -1650,6 +1723,7 @@ for _, list in ipairs({ PORTED, PX_ART }) do
     for key, value in pairs(w) do
       spec[key] = value
     end
+    spec.hold = PX_HOLDS[w.weapon]
     wa.weapons.replace(spec)
   end
 end
@@ -1747,328 +1821,31 @@ wa.on.worm_message(function(worm, msg)
   end
 end)
 
--- ------------------------------------------ PX's sprite builder, at run time
--- Shared with later sections; the rest of this section is local to it.
-local HOLD_DEPTH, next_phase, frame_of, held
-do
---
--- PX draws many weapons' holds at run time (p_sprite_builder, WormSprite).
--- Over a worm posture with no weapon in it -- def_shot_aim_*, the sheets
--- below -- it draws the weapon and a hand, each placed and turned from the
--- aim angle by the weapon's CWormAnimParams, and grows the weapon in over the
--- first 20 frames of aiming. This does the same with two actors per aiming
--- worm, from worm messages, so in lockstep.
---
--- It reads worm.aim (the aim WA draws, 0 straight down .. 1 straight up:
--- PX's FireAngle) and worm.aiming (WA draws the worm with its weapon out:
--- PX's WS_AIMING or WS_SETPOWER). On an engine without them it does
--- nothing.
-
--- In front of worms and terrain, as the sentry's gun.
-HOLD_DEPTH = 0x10000
-
--- WormSprite's grow-in, counter 0..20: to 2.7 * c/20 up to 9, then 0.025
--- smaller a frame, then 0.9, 0.95, and full size from 20.
-local PICK = {}
-do
-  local s = 0
-  for c = 0, 20 do
-    if c >= 20 then s = 1
-    elseif c > 17 then s = c / 20
-    elseif c > 9 then s = s - 0.025
-    else s = 2.7 * c / 20 end
-    PICK[c] = s
-  end
-end
-
--- Slot -> the weapon's CWormAnimParams, as its PX script states them.
-local PX_HOLDS = {
-  prod = {
-    keep_while_firing = true,
-    sheet = "sprites/javelin/hold", draw_hand = false,
-    hand_radius = 0, hand_rotation = 0, hand_radial_rotation = 0,
-    weap_radial_rotation = 0, weap_rotation = 1, weap_radius = -11.8,
-    animate = true, anim_speed = 1.25, frames = 12,
-  },
-  earthquake = { -- Electric Grenade (electric_grenade_anim)
-    thrown = true,
-    sheet = "sprites/px_hold/electric_grenade.png", hand_type = 1,
-    hand_radius = 15, hand_scale = 0.8,
-    weap_rotation = 0.5, weap_radius = 9,
-  },
-  grenade = { -- Sticky Bomb (sb_script)
-    -- Thrown: once fired it has left the worm's hands, and WA puts nothing
-    -- away (as for its own grenades), so neither does the rule.
-    thrown = true,
-    sheet = "sprites/px_hold/sticky_bomb", hand_type = 1, hand_radius = 24,
-    hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
-    weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
-  },
-  super_banana = { -- Chilli Bomb (chilli_bomb_anim)
-    thrown = true,
-    sheet = "sprites/px_hold/chilli_bomb", hand_type = 1, hand_radius = 13,
-    hand_scale = 0.8, weap_rotation = 0.5, weap_radius = 9,
-  },
-  homing_missile = { -- Igniter (igniter_anim)
-    -- Up through the shot too: it has no firing poses of its own, so WA
-    -- fires it in the aim posture, empty-handed without the hold. Not PX's.
-    keep_while_firing = true,
-    sheet = "sprites/px_hold/igniter", hand_type = 2, hand_radius = -6.0,
-    hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
-    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
-  },
-  mine = { -- Nuke Rocket (nuke_rocket_anim): held at a fixed angle, not
-    -- the aim's (dont_rotate_with_angle), and placed, so never put away.
-    thrown = true,
-    sheet = "sprites/px_hold/nuke_rocket", hand_type = 2, hand_radius = 13.0,
-    hand_rotation = -0.6, hand_radial_rotation = -0.95, hand_scale = 1.0,
-    weap_rotation = 0.45, weap_radial_rotation = 1.0, weap_radius = 8.5,
-    static = { weap = -0.1, hand = 0.4 }, -- ang_if_static, hand_ang_if_static
-  },
-  handgun = { -- Sniper Rifle (sniper_rifle_script): its hand at scale 0
-    -- Up through each shot, with its laser, over the snipefire poses (the
-    -- worm lit by the muzzle), so it does not flicker between the three.
-    -- Not PX's: PX hides it until the worm aims again.
-    keep_while_firing = true,
-    -- A muzzle flash on each shot. Not PX's: its rifle and snipefire poses
-    -- have none. The sentry gun's flare, smaller, at the barrel's tip (30
-    -- pixels out, on the barrel 2 to the side, as the laser leaves it).
-    flash = { sheet = "sprites/sniper_rifle/flash", out = 30, side = 2, scale = 0.45, frames = 3 },
-    sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
-    hand_rotation = 1.0, hand_radial_rotation = 0.9,
-    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
-  },
-  longbow = { -- Shadow-Bolt (shadow_bolt_script): no hand, the bolt animated
-    -- The crossbow stays up through the shot: it has no firing poses of
-    -- its own, so WA fires it in the aim posture. Not PX's.
-    keep_while_firing = true,
-    sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
-    hand_rotation = 0.0, hand_radial_rotation = 0.0,
-    weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 3.5,
-    animate = true, anim_speed = 1.30, frames = 6,
-  },
-}
-
--- CWormAnimParams' own defaults, for whatever a weapon's script leaves out:
--- the Chilli Bomb sets neither radial rotation, so its hold is cocked back
--- behind the worm's head (1.0: half a turn) as a throw.
-local PX_HOLD_DEFAULTS = {
-  hand_radius = 1.0, hand_rotation = 1.0, hand_radial_rotation = 1.0,
-  hand_scale = 1.0, hand_type = 2, weap_rotation = 1.0,
-  weap_radial_rotation = 1.0, weap_radius = 1.0, anim_speed = 1.0,
-}
-for _, p in pairs(PX_HOLDS) do
-  for k, v in pairs(PX_HOLD_DEFAULTS) do
-    if p[k] == nil then
-      p[k] = v
-    end
-  end
-end
-
--- WormSprite::CalculateFrame and WeapSprite::CalculateFrame: a phase from 0
--- to 1 through the sheet, anim_speed * 0.03 a frame, back to 0 past 0.99.
-function next_phase(phase, anim_speed)
-  if phase > 0.99 then
-    return 0
-  end
+-- PX's missile sprite animations share these two helpers. Holds are drawn
+-- by the engine from each replace claim's hold table above.
+local HOLD_DEPTH = 0x10000
+local function next_phase(phase, anim_speed)
+  if phase > 0.99 then return 0 end
   return phase + anim_speed * 30 / 1000
 end
-
-function frame_of(phase, frames)
+local function frame_of(phase, frames)
   return math.min(math.floor(phase * frames), frames - 1)
 end
 
-held = {} -- worm id -> { slot, weapon, hand, counter, phase, aim }
-
-local function drop_hold(id)
-  local h = held[id]
-  if h then
-    h.weapon:despawn()
-    if h.hand then
-      h.hand:despawn()
-    end
-    if h.flash then
-      h.flash:despawn()
-    end
-    held[id] = nil
-  end
-end
-
--- One sprite of the hold: centred at (dx, dy) pixels from the worm, turned
--- by `angle` radians, as PX computes them for a worm facing right; facing
--- left mirrors all three, as PX's left-facing formulas do.
-local function place(a, worm, dx, dy, angle, scale, look)
-  local f = worm.facing
-  -- Positions are 16.16 integers.
-  a.x = worm.x + math.floor(f * dx * 0x10000 + 0.5)
-  a.y = worm.y + math.floor(dy * 0x10000 + 0.5)
-  a.vx, a.vy = 0, 0
-  a.facing = f
-  local g = { angle = math.deg(angle * f) % 360, scale = scale, depth = HOLD_DEPTH }
-  for k, v in pairs(look or {}) do
-    g[k] = v
-  end
-  a:gfx(g)
-end
-
--- worm.aim, or nil on an engine without it: a worm has no such field there,
--- and reading one is an error rather than nil.
-local function aim_of(worm)
-  local ok, aim = pcall(function() return worm.aim end)
-  return ok and aim or nil
-end
-
-local function spawn_hold(worm, slot)
-  local p = PX_HOLDS[slot]
-  local function actor(sheet)
-    return wa.actors.spawn({
-      sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-      collide = false, owner = worm, on = function() end,
-    })
-  end
-  local h = { slot = slot, counter = 0, phase = 0 }
-  if p.flash then
-    h.flash = actor(p.flash.sheet)
-    h.flash:frame(0) -- its empty frame, until a shot
-  end
-  h.weapon = actor(p.sheet)
-  -- A weapon PX draws with no hand: draw_hand = false.
-  if p.draw_hand ~= false then
-    h.hand = actor(PX_HANDS[p.hand_type])
-  end
-  held[worm.id] = h
-  return h
-end
-
--- WormSprite::CalculateAngle: the hold at its aim, grown to PICK[counter].
-local function place_hold(worm, h)
-  local p = PX_HOLDS[h.slot]
-  -- dont_rotate_with_angle: placed as if aimed level, turned by fixed angles.
-  local aim = p.static and 0.5 or h.aim
-  local pi = math.pi
-  local rot = (1 - aim) * pi
-  local rot_w = rot + pi * p.weap_radial_rotation
-  local rot_h = rot - pi * p.hand_radial_rotation
-  local grow = PICK[h.counter]
-  place(h.weapon, worm, math.sin(rot_w) * p.weap_radius, -math.cos(rot_w) * p.weap_radius,
-    p.static and p.static.weap * pi or pi - pi * aim - pi * (1 - p.weap_rotation), grow)
-  if p.animate then
-    h.phase = next_phase(h.phase, p.anim_speed)
-    h.weapon:frame(frame_of(h.phase, p.frames))
-  end
-  if h.hand then
-    place(h.hand, worm, math.sin(rot_h) * p.hand_radius, -math.cos(rot_h) * p.hand_radius,
-      p.static and p.static.hand * pi or rot + pi * p.hand_rotation, grow * p.hand_scale)
-  end
-  if h.flash then
-    -- At the barrel's tip, pointing along the aim (the art points right).
-    -- Additive and white, in front of the weapon, as the sentry's flare.
-    local f = p.flash
-    local lit = (h.flash_left or 0) > 0
-    if lit then
-      h.flash_left = h.flash_left - 1
-    end
-    h.flash:frame(lit and 1 or 0)
-    place(h.flash, worm, math.sin(rot) * f.out - math.cos(rot) * f.side,
-      -math.cos(rot) * f.out - math.sin(rot) * f.side, rot - pi / 2, f.scale,
-      { tint = 0xFFFFFF, blend = "add", depth = HOLD_DEPTH - 0x100 })
-  end
-end
-
--- Putting a weapon away. Not PX's: PX drops the hold the frame the worm
--- stops aiming. WA puts a weapon away by playing the worm's draw sheet
--- backwards, standing, over 20 frames; after a gun's last shot it has
--- already selected the next weapon. So a hold last aimed (`put_away`
--- remembers it) comes back when the worm stands with another weapon, and
--- shrinks out along the grow-in played backwards, a step a frame.
-local put_away = {} -- worm id -> { slot, aim } of the hold last aimed
-
-local function update_put_away(worm)
-  local h = held[worm.id]
-  if h and h.putting_away then
-    if worm.state ~= "standing" or h.counter == 0 then
-      drop_hold(worm.id)
-      return
-    end
-    h.counter = h.counter - 1
-    place_hold(worm, h)
-    return
-  end
-  local last = put_away[worm.id]
-  local state = worm.state
-  if last and worm.aiming then
-    -- Aiming another weapon: this one was never put away here.
-    put_away[worm.id] = nil
-    return
-  end
-  if not last or state == nil then
-    -- No name: WA's firing states between the last aim and the put-away.
-    return
-  end
-  put_away[worm.id] = nil
-  if state == "standing" and worm.weapon ~= last.slot then
-    h = spawn_hold(worm, last.slot)
-    h.aim, h.counter, h.putting_away = last.aim, 20, true
-    place_hold(worm, h)
-  end
-end
-
-local function update_hold(worm)
-  local p = PX_HOLDS[worm.weapon]
-  local aim = p and aim_of(worm)
-  if not aim or not worm.aiming then
-    local h = held[worm.id]
-    -- Fired, in WA's firing states (no state name) with the weapon still
-    -- selected. Walking is unnamed too, hence the fire key.
-    if h and h.firing and PX_HOLDS[h.slot].keep_while_firing and worm.state == nil
-        and worm.weapon == h.slot then
-      local flash = PX_HOLDS[h.slot].flash
-      if flash and not h.shot_out then
-        -- The first frame of WA's firing states: the shot.
-        h.flash_left = flash.frames
-      end
-      h.shot_out = true
-      place_hold(worm, h)
-      return
-    end
-    if h and not h.putting_away then
-      if not (h.firing and PX_HOLDS[h.slot].thrown) then
-        put_away[worm.id] = { slot = h.slot, aim = h.aim }
-      end
-      drop_hold(worm.id)
-    end
-    update_put_away(worm)
-    return
-  end
-  put_away[worm.id] = nil
-  local h = held[worm.id]
-  if h and (h.slot ~= worm.weapon or h.putting_away) then
-    drop_hold(worm.id)
-    h = nil
-  end
-  h = h or spawn_hold(worm, worm.weapon)
-  -- Kept for anything drawn with the hold (the Sniper Rifle's laser), so it
-  -- turns with the weapon: worm.aim is WA's smoothed crosshair (+0x270),
-  -- which WA also rewrites at render time, between sim frames.
-  -- The wind-up after the fire key still counts as aiming; the shot is
-  -- over only once the worm aims again after WA's firing states.
-  if h.shot_out then
-    h.firing, h.shot_out = false, false
-  end
-  h.aim = aim
-  place_hold(worm, h)
-  h.counter = math.min(h.counter + 1, 20)
-end
-
+-- The Sniper Rifle's sight remains a draw callback. Keep only its last aim
+-- through its firing poses; the rifle and flash themselves are engine draws.
+local held = {}
 wa.on.worm_message(function(worm, msg)
-  if msg == wa.msg.FIRE_WEAPON and held[worm.id] then
-    held[worm.id].firing = true
-  end
-  if msg == wa.msg.FRAME_FINISH then
-    update_hold(worm)
+  local h = held[worm.id]
+  if msg == wa.msg.FIRE_WEAPON and h then h.firing = true end
+  if msg ~= wa.msg.FRAME_FINISH then return end
+  if worm.weapon == "handgun" and worm.aiming then
+    held[worm.id] = { slot = "handgun", aim = worm.aim }
+  elseif not (h and h.firing and worm.weapon == "handgun"
+      and (worm.state == "firing" or worm.state == "fired")) then
+    held[worm.id] = nil
   end
 end)
-end
 
 -- ------------------------------------------ the Sniper Rifle's laser sight
 -- Shared with later sections; the rest of this section is local to it.
@@ -2167,7 +1944,7 @@ if wa.on.draw then
       -- The aim the rifle was drawn with, so the ray leaves along it; while
       -- the worm aims or fires the rifle, not while it puts it away.
       local h = worm.turn and held[worm.id]
-      local aim = h and h.slot == "handgun" and not h.putting_away and h.aim
+      local aim = h and h.slot == "handgun" and h.aim
       if aim then
         local ang = (1 - aim) * 3.14159
         if worm.facing < 0 then
