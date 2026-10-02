@@ -1,8 +1,9 @@
 # component_demo
 
 A component bundle (`format_version = 2`): one weapon, one scheme and one
-feature. Installing it runs nothing; a profile selects what runs. Put this in
-`Mods/wormforge.toml`:
+feature. Installing it runs nothing; a profile selects what runs. Pick
+"Demo scheme" in the mod loader's Profile tab and tick "Turn note", or put this
+in `Mods/wormforge.toml` (the Profile tab writes the same table):
 
 ```toml
 [profile]
