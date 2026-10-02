@@ -1,6 +1,18 @@
 -- Drives mods/examples/highlander/rules.lua against a mocked WA.
 --
---   lua mods/examples/highlander/test_rules.lua   (from the repo root)
+--   lua mods/examples/highlander/test_rules.lua              (from the repo root)
+--   lua mods/examples/highlander/test_rules.lua --baseline   (rewrites baseline.txt)
+--
+-- baseline.txt is the pack's observable shape: every slot it claims and what
+-- with, the hooks it registers, the globals it defines, and what each hand can
+-- be dealt. Every run compares against it, so a refactor that changes any of
+-- it fails until baseline.txt is rewritten on purpose.
+
+-- The globals Lua itself defines, before this file or the pack adds any.
+local PRISTINE = {}
+for k in pairs(_G) do
+  PRISTINE[k] = true
+end
 --
 -- The pack is data, not a crate, so this is not part of `cargo test`. Ammo
 -- is modelled per alliance row, as WA stores it, and `{ set = n }` is
@@ -183,12 +195,15 @@ local function new_match(opts)
   rng = 12345
   ammo = {}
   worms = {}
+  rng = opts.seed or rng
   -- Two teams of two, each its own alliance: team 1 is alliance 0, team 2 is 1.
+  -- `per_team` makes larger teams, numbered team * 1000 + index.
+  local per_team = opts.per_team or 2
   for team = 1, 2 do
     ammo[team - 1] = {}
-    for index = 0, 1 do
+    for index = 0, per_team - 1 do
       worms[#worms + 1] = setmetatable({
-        id = team * 16 + index, team = team, alliance = team - 1, hp = 100,
+        id = (per_team > 2 and team * 1000 or team * 16) + index, team = team, alliance = team - 1, hp = 100,
         kind = "worm", x = 0, y = 0, facing = 1,
         gravity = 0x10000, -- WA's normal
       }, Worm)
@@ -2245,6 +2260,142 @@ do
       table.sort(unlisted)
       check("every WAV in sounds/ is registered by an entry", #unlisted == 0, table.concat(unlisted, ", "))
     end
+  end
+end
+
+-- ------------------------------------------------------------ baseline
+
+-- A value as text: tables with their keys sorted, functions as <function>.
+local function serialize(v, seen)
+  local t = type(v)
+  if t == "string" then
+    return string.format("%q", v)
+  elseif t == "number" then
+    return math.type(v) == "integer" and tostring(v) or string.format("%.17g", v)
+  elseif t ~= "table" then
+    return t == "function" and "<function>" or tostring(v)
+  end
+  seen = seen or {}
+  if seen[v] then
+    return "<cycle>"
+  end
+  seen[v] = true
+  local keys = {}
+  for k in pairs(v) do
+    keys[#keys + 1] = k
+  end
+  table.sort(keys, function(a, b)
+    if type(a) == type(b) and type(a) ~= "table" then
+      return a < b
+    end
+    return type(a) < type(b)
+  end)
+  local parts = {}
+  for _, k in ipairs(keys) do
+    local key = type(k) == "string" and k:match("^[%a_][%w_]*$") and k or "[" .. serialize(k, seen) .. "]"
+    parts[#parts + 1] = key .. " = " .. serialize(v[k], seen)
+  end
+  seen[v] = nil
+  return "{ " .. table.concat(parts, ", ") .. " }"
+end
+
+local function baseline()
+  local out = {}
+  local function add(line)
+    out[#out + 1] = line
+  end
+
+  new_match()
+  add("# claims, in wa.weapons.replace order")
+  for _, spec in ipairs(replaced) do
+    add(spec.weapon .. " " .. serialize(spec))
+  end
+
+  add("")
+  add("# hooks registered, by event")
+  local hooks = {
+    worm_message = M.handlers, turn_start = M.turn_starts, missile_frame = M.missile_handlers,
+    draw = M.draws, contact = M.contacts,
+  }
+  for _, name in ipairs({ "contact", "death", "draw", "hud", "missile_frame", "turn_start", "worm_message" }) do
+    local n = hooks[name] and #hooks[name] or (M[name] and 1 or 0)
+    add(("%s %d"):format(name, n))
+  end
+
+  add("")
+  add("# globals the pack defines")
+  local globals = {}
+  for k in pairs(_G) do
+    if not PRISTINE[k] and k ~= "wa" then
+      globals[#globals + 1] = tostring(k)
+    end
+  end
+  table.sort(globals)
+  for _, k in ipairs(globals) do
+    add(k)
+  end
+
+  -- What each hand position can be dealt: 200 worms, open and cavern.
+  for _, map in ipairs({ "open", "cavern" }) do
+    add("")
+    add("# hands dealt at match start, " .. map .. " map (4 worms, fixed RNG)")
+    new_match({ cavern = map == "cavern" })
+    frame()
+    for _, id in ipairs({ 16, 17, 32, 33 }) do
+      add(("%d %s"):format(id, table.concat(hand(id) or {}, ", ")))
+    end
+    add("")
+    add("# what each hand position can be dealt, " .. map .. " map (200 worms)")
+    new_match({ cavern = map == "cavern", per_team = 100, seed = 4242 })
+    frame()
+    local seen = {}
+    for _, w in ipairs(worms) do
+      for i, name in ipairs(hand(w.id) or {}) do
+        seen[i] = seen[i] or {}
+        seen[i][name] = true
+      end
+    end
+    for i = 1, #seen do
+      add(("%d %s"):format(i, table.concat(wa.sorted(seen[i]), ", ")))
+    end
+  end
+  return table.concat(out, "\n") .. "\n"
+end
+
+local BASELINE = "mods/examples/highlander/baseline.txt"
+print("baseline: the pack's claims, hooks, globals and deals")
+do
+  local now = baseline()
+  if arg and arg[1] == "--baseline" then
+    local f = assert(io.open(BASELINE, "w"))
+    f:write(now)
+    f:close()
+    print("  wrote " .. BASELINE)
+  else
+    -- A host that runs this suite from elsewhere (lua-host's test, from the
+    -- crate's folder) hands the file's text in as HIGHLANDER_BASELINE.
+    local was = HIGHLANDER_BASELINE
+    if was == nil then
+      local f = io.open(BASELINE, "r")
+      was = f and f:read("a")
+      if f then f:close() end
+    end
+    -- A Windows checkout may hand the file back with CRLF line endings.
+    was = was and was:gsub("\r\n", "\n")
+    local differs
+    if was and was ~= now then
+      local a, b = {}, {}
+      for line in was:gmatch("[^\n]*") do a[#a + 1] = line end
+      for line in now:gmatch("[^\n]*") do b[#b + 1] = line end
+      for i = 1, math.max(#a, #b) do
+        if a[i] ~= b[i] then
+          differs = ("line %d:\n    was: %s\n    now: %s"):format(i, tostring(a[i]), tostring(b[i]))
+          break
+        end
+      end
+    end
+    check("matches baseline.txt (rewrite with --baseline when intended)", was == now,
+      was == nil and "no baseline.txt" or differs)
   end
 end
 
