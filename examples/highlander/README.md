@@ -470,7 +470,7 @@ lua mods/examples/highlander/test_rules.lua     # from the repo root
 These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- all 53 slot claims, including the Lightning Strike, Electric Grenade,
+- all 54 slot claims, including the Lightning Strike, Electric Grenade,
   Laser Gun and Super Tele scheme records
 - Super Tele's exact click, 50-frame wait, three terrain cuts, cavern ceiling
   and cancellation when its worm dies

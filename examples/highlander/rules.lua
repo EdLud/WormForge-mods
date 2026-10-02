@@ -3214,14 +3214,14 @@ local function swim_drop_art(worm, s)
 end
 
 -- The suit comes off: gravity back, the water's bit back in its mask, and
--- sinking if it gave out in the water.
+-- tumbling (which drowns it) if it gave out in the water.
 local function suit_off(worm, s, sink)
   s.suit, s.plopready, s.plopped, s.floating = false, false, false, false
   worm.gravity = FX
   worm.collision_mask = worm.collision_mask | SWIM_WATER
   swim_drop_art(worm, s)
   if sink then
-    worm:set_state("sinking")
+    worm:set_state("tumbling")
   end
 end
 
@@ -3597,7 +3597,7 @@ do
   -- States a worm is not firing in: the beam stops (PX keeps it only in
   -- repeat fire, firing, aiming and fired).
   local LASER_STOPS = { standing = true, sliding = true, jetpacking = true, parachuting = true,
-    bungee = true, sinking = true, teleporting = true, drilling = true, punching = true }
+    bungee = true, tumbling = true, teleporting = true, drilling = true, punching = true }
   local lasers = {} -- worm id -> the beam
 
   local function laser_rand(r)

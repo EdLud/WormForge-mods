@@ -1725,7 +1725,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   w.y = 700 * P
   M.message(w, wa.msg.FRAME_FINISH)
-  check("too deep: sinking, the water's bit back in its mask, drawn as itself", w.state == "sinking"
+  check("too deep: tumbling, the water's bit back in its mask, drawn as itself", w.state == "tumbling"
     and w.collision_mask == 134342 | 0x400000 and w.body_visible == true)
   -- Fast Walk: swim speed 6 for the turn.
   w.weapon = "fast_walk"
