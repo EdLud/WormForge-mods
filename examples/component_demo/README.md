@@ -1,6 +1,6 @@
 # component_demo
 
-A component bundle (`format_version = 2`): one weapon, one scheme and one
+A component bundle (`format_version = 2`): two weapons, one scheme and one
 feature. Installing it runs nothing; a profile selects what runs. Pick
 "Demo scheme" in the mod loader's Profile tab and tick "Turn note", or put this
 in `Mods/wormforge.toml` (the Profile tab writes the same table):
@@ -22,3 +22,8 @@ lines). The feature adds a HUD line while `show` is on.
 The weapon data is written into WA's scheme for the round, whatever scheme
 the lobby picked: every team starts with infinite Big Bazookas, usable from
 the second round of turns (a scheme delay of 1).
+
+**Big Mortar** (Mortar with damage 70, 3 at round start) is outside the preset.
+Type "mortar" in the Profile tab's search and tick it: it goes to F1 3. Both
+weapons were checked at F1 1 and F1 3, so moving one onto the other's position
+offers to swap them (or to replace the one there).
