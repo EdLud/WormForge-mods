@@ -60,6 +60,7 @@ death 1
 draw 4
 hud 1
 missile_frame 5
+turn_end 1
 turn_start 3
 worm_message 12
 

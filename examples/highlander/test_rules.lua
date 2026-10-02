@@ -2314,10 +2314,13 @@ local function baseline()
   add("")
   add("# hooks registered, by event")
   local hooks = {
-    worm_message = M.handlers, turn_start = M.turn_starts, missile_frame = M.missile_handlers,
-    draw = M.draws, contact = M.contacts,
+    worm_message = M.handlers, turn_start = M.turn_starts, turn_end = M.turn_ends,
+    missile_frame = M.missile_handlers, draw = M.draws, contact = M.contacts,
   }
-  for _, name in ipairs({ "contact", "death", "draw", "hud", "missile_frame", "turn_start", "worm_message" }) do
+  for _, name in ipairs({
+    "contact", "death", "draw", "hud", "missile_frame",
+    "turn_end", "turn_start", "worm_message",
+  }) do
     local n = hooks[name] and #hooks[name] or (M[name] and 1 or 0)
     add(("%s %d"):format(name, n))
   end
