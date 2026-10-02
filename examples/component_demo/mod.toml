@@ -11,7 +11,16 @@ id = "demo.big_bazooka"
 type = "weapon"
 name = "Big Bazooka"
 entry = "weapons/big_bazooka.lua"
-compatible_positions = [{ row = "F1", column = 1 }]
+compatible_positions = [{ row = "F1", column = 1 }, { row = "F1", column = 3 }]
+
+# Not in the preset: add it from the Profile tab's search. Both weapons may
+# sit at F1 1 or F1 3, so they can swap.
+[[components]]
+id = "demo.big_mortar"
+type = "weapon"
+name = "Big Mortar"
+entry = "weapons/big_mortar.lua"
+compatible_positions = [{ row = "F1", column = 3 }, { row = "F1", column = 1 }]
 
 [[components]]
 id = "demo.scheme"

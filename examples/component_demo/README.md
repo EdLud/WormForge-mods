@@ -1,6 +1,6 @@
 # component_demo
 
-A component bundle (`format_version = 2`): one weapon, one scheme and one
+A component bundle (`format_version = 2`): two weapons, one scheme and one
 feature. Installing it runs nothing; a profile selects what runs. Pick
 "Demo scheme" in the mod loader's Profile tab and tick "Turn note", or put this
 in `Mods/wormforge.toml` (the Profile tab writes the same table):
@@ -29,3 +29,8 @@ of 1), grenades, shotguns, five ropes and two teleports, and every other
 slot is empty and never comes in a crate. Each turn a weapon crate drops
 with a 40% chance, a health crate 10% and a utility crate 20% (the
 scheme's `crates`), whatever the lobby's crate settings.
+
+**Big Mortar** (Mortar with damage 70, 3 at round start) is outside the preset.
+Type "mortar" in the Profile tab's search and tick it: it goes to F1 3. Both
+weapons were checked at F1 1 and F1 3, so moving one onto the other's position
+offers to swap them (or to replace the one there).
