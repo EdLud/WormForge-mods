@@ -1,9 +1,9 @@
 # Sentry Gun
 
-Copy this folder into `Mods/` beside WA 3.8.1 and use the DLL built from the
-`sentry-gun` branch. Disable other bazooka overlays: the first loaded pack wins.
+Copy this folder into `Mods/` beside WA 3.8.1 and use a matching WormForge DLL.
+Disable other donkey overlays: the first loaded pack wins.
 
-Select the bazooka slot, then press Space to place the sentry. Stock mine input,
+Select the donkey slot, then press Space to place the sentry. Stock mine input,
 ammo consumption and retreat timing are retained. The body gets a small placement
 nudge (0.3px sideways, 0.15px upward plus half the worm velocity), independent of
 aim and charge. It falls and plants on terrain.

@@ -3513,8 +3513,8 @@ wa.on.worm_message(function(worm, msg)
   end
 end)
 
--- M_TURNBEGIN: the match's gravity back.
-wa.on.turn_start(function()
+-- Reset when this turn ends; doing it at the next turn start can softlock.
+wa.on.turn_end(function()
   if gravity_factor then
     gravity_factor = nil
     wa.world.set_gravity(gravity_initial)

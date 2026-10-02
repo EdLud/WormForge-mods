@@ -334,6 +334,13 @@ local function new_match(opts)
           for _, h in ipairs(M.turn_starts) do h(...) end
         end
       end,
+      turn_end = function(f)
+        M.turn_ends = M.turn_ends or {}
+        M.turn_ends[#M.turn_ends + 1] = f
+        M.turn_end = function(...)
+          for _, h in ipairs(M.turn_ends) do h(...) end
+        end
+      end,
       missile_frame = function(f)
         M.missile_handlers = M.missile_handlers or {}
         M.missile_handlers[#M.missile_handlers + 1] = f
@@ -1762,7 +1769,9 @@ do
   check("5: very high gravity chosen (9 means nothing)", M.message(w, wa.msg.FIRE_WEAPON) == nil
     and M.gravity == math.floor(0x3AE * 2.4), tostring(M.gravity))
   M.turn_start({ worm = w, active = w })
-  check("the next turn: the match's gravity", M.gravity == 0x3AE)
+  check("turn start leaves Gravity Control active", M.gravity == math.floor(0x3AE * 2.4))
+  M.turn_end({ worm = w, active = w })
+  check("turn end restores the match's gravity", M.gravity == 0x3AE)
 end
 
 print("jump: the worm leaves with the shot")

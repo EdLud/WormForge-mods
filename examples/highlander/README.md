@@ -376,7 +376,7 @@ WA fires a utility that does nothing and the script does the work:
   wind change (the clouds and the wind bar follow). The rules grant one every
   turn, as PX's GiveWeapons does.
 - **Gravity Control:** 1-5 choose 0.3, 0.5, 1, 1.7 or 2.4 times the match's
-  gravity. Firing it holds WA's gravity there until the next turn. Fired with
+  gravity. Firing it holds WA's gravity there until this turn ends. Fired with
   nothing chosen, it doesn't fire.
 - **Keys:** the digit keys are synced like the other keys.
 - **Differences:** a HUD line shows the keys and the choice, in place of PX's

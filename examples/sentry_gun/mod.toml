@@ -6,4 +6,4 @@ entry = "weapons.lua"
 
 [weapons]
 register = ["example.sentry_gun"]
-replace = ["bazooka"]
+replace = ["donkey"]

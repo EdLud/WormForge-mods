@@ -1,4 +1,4 @@
--- Sentry gun in the bazooka slot, with stock mine placement on Space.
+-- Sentry gun in the donkey slot, with stock mine placement on Space.
 -- Baked sheets keep the base, firing barrel and housing in one draw, with
 -- 120 angles per pose. a:frame() selects idle/firing without changing feet.
 -- Angles: 0 down, 90 right, 180 up, 270 left.
@@ -617,7 +617,7 @@ local function placement_x(worm, facing)
 end
 
 wa.weapons.replace({
-  weapon = "bazooka",
+  weapon = "donkey",
   copy_from = "mine",
   name = "Sentry Gun",
   -- PX's own icon, copied byte for byte so replays share its asset.
