@@ -91,6 +91,19 @@ function Worm:carry(x, y) self.x, self.y, self.carried = x, y, true end
 function Worm:drop() self.carried = false end
 function Worm:clear_keys() self.keys = {} end
 function Worm:set_state(state) self.state = state end
+-- The engine's handoff verbs: what the worm looks like to the pack after.
+function Worm:take(opts)
+  opts = opts or {}
+  self.taken = { hide = opts.hide or false, turn = opts.turn or "run" }
+  if opts.hide then self.visible = false end
+end
+function Worm:release(vx, vy, opts)
+  self.taken, self.carried = nil, false
+  if self.visible == false then self.visible = true end
+  self.state = opts and opts.tumble and "tumbling" or "sliding"
+  self.vx, self.vy = vx or 0, vy or 0
+end
+function Worm:jetpack_steer(on) self.steered = on ~= false end
 
 local function inventory_api()
   local api = {}
@@ -269,6 +282,7 @@ local function new_match(opts)
         M.digs[#M.digs + 1] = spec
       end,
       trace = function() return M.trace_hit end,
+      solid = function(x, y) return M.solid ~= nil and M.solid(x, y) or false end,
     },
     draw = {
       quad = function(q) M.quads[#M.quads + 1] = q end,
@@ -1695,46 +1709,65 @@ do
   local h = 25 * P
   check("centred on the worm", bubble.points[1][1] == w.x - h and bubble.points[3][1] == w.x + h
     and bubble.points[1][2] == w.y - h and bubble.points[3][2] == w.y + h)
-  -- Into the water, falling fast: a splash, no gravity, the speed capped, a
-  -- bungee's state.
+  function w:set_state() error("the Swim Suit takes and releases the worm; it sets no state") end
+  function w:clear_keys() error("a taken worm's keys are the engine's to clear") end
+  local function frames(n, until_fn)
+    for _ = 1, n do
+      M.message(w, wa.msg.FRAME_FINISH)
+      if until_fn and until_fn() then return end
+    end
+  end
+  -- Into the water, falling fast: a splash, taken by the pack for the swim
+  -- with the turn running, the speed capped.
   w.state, w.y, w.vx, w.vy = "sliding", 510 * P, 9 * P, 12 * P
+  local x0, y0 = w.x, w.y
   M.message(w, wa.msg.FRAME_FINISH)
-  check("splash, no gravity, swimming", M.sounds[#M.sounds] == 57 and w.gravity == 0 and w.state == "bungee")
-  check("the speed capped at 5 (2.5 times the swim speed 2), then eased", w.vx < 5 * P and w.vy < 5 * P
-    and w.vx > 4 * P, w.vx .. " " .. w.vy)
+  check("splash, taken for the swim, the turn running", M.sounds[#M.sounds] == 57 and w.taken
+    and w.taken.turn == "run" and w.state == "sliding")
+  local dx, dy = w.x - x0, w.y - y0
+  check("the speed capped at 5 (2.5 times the swim speed 2), then eased", dx < 5 * P and dy < 5 * P
+    and dx > 4 * P and dy > 4 * P, dx .. " " .. dy)
   check("the swim animation in its place, facing left art mirrored", w.body_visible == false
     and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim" and M.spawned[#M.spawned].facing == -1)
-  -- Swimming left: a push, turned, and the key used up.
-  w.vx, w.vy, w.keys = 0, 0, { left = true }
+  -- Swimming left: a push that way, turned.
+  x0, w.keys = w.x, { left = true }
   M.message(w, wa.msg.FRAME_FINISH)
-  check("left: 0.2 a frame that way, facing it, the key taken", w.vx == -13107 and w.facing == -1
-    and not w.keys.left, tostring(w.vx))
+  check("left: 0.2 a frame slower, facing left", w.x - x0 == math.floor((5 / 1.05 - 0.2) * P)
+    and w.facing == -1, tostring((w.x - x0) / P))
   check("no jumping while it swims", M.message(w, wa.msg.JUMP) == "eat")
-  -- Still, no key: the float animation.
-  w.vx, w.vy = 0, 0
+  local spent_before = spent
+  check("no weapons while it swims", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == spent_before)
+  -- Land in the way: it stops there.
+  M.solid = function(x) return x >= w.x + 6 * P end
+  x0, w.keys = w.x, { right = true }
   M.message(w, wa.msg.FRAME_FINISH)
+  check("land stops it", w.x == x0 and w.taken, tostring((w.x - x0) / P))
+  M.solid = nil
+  -- Still, no key: the float animation, once it has glided to a stop.
+  w.keys = {}
+  frames(120)
+  check("still: floating", M.spawned[#M.spawned].sprite == "sprites/swim_suit/float" and w.taken)
+  -- Up out of the water: released as from a jump, the suit still on.
+  w.keys = { up = true }
+  frames(200, function() return not w.taken end)
+  check("out: released above the surface, moving up, the suit still on", w.state == "sliding"
+    and w.vy < 0 and w.y < M.water and w.collision_mask == 134342 and w.body_visible == true)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("still: floating", M.spawned[#M.spawned].sprite == "sprites/swim_suit/float")
-  -- Out of the water: on as from a jump, gravity back.
-  w.y, w.vy = 490 * P, -2 * P
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("out: airborne, gravity back, the suit still on", w.state == "sliding" and w.gravity == P
-    and w.collision_mask == 134342)
-  -- Back in, then too deep: it gives out and the worm sinks.
-  w.y = 510 * P
-  M.message(w, wa.msg.FRAME_FINISH)
-  w.y = 700 * P
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("too deep: tumbling, the water's bit back in its mask, drawn as itself", w.state == "tumbling"
-    and w.collision_mask == 134342 | 0x400000 and w.body_visible == true)
+  check("no second splash on the way out", not w.taken)
+  -- Back in, then too deep: it gives out and the worm drowns.
+  w.y, w.vx, w.vy, w.keys = 510 * P, 0, 0, { down = true }
+  frames(200, function() return w.state == "tumbling" end)
+  check("too deep: out of control, the water's bit back, drawn as itself", w.state == "tumbling"
+    and not w.taken and w.collision_mask == 134342 | 0x400000 and w.body_visible == true)
   -- Fast Walk: swim speed 6 for the turn.
-  w.weapon = "fast_walk"
+  w.weapon, w.keys = "fast_walk", {}
   M.message(w, wa.msg.FIRE_WEAPON)
   w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "sliding", 400 * P, 0, 0
   M.message(w, wa.msg.FIRE_WEAPON)
+  x0 = w.x
   w.y, w.vx, w.vy = 510 * P, 20 * P, 0
   M.message(w, wa.msg.FRAME_FINISH)
-  check("Fast Walk: capped at 15", w.vx > 14 * P and w.vx <= 15 * P, tostring(w.vx / P))
+  check("Fast Walk: capped at 15", w.x - x0 > 14 * P and w.x - x0 <= 15 * P, tostring((w.x - x0) / P))
   -- A missile in the water hits worms, and blows up on a swimmer.
   local m = { id = 1, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 0, vy = 0, collision_mask = 0x400000 }
   M.missile(m)
@@ -1745,6 +1778,13 @@ do
   local boom = M.spawned[n + 1]
   check("it blows up on the swimmer (100, 50) and is gone", boom and boom.explode and boom.explode.damage == 100
     and boom.explode.id == 50 and missile.y > M.water)
+  -- The turn ends with it in the water: the engine lets go, and it drowns.
+  w.taken, w.vx, w.vy = nil, 0, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the turn over, in the water: out of control, the water's bit back", w.state == "tumbling"
+    and w.collision_mask & 0x400000 ~= 0 and w.body_visible == true)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and no longer the pack's", not w.taken)
   M.turn_start({ worm = w, active = w })
 end
 
@@ -1803,7 +1843,7 @@ do
   local w = worm(33)
   w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
   w.x, w.y, w.vx, w.vy, w.state = 100 * P, 50 * P, 0, 0, "standing"
-  function w:set_state(s) self.state = s end
+  function w:set_state() error("the Jump releases the worm; it sets no state") end
   M.spawned, M.sounds = {}, {}
   M.message(w, wa.msg.FIRE_WEAPON)
   M.message(w, wa.msg.FRAME_FINISH)
@@ -1973,8 +2013,9 @@ do
   local jumper = worm(16)
   jumper.turn, jumper.weapon = true, "napalm_strike"
   jumper.state = "prefiring"
+  function jumper:set_state() error("the engine ends a click-only fire's prefire, not the pack") end
   click({ worm=jumper, x=100*P, y=100*P })
-  check("click releases WA's prefiring pose so Jump can run", jumper.state == "standing")
+  check("click leaves ending WA's prefiring pose to the engine", jumper.state == "prefiring")
 
   new_match()
   local by_slot = {}
@@ -2114,7 +2155,11 @@ do
   target.x, target.y = 5*P, 0
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(1)
-  check("near worm is held in tazed pose", target.carried and target.body_visible == false)
+  function target:set_state() error("a tazed worm is taken, not set to a state") end
+  function target:clear_keys() error("a tazed worm's keys are the engine's to consume") end
+  check("near worm is held in tazed pose", target.taken and target.taken.turn == "freeze"
+    and target.body_visible == false)
+  check("a tazed worm cannot start a shot", M.message(target, wa.msg.FIRE_WEAPON) == "eat")
   -- The current, drawn: a glow at every point of the strip, and PX's
   -- widths (9 at the thickest, a half width).
   M.quads, M.ribbons = {}, {}
@@ -2128,8 +2173,9 @@ do
   tick(23)
   check("zap waits 24 frames", target.hp == 100)
   tick(1)
-  check("zap deals 24 and releases movement", target.hp == 76 and target.carried == false
-    and target.body_visible == true)
+  check("zap deals 24 and releases movement", target.hp == 76 and target.taken == nil
+    and target.state == "sliding" and target.body_visible == true)
+  check("released, it may fire again", M.message(target, wa.msg.FIRE_WEAPON) ~= "eat")
   spec, owner = setup()
   local first, second = worm(17), worm(32)
   first.x, first.y = 5*P, 0

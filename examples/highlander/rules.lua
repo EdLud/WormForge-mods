@@ -157,12 +157,9 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/" },
     -- Click-only dispatch keeps the strike's cursor and turn handling.
     on_select = { cursor = true },
-    on_click = function(ev)
-      lightning_click(ev)
-      -- WA's click-only FireWeapon has no stock finish: PreFiring would keep
-      -- the worm in its handoff pose and prevent the next jump.
-      if ev.worm.state == "prefiring" then ev.worm:set_state("standing") end
-    end,
+    -- The engine ends WA's prefire after a click-only fire. (A closure:
+    -- lightning_click is defined further down.)
+    on_click = function(ev) lightning_click(ev) end,
   },
   { -- Double Bazooka: a second shell carries on from where the first
     -- explodes (its section below). Held as a plain bazooka: the pack's
@@ -3159,14 +3156,15 @@ do
 -- and swim_suit_diving_s (PyroMan), on WA's laser sight. Using it puts the
 -- suit on (or, out of the water, takes it off): WA's laser sight never
 -- switches on, as PX's FireFinal never calls super. A worm in the suit that
--- falls into the water splashes and swims instead of drowning: held in WA's
--- bungee state with no gravity, moved by its own four keys (up to 2.5 pixels
--- a frame times the swim speed, gliding to a stop when they are let go),
--- turned by left and right unless Shift is held. Enter does nothing while it
--- swims. Out of the water it flies on as from a jump; too deep (180 pixels
--- under the water, or the bottom of a cavern) or knocked out of those states,
--- the suit gives out and it sinks. Fast Walk switches the swim speed between
--- 2 and 6 for the turn. Missiles in the water can hit a swimming worm: they
+-- falls into the water splashes and swims instead of drowning: the pack takes
+-- it (worm:take) and moves it by its own four keys (up to 2.5 pixels a frame
+-- times the swim speed, gliding to a stop when they are let go), stopping at
+-- land, turned by left and right unless Shift is held. Enter and weapons do
+-- nothing while it swims (Fast Walk aside). Out of the water it is released
+-- as from a jump. Too deep (180 pixels under the water, or the bottom of a
+-- cavern), knocked flying, or still in the water when the turn ends, the
+-- suit gives out and it drowns. Fast Walk switches the swim speed between 2
+-- and 6 for the turn. Missiles in the water can hit a swimming worm: they
 -- blow up on it (damage 100, blast 50).
 --
 -- Drawn in the worm's place: the swim or, when still, the float animation,
@@ -3193,10 +3191,12 @@ local SWIM_BODY_DEPTH = 0x10000
 local SWIM_RING_DEPTH = 0x10001
 -- Ring sheet is 50×50; wa.draw.quad corners are centred on the worm like a:gfx.
 local SWIM_RING_HALF = 25 * 0x10000
+-- The land a swimmer stops at: its body, 4 pixels either side, 6 above and below.
+local SWIM_HALF_W, SWIM_HALF_H = 4 * 0x10000, 6 * 0x10000
 
 local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
 local swim_in_game = false    -- SwimInGame: someone has worn the suit
-local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body }
+local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy }
 
 local function swimmer_of(worm)
   local s = swimmers[worm.id]
@@ -3213,16 +3213,21 @@ local function swim_drop_art(worm, s)
   worm.body_visible = true
 end
 
--- The suit comes off: gravity back, the water's bit back in its mask, and
--- tumbling (which drowns it) if it gave out in the water.
-local function suit_off(worm, s, sink)
+-- The suit comes off, the water's bit back in its mask. `sink`: it gave out
+-- in the water, and the worm goes back to WA out of control, moving at
+-- (vx, vy), for WA to drown.
+local function suit_off(worm, s, sink, vx, vy)
   s.suit, s.plopready, s.plopped, s.floating = false, false, false, false
-  worm.gravity = FX
-  worm.collision_mask = worm.collision_mask | SWIM_WATER
   swim_drop_art(worm, s)
   if sink then
-    worm:set_state("tumbling")
+    worm:release(vx, vy, { tumble = true })
   end
+  worm.collision_mask = worm.collision_mask | SWIM_WATER
+end
+
+local function swim_blocked(x, y)
+  return wa.land.solid(x - SWIM_HALF_W, y) or wa.land.solid(x + SWIM_HALF_W, y)
+    or wa.land.solid(x, y - SWIM_HALF_H) or wa.land.solid(x, y + SWIM_HALF_H)
 end
 
 -- One step towards the cap on a held key, as PX's: while under it, a push;
@@ -3247,14 +3252,19 @@ local function swim_frame(worm)
   if worm.y >= water and s.plopready and worm.state ~= "teleporting" then
     wa.sound.play(worm, SWIM_SPLASH)
     s.plopready, s.plopped = false, true
-    worm.gravity = 0
-    worm.vx = math.min(worm.vx, trunc(cap * P))
-    worm.vy = math.min(worm.vy, trunc(cap * P))
-    worm:set_state("bungee")
+    s.x, s.y = worm.x, worm.y
+    s.vx, s.vy = math.min(worm.vx / P, cap), math.min(worm.vy / P, cap)
+    worm:take{ turn = "run" }
     s.plophase = 0
   end
+  if s.plopped and not worm.taken then
+    -- The engine let go: the turn ended, or WA knocked it flying. Still in
+    -- the water, the suit gives out.
+    suit_off(worm, s, true, worm.vx, worm.vy)
+    return
+  end
   if s.plopped then
-    local vx, vy = math.min(worm.vx / P, cap), math.min(worm.vy / P, cap)
+    local vx, vy = math.min(s.vx, cap), math.min(s.vy, cap)
     local held = s.keys
     local still = math.abs(vx) <= SWIM_STILL * swim_speed and math.abs(vy) <= SWIM_STILL * swim_speed
     if still and not (held.left or held.up or held.down or held.right) then
@@ -3300,32 +3310,37 @@ local function swim_frame(worm)
       vx = swim_push(vx, 1, cap)
     end
     s.keys = { up = up, down = down, left = left, right = right }
-    worm:clear_keys()
-    worm.vx, worm.vy = trunc(vx * P), trunc(vy * P)
+    -- The engine clears the keys after this hook. Move, stopping at land
+    -- on each axis (unless it is already in land, so it can swim free).
+    local stuck = swim_blocked(s.x, s.y)
+    local nx = s.x + trunc(vx * P)
+    if not stuck and swim_blocked(nx, s.y) then vx = 0 else s.x = nx end
+    local ny = s.y + trunc(vy * P)
+    if not stuck and swim_blocked(s.x, ny) then vy = 0 else s.y = ny end
+    s.vx, s.vy = vx, vy
     -- Out of the water: on through the air, as from a jump.
-    if worm.y < water then
-      if worm.state ~= "teleporting" then
-        worm:set_state("sliding")
-      end
+    if s.y < water then
       s.floating = false
-      worm.gravity = FX
       s.plopready, s.plopped = true, false
-    end
-    -- Knocked out of its states, or too deep: the suit gives out.
-    local state = worm.state
-    local y, w = worm.y / P, water / P
-    local deep
-    if not wa.world.cavern() then
-      deep = y > w + SWIM_DEPTH
-    elseif w > 610 then
-      deep = y > w + SWIM_DEPTH
+      -- Where the swim took it: its last pin is still under the surface.
+      worm.x, worm.y = s.x, s.y
+      worm:release(trunc(vx * P), trunc(vy * P))
     else
-      deep = y > 768
-    end
-    if (state ~= "bungee" and state ~= "parachuting" and state ~= "sliding" and state ~= "teleporting")
-        or deep then
-      suit_off(worm, s, true)
-      return
+      worm:carry(s.x, s.y)
+      -- Too deep: the suit gives out.
+      local y, w = s.y / P, water / P
+      local deep
+      if not wa.world.cavern() then
+        deep = y > w + SWIM_DEPTH
+      elseif w > 610 then
+        deep = y > w + SWIM_DEPTH
+      else
+        deep = y > 768
+      end
+      if deep then
+        suit_off(worm, s, true, trunc(vx * P), trunc(vy * P))
+        return
+      end
     end
   end
   -- Between turns, a worm out of the water takes the suit off.
@@ -3341,7 +3356,7 @@ local function swim_frame(worm)
       collide = false, owner = worm, on = function() end,
     })
   end
-  if s.plopped and worm.state ~= "teleporting" then
+  if s.plopped then
     local sheet = s.floating and "sprites/swim_suit/float" or "sprites/swim_suit/swim"
     if s.body and s.body_sheet ~= sheet then
       s.body:despawn()
@@ -3350,7 +3365,7 @@ local function swim_frame(worm)
     s.body = s.body or art(sheet)
     s.body_sheet = sheet
     local phase = s.floating and s.flophase or s.plophase
-    s.body.x, s.body.y, s.body.vx, s.body.vy = worm.x, worm.y, 0, 0
+    s.body.x, s.body.y, s.body.vx, s.body.vy = s.x, s.y, 0, 0
     s.body.facing = -worm.facing
     s.body:frame(math.floor((phase % 1) * 20) % 20)
     s.body:gfx({ depth = SWIM_BODY_DEPTH })
@@ -3393,6 +3408,10 @@ wa.on.worm_message(function(worm, msg)
       return "eat"
     end
   elseif msg == wa.msg.FIRE_WEAPON then
+    local s = swimmers[worm.id]
+    if s and s.plopped and worm.weapon ~= "fast_walk" then
+      return "eat" -- no weapons while it swims
+    end
     if worm.weapon == "fast_walk" then
       swim_speed = swim_speed ~= 6 and 6 or 2
     elseif worm.weapon == "laser_sight" then
@@ -3557,8 +3576,7 @@ local JUMP_SPEECH, SPEECH_LINES = 150, 54
 
 fires.jump = function(fire)
   local worm = fire.worm
-  worm:set_state("sliding")
-  worm.vx, worm.vy = fire.vx, fire.vy
+  worm:release(fire.vx, fire.vy)
   wa.sound.play(worm, JUMP_SPEECH + SPEECH_LINES * (worm.team - 1))
 end
 end
@@ -4296,11 +4314,20 @@ local function release_taze(key)
   if hold.count > 0 then return end
   local worm = find_target(key)
   if worm then
-    worm:drop()
+    -- Knocked flying meanwhile, the engine has already let it go.
+    if worm.taken then worm:release(0, 0) end
     worm.body_visible = true
   end
   tazed[key] = nil
 end
+
+-- A tazed worm is the pack's (worm:take): the engine eats its moves and
+-- jumps; it cannot start a shot either.
+wa.on.worm_message(function(worm, msg)
+  if msg == wa.msg.FIRE_WEAPON and tazed[target_key(worm)] then
+    return "eat"
+  end
+end)
 
 local function zap_target(arc, pending)
   local obj = find_target(pending.key)
@@ -4326,15 +4353,6 @@ local function progress_arc(arc)
       table.remove(arc.pending, i)
     end
   end
-  for _, key in ipairs(wa.sorted(tazed)) do
-    local hold = tazed[key]
-    local worm = find_target(key)
-    if worm then
-      worm:clear_keys()
-      worm:set_state("standing")
-      worm:carry(hold.x, hold.y)
-    end
-  end
   if arc.pause > 0 then arc.pause = arc.pause - 1; return end
   if arc.life <= 0 then
     if #arc.points > 0 then table.remove(arc.points, 1) end
@@ -4357,7 +4375,8 @@ local function progress_arc(arc)
             sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1" or "sprites/electric_grenade/tazed2" }
         end
         target.body_visible = false
-        target:carry(target.x, target.y)
+        -- Held where it stands, the turn stopped, until the zap.
+        target:take{ turn = "freeze" }
       end
       arc.x, arc.y = target.x, target.y
       arc.life = 20
