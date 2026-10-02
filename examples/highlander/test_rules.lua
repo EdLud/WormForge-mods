@@ -1439,8 +1439,8 @@ do
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "jet_pack", "prefiring", 100 * P, 50 * P, 0, 0, 1, true
   w.fuel, w.gravity, w.wind, w.body_visible = 30 * P, P, 0, true
   w.keys = { up = false, down = false, left = false, right = false }
-  function w:clear_keys() self.keys = { up = false, down = false, left = false, right = false }; self.cleared = true end
-  function w:set_state(s) self.state = s end
+  function w:clear_keys() error("Helicopter must leave key consumption to the engine") end
+  function w:set_state() error("Helicopter must leave landing state to WA") end
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
   local climb = M.spawned[#M.spawned]
@@ -1452,8 +1452,10 @@ do
   check("launch: PX's fuel, gravity and wind", w.fuel < 100 * P and w.fuel > 99 * P and w.gravity == math.floor(0.2 * P)
     and w.wind == math.floor(0.2 * P), w.fuel / P .. " " .. w.gravity .. " " .. w.wind)
   check("up: a kick of 0.8 from standstill", w.vy == -math.floor(0.8 * P) - 0 or w.vy == -52428, tostring(w.vy))
-  check("its keys consumed, so WA's jet pack does nothing", w.cleared and not w.keys.up)
+  check("the engine owns the keys after the script reads them", w.steered and w.keys.up)
   check("the helicopter replaces the climb-in", climb.dead and M.spawned[#M.spawned].sprite == "sprites/helicopter/flying")
+  -- In game, the engine consumes this key after the callback.
+  w.keys.up = false
   local vy = w.vy
   M.message(w, wa.msg.FRAME_FINISH)
   check("no key: speed dies away", w.vy > vy and w.vy < 0, vy .. " -> " .. w.vy)
@@ -1485,7 +1487,7 @@ do
   w.fuel = math.floor(0.05 * P)
   M.message(w, wa.msg.FRAME_FINISH)
   check("fuel below 0.1 crashes it", #M.spawned == n + 1 and M.spawned[#M.spawned].explode)
-  -- WA ends the jet pack on the ground: slide, no crash.
+  -- WA ends the jet pack on the ground without a scripted state change.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
   w.state = "jetpacking"
@@ -1494,8 +1496,8 @@ do
   w.state = "standing"
   n = #M.spawned
   M.message(w, wa.msg.FRAME_FINISH)
-  check("WA ends the jet pack at rest: sliding, no explosion", w.state == "sliding" and #M.spawned == n
-    and w.gravity == P)
+  check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing" and #M.spawned == n
+    and w.gravity == P and not w.steered and w.body_visible == true)
   -- The last Helicopter: WA clears the selection when it fires.
   w.state, w.weapon, w.vy = "prefiring", "jet_pack", 0
   M.message(w, wa.msg.FRAME_FINISH)

@@ -305,8 +305,9 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   selection as it fires the team's last one. During the wind-up, PX's
   climb-in animation plays.
 - **Flight:** the script flies the worm from the worm's own move keys
-  (`worm.keys`) and consumes them (`worm:clear_keys()`), so WA's jet pack
-  neither thrusts nor burns fuel. Speed builds while a key is held, towards
+  (`worm.keys`). The engine consumes the keys after the script reads them
+  (`worm:jetpack_steer(true)`), so WA's jet pack neither thrusts nor burns fuel.
+  Speed builds while a key is held, towards
   10 pixels a frame, and dies away when it is not. Gravity and wind act at
   0.2, and Shift keeps the facing.
 - **Fuel:** 100 (`worm.fuel`), burnt by flying and by each key, but not
@@ -318,9 +319,8 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   the speed, followed by one of PX's "oops" lines. The ground counts as
   something it hits: landing slower than a pixel a frame is PX's smooth
   landing, and a faster one crashes it. When WA ends the jet pack at rest,
-  the worm slides.
-
-The engine pieces are on the `worm-flight` branch.
+  WA owns the landing state; the script restores the worm's body and normal
+  gravity when the jet pack ends.
 
 **Chilli Bomb.** PX's `pyro_grenades_script` (PyroMan), on WA's super
 banana. When it explodes, five more Chillis burst out of it, straight up with

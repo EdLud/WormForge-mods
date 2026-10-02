@@ -2579,9 +2579,9 @@ local FX, trunc
 do
 --
 -- PX's helicopter_user_script, on WA's jet pack. While the jet pack runs,
--- the script flies the worm itself from the worm's own move keys, which it
--- then consumes so WA's jet pack neither thrusts nor burns fuel: speed that
--- builds while a key is held and dies away when it is not, fuel that burns
+-- the script flies the worm itself from the worm's own move keys. The engine
+-- consumes them after this callback, so WA neither thrusts nor burns fuel.
+-- Speed builds while a key is held and dies away when it is not; fuel burns
 -- with it (not during retreat), and a crash -- an explosion sized by the fuel
 -- left and the speed -- when the fuel runs out, the worm reaches water, the
 -- turn ends, or it hits something other than a mine faster than a pixel a
@@ -2682,6 +2682,7 @@ local function heli_frame(worm)
   -- FireFinal: the jet pack it wound up has started.
   if h and h.armed and state == "jetpacking" and not h.flying then
     worm.gravity = HELI_REALISTIC and trunc(0.2 * FX) or 0
+    worm:jetpack_steer(true)
     h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
   elseif h and h.armed and not worm.turn then
     h.armed = false -- the turn ended before it fired
@@ -2690,6 +2691,15 @@ local function heli_frame(worm)
     return
   end
   if h.flying then
+    if state ~= "jetpacking" then
+      -- WA owns the landing and its resulting state. Only remove our art
+      -- and physics overrides when WA has ended the jet pack.
+      worm:jetpack_steer(false)
+      worm.gravity, worm.wind = FX, 0
+      h.flying = false
+      heli_drop_art(h, worm)
+      return
+    end
     local vx, vy = worm.vx, worm.vy
     -- Rotor and radio, while it moves.
     if vx ~= 0 or vy ~= 0 then
@@ -2744,17 +2754,8 @@ local function heli_frame(worm)
       if not shift then worm.facing = 1 end
       vx = push(vx, 1)
     end
-    worm:clear_keys()
     worm.vx, worm.vy, worm.fuel = trunc(vx), trunc(vy), trunc(fuel)
-    if worm.state ~= "jetpacking" then
-      if worm.vy == 0 and state ~= "prefiring" and state ~= "teleporting" then
-        worm:set_state("sliding")
-      end
-      worm.gravity, worm.wind = FX, 0
-      h.flying = false
-      heli_drop_art(h, worm)
-      return
-    elseif worm.fuel <= 0.1 * FX then
+    if worm.fuel <= 0.1 * FX then
       heli_crash(worm, h, worm.vx, worm.vy)
       return
     end
