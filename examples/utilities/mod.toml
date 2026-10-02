@@ -1,0 +1,59 @@
+# A features bundle (format_version 2): one feature with several settings.
+# Nothing runs until the mod loader's Profile tab (or [profile] in
+# Mods/wormforge.toml) selects it. See README.md.
+id = "example.utilities"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+format_version = 2
+
+[[components]]
+id = "core.utilities"
+type = "feature"
+name = "Utilities"
+description = "Match settings the lobby scheme doesn't have."
+entry = "features/utilities.lua"
+
+[[components.options]]
+key = "gravity_pct"
+type = "int"
+default = 100
+min = 25
+max = 200
+label = "Gravity %"
+description = "The scheme's gravity, scaled. Low Gravity still halves it."
+
+[[components.options]]
+key = "wind"
+type = "choice"
+choices = ["scheme", "calm", "none"]
+default = "scheme"
+label = "Wind"
+description = "calm halves each turn's wind; none stills it."
+
+[[components.options]]
+key = "heal_per_turn"
+type = "int"
+default = 0
+min = 0
+max = 50
+label = "Heal at turn start (HP)"
+description = "Health the worm whose turn starts gets."
+
+[[components.options]]
+key = "infinite_jet_pack"
+type = "bool"
+default = false
+label = "Infinite Jet Pack"
+
+[[components.options]]
+key = "infinite_parachute"
+type = "bool"
+default = false
+label = "Infinite Parachute"
+
+[[components.options]]
+key = "infinite_ninja_rope"
+type = "bool"
+default = false
+label = "Infinite Ninja Rope"
