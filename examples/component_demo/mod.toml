@@ -1,0 +1,36 @@
+# A component bundle (format_version 2): nothing runs until a profile in
+# Mods/wormforge.toml selects its components. See README.md.
+id = "example.components"
+version = "0.1.0"
+author = "wkLua"
+api_version = 1
+format_version = 2
+
+[[components]]
+id = "demo.big_bazooka"
+type = "weapon"
+name = "Big Bazooka"
+entry = "weapons/big_bazooka.lua"
+compatible_positions = [{ row = "F1", column = 1 }]
+
+[[components]]
+id = "demo.scheme"
+type = "scheme"
+name = "Demo scheme"
+entry = "scheme.lua"
+preset = "demo"
+
+[presets.demo.weapons]
+"demo.big_bazooka" = { row = "F1", column = 1 }
+
+[[components]]
+id = "demo.turn_note"
+type = "feature"
+name = "Turn note"
+entry = "features/turn_note.lua"
+
+[[components.options]]
+key = "show"
+type = "bool"
+default = true
+label = "Show a HUD line"
