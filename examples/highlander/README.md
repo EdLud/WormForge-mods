@@ -179,7 +179,7 @@ bazooka hold, as the Cow Launcher's.
 | uzi | Laser Gun | icon, the worm aiming and taking it out, its beam and glow, three sounds | PX's 5 s beam in place of the uzi's bullet |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
-| parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider flight on WA's parachute |
+| parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider, flown by the pack once WA's parachute opens |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -393,20 +393,47 @@ record throws like a grenade, but nothing leaves the worm:
   "Watch this" lines while the Jump is selected, and stops a fuse or bounce
   being chosen for it.
 
-**Hang-Glider.** PX's `paratest` (`utility_hangglider_render`), on WA's
-parachute. Opened with the Hang-Glider, the parachute flies as PX's glider:
-gravity at 0.75, the wind along the wing's up side at 3x, a quarter of the
-speed across the wing damped each frame, and a nose that turns towards the
-flight path, at most about 86 degrees up or down. Up and down turn the nose,
-faster the faster it flies; left and right push it. It needs WA's own gravity
-and wind, `wa.world.gravity()` / `wa.world.wind()`. Two differences:
+**Hang-Glider.** PX's `paratest` (`utility_hangglider_render`). Opened with
+the Hang-Glider, WA's parachute becomes PX's glider: the pack takes the worm
+(`worm:take`) and flies it itself, with gravity at 0.75, the wind along the
+wing's up side at 3x, a quarter of the speed across the wing damped each
+frame, and a nose that turns towards the flight path, at most about 86 degrees
+up or down. Up and down turn the nose, faster the faster it flies; left and
+right push it. It needs WA's own gravity and wind, `wa.world.gravity()` /
+`wa.world.wind()`.
+- **Ends:** just before it would run into something (PX's `WS_AFTERROPE`;
+  land by WA's own test of the worm's shape, `worm:fits`), on
+  the jump key, in water, or when the turn ends, the worm goes back to WA
+  (`worm:release`) falling on with the glider's speed, and WA lands it.
+  Weapons fire from it as from WA's parachute.
+- **Landing:** PX swaps the sheet WA packs a parachute away with (`wparbak`,
+  289) for the glider's own. Here WA never packs a parachute away: when the
+  glide ends coming down onto land below WA's 8-pixel-per-frame fall-damage
+  threshold, the glider's pack-away (6 frames at 24 a second) plays once WA
+  has the worm standing. A faster impact releases the worm at full speed into
+  WA's normal falling state, so WA can apply the scheme's fall damage and
+  loss of control. During that impact, the engine masks the parachute slot
+  inside the worm's frame handler so it cannot reopen and slow the worm; the
+  selected weapon is restored afterwards. A hard landing or a crash into
+  something ahead plays no pack-away.
 
-- Just before it would run into something, PX ends the glide with
-  `WS_AFTERROPE`; the pack uses WA's sliding state, as the Helicopter does.
-- PX swaps the sheet WA packs a parachute away with on flat ground
-  (`wparbak`, 289) for the glider's own. The pack cannot see which sheet WA
-  plays, so it hides the worm and plays the glider's pack-away, its 6 frames
-  at 24 a second, whenever the glider lands on its feet.
+**Hot Air Balloon.** PX's `balloon_s` (r2_balloon by rafa''2, modified by
+0rang3), on the Bungee's slot, whose record the pack patches into a parachute.
+PX flies it on WA's parachute with the worm's gravity turned upside down.
+Here the pack takes the worm when that parachute opens and flies it with WA
+3.8.1's own parachute physics, upside down:
+- **Physics:** each frame the speed gains gravity (upward) and the wind, then
+  both are damped to 0.8. These are WA's entity physics (0x4FCB30) with the
+  parachute's damping and wind factor (SetState 0x7D, 0x50EBE2 and 0x50EC57).
+  So it rises at up to four times gravity and drifts with four times the wind.
+- **Steering:** the arrow keys push it as they push WA's parachute (0x513EB0):
+  half of gravity a frame in the key's direction, opposite keys cancelling.
+- **Pops:** on touching land, in water, on the jump key (which closes WA's
+  parachute), and when the turn ends. The worm then goes back to WA, falling
+  with the balloon's speed. Weapons fire from the basket as from WA's
+  parachute.
+- **Art:** the worm's body is hidden behind the balloon, drawn in its team's
+  colour, and the worm in its basket, as PX's `RenderWorm` override draws them.
 
 Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
 sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's

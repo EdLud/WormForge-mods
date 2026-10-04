@@ -55,7 +55,7 @@ handgun { copy_from = "handgun", hold = { draw_hand = false, flash = { frames = 
 minigun { copy_from = "minigun", name = "Burst Rifle", panel_icon = "sprites/burst_rifle/ico_burstr.png", patch = { bias = 6, h_damage = 7, h_delay = 6, h_flag = 2, h_radius = 15, h_shots = 10, h_spread = 63, requires_aiming = 0, uses_turn = 0 }, weapon = "minigun", worm_sprites = { weaponfire = "sprites/burst_rifle/fire", weaponfired = "sprites/burst_rifle/fired", weaponfireu = "sprites/burst_rifle/fireu", weaponlnk = "sprites/burst_rifle/aim", weaponlnkd = "sprites/burst_rifle/aimd", weaponlnku = "sprites/burst_rifle/aimu", wthrow = "sprites/burst_rifle/draw", wthrowd = "sprites/burst_rifle/drawd", wthrowu = "sprites/burst_rifle/drawu" } }
 
 # hooks registered, by event
-contact 2
+contact 3
 death 1
 draw 4
 hud 1
