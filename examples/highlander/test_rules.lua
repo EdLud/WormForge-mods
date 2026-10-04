@@ -2053,6 +2053,28 @@ do
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(25)
   check("object zap passes 12 damage", crate.damage == 12)
+  -- Two arcs hold one worm and the first zap kills it. The engine's worm
+  -- lists leave dead worms out; the second zap must release it anyway, or
+  -- the engine holds a dead worm, which never comes to rest, and the turn
+  -- the hold froze never ends.
+  spec, owner = setup()
+  local held = worm(17)
+  held.x, held.y, held.hp = 5*P, 0, 20
+  local listed = wa.worms.all
+  wa.worms.all = function()
+    local alive = {}
+    for _, w in ipairs(listed()) do if w.hp > 0 then alive[#alive + 1] = w end end
+    return alive
+  end
+  M.spawned = {}
+  spec.on_explode({ worm=owner, x=0, y=0 })
+  spec.on_explode({ worm=owner, x=0, y=0 })
+  for _ = 1, 30 do
+    for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
+  end
+  wa.worms.all = listed
+  check("a worm killed while two arcs hold it is still released", held.hp == 0 and held.taken == nil
+    and held.body_visible == true)
   spec, owner = setup()
   M.trace_hit = { x=0, y=-5*P, nx=1, ny=0, tx=0, ty=1, starts_solid=false }
   spec.on_explode({ worm=owner, x=0, y=0 })

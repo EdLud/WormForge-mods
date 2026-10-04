@@ -4298,12 +4298,14 @@ local function release_taze(key)
   if not hold then return end
   hold.count = hold.count - 1
   if hold.count > 0 then return end
-  local worm = find_target(key)
-  if worm then
-    -- Knocked flying meanwhile, the engine has already let it go.
-    if worm.taken then worm:release(0, 0) end
-    worm.body_visible = true
-  end
+  -- The worm the hold took, not a fresh lookup: an earlier zap may have
+  -- killed it, and the worm lists leave dead worms out. Left held, a dead
+  -- worm never comes to rest, so WA never runs its death and the turn,
+  -- frozen by the hold, never ends.
+  local worm = hold.worm
+  -- Knocked flying meanwhile, the engine has already let it go.
+  if worm.taken then worm:release(0, 0) end
+  worm.body_visible = true
   tazed[key] = nil
 end
 
@@ -4357,7 +4359,7 @@ local function progress_arc(arc)
         if tazed[key] then
           tazed[key].count = tazed[key].count + 1
         else
-          tazed[key] = { x = target.x, y = target.y, count = 1,
+          tazed[key] = { x = target.x, y = target.y, count = 1, worm = target,
             sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1" or "sprites/electric_grenade/tazed2" }
         end
         target.body_visible = false
