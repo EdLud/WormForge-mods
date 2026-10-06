@@ -91,6 +91,11 @@ function Worm:carry(x, y) self.x, self.y, self.carried = x, y, true end
 function Worm:drop() self.carried = false end
 function Worm:clear_keys() self.keys = {} end
 function Worm:set_state(state) self.state = state end
+function Worm:freeze()
+  if self.hp <= 0 or self.state == "frozen" then return false end
+  self.state = "frozen"
+  return true
+end
 -- The engine's handoff verbs: what the worm looks like to the pack after.
 function Worm:take(opts)
   opts = opts or {}
@@ -416,6 +421,13 @@ local function new_match(opts)
           for _, h in ipairs(M.missile_handlers) do h(m) end
         end
       end,
+      hurt = function(f)
+        M.hurt_handlers = M.hurt_handlers or {}
+        M.hurt_handlers[#M.hurt_handlers + 1] = f
+        M.hurt = function(hit)
+          for _, h in ipairs(M.hurt_handlers) do h(hit) end
+        end
+      end,
       death = function(f) M.death = f end,
       hud = function(f) M.hud = f end,
       draw = function(f)
@@ -546,7 +558,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("55 slots replaced, each once", #replaced == 55 and not dupes, tostring(#replaced))
+  check("56 slots replaced, each once", #replaced == 56 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -566,7 +578,7 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" then
+    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" or slot == "armageddon" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
@@ -577,6 +589,9 @@ do
       and by_slot.skip_go.panel_icon == "sprites/skip_go/icon.png"
       and by_slot.skip_go.stock_fire_choice.held == "ctrl"
       and by_slot.skip_go.stock_fire_choice.alternate == "surrender")
+  check("Ice Arrow uses PX's arrow record and icon",
+    by_slot.armageddon and by_slot.armageddon.wep == "weps/armageddon.wep"
+      and by_slot.armageddon.panel_icon == "sprites/ice_arrow/icon.png")
   check("Super Tele owns the teleport cursor and click dispatch",
     by_slot.teleport and by_slot.teleport.on_select.cursor
       and type(by_slot.teleport.on_click) == "function"
@@ -593,6 +608,25 @@ do
   check("Windy Cluster brings PX's icon and bits",
     by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
       and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster")
+end
+
+print("Ice Arrow: only its own arrow freezes after the bow hit")
+do
+  new_match()
+  local target, other = worm(32), worm(17)
+  target.state, target.vx = "tumbling", 3 * 0x10000
+  M.hurt({ phase = "post", source_weapon = "longbow", kind = "hit", worm = other })
+  M.hurt({ phase = "pre", source_weapon = "armageddon", kind = "hit", worm = other })
+  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
+  check("bow impulse remains until the target's next frame",
+    target.state == "tumbling" and target.vx == 3 * 0x10000 and other.state ~= "frozen")
+  M.message(other, wa.msg.FRAME_FINISH)
+  M.message(target, wa.msg.FRAME_FINISH)
+  check("the hit target alone enters frozen state", target.state == "frozen" and other.state ~= "frozen")
+  target.state, target.hp = "tumbling", 0
+  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
+  M.message(target, wa.msg.FRAME_FINISH)
+  check("a later hit cannot freeze a dead worm", target.state == "tumbling")
 end
 
 print("pools: every stock slot is in exactly one place")
@@ -2477,10 +2511,10 @@ local function baseline()
   add("# hooks registered, by event")
   local hooks = {
     worm_message = M.handlers, turn_start = M.turn_starts, turn_end = M.turn_ends,
-    missile_frame = M.missile_handlers, draw = M.draws, contact = M.contacts,
+    missile_frame = M.missile_handlers, draw = M.draws, contact = M.contacts, hurt = M.hurt_handlers,
   }
   for _, name in ipairs({
-    "contact", "death", "draw", "hud", "missile_frame",
+    "contact", "death", "draw", "hud", "hurt", "missile_frame",
     "turn_end", "turn_start", "worm_message",
   }) do
     local n = hooks[name] and #hooks[name] or (M[name] and 1 or 0)

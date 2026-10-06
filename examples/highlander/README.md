@@ -10,8 +10,7 @@ Bat on the girder's. The pools are PX's own lists, each weapon written as the
 slot it takes.
 
 Weapons are ported in batches. **A weapon not ported yet leaves WA's stock
-weapon on its slot, and that stands in for it.** For example, the Ice Arrow's
-slot still holds Armageddon, dealt as a second weapon.
+weapon on its slot, and that stands in for it.**
 
 ## Rules
 
@@ -44,6 +43,13 @@ weapons only. That leaves out the Ferret and the strikes, and Reinforcement,
 Crate Strike and Lightning Strike.
 
 ## Ported weapons
+
+### Ice Arrow
+
+Ice Arrow uses the Highlander scheme's arrow record on Armageddon's slot and
+WA's ArrowEntity for flight and bow impact. Its PX panel icon is included.
+When that arrow hits a worm, the pack enters WA's frozen state on the worm's
+next frame, after the bow hit has applied its momentum.
 
 Most start from the stock WA table entry (`copy_from = "<slot>"`) with a
 named `patch` for the fields PX's scheme changed. Lightning Strike and

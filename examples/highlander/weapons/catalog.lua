@@ -38,6 +38,11 @@ local PORTED = {
 -- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
 -- its sprite builder (p_sprite_builder), so does the engine from PX_HOLDS.
 local PX_ART = {
+  { -- Ice Arrow: WA's own ArrowEntity supplies its flight and bow impact.
+    -- The Highlander script freezes only a worm hit by this slot's arrow.
+    weapon = "armageddon", wep = "weps/armageddon.wep",
+    panel_icon = "sprites/ice_arrow/icon.png",
+  },
   { -- Super Tele: the PX record is a type-3 cursor weapon on teleport's slot.
     weapon = "teleport",
     wep = "weps/teleport.wep",
