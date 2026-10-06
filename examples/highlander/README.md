@@ -78,6 +78,8 @@ the click and 10 and 22 pixels above make room to arrive inside land. Cavern
 clicks are clamped to 19 pixels below the ceiling, as in PX. The click comes
 from WA's synchronized fire context, so the destination cannot follow a
 later mouse movement.
+During manual placement the worm starts at WA's off-map holding position, so
+Super Tele places it immediately and plays its start sound at the destination.
 
 ### WA's own weapons
 
@@ -525,8 +527,8 @@ the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
 - all 54 slot claims, including the Lightning Strike, Electric Grenade,
   Laser Gun and Super Tele scheme records
-- Super Tele's exact click, 50-frame wait, three terrain cuts, cavern ceiling
-  and cancellation when its worm dies
+- Super Tele's exact click, 50-frame wait, three terrain cuts, cavern ceiling,
+  cancellation when its worm dies, and immediate manual placement
 - strike timing, grave identity, revival and restored Highlander hand
 - tazer seeking, delayed zap, stun, mine fuse, object damage and terrain trace
 - the Fire Jump's timeline, counted from the punch, not the fire key

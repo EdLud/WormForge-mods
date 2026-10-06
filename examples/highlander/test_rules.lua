@@ -324,6 +324,7 @@ local function new_match(opts)
         M.sound_targets[#M.sound_targets + 1] = target
         M.sounds[#M.sounds + 1] = name
         M.sound_flags[#M.sound_flags + 1] = flags
+        M.sound_positions[#M.sound_positions + 1] = { x = target.x, y = target.y }
         -- A pack WAV plays only once an entry registers it (`sounds`);
         -- otherwise the engine plays nothing, without a word.
         if type(name) == "string" then
@@ -454,7 +455,8 @@ local function new_match(opts)
       end,
     },
   }
-  M.quads, M.ribbons, M.sounds, M.sound_flags, M.trace_hit, M.draws = {}, {}, {}, {}, nil, nil
+  M.quads, M.ribbons, M.sounds, M.sound_flags, M.sound_positions, M.trace_hit, M.draws =
+    {}, {}, {}, {}, {}, nil, nil
   M.mines, M.crates, M.oil, M.graves = {}, {}, {}, {}
   -- The engine's require: a pack module runs once per match, in its own
   -- environment that reads the shared globals and keeps its writes.
@@ -2041,11 +2043,11 @@ do
   local marker = M.spawned[#M.spawned]
   check("target marker stays at the frozen click position",
     marker.sprite == "markerr" and marker.x == target_x and marker.y == target_y and not marker.dead)
-  check("click confirms target with PX sound and flags",
-    w.state ~= "teleporting" and M.sounds[1] == 68 and M.sound_flags[1] == 0)
+  check("click confirms target with PX's sound at WA's teleport priority",
+    w.state ~= "teleporting" and M.sounds[1] == 68 and M.sound_flags[1] == 3)
   M.message(w, wa.msg.FRAME_FINISH)
   check("the next frame enters WA's teleport pose and plays PX's start sound",
-    w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 0)
+    w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 3)
   for _ = 1, 49 do M.message(w, wa.msg.FRAME_FINISH) end
   check("worm and marker remain in place for 49 frames after starting",
     w.x == 40 * P and w.y == 70 * P and not M.digs and not marker.dead)
@@ -2079,6 +2081,50 @@ do
   for _ = 1, 50 do M.message(w, wa.msg.FRAME_FINISH) end
   check("a dead worm is never moved or carved in and its marker is removed",
     w.x == 40 * P and w.y == 70 * P and not M.digs and marker.dead)
+
+  new_match()
+  spec = nil
+  for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
+  w = worm(16)
+  w.x, w.y, w.hp = 960 * P, -10000 * P, 100
+  local place_x, place_y = 220 * P, 130 * P
+  spec.on_click({ worm = w, x = place_x, y = place_y })
+  check("manual placement moves the unplaced worm before it can fall",
+    w.x == place_x and w.y == place_y and w.state == "teleporting")
+  check("manual placement plays WA's placement Communicator from the worm",
+    #M.sounds == 1 and M.sounds[1] == 68 and M.sound_targets[1] == w and M.sound_flags[1] == 3)
+  check("manual placement carves the destination without a delayed marker",
+    #M.digs == 3 and not (M.spawned and #M.spawned > 0))
+  for _ = 1, 20 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("no WormPop before WA's placement delay", #M.sounds == 1)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("WormPop 21 frames after the click, as WA's placement",
+    #M.sounds == 2 and M.sounds[2] == 54 and M.sound_targets[2] == w and M.sound_flags[2] == 3)
+  for _ = 1, 51 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("manual placement has no second arrival or sound",
+    w.x == place_x and w.y == place_y and #M.digs == 3 and #M.sounds == 2)
+
+  -- The wind-up: none for an unplaced worm, as WA's own placement; PX's in
+  -- a turn.
+  new_match()
+  w = worm(16)
+  w.x, w.y, w.weapon = 960 * P, -10000 * P, "teleport"
+  M.message(w, wa.msg.FIRE_WEAPON)
+  check("firing Super Tele from an unplaced worm skips the wind-up", w.windup == 0)
+  local placed = worm(17)
+  placed.x, placed.y, placed.weapon = 40 * P, 70 * P, "teleport"
+  M.message(placed, wa.msg.FIRE_WEAPON)
+  placed.state = "prefiring"
+  M.message(placed, wa.msg.FRAME_FINISH)
+  check("in a turn Super Tele keeps its wind-up", placed.windup == nil)
+  local late = worm(32)
+  late.x, late.y, late.weapon, late.state = 960 * P, -10000 * P, "teleport", "prefiring"
+  M.message(late, wa.msg.FRAME_FINISH)
+  check("an unplaced worm already winding up has it skipped at the frame's end", late.windup == 0)
+  local other = worm(33)
+  other.x, other.y, other.weapon = 960 * P, -10000 * P, "bazooka"
+  M.message(other, wa.msg.FIRE_WEAPON)
+  check("other weapons keep their wind-up in placement", other.windup == nil)
 end
 
 print("lightning strike: warning, hit, grave identity and copied hand")
