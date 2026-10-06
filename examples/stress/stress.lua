@@ -30,8 +30,9 @@
 -- (see mods/examples/perf). wkLua.log gets a "stress:" line when each batch
 -- goes, between the profiler's "perf:" lines.
 --
--- The pack claims Nuclear Test only to carry its two sheets into the GPU atlas
--- (`gpu_prefix`); the weapon itself stays WA's.
+-- The pack claims Mine Strike only to carry its two sheets into the GPU atlas
+-- (`gpu_prefix`); the weapon itself stays WA's. (Highlander has Nuclear Test:
+-- its Reinforcement.)
 
 local COUNT = 40        -- projectiles per batch
 local BATCH_GAP = 400   -- frames from batch 1 to batch 2: 8 s at WA's 50 a second
@@ -54,7 +55,7 @@ local TRAIL_EVERY = 4   -- frames between them, so the trail lingers
 local FLASH = 50        -- frames an explosion's flash lasts
 
 wa.weapons.replace({
-  weapon = "nuclear_test",
+  weapon = "mine_strike",
   sprites = { ORB, GLOW },
   params = { gpu_prefix = "sprites/" },
 })

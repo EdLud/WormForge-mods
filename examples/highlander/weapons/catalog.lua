@@ -43,6 +43,13 @@ local PX_ART = {
     weapon = "armageddon", wep = "weps/armageddon.wep",
     panel_icon = "sprites/ice_arrow/icon.png",
   },
+  { -- Reinforcement: PX's new worm for the team (weapons/reinforcement.lua),
+    -- on Nuclear Test's slot. Click-only, as the Super Tele.
+    weapon = "nuclear_test", wep = "weps/nuclear_test.wep",
+    panel_icon = "sprites/reinforcement/icon.png",
+    on_select = { cursor = true },
+    on_click = function(ev) fires.reinforcement(ev) end,
+  },
   { -- Super Tele: the PX record is a type-3 cursor weapon on teleport's slot.
     weapon = "teleport",
     wep = "weps/teleport.wep",

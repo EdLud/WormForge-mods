@@ -6,8 +6,8 @@ kind = "gameplay"
 entry = "stress.lua"
 
 # Fires two batches of projectiles in the first turn, stock then custom, and
-# turns on the FPS counter and profiler. Nuclear Test is claimed only to carry
+# turns on the FPS counter and profiler. Mine Strike is claimed only to carry
 # the pack's sheets into the GPU atlas; the weapon stays WA's.
 [weapons]
 register = []
-replace = ["nuclear_test"]
+replace = ["mine_strike"]

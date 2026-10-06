@@ -268,6 +268,7 @@ local function new_match(opts)
       retreat = function() return M.retreat or 0 end,
       turn_clock = function() return M.turn_clock or 0 end,
       water = function() return M.water or 0x7FFFFFFF end,
+      size = function() return { w = M.map_w or 2000, h = M.map_h or 1000 } end,
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
       keys = function() return { sprint = M.shift or false, digit = M.digit } end,
@@ -281,6 +282,13 @@ local function new_match(opts)
       return lo + rng % (hi - lo + 1)
     end,
     worms = {
+      -- As the engine's: a new worm for the team, or an error when it is full.
+      spawn = function(spec)
+        if M.team_full then error("worms.spawn: team " .. spec.team .. " already has 8 worms") end
+        M.worm_spawns = M.worm_spawns or {}
+        M.worm_spawns[#M.worm_spawns + 1] = spec
+        return { kind = "worm", team = spec.team, x = spec.x, y = spec.y, hp = spec.health }
+      end,
       all = function()
         local live = {}
         -- Deliberately NOT in id order: the pack must sort for itself.
@@ -568,7 +576,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("57 slots replaced, each once", #replaced == 57 and not dupes, tostring(#replaced))
+  check("58 slots replaced, each once", #replaced == 58 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -589,7 +597,7 @@ do
   local own_file = true
   for slot, spec in pairs(by_slot) do
     if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" or slot == "armageddon"
-      or slot == "petrol_bomb" then
+      or slot == "petrol_bomb" or slot == "nuclear_test" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
@@ -603,6 +611,10 @@ do
   check("Ice Arrow uses PX's arrow record and icon",
     by_slot.armageddon and by_slot.armageddon.wep == "weps/armageddon.wep"
       and by_slot.armageddon.panel_icon == "sprites/ice_arrow/icon.png")
+  check("Reinforcement uses PX's record and icon, and a click",
+    by_slot.nuclear_test and by_slot.nuclear_test.wep == "weps/nuclear_test.wep"
+      and by_slot.nuclear_test.panel_icon == "sprites/reinforcement/icon.png"
+      and by_slot.nuclear_test.on_select.cursor and type(by_slot.nuclear_test.on_click) == "function")
   check("Super Tele owns the teleport cursor and click dispatch",
     by_slot.teleport and by_slot.teleport.on_select.cursor
       and type(by_slot.teleport.on_click) == "function"
@@ -638,6 +650,31 @@ do
   M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
   M.message(target, wa.msg.FRAME_FINISH)
   check("a later hit cannot freeze a dead worm", target.state == "tumbling")
+end
+
+print("Reinforcement: a new worm for the team, on the ground under the click")
+do
+  new_match()
+  local p = 0x10000
+  local click
+  for _, spec in ipairs(replaced) do if spec.weapon == "nuclear_test" then click = spec.on_click end end
+  local w = worm(16)
+  M.solid = function(_, y) return y >= 300 * p end
+  M.worm_spawns, M.sounds = {}, {}
+  click({ worm = w, x = 250 * p + 0x4000, y = 40 * p })
+  local s = M.worm_spawns[1]
+  check("PX's Reinforcement: the team's, 200 health, at the click's column, standing on the ground",
+    s and s.team == w.team and s.name == "Reinforcement" and s.health == 200
+      and s.x == 250 * p and s.y == (300 - 12) * p, s and (s.x / p .. "," .. s.y / p) or "none")
+  M.solid = function() return false end
+  M.water = 500 * p
+  click({ worm = w, x = 100 * p, y = 40 * p })
+  check("over the water it drops in at the surface", M.worm_spawns[2] and M.worm_spawns[2].y == (500 - 12) * p)
+  M.team_full = true
+  click({ worm = w, x = 100 * p, y = 40 * p })
+  check("a full team gets no worm, and an error sound", #M.worm_spawns == 2
+    and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav")
+  M.team_full, M.water, M.solid = nil, nil, nil
 end
 
 print("pools: every stock slot is in exactly one place")

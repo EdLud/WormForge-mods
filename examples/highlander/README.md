@@ -191,6 +191,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider, flown by the pack once WA's parachute opens |
 | petrol_bomb | Valyrian Fire | icon, the bottle (held and in flight) | the hold and the spinning bottle drawn at run time; thrown 15 pixels further out, and from the water the bottle goes back to the team; PX's 51 fires on a 3-pixel ring at the impact (`wa.fire.spawn`, PX's fire values), drawn green (PX's RGB(75, 225, 75)) on the GPU renderer, whose hits on worms do 25% more damage and knock twice as far. Not yet: "WILDFIRE !!!" and the bottle bursting on the water |
+| nuclear_test | Reinforcement | icon | a click puts a new worm in the team's next unused place (`wa.worms.spawn`), named Reinforcement, with 200 health, standing on the ground under the click; with 8 worms the team is full (an error sound). Not PX's: PX's worm floats down from above the map on an empty jet pack; this one stands there at once |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
