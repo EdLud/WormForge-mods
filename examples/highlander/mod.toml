@@ -14,7 +14,7 @@ debug_worm_state = true
 [weapons]
 register = []
 replace = [
-  "earthquake", "napalm_strike", "uzi", "teleport",
+  "earthquake", "napalm_strike", "uzi", "teleport", "petrol_bomb",
   "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
   "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
   "damage_x2", "double_turn_time", "ming_vase",

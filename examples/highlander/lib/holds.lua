@@ -37,6 +37,12 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
     weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
   },
+  petrol_bomb = { -- Valyrian Fire (valyrianfire_s)
+    thrown = true,
+    sheet = "sprites/px_hold/valyrian_fire.png", hand_type = 1, hand_radius = -6.0,
+    hand_rotation = 0.0, hand_radial_rotation = 0.0, hand_scale = 1.0,
+    weap_rotation = 0.35, weap_radial_rotation = 0.0, weap_radius = -8.0,
+  },
   super_banana = { -- Chilli Bomb (chilli_bomb_anim)
     thrown = true,
     sheet = "sprites/px_hold/chilli_bomb", hand_type = 1, hand_radius = 13,

@@ -94,6 +94,21 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/px_hold/" },
     on_explode = function(ev) shared.electric_grenade_explode(ev) end,
   },
+  { -- Valyrian Fire (rafa``2's valyrianfire_s): a Petrol Bomb with PX's
+    -- bottle in the hand and spinning in flight (PX_WEAP_SPRITES), thrown
+    -- 15 pixels further out. PX's record leaves the flight sprite 0, as the
+    -- Electric Grenade's: here the stock bottle, for the worm's throw sheet,
+    -- hidden in flight.
+    weapon = "petrol_bomb",
+    wep = "weps/petrol_bomb.wep",
+    panel_icon = "sprites/valyrian_fire/icon.png",
+    sprite = "petrolbm",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/px_hold/valyrian_fire.png" },
+    params = { gpu_prefix = "sprites/px_hold/" },
+    on_fire = function(fire) fires.valyrian_fire(fire) end,
+    on_explode = function(ev) fires.valyrian_burst(ev) end,
+  },
   { -- Lightning Strike: the PX strike is an effect, not WA's napalm plane.
     weapon = "napalm_strike",
     wep = "weps/napalm_strike.wep",

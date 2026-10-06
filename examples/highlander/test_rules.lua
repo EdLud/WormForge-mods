@@ -356,6 +356,14 @@ local function new_match(opts)
         return a
       end,
     },
+    -- wa.fire.spawn: the fires a pack starts, as given.
+    fire = {
+      spawn = function(spec)
+        M.fires = M.fires or {}
+        M.fires[#M.fires + 1] = spec
+        return #M.fires
+      end,
+    },
     weapons = {
       replace = function(spec)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
@@ -558,7 +566,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("56 slots replaced, each once", #replaced == 56 and not dupes, tostring(#replaced))
+  check("57 slots replaced, each once", #replaced == 57 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -578,7 +586,8 @@ do
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do
-    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" or slot == "armageddon" then
+    if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi" or slot == "prod" or slot == "armageddon"
+      or slot == "petrol_bomb" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
@@ -972,7 +981,7 @@ do
   end
   local count = 0
   for _ in pairs(holds) do count = count + 1 end
-  check("eight PX holds claimed", count == 8, tostring(count))
+  check("nine PX holds claimed", count == 9, tostring(count))
   check("Sticky Bomb has a weapon and the lower radial hand",
     holds.grenade.sheet == "sprites/px_hold/sticky_bomb"
     and holds.grenade.hand == "sprites/px_hold/hand_rad_lower"
@@ -1135,6 +1144,51 @@ do
   check("with no clear point within 40 pixels she starts at the worm",
     #M.launched == 4 and M.launched[4].x == w.x and M.launched[4].y == w.y)
   M.solid = nil
+end
+
+print("valyrian fire: PX's bottle, thrown further out, refunded from the water")
+do
+  new_match()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "petrol_bomb" then spec = r end
+  end
+  check("Valyrian Fire takes the scheme's record, its icon and PX's bottle in hand and flight", spec
+    and spec.wep == "weps/petrol_bomb.wep" and spec.panel_icon == "sprites/valyrian_fire/icon.png"
+    and spec.sprite == "petrolbm" and type(spec.on_fire) == "function"
+    and spec.hold and spec.hold.sheet == "sprites/px_hold/valyrian_fire.png")
+  local w = worm(17)
+  w.x, w.y = 100 * P, 100 * P
+  spec.on_fire({ worm = w, x = 110 * P, y = 100 * P, vx = 3 * P, vy = -4 * P })
+  local l = M.launched and M.launched[1]
+  check("the bottle starts 15 pixels further along the throw, at the throw's speed", l
+    and l.weapon == "petrol_bomb" and l.owner == w and l.vx == 3 * P and l.vy == -4 * P
+    and l.x == 110 * P + 9 * P and l.y == 100 * P - 12 * P,
+    l and (l.x / P .. "," .. l.y / P))
+  M.water = 90 * P
+  ammo[w.ammo_group].petrol_bomb = 0
+  spec.on_fire({ worm = w, x = 110 * P, y = 100 * P, vx = 3 * P, vy = -4 * P })
+  check("from the water nothing is thrown and the bottle goes back to the team",
+    #M.launched == 1 and ammo[w.ammo_group].petrol_bomb == 1)
+  M.water = nil
+  -- The impact: PX's 51 fires on a 3-pixel ring, for the turn's worm.
+  w.turn = true
+  spec.on_explode({ worm = worm(32), x = 300 * P, y = 200 * P })
+  local f = M.fires or {}
+  local near, pxs = true, true
+  for _, fire in ipairs(f) do
+    local dx, dy = (fire.x - 300 * P) / P, (fire.y - 200 * P) / P
+    if dx * dx + dy * dy > 9.0001 then near = false end
+    if fire.owner ~= w or fire.count ~= 0 or fire.duration ~= 6000 or fire.up_power ~= 0
+      or fire.damage ~= 0 or fire.damage_scale ~= 1.25 or fire.knock_scale ~= 2
+      or fire.tint ~= 0x4BE14B then pxs = false end
+  end
+  check("51 fires on a 3-pixel ring around the impact", #f == 51 and near, tostring(#f))
+  check("each with PX's fire values, green, hitting 25% harder and knocking twice as far, for the turn's worm", pxs)
+  check("PX's first fire: x + 3 cos(360), y - 3 sin(360)",
+    f[1] and f[1].x == 300 * P - 55776 and f[1].y == 200 * P - 188531)
+  w.turn = nil
 end
 
 print("chilli bomb: five more Chillis burst out")

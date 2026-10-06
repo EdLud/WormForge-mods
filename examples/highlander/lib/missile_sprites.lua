@@ -42,6 +42,11 @@ local PX_WEAP_SPRITES = {
   homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
     sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
   },
+  petrol_bomb = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
+    sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,
+    spin = true, spin_speed = 0.35,
+    hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
+  },
   earthquake = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
     sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
@@ -138,11 +143,12 @@ wa.on.missile_frame(function(m)
   end
   local rot
   if p.spin then
-    -- WeapSprite type 3: 0.5 * (vx * 0.15 + |vy| * 0.01, towards vx) a
-    -- frame, in pixels a frame and radians.
+    -- WeapSprite type 3: speed * (vx * 0.15 + |vy| * 0.01, towards vx) a
+    -- frame, in pixels a frame and radians; WeapSprite's speed is 0.5
+    -- unless the weapon's script sets it.
     local vx, vy = m.vx / 0x10000, m.vy / 0x10000
     local sign = vx > 0 and 1 or vx < 0 and -1 or 0
-    f.rot = f.rot + 0.5 * (vx * 0.15 + math.abs(vy * 0.01) * sign)
+    f.rot = f.rot + (p.spin_speed or 0.5) * (vx * 0.15 + math.abs(vy * 0.01) * sign)
     rot = f.rot
   else
     -- WeapSprite::CalculateAngle, rotation 0.
