@@ -1,4 +1,9 @@
-# Sentry Gun
+# Sentry Gun (old)
+
+The first port of Project X's Sentry Gun, as a standalone pack on the donkey
+slot. The Sentry Gun now lives in Highlander (on the kamikaze slot, as PX's
+Highlander scheme has it); this pack stays as an example of the engine
+additions it brought.
 
 Copy this folder into `Mods/` beside WA 3.8.1 and use a matching WormForge DLL.
 Disable other donkey overlays: the first loaded pack wins.

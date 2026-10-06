@@ -1,9 +1,9 @@
-id = "example.sentry_gun"
+id = "example.sentry_gun_old"
 version = "0.1.0"
 author = "wkLua"
 api_version = 1
 entry = "weapons.lua"
 
 [weapons]
-register = ["example.sentry_gun"]
+register = ["example.sentry_gun_old"]
 replace = ["donkey"]
