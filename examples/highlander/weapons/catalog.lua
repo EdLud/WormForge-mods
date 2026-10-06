@@ -136,10 +136,7 @@ local PX_ART = {
     weapon = "mad_cow",
     panel_icon = "sprites/launchers/cow_launcher_ico.png",
   },
-  { -- Old Woman Launcher. Its record is PX's but for one field: +0x34,
-    -- which picks a projectile's aim sheet in WA (0x51C060), is 3 (the
-    -- bazooka hold, as the Cow Launcher's) where PX has 0. WA knows 1-12
-    -- only and draws no worm at all for 0.
+  { -- Old Woman Launcher: WA's animal launched from a clear muzzle point.
     weapon = "old_woman",
     panel_icon = "sprites/launchers/old_woman_launcher_ico.png",
   },

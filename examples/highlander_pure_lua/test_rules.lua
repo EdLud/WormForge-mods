@@ -3,7 +3,7 @@
 --   lua mods/examples/highlander_pure_lua/test_rules.lua   (from the repo root)
 --
 -- The pack is data, not a crate, so this is not part of `cargo test`. Ammo
--- is modelled per alliance row, as WA stores it, and `{ set = n }` is
+-- is modelled per ammo group, as WA stores it, and `{ set = n }` is
 -- absolute, infinite included, as the engine implements it. Which row a team
 -- writes to is the engine's job (`world::ammo_row`), not the pack's, so it is
 -- not something this mock can test.
@@ -58,7 +58,7 @@ local Worm = {}
 Worm.__index = Worm
 function Worm:ammo(name, change)
   assert(IS_STOCK[name], "pack asked for a weapon that does not exist: " .. tostring(name))
-  local store = ammo[self.alliance]
+  local store = ammo[self.ammo_group]
   if change == nil then
     return store[name] or 0
   end
@@ -79,7 +79,8 @@ local function new_match(opts)
     ammo[team - 1] = {}
     for index = 0, 1 do
       worms[#worms + 1] = setmetatable({
-        id = team * 16 + index, team = team, alliance = team - 1, hp = 100,
+        id = team * 16 + index, team = team, alliance = team - 1,
+        ammo_group = team - 1, hp = 100,
       }, Worm)
     end
   end

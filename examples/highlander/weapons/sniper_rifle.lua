@@ -14,7 +14,7 @@ wa.on.worm_message(function(worm, msg)
       and (worm.state == "firing" or worm.state == "fired")) then
     held[worm.id] = nil
   end
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 
 -- ------------------------------------------ the Sniper Rifle's laser sight
 -- Shared with later sections; the rest of this section is local to it.

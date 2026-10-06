@@ -30,7 +30,7 @@ wa.on.worm_message(function(worm, msg)
     end
   end
   return "eat"
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON } })
 
 wa.on.hurt(function(hit)
   if hit.phase ~= "post" or hit.lost < 1 then

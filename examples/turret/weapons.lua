@@ -414,4 +414,4 @@ wa.on.worm_message(function(worm, msg)
       s.ammo = AMMO
     end
   end
-end)
+end, { msgs = { wa.msg.START_TURN } })

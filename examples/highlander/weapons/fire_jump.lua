@@ -68,4 +68,4 @@ wa.on.worm_message(function(worm, msg)
     fire_jump(worm, t)
     jumps[worm.id] = t < 211 and t or nil
   end
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })

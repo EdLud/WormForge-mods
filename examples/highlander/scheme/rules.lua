@@ -80,7 +80,7 @@ wa.on.worm_message(function(worm, msg)
   if not dealt[worm.id] then
     deal(worm)
   end
-end)
+end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.START_TURN } })
 
 wa.on.turn_start(function(event)
   start_turn(event.worm)

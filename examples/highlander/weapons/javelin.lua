@@ -14,6 +14,10 @@ do
     if m.weapon == "prod" then speed[m.id] = { m.vx, m.vy } end
   end)
 
+  -- How the part of the stamp inside the land fades: over 3 pixels from the
+  -- spear's outline, its colour mixed with the earth's. Tuned by eye in game.
+  local JAVELIN_BURIED = { soften = 3, blend = "mix" }
+
   local function trunc(n) return n < 0 and math.ceil(n) or math.floor(n) end
   local function orientation(vx, vy)
     if vx == 0 then return vy > 0 and 16 or 0 end
@@ -48,7 +52,13 @@ do
       else target:hit(20, trunc(vx / 2), trunc(vy / 2), "projectile") end
       return
     end
-    wa.land.stamp{ sprite = "sprites/javelin/stamp", frame = orientation(vx, vy), x = ev.x, y = ev.y }
+    -- Centred on the impact, as PX's, so its front half lies in the land:
+    -- that half fades into the earth (the engine's buried stamp) instead of
+    -- being drawn over it, and the javelin looks stuck.
+    wa.land.stamp{
+      sprite = "sprites/javelin/stamp", frame = orientation(vx, vy), x = ev.x, y = ev.y,
+      buried = JAVELIN_BURIED,
+    }
     -- PX plays it unplaced. On the turn's worm: an explosion's ev.worm is the
     -- missile's owner, which need not be a worm and has no sound of its own.
     local shooter = current_worm()

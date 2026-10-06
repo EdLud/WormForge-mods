@@ -354,6 +354,6 @@ do
         glider_close(worm, g, false)
         return "eat"
       end
-    end)
+    end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP } })
   end
 end

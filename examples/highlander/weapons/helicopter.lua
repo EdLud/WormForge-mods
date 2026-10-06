@@ -220,7 +220,7 @@ wa.on.worm_message(function(worm, msg)
   if msg == wa.msg.FRAME_FINISH then
     heli_frame(worm)
   end
-end)
+end, { msgs = { wa.msg.FRAME_FINISH } })
 
 -- Collide: hitting anything but a mine faster than a pixel a frame crashes
 -- it, the ground included -- a slow landing is PX's smooth landing -- judged

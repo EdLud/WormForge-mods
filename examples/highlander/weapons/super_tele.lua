@@ -53,5 +53,5 @@ wa.on.worm_message(function(worm, msg)
   for _, rise in ipairs({ 0, 10, 22 }) do
     wa.land.dig({ x = tele.x, y = tele.y - rise * 0x10000, radius = 12 })
   end
-end)
+end, { msgs = { wa.msg.FRAME_FINISH } })
 end

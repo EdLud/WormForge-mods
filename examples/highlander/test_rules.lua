@@ -15,7 +15,7 @@ for k in pairs(_G) do
 end
 --
 -- The pack is data, not a crate, so this is not part of `cargo test`. Ammo
--- is modelled per alliance row, as WA stores it, and `{ set = n }` is
+-- is modelled per ammo group, as WA stores it, and `{ set = n }` is
 -- absolute, infinite included, as the engine implements it. Which row a team
 -- writes to is the engine's job (`world::ammo_row`), not the pack's, so it is
 -- not something this mock can test.
@@ -77,7 +77,7 @@ local Worm = {}
 Worm.__index = Worm
 function Worm:ammo(name, change)
   assert(IS_STOCK[name], "pack asked for a weapon that does not exist: " .. tostring(name))
-  local store = ammo[self.alliance]
+  local store = ammo[self.ammo_group]
   if change == nil then
     return store[name] or 0
   end
@@ -112,6 +112,14 @@ function Worm:fits(x, y)
   local w, h = 4 * 0x10000, 6 * 0x10000
   return not (M.solid(x, y) or M.solid(x - w, y) or M.solid(x + w, y)
     or M.solid(x, y - h) or M.solid(x, y + h))
+end
+
+-- A copy of `v` and every table in it.
+local function deep_copy(v)
+  if type(v) ~= "table" then return v end
+  local out = {}
+  for k, x in pairs(v) do out[k] = deep_copy(x) end
+  return out
 end
 
 local function inventory_api()
@@ -190,8 +198,8 @@ local function inventory_api()
       if opts.clear then
         local seen = {}
         for _, live in ipairs(wa.worms.all()) do
-          if not seen[live.alliance] then
-            seen[live.alliance] = true
+          if not seen[live.ammo_group] then
+            seen[live.ammo_group] = true
             for _, name in ipairs(slots) do live:ammo(name, { set = 0 }) end
           end
         end
@@ -225,7 +233,8 @@ local function new_match(opts)
     ammo[team - 1] = {}
     for index = 0, per_team - 1 do
       worms[#worms + 1] = setmetatable({
-        id = (per_team > 2 and team * 1000 or team * 16) + index, team = team, alliance = team - 1, hp = 100,
+        id = (per_team > 2 and team * 1000 or team * 16) + index, team = team,
+        alliance = team - 1, ammo_group = team - 1, hp = 100,
         kind = "worm", x = 0, y = 0, facing = 1,
         gravity = 0x10000, -- WA's normal
       }, Worm)
@@ -252,6 +261,7 @@ local function new_match(opts)
     world = {
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
+      turn_clock = function() return M.turn_clock or 0 end,
       water = function() return M.water or 0x7FFFFFFF end,
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
@@ -297,8 +307,10 @@ local function new_match(opts)
       solid = function(x, y) return M.solid ~= nil and M.solid(x, y) or false end,
     },
     draw = {
-      quad = function(q) M.quads[#M.quads + 1] = q end,
-      ribbon = function(q) M.ribbons[#M.ribbons + 1] = q end,
+      -- The engine reads the table before returning, so a pack may refill
+      -- one table for every call: keep a copy, as the engine does.
+      quad = function(q) M.quads[#M.quads + 1] = deep_copy(q) end,
+      ribbon = function(q) M.ribbons[#M.ribbons + 1] = deep_copy(q) end,
       random = function() return 0.5 end,
     },
     sound = {
@@ -354,15 +366,30 @@ local function new_match(opts)
       end,
     },
     on = {
-      -- Every handler, in registration order, as the engine keeps them.
-      worm_message = function(f)
+      -- Every handler, in registration order, as the engine keeps them,
+      -- each run only for the messages it names (no options: every one).
+      worm_message = function(f, opts)
         M.handlers = M.handlers or {}
+        M.handler_msgs = M.handler_msgs or {}
+        local wants = false
+        if opts then
+          assert(type(opts.msgs) == "table" and #opts.msgs > 0, "worm_message: msgs = { ... }")
+          wants = {}
+          for _, m in ipairs(opts.msgs) do
+            assert(math.type(m) == "integer", "worm_message: msgs lists message numbers")
+            wants[m] = true
+          end
+        end
         M.handlers[#M.handlers + 1] = f
+        M.handler_msgs[#M.handlers] = wants
         -- "eat" from any handler swallows the message, as the engine's.
         M.message = function(w, msg)
           local eat
-          for _, h in ipairs(M.handlers) do
-            if h(w, msg) == "eat" then eat = "eat" end
+          for i, h in ipairs(M.handlers) do
+            local wanted = M.handler_msgs[i]
+            if not wanted or wanted[msg] then
+              if h(w, msg) == "eat" then eat = "eat" end
+            end
           end
           return eat
         end
@@ -543,7 +570,7 @@ do
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
-  check("the lightning, Super Tele, Laser Gun and Javelin slots use scheme records; others copy stock", own_file)
+  check("scheme records use their intended bases; others copy stock", own_file)
   check("Super Tele owns the teleport cursor and click dispatch",
     by_slot.teleport and by_slot.teleport.on_select.cursor
       and type(by_slot.teleport.on_click) == "function"
@@ -851,7 +878,7 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.facing, w.vx, w.vy = "fire_punch", -1, 0, 0
-  ammo[w.alliance].fire_punch = 1
+  ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   -- WA's wind-up: the worm stands still, and nothing may move it.
   for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
@@ -888,7 +915,7 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.vy = "fire_punch", 0
-  ammo[w.alliance].fire_punch = 1
+  ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
   w.vy = -3 * 0x10000 -- a later jump of some other kind
@@ -969,7 +996,7 @@ do
   M.quads = {}
   w.aiming = false
   M.message(w, wa.msg.FRAME_FINISH)
-  ammo[w.alliance].handgun = 1
+  ammo[w.ammo_group].handgun = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   check("its own shot sound on firing", M.sounds[1] == "sounds/sniper_firing.wav")
 end
@@ -990,7 +1017,7 @@ do
     and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "bazooka"
-  ammo[w.alliance].bazooka = 1
+  ammo[w.ammo_group].bazooka = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   M.missile({ id = 500, phase = "pre", weapon = "bazooka", x = 90 * P, y = 52 * P, vx = 0, vy = 0 })
   M.missile({ id = 500, phase = "post", weapon = "bazooka", x = 100 * P, y = 50 * P, vx = 6 * P, vy = -P })
@@ -1015,6 +1042,59 @@ do
   spec.on_explode({ x = 1, y = 1, slot = 1, missile = 777 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("no missile id, or one never seen flying: nothing", #M.launched == 1 and #M.digs == 1)
+end
+
+print("s.m.a.r.t bomb: homing bits leave the red trail")
+do
+  new_match()
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "mortar" then spec = r end
+  end
+  check("homing bits draw the trail's red circles, not WA's green gas, on the generated record",
+    spec and spec.patch.c_homing_sprite == 250 and spec.patch.c_homing_kind == 1
+      and spec.patch.cluster_count == 7)
+end
+
+print("old woman launcher: launch the Old Woman from a clear point")
+do
+  new_match()
+  local P = 0x10000
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "old_woman" then spec = r end
+  end
+  check("stock Old Woman supplies the animal and Lua handles its projectile",
+    spec and spec.copy_from == "old_woman" and type(spec.on_fire) == "function"
+      and spec.patch.fire_type == 1 and spec.patch.fire_method == 3)
+  local w = worm(17)
+  w.x, w.y = 100 * P, 100 * P
+  M.solid = function(x) return x <= 91 * P end
+  spec.on_fire({ worm = w, x = 86 * P, y = w.y, vx = -12 * P, vy = 0 })
+  check("a wall at the muzzle moves the Old Woman into clear space",
+    #M.launched == 1 and M.launched[1].weapon == "old_woman"
+      and M.launched[1].x >= 94 * P and M.launched[1].fuse == 5000)
+  M.solid = nil
+  spec.on_fire({ worm = w, x = 114 * P, y = w.y, vx = 12 * P, vy = 0 })
+  check("a clear muzzle keeps WA's original launch point",
+    #M.launched == 2 and M.launched[2].x == 114 * P)
+  -- A thin wall (105-108) between the worm and a clear muzzle beyond it:
+  -- the worm can't see the muzzle, so she starts on the worm's side.
+  M.solid = function(x) return x >= 105 * P and x < 109 * P end
+  M.trace_hit = function(x0, _, x1)
+    local wall = 107 * P
+    if (x0 - wall) * (x1 - wall) < 0 then return { hit = true, x = wall, y = w.y } end
+  end
+  spec.on_fire({ worm = w, x = 114 * P, y = w.y, vx = 12 * P, vy = 0 })
+  check("a muzzle past a thin wall moves her back to the worm's side",
+    #M.launched == 3 and M.launched[3].x < 105 * P and M.launched[3].x > w.x - 40 * P,
+    #M.launched == 3 and M.launched[3].x / P or #M.launched)
+  M.trace_hit = nil
+  M.solid = function() return true end
+  spec.on_fire({ worm = w, x = 86 * P, y = w.y, vx = -12 * P, vy = 0 })
+  check("with no clear point within 40 pixels she starts at the worm",
+    #M.launched == 4 and M.launched[4].x == w.x and M.launched[4].y == w.y)
+  M.solid = nil
 end
 
 print("chilli bomb: five more Chillis burst out")
@@ -1049,13 +1129,25 @@ do
     and c.explode_into == "fire")
   check("and WA's sprite 0: only the chilli is drawn", c.sprite == 0)
   local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = P, vy = 0, sprite = 51 }
+  local was_turn = w.turn
+  w.turn = true -- thrown in its turn
   M.missile(m)
+  w.turn = was_turn
   check("the thrown Chilli's own banana hidden in flight", m.sprite == 0)
   local b = { id = 611, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = P, vy = 0, sprite = 48 }
   M.missile(b)
   check("other missiles keep theirs", b.sprite == 48)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   check("launched once", #M.launched == 5)
+  -- The blast hurt the thrower, which ends WA's turn: no worm holds the turn
+  -- while the five fly, and they are drawn all the same.
+  M.turn_start({ worm = w })
+  for _, x in ipairs(wa.worms.all()) do x.turn = false end
+  M.spawned = {}
+  local child = { id = 620, phase = "post", weapon = "super_banana", x = 0, y = 0, vx = P, vy = -P, sprite = 0 }
+  M.missile(child)
+  check("the five are drawn after the turn ends, for the last turn's worm",
+    M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/chilli_bomb" and M.spawned[1].owner == w)
   for i = 1, 5 do
     spec.on_explode({ x = 1, y = 1, slot = 42, missile = 9000 + i })
   end
@@ -1696,6 +1788,30 @@ do
   check("turn start leaves Gravity Control active", M.gravity == math.floor(0x3AE * 2.4))
   M.turn_end({ worm = w, active = w })
   check("turn end restores the match's gravity", M.gravity == 0x3AE)
+  -- PX's rule: the turn clock standing still for 10 s puts the gravity back.
+  local high = math.floor(0x3AE * 2.4)
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_clock = 20000
+  for _ = 1, 120 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("a shot's settling (2.4 s, clock still) keeps the gravity", M.gravity == high)
+  for i = 1, 600 do
+    M.turn_clock = 20000 - i * 20
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("a running clock keeps it however long", M.gravity == high)
+  for _ = 1, 499 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("the clock still for 499 frames keeps it", M.gravity == high)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("10 s with the clock still puts the gravity back", M.gravity == 0x3AE, tostring(M.gravity))
+  M.turn_end({ worm = w, active = w })
+  check("turn end after that leaves the match's gravity", M.gravity == 0x3AE)
 end
 
 print("jump: the worm leaves with the shot")
@@ -1886,6 +2002,21 @@ do
   click({ worm=jumper, x=100*P, y=100*P })
   check("click leaves ending WA's prefiring pose to the engine", jumper.state == "prefiring")
 
+  -- The strike comes from where WA's arrow points (the sign of ev.vx), not
+  -- from the worm's facing. With no land the beam ends 300 pixels along it,
+  -- which is where its effect sits: left of the click when it comes from
+  -- the left.
+  new_match()
+  local facing_right = worm(16)
+  facing_right.facing = 1
+  click({ worm = facing_right, x = 100 * P, y = 100 * P, vx = -P })
+  local from_right = M.spawned[#M.spawned]
+  facing_right.facing = -1
+  click({ worm = facing_right, x = 100 * P, y = 100 * P, vx = P })
+  local from_left = M.spawned[#M.spawned]
+  check("the arrow, not the worm's facing, sets the side it strikes from",
+    from_right.x > 100 * P and from_left.x < 100 * P, (from_right.x / P) .. "," .. (from_left.x / P))
+
   new_match()
   local by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
@@ -1940,7 +2071,7 @@ do
   local grave = { id=701, kind="grave", worm_id=17, x=140*P, y=100*P }
   function grave:revive(id, hp)
     assert(id == 17 and hp == 10)
-    local revived = setmetatable({ id=id, kind="worm", team=1, alliance=0,
+    local revived = setmetatable({ id=id, kind="worm", team=1, alliance=0, ammo_group=0,
       hp=hp, x=self.x, y=self.y-5*P, facing=1 }, Worm)
     worms[#worms+1] = revived
     M.graves = {}
@@ -1998,6 +2129,29 @@ do
     local a = M.spawned[#M.spawned]
     for _ = 1, n do if not a.dead then a.on(a) end end
   end
+  -- Dozens of live arcs, drawn: the draw refills its tables rather than
+  -- making garbage for every glow, so Lua's GC does not run inside it.
+  do
+    local spec, owner = setup()
+    for i = 1, 40 do spec.on_explode({ worm = owner, x = i * 40 * P, y = 0 }) end
+    for _ = 1, 12 do
+      for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
+    end
+    local quad, ribbon = wa.draw.quad, wa.draw.ribbon
+    local quads, ribbons = 0, 0
+    wa.draw.quad = function() quads = quads + 1 end
+    wa.draw.ribbon = function() ribbons = ribbons + 1 end
+    M.draw()
+    quads, ribbons = 0, 0
+    collectgarbage("stop")
+    local before = collectgarbage("count")
+    M.draw()
+    local kb = collectgarbage("count") - before
+    collectgarbage("restart")
+    wa.draw.quad, wa.draw.ribbon = quad, ribbon
+    check("40 arcs drawn without new tables per glow", ribbons == 40 and quads > 400 and kb < 4,
+      string.format("%d ribbons, %d quads, %.1f KB", ribbons, quads, kb))
+  end
   local spec, owner = setup()
   check("a stock grenade for the worm's throw sheet, PX's hold over it",
     spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim"
@@ -2011,6 +2165,38 @@ do
   M.missile(m)
   check("thrown: WA's sprite hidden, PX's grenade follows it", m.sprite == 0
     and M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/electric_grenade.png")
+  -- Its sprite's owner when no worm holds the turn: the last turn's worm;
+  -- if that one died since (WA frees a dead worm, its handle dangles), a
+  -- living worm, never the dead one, so PX's grenade is still drawn (WA's
+  -- own sprite is the stock grenade, which the Sticky Bomb redraws).
+  do
+    local before = M.spawned
+    owner.turn = false
+    M.turn_start({ worm = owner })
+    local listed = wa.worms.all
+    wa.worms.all = function()
+      local alive = {}
+      for _, w in ipairs(listed()) do if w ~= owner then alive[#alive + 1] = w end end
+      return alive
+    end
+    M.spawned = {}
+    local late = { id = 502, phase = "post", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 0 }
+    late.phase = "pre"
+    late.sprite = 50
+    M.missile(late)
+    late.phase = "post"
+    M.missile(late)
+    check("a grenade flying after the last turn's worm died is drawn for a living worm,"
+      .. " WA's own sprite hidden", #M.spawned == 1 and M.spawned[1].owner ~= owner
+      and M.spawned[1].owner ~= nil and late.sprite == 0)
+    wa.worms.all = listed
+    M.spawned = {}
+    local later = { id = 503, phase = "post", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 0 }
+    M.missile(later)
+    check("while that worm lives, it owns the sprite", M.spawned[1] and M.spawned[1].owner == owner)
+    owner.turn = true
+    M.spawned = before
+  end
   -- It spins as a grenade (its record's WAT_Rotation), not faces its flight:
   -- flying right at 4 px a frame, 0.5 * 4 * 0.15 = 0.3 rad a frame.
   m.vx, m.vy = 4*P, 0
@@ -2052,6 +2238,36 @@ do
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(50)
   check("arc chains to a second unvisited worm", first.hp == 76 and second.hp == 76)
+  -- The thrower: as PX's, the arc never zaps the worm that fired the
+  -- grenade, whichever worm the explosion names.
+  spec, owner = setup()
+  owner.weapon = "earthquake"
+  M.message(owner, wa.msg.FIRE_WEAPON)
+  first = worm(17)
+  first.x, first.y = 5*P, 0
+  spec.on_explode({ worm=worm(32), x=0, y=0 })
+  tick(50)
+  check("the arc spares the worm that threw the grenade", owner.hp == 100 and first.hp == 76,
+    tostring(owner.hp) .. " " .. tostring(first.hp))
+  -- The trail: every point stays from the grenade on, links included.
+  spec, owner = setup()
+  first = worm(17)
+  first.x, first.y = 60*P, 0
+  spec.on_explode({ worm=owner, x=0, y=0 })
+  local function drawn_points()
+    M.quads, M.ribbons = {}, {}
+    M.draw()
+    local r = M.ribbons[#M.ribbons]
+    return r and #r.points or 0
+  end
+  local before, after = drawn_points(), nil
+  for _ = 1, 30 do
+    tick(1)
+    if first.taken then after = drawn_points(); break end
+    before = drawn_points()
+  end
+  check("linking to a worm keeps the trail it came along", after and before >= 3 and after == before + 1,
+    tostring(before) .. " -> " .. tostring(after))
   spec, owner = setup()
   local mine = { id=800, kind="mine", x=5*P, y=0 }
   function mine:arm(fuse) self.fuse = fuse end
@@ -2165,6 +2381,9 @@ do
       and stamp.x == 100 * P and stamp.y == 100 * P
   end
   check("cardinals, ratio bins and clamps choose PX's centered 60px stamp", good)
+  local last = M.stamps[#M.stamps]
+  check("the half in the land fades into it", last.buried and last.buried.soften == 3
+    and last.buried.blend == "mix")
   check("sticking plays the registered impact sound on the turn's worm, never the missile's owner",
     M.sounds[#M.sounds] == "sounds/javelin_impact.wav" and M.sound_targets[#M.sound_targets] == owner)
   local n = #M.stamps
@@ -2303,6 +2522,18 @@ local function baseline()
 end
 
 local BASELINE = "mods/examples/highlander/baseline.txt"
+print("worm_message: every handler names its messages")
+do
+  new_match()
+  local open = 0
+  for i = 1, #M.handlers do
+    if not M.handler_msgs[i] then open = open + 1 end
+  end
+  -- One handler without a filter makes the engine call into Lua for every
+  -- message every worm gets, several a frame each.
+  check("no handler takes every message", open == 0, open .. " of " .. #M.handlers)
+end
+
 print("baseline: the pack's claims, hooks, globals and deals")
 do
   local now = baseline()

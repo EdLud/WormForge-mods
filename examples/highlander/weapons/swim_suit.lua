@@ -284,7 +284,7 @@ wa.on.worm_message(function(worm, msg)
       return "eat"
     end
   end
-end)
+end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.FIRE_WEAPON } })
 
 -- fastswim: the swim speed is 2 again every turn.
 wa.on.turn_start(function()

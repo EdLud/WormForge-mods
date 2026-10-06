@@ -67,5 +67,5 @@ wa.on.worm_message(function(worm, msg)
     end
     db_pending = {}
   end
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 end

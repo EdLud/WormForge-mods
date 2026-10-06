@@ -18,4 +18,4 @@ wa.on.worm_message(function(worm, msg)
     end
   end
   prev_q[worm.id] = q
-end)
+end, { msgs = { wa.msg.FRAME_FINISH } })

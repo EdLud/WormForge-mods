@@ -48,4 +48,4 @@ wa.on.worm_message(function(worm, msg)
     on = follow_stock_drill(worm, id),
   })
   -- Do not eat FIRE_WEAPON: WA must enter its normal drilling state.
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON } })

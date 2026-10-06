@@ -58,5 +58,5 @@ wa.on.worm_message(function(worm, msg)
     end
     chilli_pending = {}
   end
-end)
+end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 end

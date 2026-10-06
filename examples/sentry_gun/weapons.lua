@@ -786,4 +786,4 @@ wa.on.worm_message(function(worm, msg)
     s.lost = false
     s.seen = {}
   end
-end)
+end, { msgs = { wa.msg.START_TURN } })

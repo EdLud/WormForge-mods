@@ -173,7 +173,8 @@ end
 
 -- Take every pooled weapon away from every team.
 --
--- WA keeps ammo per alliance (`worm.alliance`; allied teams share a row).
+-- WA keeps ammo in separate physical rows (`worm.ammo_group`), which need not
+-- match a team's visible coalition colour (`worm.alliance`).
 -- Going through one worm of each team reaches every row without relying on
 -- that mapping -- a row two allied teams share is simply written twice.
 local function clear_pooled()

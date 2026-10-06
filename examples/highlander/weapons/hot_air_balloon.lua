@@ -183,7 +183,7 @@ do
       balloon_stop(worm, b)
       return "eat"
     end
-  end)
+  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP } })
 
   -- M_TURNBEGIN: any balloon still up pops.
   wa.on.turn_start(function()
