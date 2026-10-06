@@ -188,7 +188,7 @@ Shadow-Bolt, the Sniper Rifle and the Helicopter.
 with its sprite builder, not from a sheet. It takes a posture with no weapon
 in it, then draws the weapon and a hand over it, placed and turned from the
 aim each frame, and grows the weapon in as aiming starts. Each replacement
-declares its PX numbers as `hold = {…}` (`PX_HOLDS` in `rules.lua`); the engine
+declares its PX numbers as `hold = {…}` (`PX_HOLDS` in `lib/holds.lua`); the engine
 draws the GPU weapon and optional hand over WA's worm pose. Walking hides the
 hold immediately, and aiming restores it. Holds are presentation only and do
 not spawn simulation actors.
@@ -219,7 +219,7 @@ sprite 0 and draws the missile itself (`WeapSprite`). The sprite is turned
 to its flight, mirrored when it flies left, and can be animated. The pack
 does the same with a GPU actor per missile, placed from
 `wa.on.missile_frame`, and uses each weapon's numbers from its PX script
-(`PX_WEAP_SPRITES` in `rules.lua`). It needs `m.weapon`, the missile's slot
+(`PX_WEAP_SPRITES` in `lib/missile_sprites.lua`). It needs `m.weapon`, the missile's slot
 (engine branch `missile-weapon`). The Shadow-Bolt's bolt is drawn this way,
 its hold is animated, and its trail is stock sprite 453 with PX's shadow
 trail, as `sprite_curtis_453` does.
@@ -451,7 +451,7 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 
 ## Differences from PX
 
-These are deliberate, and each one is explained in `rules.lua`:
+These are deliberate, and each one is explained in the pack's code:
 
 - PX grants 3 Hot Air Balloons and 1 Wind Changer every turn; so does the pack.
 - There's no removal at turn end. The next turn start does the same job.
@@ -487,13 +487,29 @@ hands. Nothing reads local input or the clock.
   team's writes landed in the first team's row. Only that team ever played by
   Highlander rules.
 
+## Layout
+
+`rules.lua` is the entry: the pack's description and one `require` per
+module, in the order they run.
+
+| Folder | Holds |
+|---|---|
+| `lib/` | What several weapons share: the engine-drawn holds, sprite animation helpers, PX's missile sprites, and `shared.lua`, the table modules pass values through. |
+| `weapons/` | One module per weapon or weapon family, plus the claim tables (`catalog.lua`, `claims.lua`) and the generated record data (`wep_data.lua`, written by `tools/embed_weps.py`). |
+| `scheme/` | The Highlander scheme itself: its pools, its state and its rules. |
+
+A module reads another's value as `local name = shared.name`; one that is
+set later (an explode handler the claims call) is used as `shared.name`
+throughout. `tools/split_highlander.py` made this layout from the single
+`rules.lua` the pack used to be, and can make it again from a newer one.
+
 ## Tests
 
 ```sh
 lua mods/examples/highlander/test_rules.lua     # from the repo root
 ```
 
-These run `rules.lua` against a mocked WA. Ammo is stored per alliance, and
+These run the pack (`rules.lua` and the modules it requires) against a mocked WA. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
 - all 54 slot claims, including the Lightning Strike, Electric Grenade,

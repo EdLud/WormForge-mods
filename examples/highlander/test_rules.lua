@@ -409,6 +409,19 @@ local function new_match(opts)
   }
   M.quads, M.ribbons, M.sounds, M.sound_flags, M.trace_hit, M.draws = {}, {}, {}, {}, nil, nil
   M.mines, M.crates, M.oil, M.graves = {}, {}, {}, {}
+  -- The engine's require: a pack module runs once per match, in its own
+  -- environment that reads the shared globals and keeps its writes.
+  local modules = {}
+  function require(name)
+    if modules[name] ~= nil then return modules[name] end
+    local env = setmetatable({}, { __index = _G })
+    local root = HIGHLANDER_ROOT or "mods/examples/highlander/"
+    local chunk = assert(loadfile(root .. name .. ".lua", "t", env))
+    local result = chunk()
+    if result == nil then result = true end
+    modules[name] = result
+    return result
+  end
   dofile("mods/examples/highlander/rules.lua")
 end
 
