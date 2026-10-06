@@ -13,6 +13,11 @@ local fires = {}
 -- WA's own weapons, as PX tuned them for this scheme. One moved off its own
 -- stock slot borrows its own stock icon.
 local PORTED = {
+  { -- PX's Skip Go/Surrender: stock Skip Go, or stock Surrender with Ctrl.
+    weapon = "skip_go", name = "Skip Go/Surrender",
+    panel_icon = "sprites/skip_go/icon.png",
+    stock_fire_choice = { held = "ctrl", alternate = "surrender" },
+  },
   { weapon = "dynamite" },
   { weapon = "blow_torch" },                                   -- BlowTorch
   { weapon = "flame_thrower" },

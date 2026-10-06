@@ -546,7 +546,7 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("54 slots replaced, each once", #replaced == 54 and not dupes, tostring(#replaced))
+  check("55 slots replaced, each once", #replaced == 55 and not dupes, tostring(#replaced))
   -- The loader skips a replace the manifest does not declare, silently.
   -- (Checked where the suite can read the pack's files: run from the repo,
   -- not inside the engine's loader test.)
@@ -571,6 +571,12 @@ do
     elseif spec.copy_from ~= slot or spec.wep then own_file = false end
   end
   check("scheme records use their intended bases; others copy stock", own_file)
+  check("Skip Go uses stock Skip Go, with Ctrl choosing stock Surrender",
+    by_slot.skip_go and by_slot.skip_go.copy_from == "skip_go"
+      and by_slot.skip_go.name == "Skip Go/Surrender"
+      and by_slot.skip_go.panel_icon == "sprites/skip_go/icon.png"
+      and by_slot.skip_go.stock_fire_choice.held == "ctrl"
+      and by_slot.skip_go.stock_fire_choice.alternate == "surrender")
   check("Super Tele owns the teleport cursor and click dispatch",
     by_slot.teleport and by_slot.teleport.on_select.cursor
       and type(by_slot.teleport.on_click) == "function"

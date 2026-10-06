@@ -177,6 +177,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
+| skip_go | Skip Go/Surrender | PX icon | Space skips the turn; holding Ctrl shows the Surrender pose and fires stock Surrender |
 | uzi | Laser Gun | icon, the worm aiming and taking it out, its beam and glow, three sounds | PX's 5 s beam in place of the uzi's bullet |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |

@@ -1,4 +1,5 @@
 # claims, in wa.weapons.replace order
+skip_go { copy_from = "skip_go", name = "Skip Go/Surrender", panel_icon = "sprites/skip_go/icon.png", stock_fire_choice = { alternate = "surrender", held = "ctrl" }, weapon = "skip_go" }
 dynamite { copy_from = "dynamite", name = "Dynamite", patch = { requires_aiming = 0, retreat = 0, uses_turn = 0 }, weapon = "dynamite" }
 blow_torch { copy_from = "blow_torch", name = "BlowTorch", patch = { uses_turn = 0 }, weapon = "blow_torch" }
 flame_thrower { copy_from = "flame_thrower", name = "Flame Thrower", weapon = "flame_thrower" }
