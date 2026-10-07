@@ -61,10 +61,16 @@ do
   -- Against land it keeps no upward speed, and for a few frames, if WA has
   -- stood it up, it is released again, falling: PX's balloon does the same
   -- (WS_IDLE -> WS_SLIDING) when WA's parachute closes against the land.
-  local function balloon_stop(worm, b, against_land)
+  -- `why` goes to the log with each pop, so a report of a balloon that
+  -- would not pop can be traced to what ended it.
+  local function balloon_stop(worm, b, why, against_land)
     if not b.active then
       return
     end
+    wa.log(string.format(
+      "highlander: balloon of worm %d popped after %d frames: %s (turn clock %d ms)",
+      worm.id, b.ticks, why, wa.world.turn_clock()
+    ))
     b.active, b.ticks = false, 0
     if b.balloon then b.balloon:despawn(); b.balloon = nil end
     if b.basket then b.basket:despawn(); b.basket = nil end
@@ -111,6 +117,9 @@ do
     if not b.active and state == "parachuting" and not b.was_parachuting
         and equipped == "bungee" then
       b.active, b.ticks = true, 0
+      -- A key still held from the launch is not a press in flight.
+      local held = wa.world.keys()
+      b.held_keys = { space = held.space, jump = held.jump }
       b.x, b.y, b.vx, b.vy = worm.x, worm.y, worm.vx, worm.vy
       worm:take{ turn = "run" }
       balloon_sound(worm, "inflate", 3)
@@ -130,8 +139,18 @@ do
     end
     -- The engine let go: the turn ended, or WA knocked the worm flying.
     if not worm.taken then
-      balloon_stop(worm, b)
+      balloon_stop(worm, b, "the engine let go (turn over or knocked flying)")
       return
+    end
+    -- Log every press the synced keyboard state shows in flight, to trace
+    -- a press that does not pop the balloon (see the key messages below).
+    local pressed = wa.world.keys()
+    for _, key in ipairs({ "space", "jump" }) do
+      if pressed[key] and not b.held_keys[key] then
+        wa.log(string.format("highlander: balloon of worm %d: %s pressed at flight frame %d",
+          worm.id, key, b.ticks))
+      end
+      b.held_keys[key] = pressed[key]
     end
     local P = 0x10000
     local vx, vy = b.vx, b.vy
@@ -156,11 +175,11 @@ do
     -- It pops on touching land, as WA's parachute closes there: where WA's
     -- own test says the worm would touch it, so it never sits inside it.
     if not worm:fits(x, y) then
-      balloon_stop(worm, b, true)
+      balloon_stop(worm, b, "touched land", true)
       return
     end
     if y >= wa.world.water() then
-      balloon_stop(worm, b)
+      balloon_stop(worm, b, "reached the water")
       return
     end
     b.x, b.y = x, y
@@ -168,6 +187,13 @@ do
     b.ticks = b.ticks + 1
     balloon_draw(worm, b)
   end
+
+  -- WA's key messages, named for the log. In flight WA sends jump for Space
+  -- and fire for Enter.
+  local BALLOON_KEY_MESSAGES = {
+    [wa.msg.JUMP] = "jump", [wa.msg.JUMP_UP] = "backflip",
+    [wa.msg.FIRE_WEAPON] = "fire", [wa.msg.RELEASE_WEAPON] = "release",
+  }
 
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
@@ -178,19 +204,25 @@ do
     if not (b and b.active) then
       return
     end
+    local key = BALLOON_KEY_MESSAGES[msg]
+    if key then
+      wa.log(string.format("highlander: balloon of worm %d got WA's %s message at flight frame %d",
+        worm.id, key, b.ticks))
+    end
     if msg == wa.msg.JUMP then
       -- The jump key closes WA's parachute: here it pops the balloon.
-      balloon_stop(worm, b)
+      -- In flight WA sends it for Space.
+      balloon_stop(worm, b, "jump key (Space in flight)")
       return "eat"
     end
-  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP } })
+  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP, wa.msg.FIRE_WEAPON, wa.msg.RELEASE_WEAPON } })
 
   -- M_TURNBEGIN: any balloon still up pops.
   wa.on.turn_start(function()
     for _, worm in ipairs(wa.worms.all()) do
       local b = balloons[worm.id]
       if b and b.active then
-        balloon_stop(worm, b)
+        balloon_stop(worm, b, "a new turn began")
       end
     end
   end)
