@@ -195,13 +195,15 @@ local function hit(m, a, event)
   m.vy = m.vy + (event.vy or 0)
 end
 
--- CWorm::FireFinal's Electromagnet: dropped at the worm, nudged the way it
--- faces (0.3) and up (0.15).
+-- CWorm::FireFinal's Electromagnet: dropped where it is fired (at the
+-- worm), nudged the way the worm faces (0.3) and up (0.15), in the worm's
+-- mode. A script firing it (wa.weapons.fire, the stress test) may choose
+-- the mode with `polarity` (1 repel, -1 attract).
 shared.fires.electromagnet = function(fire)
   local worm = fire.worm
-  local pol = polarity[worm.id] or 1
+  local pol = (fire.polarity == 1 or fire.polarity == -1) and fire.polarity or polarity[worm.id] or 1
   local m = { pol = pol, turns = TURNS, health = HEALTH, age = 0, angle = 0, spark = 0, alive = true,
-    x = worm.x, y = worm.y,
+    x = fire.x or worm.x, y = fire.y or worm.y,
     vx = worm.vx + (worm.facing < 0 and -1 or 1) * trunc(0.3 * P),
     vy = worm.vy - trunc(0.15 * P) }
   local a = wa.actors.spawn({
