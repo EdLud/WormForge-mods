@@ -67,7 +67,9 @@ local function on_death(event)
   if not active or active.hp <= 0 then
     return
   end
-  arsenal:transfer(victim, active, { weapons = "all", mode = "move" })
+  arsenal:transfer(victim, active, {
+    weapons = "all", mode = "move", x = victim.x, y = victim.y,
+  })
   -- Usable at once, this turn, not from the stealer's next turn.
   arsenal:apply(active, { weapons = mine, each = 1 })
   wa.log(string.format(

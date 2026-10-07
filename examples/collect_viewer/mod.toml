@@ -1,0 +1,10 @@
+id = "example.collect_viewer"
+version = "0.1.0"
+author = "WormForge"
+api_version = 1
+kind = "gameplay"
+entry = "viewer.lua"
+
+[weapons]
+register = []
+replace = []

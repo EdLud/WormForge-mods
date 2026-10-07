@@ -183,6 +183,8 @@ local function inventory_api()
     end
     function inv:transfer(from, to, opts)
       opts = opts or {}
+      M.transfers = M.transfers or {}
+      M.transfers[#M.transfers + 1] = {from = from.id, to = to.id, x = opts.x, y = opts.y}
       local names = opts.weapons
       if names == nil or names == "all" then names = slots end
       if type(names) == "string" then names = { names } end
@@ -855,7 +857,14 @@ do
   frame()
   turn(16)
   local victim = hand(32)
+  worm(32).x, worm(32).y = 321 * 0x10000, 123 * 0x10000
+  worm(16).x, worm(16).y = 50 * 0x10000, 40 * 0x10000
   kill(32)
+  local reward = M.transfers[#M.transfers]
+  check("reward icons start at the killed worm", reward.from == 32 and reward.to == 16
+    and reward.x == 321 * 0x10000 and reward.y == 123 * 0x10000)
+  worm(32).x = 999 * 0x10000
+  check("reward origin is captured", reward.x == 321 * 0x10000)
   local expect = {}
   for _, n in ipairs(hand(16)) do expect[#expect + 1] = n end
   for _, n in ipairs(victim) do expect[#expect + 1] = n end
