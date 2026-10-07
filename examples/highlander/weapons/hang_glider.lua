@@ -145,7 +145,7 @@ do
     local P = 0x10000
     local f = worm.facing
     local ang = f < 0 and g.ang or GLIDER_PI - g.ang
-    local fwd_x, fwd_y = -math.cos(ang), math.sin(ang)
+    local fwd_x, fwd_y = -wa.math.cos(ang), wa.math.sin(ang)
     local up_x, up_y
     if f < 0 then up_x, up_y = -fwd_y, fwd_x else up_x, up_y = fwd_y, -fwd_x end
     local sx, sy = g.sx, g.sy
@@ -155,7 +155,7 @@ do
     local up_vel = sx * up_x + sy * up_y
     sx, sy = sx - up_x * up_vel * GLIDER_FRICTION, sy - up_y * up_vel * GLIDER_FRICTION
     -- The nose turns towards the flight path, never straight up or down.
-    local target = f < 0 and math.atan(sy, -sx) or math.atan(sy, sx)
+    local target = f < 0 and wa.math.atan(sy, -sx) or wa.math.atan(sy, sx)
     target = normalize_angle(target)
     g.target = math.max(-GLIDER_MAX_ANGLE, math.min(GLIDER_MAX_ANGLE, target))
     g.ang = lerp_angle(GLIDER_LERP, g.ang, g.target)

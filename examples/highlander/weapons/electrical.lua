@@ -70,6 +70,7 @@ local function electrical_trace(x0, y0, dx, dy)
 end
 
 local function strike_hit(s)
+  if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
   if not s.hit then return end
   local radius2 = (6 * EP) ^ 2
   local targets = wa.world.electrical_nearby
@@ -163,6 +164,13 @@ shared.lightning_click = function(ev)
   local hit = electrical_trace(sx, sy, dirx, diry)
   local ex, ey = hit and hit.x or sx + math.floor(300 * dirx * EP),
     hit and hit.y or sy + math.floor(300 * diry * EP)
+  -- A bowling ball on the way stops the beam, as PX's does.
+  local bx, by = nil, nil
+  if shared.bowling_ball_on_beam then
+    local reach = math.sqrt(((ex - sx) / EP) ^ 2 + ((ey - sy) / EP) ^ 2)
+    bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
+  end
+  if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
   local distance = math.sqrt(((ex - sx) / EP) ^ 2 + ((ey - sy) / EP) ^ 2)
   if hit and distance > 300 then
     sx, sy = ex - math.floor(300 * dirx * EP), ey - math.floor(300 * diry * EP)
@@ -197,6 +205,10 @@ local function target_key(obj)
 end
 
 local function find_target(key)
+  local ball = key:match("^ball:(%d+)$")
+  if ball then
+    return shared.bowling_ball_target and shared.bowling_ball_target(tonumber(ball))
+  end
   for _, obj in ipairs(electrical_targets(false)) do
     if target_key(obj) == key then return obj end
   end
@@ -206,13 +218,18 @@ local function closest_target(arc)
   local best, distance = nil, (200 * EP) ^ 2
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(arc.x, arc.y, 200, false) or electrical_targets(false)
-  for _, obj in ipairs(targets) do
+  local function consider(obj)
     local key = target_key(obj)
     if not arc.ignore[key] and (obj.kind ~= "worm" or obj.hp > 0) then
       local dx, dy = obj.x - arc.x, obj.y - arc.y
       local d = dx * dx + dy * dy
       if d < distance then best, distance = obj, d end
     end
+  end
+  for _, obj in ipairs(targets) do consider(obj) end
+  -- PX's Tazer takes Bowling Balls too.
+  if shared.bowling_ball_targets then
+    for _, obj in ipairs(shared.bowling_ball_targets()) do consider(obj) end
   end
   return best, distance
 end
@@ -257,6 +274,8 @@ local function zap_target(arc, pending)
     obj:arm(400)
   elseif obj.kind == "crate" or obj.kind == "oil" then
     obj:hit(12, pending.side * 1.2 * EP, -4 * EP)
+  elseif obj.kind == "ball" then
+    shared.zap_bowling_ball(obj.id)
   end
 end
 
@@ -532,6 +551,15 @@ if wa.on.draw and wa.draw.ribbon then
           glow(x, y, i == num - 1 and 115 or 38, c)
         end
         ribbon(num + 1)
+      end
+    end
+    -- PX's CTazerDamage glow on a linked Bowling Ball until it is zapped.
+    for _, arc in ipairs(arcs) do
+      for _, p in ipairs(arc.pending) do
+        if p.key:sub(1, 5) == "ball:" then
+          local ball = find_target(p.key)
+          if ball then glow(ball.x, ball.y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255)) end
+        end
       end
     end
     for key, hold in pairs(tazed) do

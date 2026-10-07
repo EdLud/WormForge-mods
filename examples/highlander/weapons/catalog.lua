@@ -50,6 +50,169 @@ local PX_ART = {
     on_select = { cursor = true },
     on_click = function(ev) fires.reinforcement(ev) end,
   },
+  { -- Portal Gun: custom bolts and per-team pairs, on Scales of Justice.
+    weapon = "scales_of_justice", wep = "weps/scales_of_justice.wep",
+    panel_icon = "sprites/portal_gun/icon.png",
+    -- The native shot remains usable while Lua accounts for pairs. PX's
+    -- CanFire/state hacks are replaced by uses_turn=0 and worm:air_fire.
+    patch = { uses_turn = 0, hold_pose = 3 },
+    worm_sprites = {
+      weaponlnk = "sprites/portal_gun/portal_gun_normal",
+      weaponlnku = "sprites/portal_gun/portal_gun_up",
+      weaponlnkd = "sprites/portal_gun/portal_gun_down",
+      wthrow = "sprites/portal_gun/portal_gun_link_normal",
+      wthrowu = "sprites/portal_gun/portal_gun_link_up",
+      wthrowd = "sprites/portal_gun/portal_gun_link_down",
+    },
+    sprites = {
+      "sprites/portal_gun/portal_ball", "sprites/portal_gun/portal_orange.png",
+      "sprites/portal_gun/portal_blue.png", "sprites/portal_gun/portal_glow.png",
+      "sprites/portal_gun/portal_gun_glow.png",
+      "sprites/portal_gun/lightning_glow.png", "sprites/portal_gun/portal_black_mask",
+    },
+    sounds = { "sounds/portal_gun_shoot.wav", "sounds/portal_gun_hit.wav", "sounds/portal_gun_failhit.wav",
+      "sounds/portal_active.wav", "sounds/portal_inactive.wav", "sounds/portal_teleport.wav" },
+    params = { gpu_prefix = "sprites/portal_gun/" },
+    on_fire = function(fire) fires.portal_gun(fire) end,
+  },
+  { -- Electromagnet: PX's placed, persistent field on the Baseball Bat slot.
+    weapon = "baseball_bat", wep = "weps/baseball_bat.wep",
+    panel_icon = "sprites/electromagnet/ico_magnet.png",
+    -- WA takes it out and puts it away with the Dynamite's draw (334-336);
+    -- PX swaps in the magnet's (CSpriteAnim::SetAnimEx): blue repelling,
+    -- red once + switched the worm to attracting (the engine reads + as the
+    -- module does, and plays the take-out again in the new colour).
+    worm_sprites = {
+      wdynlnk = "sprites/electromagnet/wmag2lnk",
+      wdynlnku = "sprites/electromagnet/wmag2lnku",
+      wdynlnkd = "sprites/electromagnet/wmag2lnkd",
+    },
+    worm_sprites_toggle = { key = "plus_key", worm_sprites = {
+      wdynlnk = "sprites/electromagnet/wmaglnk",
+      wdynlnku = "sprites/electromagnet/wmaglnku",
+      wdynlnkd = "sprites/electromagnet/wmaglnkd",
+    } },
+    sprites = {
+      "sprites/electromagnet/magnet.png", "sprites/electromagnet/magnet2.png",
+      "sprites/electromagnet/magnet_damaged.png", "sprites/electromagnet/magnet2_damaged.png",
+      "sprites/electromagnet/ring_in.png", "sprites/electromagnet/ring_out.png",
+      "sprites/electromagnet/magnetsparks",
+    },
+    params = { gpu_prefix = "sprites/electromagnet/" },
+    on_fire = function(fire) fires.electromagnet(fire) end,
+  },
+  { -- Sentry Gun: PX's turret (weapons/sentry_gun.lua, lib/turret.lua) on
+    -- the Kamikaze slot, placed as WA places a mine: its timing, ammo and
+    -- retreat, with the turret as a Lua body instead of a mine.
+    weapon = "kamikaze", copy_from = "mine", name = "Sentry Gun",
+    panel_icon = "sprites/sentry_gun/icon.png",
+    is_weapon = true,
+    -- PX's take-out and placing, grey; the housing in them coloured per team
+    -- at draw time (one sheet and its housing for six colours).
+    worm_sprites = {
+      weaponlnk = "sprites/sentry_gun/equip", weaponlnku = "sprites/sentry_gun/equipu",
+      weaponlnkd = "sprites/sentry_gun/equipd",
+      wthrow = "sprites/sentry_gun/unequip", wthrowu = "sprites/sentry_gun/unequipu",
+      wthrowd = "sprites/sentry_gun/unequipd",
+    },
+    worm_sprites_team_tint = {
+      worm_sprites = {
+        weaponlnk = "sprites/sentry_gun/equip_housing", weaponlnku = "sprites/sentry_gun/equipu_housing",
+        weaponlnkd = "sprites/sentry_gun/equipd_housing",
+        wthrow = "sprites/sentry_gun/unequip_housing", wthrowu = "sprites/sentry_gun/unequipu_housing",
+        wthrowd = "sprites/sentry_gun/unequipd_housing",
+      },
+      colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
+    },
+    sprites = {
+      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing", "sprites/sentry_gun/turret_base",
+      "sprites/sentry_gun/turret_gun", "sprites/sentry_gun/turret_flare",
+    },
+    sounds = {
+      "sounds/sentry_gun/sentryplace.wav", "sounds/sentry_gun/sentrybeeps2.wav",
+      "sounds/sentry_gun/sentryfireloop.wav", "sounds/sentry_gun/sentryfireend.wav",
+      "sounds/sentry_gun/sentryservostart.wav", "sounds/sentry_gun/sentryservoloop.wav",
+      "sounds/sentry_gun/sentryservoend.wav",
+    },
+    params = {
+      sprite_columns = 1,
+      -- The take-out and placing play frame by frame, not as aim sheets.
+      worm_sprites_animate = true,
+      -- The turret between terrain (0x180000) and soil (0x1B0000): the
+      -- landscape hides its sunk feet. The worm's sheets stay in front.
+      depth = 0x190000,
+      depth_prefix = "sprites/sentry_gun/turret_",
+      gpu_prefix = "sprites/sentry_gun/turret_",
+    },
+    on_fire = function(fire) fires.sentry_gun(fire) end,
+  },
+  { -- Sentry Laser: PX's projectile-defence turret (weapons/sentry_laser.lua,
+    -- lib/turret.lua) on the Dragon Ball slot, placed as the Sentry Gun.
+    weapon = "dragon_ball", copy_from = "mine", name = "Sentry Laser",
+    panel_icon = "sprites/sentry_laser/icon.png",
+    is_weapon = true,
+    worm_sprites = {
+      weaponlnk = "sprites/sentry_laser/equip", weaponlnku = "sprites/sentry_laser/equipu",
+      weaponlnkd = "sprites/sentry_laser/equipd",
+      wthrow = "sprites/sentry_laser/unequip", wthrowu = "sprites/sentry_laser/unequipu",
+      wthrowd = "sprites/sentry_laser/unequipd",
+    },
+    -- The body coloured per team, as on the planted turret; its barrel stays grey.
+    worm_sprites_team_tint = {
+      worm_sprites = {
+        weaponlnk = "sprites/sentry_laser/equip_housing", weaponlnku = "sprites/sentry_laser/equipu_housing",
+        weaponlnkd = "sprites/sentry_laser/equipd_housing",
+        wthrow = "sprites/sentry_laser/unequip_housing", wthrowu = "sprites/sentry_laser/unequipu_housing",
+        wthrowd = "sprites/sentry_laser/unequipd_housing",
+      },
+      colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
+    },
+    sprites = {
+      "sprites/sentry_laser/turret_base", "sprites/sentry_laser/turret_body",
+      "sprites/sentry_laser/turret_barrel",
+    },
+    sounds = {
+      "sounds/sentry_laser/sentrylaserplace.wav", "sounds/sentry_laser/sentrylaserbeep.wav",
+      "sounds/sentry_laser/sentrylaserstart.wav", "sounds/sentry_laser/sentrylaserloop.wav",
+      "sounds/sentry_laser/sentrylaserend.wav", "sounds/sentry_laser/sentrylaserdisin.wav",
+    },
+    params = {
+      sprite_columns = 1,
+      worm_sprites_animate = true,
+      depth = 0x190000,
+      depth_prefix = "sprites/sentry_laser/turret_",
+      gpu_prefix = "sprites/sentry_laser/turret_",
+    },
+    on_fire = function(fire) fires.sentry_laser(fire) end,
+  },
+  { -- Kamikaze Rocket: PX's steered Kamikaze (weapons/kamikaze_rocket.lua) on
+    -- the Suicide Bomber slot. Its record is WA's Kamikaze's, so WA flies,
+    -- digs and hits as its own Kamikaze; the pack steers it.
+    weapon = "suicide_bomber", wep = "weps/suicide_bomber.wep",
+    panel_icon = "sprites/kamikaze_rocket/icon.png",
+    -- The Kamikaze's take-out (its last frame the hold) and launch, PX's.
+    worm_sprites = {
+      wkamlnk = "sprites/kamikaze_rocket/take_out", wkamlnku = "sprites/kamikaze_rocket/take_out",
+      wkamlnkd = "sprites/kamikaze_rocket/take_out", wkamjmp = "sprites/kamikaze_rocket/launch",
+    },
+    sprites = { "sprites/kamikaze_rocket/fly" },
+    params = { gpu_prefix = "sprites/kamikaze_rocket/" },
+  },
+  { -- Weapon Crate: a weapon crate dropped in front of the worm
+    -- (weapons/weapon_crate.lua) on the Freeze slot, placed as WA places a
+    -- mine (PX's record), the crate instead of the mine.
+    weapon = "freeze", wep = "weps/freeze.wep",
+    panel_icon = "sprites/weapon_crate/icon.png",
+    -- PX's take-out (picking the crate up) and its hold.
+    worm_sprites = {
+      weaponlnk = "sprites/weapon_crate/take_out", weaponlnku = "sprites/weapon_crate/take_outu",
+      weaponlnkd = "sprites/weapon_crate/take_outd",
+      wthrow = "sprites/weapon_crate/put_away", wthrowu = "sprites/weapon_crate/put_awayu",
+      wthrowd = "sprites/weapon_crate/put_awayd",
+    },
+    params = { worm_sprites_animate = true },
+    on_fire = function(fire) fires.weapon_crate(fire) end,
+  },
   { -- Super Tele: the PX record is a type-3 cursor weapon on teleport's slot.
     weapon = "teleport",
     wep = "weps/teleport.wep",
@@ -115,6 +278,37 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/px_hold/" },
     on_fire = function(fire) fires.valyrian_fire(fire) end,
     on_explode = function(ev) fires.valyrian_burst(ev) end,
+  },
+  { -- Bowling Ball Strike: PX's three rolling balls (weapons/bowling_ball.lua),
+    -- not WA's sheep. Click-only, as the Lightning Strike: the engine ends
+    -- WA's prefire after the click.
+    weapon = "sheep_strike",
+    wep = "weps/sheep_strike.wep",
+    panel_icon = "sprites/bowling_ball/strike_icon.png",
+    sprites = { "sprites/bowling_ball/ball.png", "sprites/bowling_ball/glow.png", "sprites/bowling_ball/spark.png",
+      "sprites/bowling_ball/sheen.png" },
+    params = { gpu_prefix = "sprites/bowling_ball/" },
+    on_select = { cursor = true },
+    on_click = function(ev) fires.bowling_strike(ev) end,
+  },
+  { -- Ferret: PX's terrain-walking ferret (weapons/ferret.lua), thrown in
+    -- place of WA's Salvation Army.
+    weapon = "salvation_army",
+    wep = "weps/salvation_army.wep",
+    panel_icon = "sprites/ferret/icon.png",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/ferret/walk" },
+    sounds = { "sounds/ferret/walk.wav" },
+    params = { gpu_prefix = "sprites/ferret/" },
+    on_fire = function(fire) fires.ferret(fire) end,
+  },
+  { -- Crate Strike: PX's three parachute crates (weapons/crate_strike.lua),
+    -- not WA's donkey. Click-only, as the Lightning Strike.
+    weapon = "donkey",
+    wep = "weps/donkey.wep",
+    panel_icon = "sprites/crate_strike/icon.png",
+    on_select = { cursor = true },
+    on_click = function(ev) fires.crate_strike(ev) end,
   },
   { -- Lightning Strike: the PX strike is an effect, not WA's napalm plane.
     weapon = "napalm_strike",

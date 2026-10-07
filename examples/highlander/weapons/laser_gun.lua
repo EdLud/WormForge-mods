@@ -1,5 +1,6 @@
 -- Highlander: Laser Gun. Split from rules.lua by tools/split_highlander.py.
 local shared = require("lib/shared")
+local laser = require("lib/laser")
 local fires = shared.fires
 
 -- ------------------------------------------------------------- Laser Gun
@@ -26,40 +27,24 @@ local fires = shared.fires
 
 -- Its own block: the file is at Lua's 200 locals for one chunk.
 do
-  local LASER_FX = 0x10000
+  local LASER_FX = laser.FX
   local LASER_LIFE = 250
   local LASER_REACH = 2048
   local LASER_LOOP_FRAMES = 51 -- laser_loop.wav is 1.02 s
-  local LASER_GLOW = "sprites/laser_gun/laser_glow.png"
-  local LASER_BEAM = "sprites/laser_gun/laser_beam.png"
-  local LASER_DEPTH = 0x10000
   -- States a worm is not firing in: the beam stops (PX keeps it only in
   -- repeat fire, firing, aiming and fired).
   local LASER_STOPS = { standing = true, sliding = true, jetpacking = true, parachuting = true,
     bungee = true, tumbling = true, teleporting = true, drilling = true, punching = true }
   local lasers = {} -- worm id -> the beam
 
-  local function laser_rand(r)
-    r.seed = (r.seed * 1103515245 + 12345) % 0x80000000
-    return r.seed / 0x80000000
-  end
-
-  local function laser_between(r, lo, hi)
-    return lo + (hi - lo) * laser_rand(r)
-  end
-
-  -- A PX particle: moved, pulled and slowed each game frame, drawn additive.
-  local function laser_particle(r, p)
-    p.age, p.vx, p.vy = 0, p.vx or 0, p.vy or 0
-    r.fx[#r.fx + 1] = p
-  end
+  local laser_between, laser_particle = laser.between, laser.particle
 
   -- UpdatePosDir: the beam's direction from the worm's aim (0 down, 1 up)
   -- and side; it starts at the worm and draws from 24 px out.
   local function laser_aim(r, w)
     local ang = (1 - w.aim) * math.pi
     if w.facing < 0 then ang = 2 * math.pi - ang end
-    r.dx, r.dy = math.sin(ang), -math.cos(ang)
+    r.dx, r.dy = wa.math.sin(ang), -wa.math.cos(ang)
     r.x = w.x + math.floor((2 * w.facing * r.dy - r.dx) * LASER_FX)
     r.y = w.y + math.floor((-2 - r.dy) * LASER_FX)
     r.gx = r.x + math.floor(24 * r.dx * LASER_FX)
@@ -152,23 +137,6 @@ do
     end
   end
 
-  local function laser_particles(r)
-    for i = #r.fx, 1, -1 do
-      local p = r.fx[i]
-      p.age = p.age + 1
-      if p.age >= p.life then
-        table.remove(r.fx, i)
-      else
-        if p.jitter then
-          p.vx = p.vx + math.floor(laser_between(r, -p.jitter, p.jitter) * LASER_FX)
-        end
-        p.vy = p.vy + math.floor(p.grav * LASER_FX / 10)
-        p.vx, p.vy = math.floor(p.vx * (1 - p.drag)), math.floor(p.vy * (1 - p.drag))
-        p.x, p.y = p.x + p.vx, p.y + p.vy
-      end
-    end
-  end
-
   local function laser_stop(r, w)
     r.dead = true
     if w then
@@ -194,7 +162,7 @@ do
       sprite = false, x = w.x, y = w.y, gravity = false, collide = false, owner = w,
       on = function(a)
         r.life = r.life - 1
-        laser_particles(r)
+        laser.step(r)
         if r.dead then
           if r.life <= -10 and #r.fx == 0 then
             lasers[r.worm_id] = nil
@@ -231,33 +199,14 @@ do
   end
 
   if wa.on.draw and wa.draw.ribbon then
-    local function red(a, rgb)
-      return (math.floor(math.max(0, math.min(255, a))) << 24)
-        | (math.floor(rgb[1]) << 16) | (math.floor(rgb[2]) << 8) | math.floor(rgb[3])
-    end
-    local function laser_glow(x, y, px, color)
-      local h = px * LASER_FX / 2
-      wa.draw.quad({ sprite = LASER_GLOW, blend = "add", color = color, depth = LASER_DEPTH,
-        points = { { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h } } })
-    end
     wa.on.draw(function()
       for _, r in pairs(lasers) do
-        for _, p in ipairs(r.fx) do
-          local t = p.age / p.life
-          local c = { p.c0[1] + (p.c1[1] - p.c0[1]) * t, p.c0[2] + (p.c1[2] - p.c0[2]) * t,
-            p.c0[3] + (p.c1[3] - p.c0[3]) * t }
-          laser_glow(p.x, p.y, 32 * (p.s0 + (p.s1 - p.s0) * t), red(255, c))
-        end
+        laser.draw_particles(r)
         if not r.dead then
-          local c = red(255, { 255, 0, 0 })
-          laser_glow(r.gx, r.gy, 32 * 0.5 * r.size, c)
-          if r.draw_beam then
-            wa.draw.ribbon({ sprite = LASER_BEAM, blend = "add", depth = LASER_DEPTH, points = {
-              { x = r.gx, y = r.gy, width = 2 * 8 * r.size, u = 0, color = c },
-              { x = r.hx, y = r.hy, width = 2 * 8 * r.size, u = 1, color = c },
-            } })
-          end
-          if r.hit then laser_glow(r.hx, r.hy, 32 * 0.75 * r.size, c) end
+          local c = laser.argb(255, { 255, 0, 0 })
+          laser.glow(r.gx, r.gy, 32 * 0.5 * r.size, c)
+          if r.draw_beam then laser.beam(r.gx, r.gy, r.hx, r.hy, 2 * 8 * r.size, c) end
+          if r.hit then laser.glow(r.hx, r.hy, 32 * 0.75 * r.size, c) end
         end
       end
     end)

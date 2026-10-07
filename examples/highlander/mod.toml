@@ -14,7 +14,8 @@ debug_worm_state = true
 [weapons]
 register = []
 replace = [
-  "earthquake", "napalm_strike", "uzi", "teleport", "petrol_bomb",
+  "earthquake", "napalm_strike", "uzi", "teleport", "petrol_bomb", "sheep_strike",
+  "salvation_army", "donkey",
   "dynamite", "blow_torch", "flame_thrower", "girder", "girder_pack",
   "fast_walk", "crate_spy", "crate_shower", "magic_bullet", "invisibility",
   "damage_x2", "double_turn_time", "ming_vase",
@@ -23,5 +24,6 @@ replace = [
   "carpet_bomb", "air_strike", "mole_bomb", "mole_squadron", "aqua_sheep",
   "sheep", "mb_bomb", "shotgun", "holy_grenade", "skunk", "homing_missile",
   "grenade", "fire_punch", "pneumatic_drill", "longbow", "handgun", "jet_pack", "bungee", "parachute", "super_banana", "laser_sight", "surrender", "low_gravity", "ninja_rope",
-  "bazooka", "mine", "prod", "skip_go", "armageddon", "nuclear_test",
+  "bazooka", "mine", "prod", "skip_go", "armageddon", "nuclear_test", "baseball_bat", "kamikaze",
+  "dragon_ball", "suicide_bomber", "scales_of_justice", "freeze",
 ]

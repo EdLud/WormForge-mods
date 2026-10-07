@@ -81,8 +81,8 @@ local CAVE_SECOND = 16
 -- The slots Highlander never pools -- Kamikaze Rocket, Gravler, Hot Air
 -- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
 -- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
--- whatever ammo the scheme gives them, except the Hot Air Balloon and the
--- Wind Changer, which start_turn sets to 3 and 1.
+-- whatever ammo the scheme gives them, except the Hot Air Balloon, the Wind
+-- Changer and the Weapon Crate, which start_turn sets to 3, 1 and 1.
 
 -- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
 -- must not depend on pairs() order: Lua's string hashing is seeded per

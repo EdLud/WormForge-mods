@@ -33,8 +33,9 @@ weapon on its slot, and that stands in for it.**
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
 | Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
-Highlander never touches the **not pooled** slots, except the Hot Air
-Balloon: every turn it gives the worm's team 3, as PX does. The others keep
+Highlander never touches the **not pooled** slots, except three: every turn
+it gives the worm's team 3 Hot Air Balloons and a Wind Changer, as PX does,
+and a Weapon Crate. The others keep
 whatever ammo the scheme gives, so the scheme decides whether Teleport or Skip
 Go is always available.
 
@@ -61,7 +62,7 @@ Electric Grenade use the scheme's full `.wep` records, extracted with
 | Slot | Weapon | Behavior |
 |---|---|---|
 | napalm_strike | Lightning Strike | Cursor-aimed 30° beam, 150-frame warning, 16-frame strike, 60-frame tail; heals live worms, revives linked graves at 10 HP, arms mines, and hits crates/oil drums. |
-| earthquake | Electric Grenade | WA grenade flight and explosion followed by PX's seeking, terrain-following, chaining tazer arc; delayed 24 damage to worms and 12 to objects, mine arming, and a temporary tazed pose. |
+| earthquake | Electric Grenade | WA grenade flight and explosion followed by PX's seeking, terrain-following, chaining tazer arc; delayed 24 damage to worms and 12 to objects, mine arming, a temporary tazed pose, and Bowling Balls as links, zapped as PX's Tazer zaps them (thrown up and electrified; thrown at 0.8 once electrified). |
 
 The beams, glows, and explosion use the GPU atlas. Gameplay runs in simulation
 callbacks; drawing only varies presentation. A grave records its original worm
@@ -192,6 +193,14 @@ PX's 0 draws no worm in WA 3.8.1.
 | parachute | Hang-Glider | icon, the glider, its pack-away, its two sounds | PX's glider, flown by the pack once WA's parachute opens |
 | petrol_bomb | Valyrian Fire | icon, the bottle (held and in flight) | the hold and the spinning bottle drawn at run time; thrown 15 pixels further out, and from the water the bottle goes back to the team; PX's 51 fires on a 3-pixel ring at the impact (`wa.fire.spawn`, PX's fire values), drawn green (PX's RGB(75, 225, 75)) on the GPU renderer, whose hits on worms do 25% more damage and knock twice as far. Not yet: "WILDFIRE !!!" and the bottle bursting on the water |
 | nuclear_test | Reinforcement | icon | a click puts a new worm in the team's next unused place (`wa.worms.spawn`), named Reinforcement, with 200 health, standing on the ground under the click; with 8 worms the team is full (an error sound). Not PX's: PX's worm floats down from above the map on an empty jet pack; this one stands there at once |
+| sheep_strike | Bowling Ball Strike | icon, the ball, PX's spark and glow | three balls dropped from PX's plane height, set back by their drift so the middle one comes down on the click, rolling on PX's CBowlingBall physics: traced as a 16-pixel circle (`wa.world.trace`), bounce and friction along the surface's normal, PX's inertia, low speed and sleep. Faster than 4 a frame it hurts what it rolls into, 5 to 60 by speed (crates and oil drums 100, pushed the way it rolls), a worm at most every 12 frames and knocked the way it rolls (`worm:hurt{ amount, vx, vy }`), a standing worm crushed from above; balls push each other apart and wake. A Lightning Strike, or an Electric Grenade's arc linking to it, overcharges the balls (PX's Zap: thrown up, then electrified for good, speeding up as it rolls, drawn with PX's blue glow, crawling sparks and glowing trail), and a ball in the way stops the bolt. WA's fires, guns and blasts hit it and wake it (`as_object`, `on.hit`): blasts at full force, the rest at 0.7, as PX's. Not yet: flame trail, shake, PX's plane |
+| salvation_army | Ferret | icon, the ferret (held and walking), its sound | thrown, it falls until the land is 3 pixels under it, then walks the terrain's outline (PX's square tracing, 3-pixel steps, against the land with WA's missile shape, the Skunk's: `shape = "missile"`, `a:fits`) and never falls off it; it explodes on a worm (the turn's worm is spared for 60 frames), an oil drum, the water or a dead end, or by itself 15 s after it was placed (not PX's), flicks mines and Bowling Balls up, and at most 10 walk at once. Its frames animate as it walks (PX's barely do) |
+| baseball_bat | Electromagnet | icon, the magnet (both poles, damaged), its rings and sparks, the worm's deploy | dropped at the worm, it falls and settles as a mine does (a circle traced against the land, bouncing a little) and stays: for four of its owner's turns its field (170 pixels) pushes (repel) or pulls (attract) WA's own mines and missiles (`object:impulse`) and the Bowling Balls at a quarter, and triggers the mines it catches, an attracting one setting their fuses close together. + (synchronized, `wa.world.keys().plus_key`) switches the turn's worm between repel and attract; the HUD names the mode. Blasts, guns and fires hit it; at 0 of its 80 health it explodes. The Hellish Hand-Grenade slows down in a field. Not PX's: 300 frames after the turn ends, the field lets go of missiles instead of exploding them. The worm takes it out and puts it away with PX's magnet in place of the Dynamite: blue repelling, red attracting (`worm_sprites_toggle`), the take-out playing again in the new colour when + switches |
+| donkey | Crate Strike | icon | three crates on parachutes from 50 pixels above the map, at the click and 50 to either side (`wa.crates.spawn`); each a weapon, utility or health crate at random, WA picking what is inside; a health crate gives 20-40, 40-60 or 60-80 by its place |
+| freeze | Weapon Crate | icon, the worm's take-out and hold | PX's record: placed as WA places a mine (its take-out, placing and ammo), and the turn goes on; what it places is one of WA's weapon crates, its contents WA's pick, teleported in 40 pixels in front of the worm (`wa.crates.spawn`), for the worm to collect. Every worm gets one each turn. |
+| kamikaze | Sentry Gun | icon, the turret (base, head, flare), casings, impact, the worm's take-out and placing, its sounds | placed as WA places a mine, it falls and plants in front of the worm; its head sweeps, takes the nearest moving enemy in sight within 360 pixels, turns to it and fires 20 rounds a turn (PX's spread, casings), holds fire on its owner's colour's turns, reloads each turn; a blast disables it for the turn, and at 0 of its 50 health it explodes. Its head is drawn in its owner's colour, and so is the housing the worm carries (`worm_sprites_team_tint`). The shared turret (`lib/turret.lua`) is for the Sentry Laser too |
+| dragon_ball | Sentry Laser | icon, the turret (base, body, barrel), the worm's take-out and placing, its sounds | placed as the Sentry Gun; it shoots the nearest moving missile, mine or Bowling Ball of another colour within 300 pixels that it can see (`object.team`), 20 frames after it finds it, turning 5 degrees a frame; each of its 4 shots a turn is a short beam in its owner's colour that disintegrates the target without a blast (`object:remove()`), burns worms (10) and crates and oil drums (20) in between, arms a mine it crosses, and cuts a 4-pixel hole where it stops; it fires on every colour's turn, and at 0 of its 35 health it explodes. Its body is drawn in its owner's colour, the barrel grey, and so is the body the worm carries. Not PX's: WA's arrows are not listed to Lua, so it ignores them. |
+| suicide_bomber | Kamikaze Rocket | icon, the take-out, the launch, the rocket in flight | PX's scheme record, WA's Kamikaze's: WA flies the worm, digs its way and hits the worms it passes. Fired only with Ctrl held (Ctrl + Space; without, nothing is used and the HUD says so). The worm becomes a rocket from where it stood, along its aim at 8 pixels a frame, turned 9 degrees a frame by left and right, digging an 8-pixel hole each frame, for 4 seconds (counted down on the HUD); then it blows up (damage 30, blast 100) and the worm goes into the water. As PX's, it ends sooner if WA's Kamikaze does: in the water, or out of the map. |
 
 Played in game: the Fire Jump, the Sticky Bomb and Igniter holds, the
 Shadow-Bolt, the Sniper Rifle and the Helicopter.
@@ -569,3 +578,71 @@ stamp uses source alpha and the colours the terrain already holds; airborne
 art uses GPU sheets. Terrain writes and target selection run only during
 simulation. The impact sound plays on the turn's worm (PX plays it unplaced):
 an explosion's `ev.worm` is the missile's owner, not necessarily a worm.
+
+
+## Portal Gun
+
+Scales of Justice's slot is PX's Portal Gun. `-` selects orange, `+` blue;
+Ctrl or Alt selects the other colour for a shot. New endpoints automatically
+select the other colour. Pause/Break toggles the current team's portals.
+Ground shots keep WA's charge bar; airborne shots fire at full power, using
+Up/Down and Left/Right for PX's eight aim choices. Flight momentum and WA's
+collisions continue. Normal stock aim speed is retained (PX's Shift aim-speed
+hack is not used).
+
+A team owns one persistent pair. Both endpoints are required for transport.
+Placement follows PX's terrain normals and partner exclusion; each two
+successful impacts use one ammo, misses refunded. Native firing remains
+usable (`uses_turn = 0`); placing a pair consumes ammo without ending the
+turn. This replaces PX's state/CanFire overrides with a Lua dispatch and
+explicit ammo accounting. Portals reactivate at turn start and stop transporting
+when retreat ends. Each endpoint stays visible independently of its partner
+and activity, including between turns. Missiles, worms, mines, crates, oil drums, arrows
+(including Ice Arrow), graves and Bowling Balls can pass. Portal bolts,
+Electromagnets and flames do not; the last two were not traversed by PX's
+active Portal Gun loop.
+
+`lib/portals.lua` owns pairs, placement, reentry suppression, swept crossings
+and clearance. It accepts configurable dimensions, placement offset, grace,
+velocity and clearance functions, and a transport callback. Its default
+velocity strategy (`lib/portal_velocity.lua`) keeps PX's separate worm and
+object rules for all 8 × 8 directions, including their minimum speeds and
+facing changes. A transported body remains the same WA object. For a blocked
+exit, Lua cuts PX's 15-pixel clearance hole; an exit still blocked is refused.
+Swept entry checks also catch fast bodies before native terrain impact.
+Bowling Balls adapt their Lua motion model directly before their own sweep.
+
+`lib/portal_effects.lua` ports PX's two-layer plasma trails, 17-spark impact
+bursts (47 for rejected placement), three-frame flash, 15-frame ambient
+particles and five-particle teleport burst, using its original glow sprites,
+sizes, colours, drag, gravity and lifetimes. The team marker uses PX's two
+black-mask frames. Particle randomness is confined to looks and consumes no
+WA gameplay RNG. Transport activity gates ambience; it never hides endpoints.
+
+Added engine surface:
+
+- `worm:warp{ x, y, vx?, vy?, facing? }`, `object:warp{...}` and
+  `actor:warp{...}` atomically move a live body and wake it. Omitted speeds
+  retain momentum; facing is supported for worms/actors. A grounded or roped
+  worm moving out enters WA's controlled fall; tumble/frozen states remain.
+  Returns false for invalid/dead bodies. Clearance is decided by Lua.
+- `object:fits(x, y)` uses its own native shape against terrain.
+  `worm:fits(x, y, "terrain")` ignores other objects; omitting the mode
+  retains the worm's normal collision mask. Portals use terrain-only checks.
+- `worm:air_fire(on)` (default true) enables `on_fire` for synchronized Space
+  press edges in flight. It is bound to the selected Lua fire claim and
+  lapses on a selection change or turn end. The event has `airborne = true`;
+  native ammo/turn processing is not invoked. No aiming or steering physics
+  is changed by the verb. Ground `on_fire.power` is normalized charge 0..1.
+- `wa.on.body_move(fn, { kinds = {...} })` runs before stock sea, gravity and
+  collision. Supported kinds: worm, missile, mine, crate, oil, grave, arrow.
+  The callback receives the corresponding handle; warping it makes WA's
+  step continue at the new position. Filters avoid Lua calls for other kinds.
+- `object.uid` is a per-world construction number, unaffected by allocator
+  reuse; the old `object.id` stays compatible. `wa.arrows.all()` enumerates
+  live stock arrows. `ctrl`, `minus_key`, `alt`, `pause_key` join synchronized keys.
+
+Tests: `lua mods/examples/highlander/test_portals.lua`, plus the existing
+scheme mock and native Windows engine/Lua tests. The port was playtested in
+WA, including endpoint visibility and effects. Replay/network playback is
+still unverified.

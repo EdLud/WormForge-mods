@@ -67,7 +67,7 @@ do
     if wa.land.solid(x, y) then return false end
     for i = 0, 7 do
       local a = (i / 8) * 2 * math.pi
-      if wa.land.solid(x + math.floor(CLEAR * math.cos(a)), y + math.floor(CLEAR * math.sin(a))) then
+      if wa.land.solid(x + math.floor(CLEAR * wa.math.cos(a)), y + math.floor(CLEAR * wa.math.sin(a))) then
         return false
       end
     end
@@ -81,7 +81,7 @@ do
       local deg = 0
       while deg < 360 do
         local a = deg * math.pi / 180
-        local tx, ty = x + math.floor(r * math.cos(a)), y + math.floor(r * math.sin(a))
+        local tx, ty = x + math.floor(r * wa.math.cos(a)), y + math.floor(r * wa.math.sin(a))
         if clear(tx, ty) then
           local hit = wa.land.trace(tx, ty, w.x, w.y)
           if not hit or not hit.hit then return tx, ty end

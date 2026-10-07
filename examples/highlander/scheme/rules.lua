@@ -41,10 +41,11 @@ end
 
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
-  -- GiveWeapons: three Hot Air Balloons and a Wind Changer for the turn,
-  -- whatever is left.
+  -- GiveWeapons: three Hot Air Balloons, a Wind Changer and a Weapon Crate
+  -- for the turn, whatever is left.
   worm:ammo("bungee", { set = 3 })
   worm:ammo("surrender", { set = 1 })
+  worm:ammo("freeze", { set = 1 })
 end
 
 local function on_death(event)

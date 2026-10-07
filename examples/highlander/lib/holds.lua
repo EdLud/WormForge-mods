@@ -56,6 +56,14 @@ local PX_HOLDS = {
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
+  salvation_army = { -- Ferret (ferret_s's WormSprite): held still, not at the
+    -- aim's angle (dont_rotate_with_angle), and thrown.
+    thrown = true,
+    sheet = "sprites/ferret/hold.png", hand_type = 2, hand_radius = -8.0,
+    hand_rotation = 0.0, hand_radial_rotation = -0.13, hand_scale = 1.0,
+    weap_rotation = 0.5, weap_radial_rotation = 0.22, weap_radius = -9.0,
+    static = { weap = 0.0, hand = 0.45 }, -- ang_if_static, hand_ang_if_static
+  },
   mine = { -- Nuke Rocket (nuke_rocket_anim): held at a fixed angle, not
     -- the aim's (dont_rotate_with_angle), and placed, so never put away.
     thrown = true,
