@@ -271,7 +271,8 @@ local function new_match(opts)
     end,
     log = function(s) logs[#logs + 1] = s end,
     hud = { line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end },
-    msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24 },
+    msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24,
+      JUMP_UP = 0x25, RELEASE_WEAPON = 0x27 },
     world = {
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
