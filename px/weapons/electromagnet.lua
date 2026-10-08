@@ -315,15 +315,24 @@ if wa.on.hud then
 end
 
 if wa.on.draw and wa.draw.quad then
-  local function square(x, y, h, angle)
+  -- Refill one spec; the engine copies it before the next submission.
+  local QUAD = { blend = "add", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
+  local RING_IN, RING_OUT, SPARKS = BODY .. "ring_in.png", BODY .. "ring_out.png", BODY .. "magnetsparks"
+  local function square(sprite, frame, color, depth, x, y, h, angle)
+    QUAD.sprite, QUAD.frame, QUAD.color, QUAD.depth = sprite, frame, color, depth
     local c, s = wa.math.cos(angle) * h, wa.math.sin(angle) * h
-    return { { x - c + s, y - s - c }, { x + c + s, y + s - c }, { x + c - s, y + s + c }, { x - c - s, y - s + c } }
+    local p = QUAD.points
+    p[1][1], p[1][2] = x - c + s, y - s - c
+    p[2][1], p[2][2] = x + c + s, y + s - c
+    p[3][1], p[3][2] = x + c - s, y + s + c
+    p[4][1], p[4][2] = x - c - s, y - s + c
+    wa.draw.quad(QUAD)
   end
   wa.on.draw(function()
     for _, m in ipairs(magnets) do
       if m.alive and m.turns > 0 then
         local x, y = m.x, m.y
-        local ring = m.pol < 0 and "ring_in.png" or "ring_out.png"
+        local ring = m.pol < 0 and RING_IN or RING_OUT
         -- PX starts a ring every 65 frames, 5 to 120 pixels, 0.8 a frame:
         -- outwards repelling, inwards attracting, fading as it grows.
         for phase = 0, 2 do
@@ -331,13 +340,11 @@ if wa.on.draw and wa.draw.quad then
           local radius = m.pol < 0 and 120 - 0.8 * t or 5 + 0.8 * t
           if radius >= 5 and radius <= 120 then
             local alpha = math.max(0, math.min(255, math.floor((120 - radius) * 255 / 120)))
-            wa.draw.quad({ sprite = BODY .. ring, blend = "add", color = (alpha << 24) | 0xFFFFFF,
-              depth = wa.depth.OBJECTS + 1, points = square(x, y, radius, 0) })
+            square(ring, nil, (alpha << 24) | 0xFFFFFF, wa.depth.OBJECTS + 1, x, y, radius, 0)
           end
         end
         if m.spark <= 1 then
-          wa.draw.quad({ sprite = BODY .. "magnetsparks", frame = math.min(9, math.floor(m.spark * 10)),
-            blend = "add", depth = wa.depth.OBJECTS - 1, points = square(x, y, 13, m.angle) })
+          square(SPARKS, math.min(9, math.floor(m.spark * 10)), nil, wa.depth.OBJECTS - 1, x, y, 13, m.angle)
         end
       end
     end

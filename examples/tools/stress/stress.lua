@@ -358,13 +358,17 @@ return function()
     return (alpha << 24) | rgb
   end
 
-  local function glow(x, y, half, colors)
-    wa.draw.quad({
-      points = { { x - half, y - half }, { x + half, y - half }, { x + half, y + half }, { x - half, y + half } },
-      colors = colors,
-      sprite = GLOW,
-      blend = "add",
-    })
+  -- The engine copies each submission, so all glows share one refilled spec.
+  local QUAD = { sprite = GLOW, blend = "add", colors = {0, 0, 0, 0},
+    points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
+  local function glow(x, y, half, c1, c2, c3, c4)
+    local p, c = QUAD.points, QUAD.colors
+    p[1][1], p[1][2] = x - half, y - half
+    p[2][1], p[2][2] = x + half, y - half
+    p[3][1], p[3][2] = x + half, y + half
+    p[4][1], p[4][2] = x - half, y + half
+    c[1], c[2], c[3], c[4] = c1, c2, c3, c4
+    wa.draw.quad(QUAD)
   end
 
   wa.on.draw(function()
@@ -373,19 +377,19 @@ return function()
       -- The halo: a colour per corner, the orb's own at the top left, and a
       -- white-hot core over it.
       local c = TINTS[(o.a.id % #TINTS) + 1]
-      glow(x, y, 48, { argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t) })
-      glow(x, y, 16, { argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF) })
+      glow(x, y, 48, argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t))
+      glow(x, y, 16, argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF))
       for i, p in ipairs(o.trail) do
         local a = argb(0xFF - (i - 1) * 0x1C, t)
-        glow(p.x, p.y, (30 - i * 2), { a, a, a, a })
+        glow(p.x, p.y, (30 - i * 2), a, a, a, a)
       end
     end
     for _, f in ipairs(flashes) do
       local age = now - f.born
       local alpha = 0xFF * (FLASH - age) // FLASH
       local a, white = argb(alpha, f.tint), argb(alpha, 0xFFFFFF)
-      glow(f.x, f.y, (30 + age * 26 // 10), { a, a, a, a })
-      glow(f.x, f.y, (16 + age), { white, white, white, white })
+      glow(f.x, f.y, (30 + age * 26 // 10), a, a, a, a)
+      glow(f.x, f.y, (16 + age), white, white, white, white)
     end
   end)
 end

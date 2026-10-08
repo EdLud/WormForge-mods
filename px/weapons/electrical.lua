@@ -428,9 +428,12 @@ if wa.on.draw and wa.draw.ribbon then
   -- One ribbon's points, refilled: point(i, ...) sets the i-th, ribbon(n)
   -- draws the first n.
   local RIBBON = { sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
+  -- Keep shortened ribbons' point tables: the next arc may be longer again.
+  local POINTS = {}
   local function point(i, x, y, width, u, color)
-    local p = RIBBON.points[i]
-    if not p then p = {}; RIBBON.points[i] = p end
+    local p = POINTS[i]
+    if not p then p = {}; POINTS[i] = p end
+    RIBBON.points[i] = p
     p.x, p.y, p.width, p.u, p.color = x, y, width, u, color
   end
   local function ribbon(n)
@@ -459,7 +462,8 @@ if wa.on.draw and wa.draw.ribbon then
   end
   -- The main beam's 9 points, and 6 branches of 9 at random points on it.
   local function new_shape(s)
-    s.noise, s.attach = {}, {}
+    s.noise, s.attach = s.noise or {}, s.attach or {}
+    for i = 1, 8 do s.attach[i] = nil end
     noise_span(s.noise, 0, 9, 1.0, 0, 0)
     for _ = 1, 6 do s.attach[1 + math.floor(wa.draw.random() * 8)] = true end
     for i = 0, 5 do

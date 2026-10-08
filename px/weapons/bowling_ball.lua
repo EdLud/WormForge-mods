@@ -546,21 +546,23 @@ if wa.on.draw and wa.draw.quad then
     QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sheet, frame, "add", color, depth
     local c, s = wa.math.cos(rot), wa.math.sin(rot)
     local p = QUAD.points
-    local function corner(i, dx, dy)
-      p[i][1], p[i][2] = x + ((dx * c - dy * s) * half), y + ((dx * s + dy * c) * half)
-    end
-    corner(1, -1, -1)
-    corner(2, 1, -1)
-    corner(3, 1, 1)
-    corner(4, -1, 1)
+    p[1][1], p[1][2] = x + ((-c + s) * half), y + ((-s - c) * half)
+    p[2][1], p[2][2] = x + (( c + s) * half), y + (( s - c) * half)
+    p[3][1], p[3][2] = x + (( c - s) * half), y + (( s + c) * half)
+    p[4][1], p[4][2] = x + ((-c - s) * half), y + ((-s + c) * half)
     wa.draw.quad(QUAD)
   end
   local function zap_color(k)
     return 0xFF000000 | (math.floor(ZAP_R * k) << 16) | (math.floor(ZAP_G * k) << 8) | math.floor(ZAP_B * k)
   end
   local FULL = zap_color(1)
+  local DRAW_IDS = {}
   wa.on.draw(function()
-    for _, id in ipairs(balls_in_order()) do
+    local n = 0
+    for id in pairs(shared.bowling_balls) do n = n + 1; DRAW_IDS[n] = id end
+    for i = #DRAW_IDS, n + 1, -1 do DRAW_IDS[i] = nil end
+    table.sort(DRAW_IDS)
+    for _, id in ipairs(DRAW_IDS) do
       local b = shared.bowling_balls[id]
       if b.zapped then
         local drop = SPRITE_DROP
