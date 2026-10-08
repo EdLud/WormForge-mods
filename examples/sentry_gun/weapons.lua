@@ -117,7 +117,7 @@ local SPRITES = { IMPACT, CASING, BASE, GUN, FLARE }
 local function angle_to(ax, ay, tx, ty)
   local dx = (tx - ax) // PX
   local dy = (ty - ay) // PX
-  local deg = math.deg(math.atan(dx, dy))
+  local deg = math.deg(wa.math.atan(dx, dy))
   if deg < 0 then
     deg = deg + 360
   end
@@ -264,7 +264,7 @@ local function fire(a, s)
   end
 
   local rad = math.rad(s.angle + dev)
-  local dx, dy = math.sin(rad), math.cos(rad)
+  local dx, dy = wa.math.sin(rad), wa.math.cos(rad)
   local mx = a.x + math.floor(dx * MUZZLE_OUT * PX)
   local my = a.y - MUZZLE_UP * PX + math.floor(dy * MUZZLE_OUT * PX)
   local reach = SENSOR_PX * PX
@@ -277,7 +277,7 @@ local function fire(a, s)
   -- on a shot the self-blast check below is about to cancel.
   local jitter = wa.random(-CASING_JITTER_DEG, CASING_JITTER_DEG)
   local eject_rad = rad + math.rad(90 * s.side + jitter)
-  local edx, edy = math.sin(eject_rad), math.cos(eject_rad)
+  local edx, edy = wa.math.sin(eject_rad), wa.math.cos(eject_rad)
   local speed = wa.random(CASING_SPEED_MIN, CASING_SPEED_MAX) / 100
   wa.actors.spawn({
     sprite = CASING,

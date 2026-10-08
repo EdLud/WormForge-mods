@@ -85,7 +85,7 @@ local function fx_hit_object(r, x, y)
   for _ = 1, 3 do
     local a, v = laser.between(r, 0, 2 * math.pi), laser.between(r, 0.5, 1.8)
     tone = math.floor(laser.between(r, 0, 50))
-    laser.particle(r, { x = x, y = y, vx = v * math.cos(a) * P, vy = v * math.sin(a) * P,
+    laser.particle(r, { x = x, y = y, vx = v * wa.math.cos(a) * P, vy = v * wa.math.sin(a) * P,
       life = 50, drag = 0.05, grav = 1, jitter = 0.2, s0 = laser.between(r, 0.5, 0.7), s1 = 0.01,
       c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } })
   end
@@ -97,7 +97,7 @@ local function fx_disintegrate(r, x, y)
   for _ = 1, 5 do -- FX_InitialBurst
     local v = laser.between(r, 5, 8)
     local ang = r.ang + laser.between(r, -0.25, 0.25)
-    laser.particle(r, { x = r.x, y = r.y, vx = -v * math.sin(ang) * P, vy = -v * math.cos(ang) * P,
+    laser.particle(r, { x = r.x, y = r.y, vx = -v * wa.math.sin(ang) * P, vy = -v * wa.math.cos(ang) * P,
       life = 40, drag = 0.1, grav = 0.4, jitter = 0.5, s0 = laser.between(r, 0.4, 0.7), s1 = 0.01,
       c0 = c, c1 = dim, alpha = 215 })
   end
@@ -105,12 +105,12 @@ local function fx_disintegrate(r, x, y)
     c0 = c, c1 = dim, alpha = 225 }) -- FX_BarrelFlash
   local tone = math.floor(laser.between(r, 0, 50))
   local v = laser.between(r, 2, 5)
-  laser.particle(r, { x = r.x, y = r.y, vx = v * math.sin(r.ang) * P, vy = -v * math.cos(r.ang) * P,
+  laser.particle(r, { x = r.x, y = r.y, vx = v * wa.math.sin(r.ang) * P, vy = -v * wa.math.cos(r.ang) * P,
     life = 30, drag = 0.3, grav = 0.8, jitter = 0.8, s0 = laser.between(r, 0.2, 0.5), s1 = 0.01,
     c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } }) -- FX_MuzzleSparks
   for i = 0, 3 do -- FX_Disintegrate
     local a = math.pi / 4 + math.pi / 2 * i
-    laser.particle(r, { x = x, y = y, vx = 1.5 * math.sin(a) * P, vy = 1.5 * math.cos(a) * P,
+    laser.particle(r, { x = x, y = y, vx = 1.5 * wa.math.sin(a) * P, vy = 1.5 * wa.math.cos(a) * P,
       life = 60, drag = 0.05, grav = 0, s0 = 0.5, s1 = 0.01, c0 = c, c1 = dim })
   end
   fx_hit_object(r, x, y)

@@ -5,6 +5,10 @@
 -- it moves stay WA's, so their own flight, collisions and fuses run. It is
 -- an object in the oil-drum layer: blasts, guns and fires hit it, and at
 -- 0 health it explodes.
+-- Squares by multiplication: `^` calls the C runtime's pow, whose last bit
+-- may differ between machines.
+local function sq(v) return v * v end
+
 local shared = require("lib/shared")
 local P = 0x10000
 -- PX's parameters, squared where its InitializeParameters squares them.
@@ -173,7 +177,7 @@ local function frame(m, a)
     m.spark = (m.spark + 0.02) % 1.4
   end
   -- PX's UpdateRotation: spun by its speed, at most half a radian a frame.
-  local speed = math.sqrt((m.vx / P) ^ 2 + (m.vy / P) ^ 2)
+  local speed = math.sqrt(sq(m.vx / P) + sq(m.vy / P))
   m.angle = m.angle + (m.vx < 0 and -1 or 1) * math.min(0.5, 0.04 * speed)
   local s = sprite(m)
   if s ~= m.sprite then a:look(s); m.sprite = s end

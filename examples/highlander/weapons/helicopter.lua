@@ -200,7 +200,7 @@ local function heli_frame(worm)
     local a = h.body
     a.x, a.y, a.vx, a.vy, a.facing = worm.x, worm.y, 0, 0, f
     a:frame(h.frame)
-    a:gfx({ angle = math.deg(math.sin(worm.vx / FX / 24)) % 360, depth = HELI_DEPTH })
+    a:gfx({ angle = math.deg(wa.math.sin(worm.vx / FX / 24)) % 360, depth = HELI_DEPTH })
     worm.body_visible = false
   elseif h.jumpin and state == "prefiring" then
     h.climb = h.climb or heli_actor(worm, "sprites/helicopter/jumpin")

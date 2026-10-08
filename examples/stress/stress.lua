@@ -254,7 +254,7 @@ local function orb_brain(o)
     spin = (spin + 12) % 360
     local scale = o.style.scale or 1.0
     if o.style.pulse then
-      scale = 1.0 + 0.6 * math.sin(now / 6)
+      scale = 1.0 + 0.6 * wa.math.sin(now / 6)
     end
     a:gfx({ angle = spin, tint = o.tint, blend = o.style.blend, scale = scale, depth = o.style.depth })
     a:advance()

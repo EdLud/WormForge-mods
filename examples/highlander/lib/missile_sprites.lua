@@ -152,7 +152,7 @@ wa.on.missile_frame(function(m)
     rot = f.rot
   else
     -- WeapSprite::CalculateAngle, rotation 0.
-    rot = -math.atan(m.vx, m.vy) - math.pi
+    rot = -wa.math.atan(m.vx, m.vy) - math.pi
   end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)

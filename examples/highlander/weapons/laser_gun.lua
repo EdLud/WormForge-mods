@@ -1,4 +1,8 @@
 -- Highlander: Laser Gun. Split from rules.lua by tools/split_highlander.py.
+-- Squares by multiplication: `^` calls the C runtime's pow, whose last bit
+-- may differ between machines.
+local function sq(v) return v * v end
+
 local shared = require("lib/shared")
 local laser = require("lib/laser")
 local fires = shared.fires
@@ -58,8 +62,8 @@ do
       local ang = base + laser_between(r, -0.8, 0.8)
       local v = laser_between(r, v0, v1)
       local s = laser_between(r, s0, s1)
-      laser_particle(r, { x = r.gx, y = r.gy, vx = v * math.sin(ang) * LASER_FX,
-        vy = -v * math.cos(ang) * LASER_FX, life = 30, drag = 0.3, grav = 0.8,
+      laser_particle(r, { x = r.gx, y = r.gy, vx = v * wa.math.sin(ang) * LASER_FX,
+        vy = -v * wa.math.cos(ang) * LASER_FX, life = 30, drag = 0.3, grav = 0.8,
         s0 = s, s1 = 0.01, c0 = { 255, 0, 0 }, c1 = { 80, 0, 0 } })
     end
   end
@@ -85,7 +89,7 @@ do
     if land then
       if r.hit and r.dx == r.last_dx and r.dy == r.last_dy then
         -- The aim held: a clean cut from the last hit to this one.
-        local steps = math.max(1, math.floor(math.sqrt(((hx - r.hx) / LASER_FX) ^ 2 + ((hy - r.hy) / LASER_FX) ^ 2) / 2))
+        local steps = math.max(1, math.floor(math.sqrt(sq((hx - r.hx) / LASER_FX) + sq((hy - r.hy) / LASER_FX)) / 2))
         for i = 0, steps do
           wa.land.dig({ x = r.hx + (hx - r.hx) * i // steps, y = r.hy + (hy - r.hy) * i // steps, radius = 4 })
         end
@@ -129,7 +133,7 @@ do
           s0 = laser_between(r, 0.4, 0.8), s1 = 0.01, c0 = { 210, 210 - tone, 0 }, c1 = { 210, 50 - tone, 0 } })
         for _ = 1, 2 do
           local a, v = laser_between(r, 0, 2 * math.pi), laser_between(r, 0.5, 1.8)
-          laser_particle(r, { x = px, y = py, vx = v * math.cos(a) * LASER_FX, vy = v * math.sin(a) * LASER_FX,
+          laser_particle(r, { x = px, y = py, vx = v * wa.math.cos(a) * LASER_FX, vy = v * wa.math.sin(a) * LASER_FX,
             life = 30, drag = 0.05, grav = 1, s0 = laser_between(r, 0.2, 0.4), s1 = 0.01,
             c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } })
         end

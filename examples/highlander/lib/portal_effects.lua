@@ -27,7 +27,7 @@ function Effects:particle(x, y, spec)
   if #self.particles >= 1024 then return end
   local angle, speed = self:random(0, TAU), self:random(spec.speed[1], spec.speed[2])
   self.particles[#self.particles+1] = {
-    x = x/P, y = y/P, vx = math.cos(angle)*speed, vy = math.sin(angle)*speed,
+    x = x/P, y = y/P, vx = wa.math.cos(angle)*speed, vy = wa.math.sin(angle)*speed,
     age = 0, life = spec.life, sprite = spec.sprite or "lightning_glow.png",
     pixels = spec.pixels or 128, size = spec.size, end_size = spec.end_size or 0.01,
     start = spec.start, finish = spec.finish, alpha = spec.alpha or 255,
@@ -81,7 +81,7 @@ function Effects:tick(gravity)
       p.vx, p.vy = p.vx*p.resistance, p.vy*p.resistance+p.gravity*gravity/P
       if p.randomness > 0 then
         local angle, speed = self:random(0,TAU), self:random(0,p.randomness)
-        p.vx, p.vy = p.vx+math.cos(angle)*speed, p.vy+math.sin(angle)*speed
+        p.vx, p.vy = p.vx+wa.math.cos(angle)*speed, p.vy+wa.math.sin(angle)*speed
       end
     end
   end

@@ -441,7 +441,7 @@ local function electrified_frame(b)
     local a = b.seed / 0x80000000 * 2 * math.pi
     b.seed = (b.seed * 1103515245 + 12345) % 0x80000000
     local v = b.seed / 0x80000000 * 0.3 * P
-    b.trail[#b.trail + 1] = { x = b.x, y = b.y, vx = math.cos(a) * v, vy = math.sin(a) * v, age = 0 }
+    b.trail[#b.trail + 1] = { x = b.x, y = b.y, vx = wa.math.cos(a) * v, vy = wa.math.sin(a) * v, age = 0 }
   end
 end
 
@@ -546,7 +546,7 @@ if wa.on.draw and wa.draw.quad then
   local QUAD = { points = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } } }
   local function quad(sheet, frame, color, depth, x, y, half, rot)
     QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sheet, frame, "add", color, depth
-    local c, s = math.cos(rot), math.sin(rot)
+    local c, s = wa.math.cos(rot), wa.math.sin(rot)
     local p = QUAD.points
     local function corner(i, dx, dy)
       p[i][1], p[i][2] = x + math.floor((dx * c - dy * s) * half), y + math.floor((dx * s + dy * c) * half)

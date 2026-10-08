@@ -139,7 +139,7 @@ local function turn(f, x, y)
   if len > 0 then
     f.ux, f.uy = f.side * dy / len, -f.side * dx / len
   end
-  f.angle = math.atan(dx, -dy) - math.pi / 2 * f.side
+  f.angle = wa.math.atan(dx, -dy) - math.pi / 2 * f.side
   f.rx, f.ry = x, y
 end
 

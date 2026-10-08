@@ -1,4 +1,8 @@
 -- Highlander: the electrical weapons. Split from rules.lua by tools/split_highlander.py.
+-- Squares by multiplication: `^` calls the C runtime's pow, whose last bit
+-- may differ between machines.
+local function sq(v) return v * v end
+
 local shared = require("lib/shared")
 local current_worm = shared.current_worm
 local first = shared.first
@@ -55,7 +59,7 @@ local function electrical_trace(x0, y0, dx, dy)
   end
   local land = wa.land.trace(math.floor(x0), math.floor(y0),
     math.floor(x0 + dx * far * EP), math.floor(y0 + dy * far * EP))
-  local best = land and math.sqrt(((land.x - x0) / EP) ^ 2 + ((land.y - y0) / EP) ^ 2) or far
+  local best = land and math.sqrt(sq((land.x - x0) / EP) + sq((land.y - y0) / EP)) or far
   local hit = land and { x = land.x, y = land.y, obj = nil } or nil
   for _, obj in ipairs(electrical_targets(true)) do
     local ox, oy = (obj.x - x0) / EP, (obj.y - y0) / EP
@@ -72,7 +76,7 @@ end
 local function strike_hit(s)
   if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
   if not s.hit then return end
-  local radius2 = (6 * EP) ^ 2
+  local radius2 = sq(6 * EP)
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(s.ex, s.ey, 24, true) or electrical_targets(true)
   for _, obj in ipairs(targets) do
@@ -130,7 +134,7 @@ local function strike_particles(s)
     if s.delay == 0 and s.life > 0 and s.hit then
       local a = strike_rand(s) * 2 * math.pi
       local v = (1 + strike_rand(s) * 2) * EP
-      s.sparks[#s.sparks + 1] = { x = s.ex, y = s.ey, vx = math.cos(a) * v, vy = math.sin(a) * v, age = 0 }
+      s.sparks[#s.sparks + 1] = { x = s.ex, y = s.ey, vx = wa.math.cos(a) * v, vy = wa.math.sin(a) * v, age = 0 }
     end
   end
   for i = #s.cloud, 1, -1 do
@@ -167,11 +171,11 @@ shared.lightning_click = function(ev)
   -- A bowling ball on the way stops the beam, as PX's does.
   local bx, by = nil, nil
   if shared.bowling_ball_on_beam then
-    local reach = math.sqrt(((ex - sx) / EP) ^ 2 + ((ey - sy) / EP) ^ 2)
+    local reach = math.sqrt(sq((ex - sx) / EP) + sq((ey - sy) / EP))
     bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
   end
   if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
-  local distance = math.sqrt(((ex - sx) / EP) ^ 2 + ((ey - sy) / EP) ^ 2)
+  local distance = math.sqrt(sq((ex - sx) / EP) + sq((ey - sy) / EP))
   if hit and distance > 300 then
     sx, sy = ex - math.floor(300 * dirx * EP), ey - math.floor(300 * diry * EP)
   end
@@ -215,7 +219,7 @@ local function find_target(key)
 end
 
 local function closest_target(arc)
-  local best, distance = nil, (200 * EP) ^ 2
+  local best, distance = nil, sq(200 * EP)
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(arc.x, arc.y, 200, false) or electrical_targets(false)
   local function consider(obj)
@@ -345,8 +349,8 @@ local function progress_arc(arc)
     -- Follow the tangent that moves closer to the target, as PX's arc does.
     local tx, ty = land.tx or 1, land.ty or 0
     if target then
-      local a = (target.x - (land.x + tx * 10 * EP)) ^ 2 + (target.y - (land.y + ty * 10 * EP)) ^ 2
-      local b = (target.x - (land.x - tx * 10 * EP)) ^ 2 + (target.y - (land.y - ty * 10 * EP)) ^ 2
+      local a = sq(target.x - (land.x + tx * 10 * EP)) + sq(target.y - (land.y + ty * 10 * EP))
+      local b = sq(target.x - (land.x - tx * 10 * EP)) + sq(target.y - (land.y - ty * 10 * EP))
       if b < a then tx, ty = -tx, -ty end
     end
     arc.dx, arc.dy = tx, ty
