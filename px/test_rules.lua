@@ -524,6 +524,7 @@ local function new_match(opts)
       end,
       solid = function(x, y) return M.solid ~= nil and M.solid(x, y) or false end,
     },
+    sprites = { key = function(path) return "px.mock:" .. path end },
     draw = {
       -- The engine reads the table before returning, so a pack may refill
       -- one table for every call: keep a copy, as the engine does.
@@ -2812,12 +2813,12 @@ do
   M.draw()
   local glows, sparks, behind, sheen = 0, {}, true, nil
   for _, q in ipairs(M.quads) do
-    if q.sprite == "sprites/bowling_ball/glow.png" then
+    if q.sprite == wa.sprites.key("sprites/bowling_ball/glow.png") then
       glows = glows + 1
       if q.blend ~= "add" or q.depth <= wa.depth.OBJECTS then behind = false end
     end
-    if q.sprite == "sprites/bowling_ball/spark.png" then sparks[#sparks + 1] = q end
-    if q.sprite == "sprites/bowling_ball/sheen.png" then sheen = q end
+    if q.sprite == wa.sprites.key("sprites/bowling_ball/spark.png") then sparks[#sparks + 1] = q end
+    if q.sprite == wa.sprites.key("sprites/bowling_ball/sheen.png") then sheen = q end
   end
   check("an electrified ball glows behind itself: PX's glow three times, a trail glow for each frame since",
     glows == 3 + 5 and behind, tostring(glows))
@@ -3920,7 +3921,7 @@ do
   M.draw()
   local puffs = 0
   for _, q in ipairs(M.quads) do
-    if q.sprite == "sprites/lightning/cloud.png" and q.blend == "alpha" and (q.color & 0xFFFFFF) == 0x2D283C then
+    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.blend == "alpha" and (q.color & 0xFFFFFF) == 0x2D283C then
       puffs = puffs + 1
     end
   end
@@ -4115,7 +4116,7 @@ do
   M.quads, M.ribbons = {}, {}
   M.draw()
   local glows = 0
-  for _, q in ipairs(M.quads) do if q.sprite == "sprites/lightning/glow.png" then glows = glows + 1 end end
+  for _, q in ipairs(M.quads) do if q.sprite == wa.sprites.key("sprites/lightning/glow.png") then glows = glows + 1 end end
   local strip = M.ribbons[1]
   check("the current glows at every point, PX's width at its ends",
     strip and glows >= #strip.points and math.abs(strip.points[1].width - 2 * 9 * 0.1) < 1e-9,
@@ -4147,7 +4148,7 @@ do
   M.draw()
   local on_ball = false
   for _, q in ipairs(M.quads) do
-    if q.sprite == "sprites/lightning/glow.png" and q.points[1][1] < 5 and q.points[3][1] > 5
+    if q.sprite == wa.sprites.key("sprites/lightning/glow.png") and q.points[1][1] < 5 and q.points[3][1] > 5
       and q.points[3][1] - q.points[1][1] > 40 then on_ball = true end
   end
   check("the arc links to a Bowling Ball, PX's glow on it", ball and on_ball and not ball.zapped)

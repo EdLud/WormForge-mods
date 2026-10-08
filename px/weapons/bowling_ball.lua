@@ -540,16 +540,27 @@ fires.bowling_strike = function(ev)
 end
 
 if wa.on.draw and wa.draw.quad then
+  -- Resolve the pack namespace once, rather than on every submission.
+  local glow_sheet = wa.sprites.key(GLOW_SHEET)
+  local spark_sheet = wa.sprites.key(SPARK_SHEET)
+  local sheen_sheet = wa.sprites.key(SHEEN_SHEET)
   -- One spec refilled for every quad (the engine copies it).
   local QUAD = { points = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } } }
-  local function quad(sheet, frame, color, depth, x, y, half, rot)
+  local function quad(sheet, frame, color, depth, x, y, half, c, s)
     QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sheet, frame, "add", color, depth
-    local c, s = wa.math.cos(rot), wa.math.sin(rot)
     local p = QUAD.points
-    p[1][1], p[1][2] = x + ((-c + s) * half), y + ((-s - c) * half)
-    p[2][1], p[2][2] = x + (( c + s) * half), y + (( s - c) * half)
-    p[3][1], p[3][2] = x + (( c - s) * half), y + (( s + c) * half)
-    p[4][1], p[4][2] = x + ((-c - s) * half), y + ((-s + c) * half)
+    if not c then
+      -- Unrotated: the corners are half either way.
+      p[1][1], p[1][2] = x - half, y - half
+      p[2][1], p[2][2] = x + half, y - half
+      p[3][1], p[3][2] = x + half, y + half
+      p[4][1], p[4][2] = x - half, y + half
+    else
+      p[1][1], p[1][2] = x + ((-c + s) * half), y + ((-s - c) * half)
+      p[2][1], p[2][2] = x + (( c + s) * half), y + (( s - c) * half)
+      p[3][1], p[3][2] = x + (( c - s) * half), y + (( s + c) * half)
+      p[4][1], p[4][2] = x + ((-c - s) * half), y + ((-s + c) * half)
+    end
     wa.draw.quad(QUAD)
   end
   local function zap_color(k)
@@ -568,15 +579,16 @@ if wa.on.draw and wa.draw.quad then
         local drop = SPRITE_DROP
         for _, t in ipairs(b.trail) do
           local k = t.age / TRAIL_LIFE
-          quad(GLOW_SHEET, 0, zap_color(1 - k), GLOW_DEPTH, t.x, t.y + drop, (0.3 + 0.2 * k) * GLOW_SIZE / 2, 0)
+          quad(glow_sheet, 0, zap_color(1 - k), GLOW_DEPTH, t.x, t.y + drop, (0.3 + 0.2 * k) * GLOW_SIZE / 2)
         end
         local x, y = b.x, b.y + drop
         local glow = (0.3 + 0.1 * wa.draw.random()) * GLOW_SIZE / 2
-        for _ = 1, 3 do quad(GLOW_SHEET, 0, FULL, GLOW_DEPTH, x, y, glow, 0) end
-        quad(SHEEN_SHEET, 0, SHEEN_COLOR, SHEEN_DEPTH, x, y, SPARK_SIZE / 2, b.rot)
+        for _ = 1, 3 do quad(glow_sheet, 0, FULL, GLOW_DEPTH, x, y, glow) end
+        local c, s = wa.math.cos(b.rot), wa.math.sin(b.rot)
+        quad(sheen_sheet, 0, SHEEN_COLOR, SHEEN_DEPTH, x, y, SPARK_SIZE / 2, c, s)
         if b.spark <= 1 then
           local frame = math.min(SPARK_FRAMES - 1, math.floor(b.spark * SPARK_FRAMES))
-          quad(SPARK_SHEET, frame, 0xFFFFFFFF, SPARK_DEPTH, x, y, SPARK_SIZE / 2, b.rot)
+          quad(spark_sheet, frame, 0xFFFFFFFF, SPARK_DEPTH, x, y, SPARK_SIZE / 2, c, s)
         end
       end
     end

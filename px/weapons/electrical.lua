@@ -403,6 +403,11 @@ shared.electric_grenade_explode = function(ev)
 end
 
 if wa.on.draw and wa.draw.ribbon then
+  -- Resolve the pack namespace once for the many glow/beam submissions.
+  local beam_sprite = wa.sprites.key(BEAM)
+  local glow_sprite = wa.sprites.key(GLOW)
+  local cloud_sprite = wa.sprites.key(CLOUD)
+  local burst_sprite = wa.sprites.key(GRENADE_BURST)
   local function colour(a, r, g, b)
     return (math.floor(a) << 24) | (r << 16) | (g << 8) | b
   end
@@ -423,11 +428,11 @@ if wa.on.draw and wa.draw.ribbon then
   end
   local function glow(x, y, size, color)
     local h = size / 2
-    square(GLOW, 0, "add", color, ELECTRIC_DEPTH, x, y, h, h)
+    square(glow_sprite, 0, "add", color, ELECTRIC_DEPTH, x, y, h, h)
   end
   -- One ribbon's points, refilled: point(i, ...) sets the i-th, ribbon(n)
   -- draws the first n.
-  local RIBBON = { sprite = BEAM, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
+  local RIBBON = { sprite = beam_sprite, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
   -- Keep shortened ribbons' point tables: the next arc may be longer again.
   local POINTS = {}
   local function point(i, x, y, width, u, color)
@@ -500,7 +505,7 @@ if wa.on.draw and wa.draw.ribbon then
     for _, p in ipairs(s.cloud) do
       local t = p.age / p.life
       local size = lerp(t, p.s0, p.s1)
-      square(CLOUD, 0, "alpha", colour(255 * t, 45, 40, 60), CLOUD_DEPTH, p.x, p.y, 64 * size, 40 * size)
+      square(cloud_sprite, 0, "alpha", colour(255 * t, 45, 40, 60), CLOUD_DEPTH, p.x, p.y, 64 * size, 40 * size)
     end
     for _, p in ipairs(s.sparks) do
       local t = p.age / 50
@@ -537,7 +542,7 @@ if wa.on.draw and wa.draw.ribbon then
     for _, arc in ipairs(arcs) do
       if arc.explosion < 10 then
         local h = 75
-        square(GRENADE_BURST, arc.explosion, "add", 0x551E14EB, ELECTRIC_DEPTH, arc.burst_x, arc.burst_y, h, h)
+        square(burst_sprite, arc.explosion, "add", 0x551E14EB, ELECTRIC_DEPTH, arc.burst_x, arc.burst_y, h, h)
       end
       if #arc.points >= 2 then
         -- PX's CTazerShot: one strip through the arc's points, thickest in
