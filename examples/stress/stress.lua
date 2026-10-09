@@ -104,10 +104,13 @@ end
 
 -- A linear congruential generator: the same numbers on every machine, and
 -- without touching WA's RNG, so WA's own random draws are left as they were.
+-- 0 to n - 1 from the seed's high bits: its low bits repeat in short cycles
+-- (the lowest just alternates), so `seed % n` gave every magnet the same
+-- polarity, two draws a magnet apart.
 local seed = SEED
 local function rand(n)
   seed = (seed * 1103515245 + 12345) % 0x80000000
-  return seed % n
+  return seed * n // 0x80000000
 end
 
 -- Where each projectile starts, and how fast: spread across the map, from

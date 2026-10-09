@@ -22,7 +22,9 @@ local BALL_SHARE = 0.25            -- a Bowling Ball gets a quarter of the force
 -- Not PX's: PX explodes the missiles still in a field 300 frames after the
 -- turn ended, so none circles a magnet for ever. With no way to burst a
 -- stock missile from Lua, the field lets go of them instead, and each ends
--- on its own fuse or impact.
+-- on its own fuse or impact. It lets go of the mines then too: a dud mine
+-- (the scheme's) never goes off, and held against a magnet it never comes
+-- to rest either, so WA would wait for it and the turn would never end.
 local RELEASE_AFTER = 300
 -- The grenades that go off only once they stop slow down in a field (PX
 -- damps its Hellish Hand-Grenade there by 0.985 a frame).
@@ -81,15 +83,15 @@ end
 -- reaches, as PX's.
 local function field(m, scale, wake)
   wake = wake or m.vx ~= 0 or m.vy ~= 0
-  local mines = wa.mines.all()
-  for _, mine in ipairs(mines) do
-    local dx, dy = force(m, mine.x, mine.y, scale)
-    if dx then
-      trigger_mine(m, mine, mines)
-      if dx ~= 0 or dy ~= 0 then mine:impulse(dx, dy) end
-    end
-  end
   if not (m.ended_at and m.age - m.ended_at > RELEASE_AFTER) then
+    local mines = wa.mines.all()
+    for _, mine in ipairs(mines) do
+      local dx, dy = force(m, mine.x, mine.y, scale)
+      if dx then
+        trigger_mine(m, mine, mines)
+        if dx ~= 0 or dy ~= 0 then mine:impulse(dx, dy) end
+      end
+    end
     for _, missile in ipairs(wa.missiles.all()) do
       local dx, dy = force(m, missile.x, missile.y, scale)
       if dx and (dx ~= 0 or dy ~= 0) then missile:impulse(dx, dy) end

@@ -92,6 +92,11 @@ local function strike_hit(s)
           if worm then
             revived_by_lightning[worm.id] = true
             shared.restore_lightning_inventory(worm)
+          else
+            -- Refused: a living worm holds its place (a Reinforcement takes a
+            -- dead worm's), as when the team has eight. Reinforcement's error
+            -- sound, from the grave: the strike's thrower may be gone by now.
+            wa.sound.play(obj, "sounds/gravity_control/error.wav")
           end
         end
       elseif obj.kind == "mine" then

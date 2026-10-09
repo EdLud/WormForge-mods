@@ -163,7 +163,7 @@ local function heli_frame(worm)
     local fuel = worm.fuel
     local burn = wa.world.retreat() == 0
     if burn then fuel = fuel - 0.020 * FX end
-    local shift = wa.world.keys().sprint
+    local shift = wa.world.keys().shift
     if up then
       if burn then fuel = fuel - 0.2 * FX end
       vy = push(vy, -1)

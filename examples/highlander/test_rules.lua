@@ -281,7 +281,7 @@ local function new_match(opts)
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
       keys = function()
-        return { sprint = M.shift or false, digit = M.digit, plus_key = M.plus_key or false,
+        return { shift = M.shift or false, digit = M.digit, plus_key = M.plus_key or false,
           ctrl = M.ctrl or false, left = M.left or false, right = M.right or false }
       end,
       set_gravity = function(v) M.gravity = v end,
@@ -945,16 +945,20 @@ do
   M.missile(bazooka)
   check("the Hellish Hand-Grenade is damped in a field", hellish.vx == math.floor(1000 * p * 0.985)
     and bazooka.vx == 1000 * p)
-  -- 300 frames after the turn ended, missiles are let go; mines are not.
+  -- 300 frames after the turn ended, missiles and mines are let go (a dud
+  -- mine held against a magnet would never rest, and the turn never end).
   M.turn_end({ worm = w })
-  for _ = 1, 301 do attract.on(attract) end
+  for _ = 1, 299 do attract.on(attract) end
   missile.dx, mine.dx = 0, 0
   attract.on(attract)
-  check("missiles are let go 300 frames after the turn ends", missile.dx == 0 and mine.dx ~= 0)
-  M.turn_start({ worm = other, active = other })
-  missile.dx = 0
+  check("still held 300 frames after the turn ends", missile.dx ~= 0 and mine.dx ~= 0)
+  missile.dx, mine.dx = 0, 0
   attract.on(attract)
-  check("and caught again from the next turn", missile.dx ~= 0)
+  check("missiles and mines are let go after that", missile.dx == 0 and mine.dx == 0)
+  M.turn_start({ worm = other, active = other })
+  missile.dx, mine.dx = 0, 0
+  attract.on(attract)
+  check("and caught again from the next turn", missile.dx ~= 0 and mine.dx ~= 0)
   -- A blast hurts it less the further off (PX's TakeExplosionDamage).
   local function blast(m, damage, dist)
     m.hit(m, { kind = "blast", damage = damage, x = m.x + dist * p, y = m.y, vx = 0, vy = 0 })
@@ -3225,6 +3229,24 @@ do
   local restored = true
   for name in pairs(have) do if ammo[0][name] ~= 1 then restored = false end end
   check("the original Highlander hand is restored", restored)
+
+  -- A revive the engine refuses (a living worm holds the place, a full
+  -- team) plays Reinforcement's error sound at the grave.
+  new_match()
+  by_slot = {}
+  for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
+  owner = worm(16)
+  owner.x, owner.y = 100 * P, 100 * P
+  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000 * P, 1000 * P end end
+  local full = { id=703, kind="grave", worm_id=17, x=140*P, y=100*P }
+  function full:revive() return nil end
+  M.graves = { full }
+  M.sounds, M.sound_targets = {}, {}
+  by_slot.napalm_strike.on_click({ worm=owner, x=140*P, y=100*P })
+  effect = M.spawned[#M.spawned]
+  for _ = 1, 166 do effect.on(effect) end
+  check("a refused revive plays the error sound at the grave",
+    M.sounds[#M.sounds] == "sounds/gravity_control/error.wav" and M.sound_targets[#M.sound_targets] == full)
 
   new_match()
   by_slot = {}

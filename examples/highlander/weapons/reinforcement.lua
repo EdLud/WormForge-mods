@@ -23,8 +23,9 @@ end
 -- above the map on a jet pack with no fuel, and stands it up once it has
 -- landed. Here it stands on the ground under the click straight away, so
 -- it takes no fall damage either. Over the water it drops in at the
--- surface, as PX's falls in. With 8 worms the team is full (PX: "Too many
--- worms (8) in your team!").
+-- surface, as PX's falls in. It takes a dead worm's place, as PX's does;
+-- with 8 living worms the team is full (PX: "Too many worms (8) in your
+-- team!").
 shared.fires.reinforcement = function(ev)
   local worm = ev.worm
   local x = ev.x // P

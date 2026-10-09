@@ -220,7 +220,7 @@ local function brain(worm)
       local dir = right and 1 or -1
       a.facing = dir
       if st.grounded then
-        local cap = k.sprint and SPRINT or RUN
+        local cap = k.shift and SPRINT or RUN
         if vx == 0 or sign(vx) == dir then
           if abs(vx) < cap then
             vx = approach(vx, dir * cap, ACCEL)
@@ -369,7 +369,7 @@ local function brain(worm)
       set_clip(a, st, "Land")
     elseif moving then
       local spd = abs(vx)
-      if k.sprint then
+      if k.shift then
         st.gait = 32
         if spd > SPRINT - 22938 then
           set_clip(a, st, "Sprint")

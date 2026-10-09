@@ -155,7 +155,7 @@ local function swim_frame(worm)
     if left == right then vx = vx / SWIM_DRAG end
     if up then vy = swim_push(vy, -1, cap) end
     if down then vy = swim_push(vy, 1, cap) end
-    local shift = wa.world.keys().sprint
+    local shift = wa.world.keys().shift
     if left then
       if not shift then worm.facing = -1 end
       vx = swim_push(vx, -1, cap)
