@@ -22,7 +22,7 @@ return function(ctx)
   wa.on.turn_start(function(ev)
     if gravity_pct ~= 100 then
       scheme_gravity = scheme_gravity or wa.world.gravity()
-      wa.world.set_gravity(scheme_gravity * gravity_pct // 100)
+      wa.world.set_gravity(scheme_gravity * gravity_pct / 100)
     end
     if heal > 0 then
       ev.worm:heal(heal)
@@ -34,12 +34,12 @@ return function(ctx)
   end)
 
   if wind ~= "scheme" then
-    wa.on.worm_message(function(_, msg)
-      if wind_due and msg == wa.msg.FRAME_FINISH then
+    wa.on.worm_message(function()
+      if wind_due then
         wind_due = false
-        wa.world.set_wind(wind == "none" and 0 or wa.world.wind() // 2)
+        wa.world.set_wind(wind == "none" and 0 or wa.world.wind() / 2)
       end
-    end)
+    end, { msgs = { wa.msg.FRAME_FINISH } })
   end
 
   wa.log(("gravity %d%%, wind %s, heal %d, infinite %s"):format(
