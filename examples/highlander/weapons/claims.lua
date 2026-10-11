@@ -27,28 +27,59 @@ local PATCH_FIXES = {
   mortar = { c_homing_sprite = 250 },
 }
 
-for _, list in ipairs({ PORTED, PX_ART }) do
-  for _, w in ipairs(list) do
-    -- copy_from + name + named patch (stock base); was weps/<slot>.wep
-    local spec = w.wep and { wep = w.wep } or { copy_from = w.weapon, name = WEP_NAME[w.weapon] }
-    if w.weapon == "old_woman" then
-      spec.patch = OLD_WOMAN_LAUNCHER_PATCH
-      spec.on_fire = function(fire) fires.old_woman(fire) end
-    elseif not w.wep and WEP_PATCH[w.weapon] then
-      spec.patch = WEP_PATCH[w.weapon]
-    end
-    if PATCH_FIXES[w.weapon] then
-      local patch = {}
-      for k, v in pairs(spec.patch or {}) do patch[k] = v end
-      for k, v in pairs(PATCH_FIXES[w.weapon]) do patch[k] = v end
-      spec.patch = patch
-    end
-    for key, value in pairs(w) do
-      spec[key] = value
-    end
-    spec.hold = PX_HOLDS[w.weapon]
-    wa.weapons.replace(spec)
+-- The slots Highlander claimed this match. Code that acts on a slot by its
+-- stock name (a missile's sprite, a held weapon's sight) asks first: as a
+-- component bundle only the placed weapons claim, and another scheme may put
+-- WA's own weapon on the rest.
+local owned = {}
+shared.owns = function(slot)
+  return owned[slot] == true
+end
+
+-- One weapon's claim of its slot.
+local function claim(w)
+  owned[w.weapon] = true
+  -- copy_from + name + named patch (stock base); was weps/<slot>.wep
+  local spec = w.wep and { wep = w.wep } or { copy_from = w.weapon, name = WEP_NAME[w.weapon] }
+  if w.weapon == "old_woman" then
+    spec.patch = OLD_WOMAN_LAUNCHER_PATCH
+    spec.on_fire = function(fire) fires.old_woman(fire) end
+  elseif not w.wep and WEP_PATCH[w.weapon] then
+    spec.patch = WEP_PATCH[w.weapon]
   end
+  if PATCH_FIXES[w.weapon] then
+    local patch = {}
+    for k, v in pairs(spec.patch or {}) do patch[k] = v end
+    for k, v in pairs(PATCH_FIXES[w.weapon]) do patch[k] = v end
+    spec.patch = patch
+  end
+  for key, value in pairs(w) do
+    spec[key] = value
+  end
+  spec.hold = PX_HOLDS[w.weapon]
+  wa.weapons.replace(spec)
+end
+
+-- The pack in one piece (rules.lua) claims every slot, in this order.
+shared.claim_all = function()
+  for _, list in ipairs({ PORTED, PX_ART }) do
+    for _, w in ipairs(list) do
+      claim(w)
+    end
+  end
+end
+
+-- A weapon component claims only the slot it was placed on.
+shared.claim = function(slot)
+  for _, list in ipairs({ PORTED, PX_ART }) do
+    for _, w in ipairs(list) do
+      if w.weapon == slot then
+        claim(w)
+        return true
+      end
+    end
+  end
+  return false
 end
 
 do

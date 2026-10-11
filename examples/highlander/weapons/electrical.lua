@@ -7,6 +7,9 @@ local shared = require("lib/shared")
 local current_worm = shared.current_worm
 local first = shared.first
 local held = shared.held
+-- Highlander's rules (scheme/state.lua) and the Lightning Strike share it; the
+-- strike also works without the rules, as a weapon of another scheme.
+shared.revived_by_lightning = shared.revived_by_lightning or {}
 local revived_by_lightning = shared.revived_by_lightning
 
 -- --------------------------------------------------------- electrical weapons
@@ -90,7 +93,9 @@ local function strike_hit(s)
           local worm = obj:revive(id, 10)
           if worm then
             revived_by_lightning[worm.id] = true
-            shared.restore_lightning_inventory(worm)
+            if shared.restore_lightning_inventory then
+              shared.restore_lightning_inventory(worm)
+            end
           else
             -- Refused: a living worm holds its place (a Reinforcement takes a
             -- dead worm's), as when the team has eight. Reinforcement's error

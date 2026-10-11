@@ -10,7 +10,8 @@ local POOLED = shared.POOLED
 local arsenal = wa.inventory.create({ id = "arsenal", slots = POOLED })
 local dealt = {}
 local dead_hands = {}
-local revived_by_lightning = {}
+shared.revived_by_lightning = shared.revived_by_lightning or {}
+local revived_by_lightning = shared.revived_by_lightning
 
 -- The current Highlander port moves a dead worm's hand to the active worm.
 -- A grave revived by Lightning also gets that original hand back. This is a

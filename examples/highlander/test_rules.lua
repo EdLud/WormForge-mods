@@ -777,22 +777,62 @@ do
     by_slot[spec.weapon] = spec
   end
   check("67 slots replaced, each once", #replaced == 67 and not dupes, tostring(#replaced))
-  -- The loader skips a replace the manifest does not declare, silently.
-  -- (Checked where the suite can read the pack's files: run from the repo,
-  -- not inside the engine's loader test.)
+  -- A weapon component may claim only the slot it is placed on, and the
+  -- engine skips any other claim, silently: every replaced slot needs a
+  -- weapon component at that slot's panel position, and the Highlander
+  -- scheme's preset places each. (Checked where the suite can read the
+  -- pack's files: run from the repo, not inside the engine's loader test.)
   local toml = io and io.open("mods/examples/highlander/mod.toml")
   if toml then
     local manifest = toml:read("a")
     toml:close()
-    local declared = {}
-    for name in manifest:match("replace = %[(.-)%]"):gmatch('"([%w_]+)"') do
-      declared[name] = true
+    -- WA's panel: F1..F12 hold five slots each from slot 1, F5 six; the
+    -- utilities are slots 62..70 (crates/weapons/src/panel.rs).
+    local STOCK = { "bazooka", "homing_missile", "mortar", "homing_pigeon", "sheep_launcher",
+      "grenade", "cluster_bomb", "banana_bomb", "battle_axe", "earthquake",
+      "shotgun", "handgun", "uzi", "minigun", "longbow",
+      "fire_punch", "dragon_ball", "kamikaze", "suicide_bomber", "prod",
+      "dynamite", "mine", "sheep", "super_sheep", "aqua_sheep", "mole_bomb",
+      "air_strike", "napalm_strike", "mail_strike", "mine_strike", "mole_squadron",
+      "blow_torch", "pneumatic_drill", "girder", "baseball_bat", "girder_pack",
+      "ninja_rope", "bungee", "parachute", "teleport", "scales_of_justice",
+      "super_banana", "holy_grenade", "flame_thrower", "salvation_army", "mb_bomb",
+      "petrol_bomb", "skunk", "ming_vase", "sheep_strike", "carpet_bomb",
+      "mad_cow", "old_woman", "donkey", "nuclear_test", "armageddon",
+      "skip_go", "surrender", "select_worm", "freeze", "magic_bullet",
+      "jet_pack", "low_gravity", "fast_walk", "laser_sight", "invisibility",
+      "damage_x2", "crate_spy", "double_turn_time", "crate_shower" }
+    local F_FIRST = { 1, 6, 11, 16, 21, 27, 32, 37, 42, 47, 52, 57 }
+    local function slot_at(row, column)
+      if row == "utility" then return STOCK[61 + column] end
+      return STOCK[F_FIRST[tonumber(row:sub(2))] + column - 1]
     end
-    local undeclared = {}
+    local component, preset = {}, {}
+    local blocks, at = {}, 1
+    while true do
+      local i = manifest:find("[[components]]", at, true)
+      if not i then break end
+      local j = manifest:find("[[components]]", i + 1, true) or #manifest + 1
+      blocks[#blocks + 1] = manifest:sub(i, j - 1)
+      at = j
+    end
+    for _, block in ipairs(blocks) do
+      local id = block:match('id = "(hl%.[%w_]+)"')
+      local row, column = block:match('compatible_positions = %[{ row = "(%w+)", column = (%d+) }%]')
+      if id and row then component[slot_at(row, tonumber(column))] = id end
+    end
+    local presets = manifest:match("%[presets%.highlander%.weapons%](.*)$") or ""
+    for id, row, column in presets:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
+      preset[slot_at(row, tonumber(column))] = id
+    end
+    local missing = {}
     for _, r in ipairs(replaced) do
-      if not declared[r.weapon] then undeclared[#undeclared + 1] = r.weapon end
+      if not component[r.weapon] or preset[r.weapon] ~= component[r.weapon] then
+        missing[#missing + 1] = r.weapon
+      end
     end
-    check("every replaced slot is declared in mod.toml", #undeclared == 0, table.concat(undeclared, ","))
+    check("every replaced slot is a weapon component the Highlander scheme places", #missing == 0,
+      table.concat(missing, ","))
   end
   local own_file = true
   for slot, spec in pairs(by_slot) do

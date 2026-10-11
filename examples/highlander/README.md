@@ -12,6 +12,26 @@ slot it takes.
 Weapons are ported in batches. **A weapon not ported yet leaves WA's stock
 weapon on its slot, and that stands in for it.**
 
+## Playing it
+
+Highlander is a component bundle (`format_version = 2`): installing it runs
+nothing until a profile selects it. Pick the **Highlander** scheme in the mod
+loader's Profile tab, or put this in `Mods/wormforge.toml`:
+
+```toml
+[profile]
+scheme = "hl.highlander"
+```
+
+The scheme places all 67 of its weapons and deals them by the rules below
+(it says so in green in the Profile tab: it changes gameplay rules).
+
+Each weapon is also a component of its own (`hl.double_bazooka`,
+`hl.sniper_rifle`, ...), on the stock slot its code is written for. Another
+scheme can place some of them next to WA's own weapons, without Highlander's
+rules: they then keep the ammo, delay and crate odds that scheme gives them.
+Search for them in the Profile tab.
+
 ## Rules
 
 - At the start of the match, every worm is dealt **one weapon from each
@@ -512,14 +532,21 @@ hands. Nothing reads local input or the clock.
 
 ## Layout
 
-`rules.lua` is the entry: the pack's description and one `require` per
-module, in the order they run.
+`rules.lua` is the pack in one piece: its description and one `require` per
+module, in the order they run; the tests load it. In a match the bundle runs
+as components (`components/`): the scheme `hl.highlander` loads `scheme/`,
+and each placed weapon component runs `components/weapon.lua`, which loads
+the modules the placed weapons need (`components/loader.lua`, in
+`rules.lua`'s order) and claims its own slot. Code that acts on a slot by its
+stock name asks `shared.owns(slot)` first, so WA's own weapon on a slot
+Highlander didn't claim is left alone.
 
 | Folder | Holds |
 |---|---|
 | `lib/` | What several weapons share: the engine-drawn holds, sprite animation helpers, PX's missile sprites, and `shared.lua`, the table modules pass values through. |
 | `weapons/` | One module per weapon or weapon family, plus the claim tables (`catalog.lua`, `claims.lua`) and the generated record data (`wep_data.lua`, written by `tools/embed_weps.py`). |
 | `scheme/` | The Highlander scheme itself: its pools, its state and its rules. |
+| `components/` | The bundle's entries: the scheme, the weapon component, and the loader that maps placed weapons to modules. |
 
 A module reads another's value as `local name = shared.name`; one that is
 set later (an explode handler the claims call) is used as `shared.name`
