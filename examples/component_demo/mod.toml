@@ -30,6 +30,16 @@ description = "Big Bazooka plus a few stock weapons; nothing else on the panel."
 entry = "scheme.lua"
 preset = "demo"
 
+[[components]]
+id = "demo.medic"
+type = "scheme"
+name = "Medic rules"
+description = "The demo scheme's weapons, and a rule: the worm whose turn starts heals 10 HP."
+entry = "schemes/medic.lua"
+preset = "demo"
+changes_rules = true
+tags = ["demo"]
+
 # The scheme owns the whole panel: a slot left out here has no ammo and
 # never comes in a crate. stock.<slot> is WA's own weapon at its own place.
 [presets.demo.weapons]

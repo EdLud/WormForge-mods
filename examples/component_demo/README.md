@@ -30,6 +30,11 @@ slot is empty and never comes in a crate. Each turn a weapon crate drops
 with a 40% chance, a health crate 10% and a utility crate 20% (the
 scheme's `crates`), whatever the lobby's crate settings.
 
+**Medic rules** (`demo.medic`) is the same loadout with a rule of its own: the
+worm whose turn starts heals 10 HP. A scheme with rules declares
+`changes_rules = true`, and the Profile tab says "This scheme changes gameplay
+rules" in green when it is picked.
+
 **Big Mortar** (Mortar with damage 70, 3 at round start) is outside the preset.
 Type "mortar" in the Profile tab's search and tick it: it goes to F1 3. Both
 weapons were checked at F1 1 and F1 3, so moving one onto the other's position
