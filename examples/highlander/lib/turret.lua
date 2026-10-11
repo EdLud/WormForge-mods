@@ -1,7 +1,7 @@
 -- Highlander: Project X's sentry turrets (weapon_sentry_gun's PxSentryGun,
 -- weapon_sentry_laser's PxSentryLaser), the part they share: a body dropped
 -- where the worm stands, with passage for the planter until clear, a head that sweeps,
--- picks the nearest moving enemy it can see, turns to it and fires, reloads
+-- picks the nearest moving enemy in sight beyond its barrel sweep, turns and fires, reloads
 -- each turn, and is disabled for the turn by positive damage and explodes at 0
 -- health. What it aims at and what it fires are the weapon's: `targets` (by
 -- default the worms) and `fire(t, a, s, target)`.
@@ -42,6 +42,28 @@ function turret.capture_hit(entry, x, y, alliance)
   return entry.t.capture(entry.body, entry.s, alliance)
 end
 
+-- PX's Javelin includes sentries in its strict impact square. The stock
+-- electrical list excludes Lua actors, so add them through this registry.
+function turret.projectile_target(x, y)
+  for _, t in ipairs(turrets) do
+    for _, id in ipairs(wa.sorted(t.state)) do
+      local s = t.state[id]
+      if s.body.id == id and math.abs(x - s.x) < 20
+        and math.abs(y - (s.y - t.capture_up)) < 20 then
+        return { t = t, s = s, body = s.body }
+      end
+    end
+  end
+end
+
+function turret.projectile_hit(entry, damage, vx, vy, uid)
+  if entry and entry.t.state[entry.body.id] == entry.s then
+    entry.t.projectile_hit(entry.body, entry.s, damage, vx, vy, uid)
+    return true
+  end
+  return false
+end
+
 local DEFAULTS = {
   sensor_px = 360,      -- detection radius
   ammo = 20,            -- rounds per turn
@@ -54,14 +76,18 @@ local DEFAULTS = {
   aim_tolerance = 1.5,  -- PX fires only after rotation reaches the target
   require_motion = true, -- PX only acquires walking/jumping/moving worms
   hold_own_turn = true, -- the Sentry Gun holds fire on its colour's turns
-  settle_px = 8,        -- mask may overlap real terrain by this depth
+  settle_px = 4,        -- mask may overlap real terrain by this depth
   foot_offsets = { -6, 7 }, -- support beside the buried mask, never inside it
   top_px = feet.top,         -- top of the feet/hub silhouette above its anchor
   capture_radius = 24, -- Lightning's circle around the body
   capture_up = 16 - feet.burial,
   muzzle_up = 25 - feet.burial,       -- pixels from the anchor up to the turret pivot
+  sight_grace_px = 4, -- terrain grace beyond the barrel tip's circular sweep
   placement_reach = 64, -- bounded clear-space search around the planting worm
   health = 50,
+  slide_friction = 0.20, -- pixels/frame lost on supported ground
+  contact_worm = 0.5,    -- fraction of incoming worm velocity transferred
+  contact_projectile = 0.25, -- PX Javelin transfers a quarter of its velocity
   boom = { damage = 50, id = 100, below = false },
   -- Occlusion band for the head: in front of terrain (0x180000), so the
   -- landscape never buries it.
@@ -77,6 +103,36 @@ function turret.angle_to(ax, ay, tx, ty)
   local deg = math.deg(wa.math.atan(dx, dy))
   if deg < 0 then deg = deg + 360 end
   return deg
+end
+
+-- The same physical barrel tip is used for firing and its terrain gate.
+function turret.muzzle(t, a, angle)
+  local rad = math.rad(angle)
+  return a.x + wa.math.sin(rad) * t.muzzle_out,
+    a.y - t.muzzle_up + wa.math.cos(rad) * t.muzzle_out
+end
+
+-- Terrain probes leave out this turret's stamped feet, but real terrain
+-- and overlapping actors still block. Starting inside either must block too:
+-- world.trace otherwise describes the exit from an initial overlap.
+function turret.trace(a, x0, y0, x1, y1)
+  local hit = wa.world.trace { x0 = x0, y0 = y0, x1 = x1, y1 = y1,
+    radius = 0, with = { "terrain" }, ignore = { a } }
+  if hit and hit.starts_solid then return { hit = true, x = x0, y = y0 } end
+  if hit and hit.hit then return hit end
+end
+
+-- Ignore nearby terrain for sight only, inside the circle swept by every
+-- possible muzzle position plus padding. Beyond it, even an initially solid
+-- ray must block. Firing still checks the actual tip and uses the full terrain.
+function turret.sight(t, a, tx, ty)
+  local px, py = a.x, a.y - t.muzzle_up
+  local dx, dy = tx - px, ty - py
+  local radius = t.muzzle_out + t.sight_grace_px
+  local distance2 = dx * dx + dy * dy
+  if distance2 <= radius * radius then return true end
+  local scale = radius / math.sqrt(distance2)
+  return not turret.trace(a, px + dx * scale, py + dy * scale, tx, ty)
 end
 
 local function turn_toward(cur, want, speed)
@@ -141,15 +197,16 @@ function turret.new(cfg)
   end
   local targets = cfg.targets or worm_targets
 
-  -- PX needs movement to notice a target, but keeps an acquired one on line
-  -- of sight alone. Seen from the head, not the feet on the ground.
-  local function sees(a, s, c, need_motion)
+  -- Movement is needed to notice a target; a held target may stop moving.
+  -- Nearby terrain has grace around the complete barrel sweep; normal sight
+  -- blocking applies beyond it. Firing also checks the current barrel tip.
+  local function can_track(a, s, c, need_motion)
     if c.alliance == s.alliance then return false end
     if need_motion and t.require_motion and not c.moving then return false end
     local ex, ey = a.x, a.y - t.muzzle_up
     local dx, dy = (c.x - ex) // 1, (c.y - ey) // 1
     if dx * dx + dy * dy > t.sensor_px * t.sensor_px then return false end
-    return not wa.land.trace(ex, ey, c.x, c.y)
+    return turret.sight(t, a, c.x, c.y)
   end
 
   -- The nearest moving enemy in sight; ties to the first listed, the same
@@ -158,7 +215,7 @@ function turret.new(cfg)
     local ex, ey = a.x, a.y - t.muzzle_up
     local best, best_d
     for _, c in ipairs(list) do
-      if sees(a, s, c, true) then
+      if can_track(a, s, c, true) then
         local dx, dy = (c.x - ex) // 1, (c.y - ey) // 1
         local d = dx * dx + dy * dy
         if not best_d or d < best_d then best, best_d = c, d end
@@ -167,11 +224,11 @@ function turret.new(cfg)
     return best
   end
 
-  -- PX keeps its target until it loses sight of it.
+  -- Keep the target while it remains eligible, in range and in sight.
   local function held(a, s, list)
     if s.tid == nil then return nil end
     for _, c in ipairs(list) do
-      if c.key == s.tid then return sees(a, s, c, false) and c or nil end
+      if c.key == s.tid then return can_track(a, s, c, false) and c or nil end
     end
     return nil
   end
@@ -225,6 +282,8 @@ function turret.new(cfg)
     if target then
       if not s.had_target then
         s.activate = t.activate
+        wa.log("Sentry acquired " .. t.kind .. " id=" .. a.id .. " target=" .. target.key
+          .. " at=(" .. target.x .. "," .. target.y .. ")")
         if s.beep <= 0 then
           play(a, t.sounds.beep)
           s.beep = t.beep_frames
@@ -277,7 +336,12 @@ function turret.new(cfg)
     -- PX latches firing once on target, until it loses it, runs dry or is
     -- disabled.
     local hold_fire = t.hold_own_turn and active_alliance == s.alliance
+    local muzzle_clear = false
     if target and not hold_fire and s.activate <= 0 and (s.firing or aligned) then
+      local mx, my = turret.muzzle(t, a, s.angle)
+      muzzle_clear = not turret.trace(a, mx, my, mx, my)
+    end
+    if muzzle_clear then
       t.start_firing(a, s)
       if s.fire_sound <= 0 then
         s.fire_sound = 35
@@ -287,7 +351,7 @@ function turret.new(cfg)
         t.fire(t, a, s, target)
         s.cooldown = t.shot_frames
       end
-    elseif not target or hold_fire then
+    else
       t.stop_firing(a, s)
     end
   end
@@ -336,59 +400,127 @@ function turret.new(cfg)
       disable(a, s)
       if s.health <= 0 then destroy(a, s, true); return end
     end
-    -- Oil-drum style: keep the vertical push, discard horizontal knock.
-    s.vx, a.vx = 0, 0
-    local push = ev.vy or 0
-    if push ~= 0 then
-      s.vy = s.vy + push
-      a.vy = 0
-      s.planted = false
-      t.stop_firing(a, s)
-    end
+    t.push(a, s, ev.vx or 0, ev.vy or 0)
   end
 
-  -- Feet are a moving, indestructible silhouette, overlapping the real
-  -- soil when planted. At the support level (7px above the mask anchor),
-  -- these two probes lie outside the stem and the bottom row, so its own
-  -- stamped bits cannot hold it up. Subpixel state stays in Lua.
-  local function contact(x, y, above)
-    local py = above and y - t.top_px - 1 or y - t.settle_px + 1
-    local offsets = above and { -3, 4 } or t.foot_offsets
-    for _, dx in ipairs(offsets) do
-      if wa.land.solid(x + dx, py) then return true end
-    end
-    return false
+  function t.push(a, s, vx, vy)
+    s.vx, s.vy = s.vx + vx, s.vy + vy
+    a.vx, a.vy = 0, 0
+    if vy < 0 then s.planted = false end
+    if vx ~= 0 or vy ~= 0 then t.stop_firing(a, s) end
+  end
+
+  local function touched(a, ev)
+    local s = state[a.id]
+    if not s or not ev.other then return end
+    local uid = ev.other.uid
+    if uid and s.script_hits[uid] then s.script_hits[uid] = nil; return end
+    if ev.other.kind == "worm" and s.planter and ev.other.id == s.planter_id then return end
+    local fraction = ev.other.kind == "worm" and t.contact_worm or t.contact_projectile
+    t.push(a, s, (ev.vx or 0) * fraction, (ev.vy or 0) * fraction)
+  end
+
+  function t.projectile_hit(a, s, damage, vx, vy, uid)
+    if uid then s.script_hits[uid] = wa.world.frame() end
+    hit(a, { damage = damage, vx = vx, vy = vy })
   end
 
   local function motion(a, s)
-    if s.planted and not contact(s.x, s.y, false) then
-      s.planted, s.vx, s.vy = false, 0, 0
+    local obstacles, land = nil, {}
+    local function other_feet()
+      if obstacles then return obstacles end
+      obstacles = {}
+      -- Settled sentries need only support probes. Snapshot obstacles once
+      -- when moving, including positions moved earlier in this Lua frame.
+      for _, other_t in ipairs(turrets) do
+        for _, id in ipairs(wa.sorted(other_t.state)) do
+          local other = other_t.state[id]
+          if id ~= a.id and other.body.id == id then
+            obstacles[#obstacles + 1] = { x = other.x, y = other.y }
+          end
+        end
+      end
+      return obstacles
+    end
+    local function solid(px, py)
+      px, py = math.floor(px), math.floor(py)
+      local row = land[py]
+      if not row then row = {}; land[py] = row end
+      if row[px] == nil then
+        -- Most leading pixels are air. Filter our own stamp only when the
+        -- grid says solid; real dirt and overlapping masks stay solid.
+        row[px] = wa.land.solid(px, py) and turret.trace(a, px, py, px, py) ~= nil
+      end
+      return row[px]
+    end
+    local function support(x, y)
+      for _, dx in ipairs(t.foot_offsets) do
+        if solid(x + dx, y - t.settle_px + 1) then return true end
+      end
+      return false
+    end
+    local function blocked(x, y)
+      for _, other in ipairs(other_feet()) do
+        if feet.intersects(x, y, other.x, other.y) then return true end
+      end
+      -- Test the newly entered silhouette pixels. Existing burial cannot
+      -- trap a knocked turret, and the burial band may slide through soil.
+      local ox, oy = math.floor(s.x), math.floor(s.y)
+      x, y = math.floor(x), math.floor(y)
+      for _, row in ipairs(feet.rows) do
+        if row[1] <= -t.settle_px then
+          for i = 2, #row, 2 do
+            for px = x + row[i], x + row[i + 1] do
+              if not feet.contains(ox, oy, px, y + row[1]) and solid(px, y + row[1]) then return true end
+            end
+          end
+        end
+      end
+      return false
+    end
+    if s.planted and not support(s.x, s.y) then
+      s.planted = false
       t.stop_firing(a, s)
       update_servo(a, s, false)
     end
-    if not s.planted then
-      s.vy = s.vy + wa.world.gravity()
+    if s.planted and s.vy > 0 then s.vy = 0 end
+    if not s.planted then s.vy = s.vy + wa.world.gravity() end
+    if s.vx ~= 0 or s.vy ~= 0 or not s.planted then
       local n = math.max(1, math.ceil(math.max(math.abs(s.vx), math.abs(s.vy))))
       local dx, dy = s.vx / n, s.vy / n
       for _ = 1, n do
-        local x, y = s.x + dx, s.y + dy
-        if contact(x, y, dy < 0) then
-          s.vx, s.vy = 0, 0
-          if dy >= 0 then
-            s.x, s.y = x, y
-            s.planted = true
-            wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
-              t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.settle_px + 1, t.settle_px))
-            play(a, t.sounds.place)
-          end
-          break
+        if dx ~= 0 then
+          if blocked(s.x + dx, s.y) then s.vx, dx = 0, 0
+          else s.x = s.x + dx end
         end
-        s.x, s.y = x, y
+        if dy < 0 then
+          if blocked(s.x, s.y + dy) then s.vy, dy = 0, 0
+          else s.y = s.y + dy; s.planted = false end
+        elseif dy > 0 then
+          if blocked(s.x, s.y + dy) and not support(s.x, s.y + dy) then
+            s.vy, dy = 0, 0
+          else
+            s.y = s.y + dy
+            if support(s.x, s.y) then
+              s.vy, dy = 0, 0
+              if not s.planted then
+                s.planted = true
+                wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
+                  t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.settle_px + 1, t.settle_px))
+                play(a, t.sounds.place)
+              end
+            end
+          end
+        end
+        if s.planted and not support(s.x, s.y) then s.planted = false end
+      end
+      if s.planted then
+        if math.abs(s.vx) <= t.slide_friction then s.vx = 0
+        elseif s.vx > 0 then s.vx = s.vx - t.slide_friction
+        else s.vx = s.vx + t.slide_friction end
       end
     end
     a.x, a.y, a.vx, a.vy = s.x, s.y, 0, 0
-    -- Native movement is off: the shared collision mask rides on these
-    -- positions, while all gravity and settling decisions stay in Lua.
     if a:in_water() then destroy(a, s, false); return false end
     return true
   end
@@ -399,6 +531,10 @@ function turret.new(cfg)
     -- Damage is consumed only by on.hit; the legacy frame damage accumulator
     -- may describe the same blast and must not deduct health twice.
     s.tick = s.tick + 1
+    local frame = wa.world.frame()
+    for uid, at in pairs(s.script_hits) do
+      if at < frame - 1 then s.script_hits[uid] = nil end
+    end
     if s.recoil > 0 then s.recoil = s.recoil - 1 end
     if s.firing or s.recoil > 0 then s.anim = s.anim + 1 end
     local stamped_x, stamped_y = s.x, s.y
@@ -463,7 +599,7 @@ function turret.new(cfg)
           if flash and (s.tick % 30) >= 15 then rgb = (rgb & 0xFEFEFE) >> 1 end
           local r = math.rad(angle)
           local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
-          sheet(t.art.light, x + lx, y + ly, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
+          sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
         end
       end
     end)
@@ -544,13 +680,13 @@ function turret.new(cfg)
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
       gravity = false, collide = false, drown = false, as_object = true,
       mask = true, mask_worms = true, mask_weapons = true, mask_land = false, mask_actors = false,
-      on = { frame = brain, hit = hit },
+      on = { frame = brain, hit = hit, contact = touched },
     })
     assert(body:collision_ignore(worm, true), "Sentry: could not register planter passage")
     local s = {
       alliance = alliance, planted = false, active = true, disabled = false, ammo = t.ammo,
       x = x, y = y, vx = body.vx, vy = body.vy, tick = 0,
-      health = t.health, angle = idle, idle = idle, side = facing < 0 and -1 or 1,
+      script_hits = {}, health = t.health, angle = idle, idle = idle, side = facing < 0 and -1 or 1,
       sweep_dir = 1, shots = 0, firing = false, anim = 0, rotating = false,
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,

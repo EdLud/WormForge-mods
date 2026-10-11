@@ -276,6 +276,7 @@ local function new_match(opts)
     world = {
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
+      frame = function() return M.frame or 0 end,
       turn_clock = function() return M.turn_clock or 0 end,
       water = function() return M.water or 32767.99998474121 end,
       size = function() return { w = M.map_w or 2000, h = M.map_h or 1000 } end,
@@ -351,10 +352,28 @@ local function new_match(opts)
             if dx * dx + dy * dy < (r + 9) * (r + 9) then return o end
           end
         end
-        local function solid_at(x, y) return M.solid((x // 1), (y // 1)) end
+        local function solid_at(x, y)
+          x, y = x // 1, y // 1
+          if M.solid and M.solid(x, y) then return true end
+          -- Actor stamps share the terrain grid, but ignore removes only
+          -- the named contributor; real terrain and other masks remain.
+          for _, a in ipairs(M.trace_masks or {}) do
+            local ignored = false
+            for _, o in ipairs(q.ignore or {}) do if o == a then ignored = true end end
+            if not ignored then
+              for _, row in ipairs(require("lib/sentry_mask").rows) do
+                if y == math.floor(a.y) + row[1] then
+                  for i = 2, #row, 2 do
+                    if x >= math.floor(a.x) + row[i] and x <= math.floor(a.x) + row[i + 1] then return true end
+                  end
+                end
+              end
+            end
+          end
+          return false
+        end
         local function overlaps(x, y)
           if body_at(x, y) then return true end
-          if not M.solid then return false end
           if solid_at(x, y) then return true end
           for rr = r, 1, -4 do
             for _, d in ipairs(RIM) do
@@ -504,11 +523,11 @@ local function new_match(opts)
         end
         M.next_actor_id = (M.next_actor_id or 0) + 1
         -- `on` is a frame function or a table of handlers (frame, land, hit).
-        local on, hit = spec.on, nil
-        if type(on) == "table" then on, hit = spec.on.frame, spec.on.hit end
+        local on, hit, contact = spec.on, nil, nil
+        if type(on) == "table" then on, hit, contact = spec.on.frame, spec.on.hit, spec.on.contact end
         local a = { id = M.next_actor_id, sprite = spec.sprite, x = spec.x, y = spec.y,
                     vx = spec.vx or 0, vy = spec.vy or 0, dead = false,
-                    explode = spec.explode, on = on, hit = hit, owner = spec.owner, as_object = spec.as_object,
+                    explode = spec.explode, on = on, hit = hit, contact = contact, owner = spec.owner, as_object = spec.as_object,
                     shape = spec.shape, spec = spec }
         function a:gfx(g)
           self.angle, self.scale, self.tint, self.blend, self.depth = g.angle, g.scale, g.tint, g.blend, g.depth
@@ -570,6 +589,11 @@ local function new_match(opts)
       end,
     },
     weapons = {
+      fire_bullet = function(spec)
+        assert(spec.weapon == "uzi" and spec.owner ~= nil)
+        M.bullets = M.bullets or {}
+        M.bullets[#M.bullets + 1] = spec
+      end,
       replace = function(spec)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
         replaced[#replaced + 1] = spec
@@ -672,6 +696,7 @@ local function new_match(opts)
   M.quads, M.ribbons, M.sounds, M.sound_flags, M.sound_positions, M.trace_hit, M.draws =
     {}, {}, {}, {}, {}, nil, nil
   M.mines, M.missiles, M.crates, M.oil, M.graves = {}, {}, {}, {}, {}
+  M.trace_masks = nil
   -- The engine's require: a pack module runs once per match, in its own
   -- environment that reads the shared globals and keeps its writes.
   local modules = {}
@@ -1041,11 +1066,14 @@ do
     and not body.spec.mask_land and not body.spec.mask_actors and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it falls and plants on the land, with PX's sound",
-    body.y >= 117 and body.y < 118 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
+    body.y >= 113 and body.y < 114 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
+  M.trace_masks = { body }
+  M.trace_hit = { x = body.x, y = body.y - turret.muzzle_up }
+  check("its sight origin is inside its own authored mask",
+    wa.world.trace { x0 = body.x, y0 = body.y - turret.muzzle_up,
+      x1 = body.x + 50, y1 = body.y - turret.muzzle_up }.starts_solid)
   local function impacts()
-    local n = 0
-    for _, a in ipairs(M.spawned) do if a.sprite == "sprites/sentry_gun/impact.png" then n = n + 1 end end
-    return n
+    return #(M.bullets or {})
   end
   local function run(n)
     for _ = 1, n do
@@ -1057,7 +1085,17 @@ do
   run(50)
   check("it waits 60 frames once it has a target", impacts() == 0)
   run(40)
-  check("then it fires at the enemy, rounds bursting at it", impacts() >= 3, impacts())
+  check("then it fires stock Uzi rounds at the enemy", impacts() >= 3, impacts())
+  local bullet = M.bullets[1]
+  local dx, dy = bullet.x - body.x, bullet.y - (body.y - turret.muzzle_up)
+  check("2 damage, muzzle origin, unit direction, only its own feet excluded",
+    bullet.damage == 2 and bullet.ignore[1] == body and #bullet.ignore == 1
+    and math.abs(dx * dx + dy * dy - 121) < 0.02
+    and math.abs(bullet.dx * bullet.dx + bullet.dy * bullet.dy - 1) < 0.001)
+  check("rounds create no explosion actors", #M.actor_booms == 0)
+  for _, a in ipairs(M.spawned) do
+    check("only body and ejected casings", a == body or a.sprite == "sprites/sentry_gun/casing")
+  end
   M.quads = {}; M.draw()
   local head
   for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun" then head = q end end
@@ -1070,13 +1108,23 @@ do
   enemy.x = 300  -- back in range: it has walked on meanwhile
   run(100)
   check("and fires again on the enemy's", impacts() > before, impacts() - before)
-  check("its rounds are its owner's while the owner lives", M.spawned[#M.spawned].owner == owner)
+  check("its rounds are its owner's while the owner lives", M.bullets[#M.bullets].owner == owner)
   -- Losing the placing worm does not lose coalition ownership.
   for i, w in ipairs(worms) do if w == owner then table.remove(worms, i) break end end
   before = impacts()
   run(20)
   check("after the placing worm dies, a live coalition member parents its rounds", impacts() > before
-    and M.spawned[#M.spawned].owner == worm(17))
+    and M.bullets[#M.bullets].owner == worm(17))
+  local coalition = {}
+  for i = #worms, 1, -1 do
+    if worms[i].alliance == state.alliance then coalition[#coalition + 1] = table.remove(worms, i) end
+  end
+  before = impacts()
+  local remaining = state.ammo
+  run(20)
+  check("an eliminated coalition retains its sentry without invalid native shots",
+    impacts() == before and state.ammo == remaining and not state.firing)
+  for _, w in ipairs(coalition) do worms[#worms + 1] = w end
   worms[#worms + 1] = owner
   body.hit(body, { kind = "blast", damage = 10, vy = 0 })
   body.on(body, { damage = 10 })
@@ -1111,6 +1159,8 @@ do
     and body.sprite == "sprites/sentry_laser/turret_mask.png" and body.spec.mask and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it plants with PX's sound", M.actor_sounds[#M.actor_sounds] == "sounds/sentry_laser/sentrylaserplace.wav")
+  M.trace_masks = { body }
+  M.trace_hit = { x = body.x, y = body.y - turret.muzzle_up }
   local function disintegrations()
     local n = 0
     for _, snd in ipairs(M.actor_sounds) do if snd == "sounds/sentry_laser/sentrylaserdisin.wav" then n = n + 1 end end
@@ -1183,6 +1233,120 @@ do
   M.solid, M.gravity, M.missiles = nil, nil, {}
 end
 
+print("Sentry traces: ignore own feet, retain real terrain and other actors")
+do
+  new_match()
+  local trace = require("lib/turret").trace
+  local body, other = { x = 100, y = 100 }, { x = 100, y = 100 }
+  M.trace_masks = { body }
+  check("clear sight through its own mask", trace(body, 100, 83, 150, 83) == nil)
+  M.trace_masks = { body, other }
+  local hit = trace(body, 100, 83, 150, 83)
+  check("an overlapping actor still blocks at the origin", hit and hit.x == 100 and hit.y == 83)
+  M.trace_masks = { body }
+  M.solid = function(x, y) return x == 100 and y == 83 end
+  hit = trace(body, 100, 83, 150, 83)
+  check("terrain beneath its own mask still blocks", hit and hit.x == 100 and hit.y == 83)
+  M.solid = function(x) return x >= 125 end
+  hit = trace(body, 100, 83, 150, 83)
+  check("a wall beyond its own feet still blocks", hit and hit.x >= 124 and hit.x < 125)
+  M.solid = nil
+end
+
+print("Sentries: nearby terrain has sight grace; distant terrain blocks tracking")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, facing in ipairs({ -1, 1 }) do
+      new_match()
+      local shared, turret = require("lib/shared"), require("lib/turret")
+      local t = shared[kind]
+      local owner, enemy = worm(16), worm(32)
+      for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+      owner.x, owner.y, owner.facing = 100, 100, facing
+      M.gravity = 0.25
+      M.solid = function(_, y) return y >= 110 end
+      local body, s = t.place({ worm = owner })
+      for _ = 1, 40 do body.on(body) end
+      local px, py = body.x, body.y - t.muzzle_up
+      enemy.x, enemy.y, enemy.vx = px + facing * 150, py, 1
+      local projectile = { id = 940, kind = "missile", alliance = enemy.alliance,
+        x = enemy.x, y = py, vx = 1, vy = 0 }
+      M.missiles = { projectile }
+      local shots = 0
+      t.fire = function() shots = shots + 1 end
+      s.angle = s.idle + 30
+      M.solid = function(x, y) return y >= 110 or (math.abs(x - px) <= 3 and math.abs(y - py) <= 3) end
+      local old_angle = s.angle
+      body.on(body)
+      check(kind .. ": buried pivot still acquires and turns, facing " .. facing,
+        s.had_target and s.angle ~= old_angle)
+      for _ = 1, 100 do body.on(body) end
+      check(kind .. ": buried pivot still fires from its clear tip", shots > 0)
+      local mx, my = turret.muzzle(t, body, s.angle)
+      M.solid = function(x, y)
+        return y >= 110 or (math.abs(x - math.floor(mx)) <= 1 and math.abs(y - math.floor(my)) <= 1)
+      end
+      local before = shots
+      for _ = 1, 20 do body.on(body) end
+      check(kind .. ": blocked tip stops firing and spends no shot", shots == before and not s.firing and s.had_target)
+      -- A wall outside the grace circle blocks tracking and firing.
+      M.solid = function(x, y) return y >= 110 or math.abs(x - (px + facing * 60)) <= 1 end
+      for _ = 1, 20 do body.on(body) end
+      check(kind .. ": distant wall loses the target and stops firing", shots == before and not s.firing and not s.had_target)
+      M.solid = function(_, y) return y >= 110 end
+      for _ = 1, 100 do body.on(body) end
+      check(kind .. ": removing the distant wall restores tracking and firing", shots > before)
+
+      -- Use horizontal and diagonal rays around the complete sweep, not a
+      -- grace area anchored to the current barrel direction.
+      for _, direction in ipairs({ {facing, 0}, {0, -1}, {facing, -1} }) do
+        local dx, dy = direction[1], direction[2]
+        local norm = math.sqrt(dx * dx + dy * dy)
+        dx, dy = dx / norm, dy / norm
+        local radius = t.muzzle_out + t.sight_grace_px
+        local inside_x, inside_y = math.floor(px + dx * (radius - 3)), math.floor(py + dy * (radius - 3))
+        M.solid = function(x, y) return x == inside_x and y == inside_y end
+        check(kind .. ": terrain inside the full tip sweep has grace", turret.sight(t, body, px + dx * 150, py + dy * 150))
+        local outside_x, outside_y = math.floor(px + dx * (radius + 3)), math.floor(py + dy * (radius + 3))
+        M.solid = function(x, y) return math.abs(x - outside_x) <= 1 and math.abs(y - outside_y) <= 1 end
+        check(kind .. ": terrain outside the grace circle blocks sight", not turret.sight(t, body, px + dx * 150, py + dy * 150))
+      end
+      M.solid = function() return true end
+      check(kind .. ": grace cannot skip a solid ray origin beyond its boundary", not turret.sight(t, body, px + facing * 150, py))
+      check(kind .. ": targets inside the grace circle require no sight ray", turret.sight(t, body, px + facing * 5, py))
+      M.solid, M.gravity = nil, nil
+    end
+  end
+end
+
+print("Sentry Laser: terrain after the muzzle stops the beam, not firing")
+do
+  new_match()
+  local owner, enemy = worm(16), worm(32)
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y = 100, 100
+  M.gravity, M.digs = 0.25, {}
+  M.solid = function(_, y) return y >= 110 end
+  local t = require("lib/shared").sentry_laser
+  local body, s = t.place({ worm = owner })
+  for _ = 1, 40 do body.on(body) end
+  local py = body.y - t.muzzle_up
+  local projectile = { id = 950, kind = "missile", x = 220, y = py, alliance = enemy.alliance, vx = 1, vy = 0 }
+  function projectile:remove() self.removed = true; return true end
+  local target = { x = projectile.x, y = projectile.y, obj = projectile }
+  s.angle = 90
+  enemy.x, enemy.y = 200, py
+  M.solid = function(x, y) return y >= 110 or x == 160 end
+  local ammo = s.ammo
+  t.fire(t, body, s, target)
+  check("a wall receives the shot and protects the target beyond it",
+    not projectile.removed and enemy.hp == 100 and s.ammo == ammo - 1 and M.digs[#M.digs].x < 160)
+  M.solid = function(_, y) return y >= 110 end
+  t.fire(t, body, s, target)
+  check("a clear beam still disintegrates its target", projectile.removed and enemy.hp == 90)
+  M.solid, M.gravity = nil, nil
+end
+
 print("Sentries: movable feet, damage, lights and coalition capture")
 do
   for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
@@ -1200,7 +1364,7 @@ do
     local body, s = t.place({ worm = owner })
     for _ = 1, 40 do body.on(body) end
     local x, y, hp = body.x, body.y, s.health
-    check(kind .. ": mask overlaps the ground by the requested settling depth", s.planted and y >= 117 and y < 118)
+    check(kind .. ": mask overlaps the ground by the requested settling depth", s.planted and y >= 113 and y < 114)
     for _ = 1, 30 do body.on(body) end
     check(kind .. ": no repeated planting or downward creep", s.planted and body.y == y)
     local mask = require("lib/sentry_mask")
@@ -1222,11 +1386,11 @@ do
     check(kind .. ": destroying support starts a fall despite its old stamped mask", not s.planted and body.y > y and s.health == hp)
     M.solid = function(_, py) return py >= floor end
     for _ = 1, 60 do body.on(body) end
-    check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 207 and body.y < 208 and #M.spawned == 1)
+    check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 203 and body.y < 204 and #M.spawned == 1)
     y = body.y
     body.hit(body, { kind = "blast", damage = 3, vx = 9, vy = -4 })
     body.on(body, { damage = 3 })
-    check(kind .. ": blast moves up only, counted once and disabled", body.x == x and body.y < y and s.health == hp - 3 and s.disabled and not s.active)
+    check(kind .. ": blast moves horizontally and up, counted once and disabled", body.x > x and body.y < y and s.health == hp - 3 and s.disabled and not s.active, string.format("pos %.2f %.2f old %.2f %.2f speed %.2f %.2f", body.x, body.y, x, y, s.vx, s.vy))
     for _ = 1, 60 do body.on(body) end
     check(kind .. ": damage lockout survives landing", s.planted and s.disabled and not s.active)
     M.message(enemy, wa.msg.START_TURN)
@@ -1240,7 +1404,7 @@ do
     M.message(enemy, wa.msg.START_TURN)
     body.hit(body, { kind = "hit", damage = 0, vx = -8, vy = -2 })
     body.on(body)
-    check(kind .. ": zero-damage push lifts without damage lockout", not s.planted and not s.disabled and body.x == x and s.health == hp - 3)
+    check(kind .. ": zero-damage push lifts without damage lockout", not s.planted and not s.disabled and s.vx < 0 and s.health == hp - 3)
     for _ = 1, 50 do body.on(body) end
     local before_rng, before_spawn = rng, #M.spawned
     M.quads = {}; s.tick = 0; M.draw()
@@ -1271,6 +1435,68 @@ do
   end
 end
 
+print("Sentries: worm and projectile contacts, sliding, walls and ledges")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match()
+    local t = require("lib/shared")[kind]
+    local owner, enemy = worm(16), worm(32)
+    for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+    owner.x, owner.y = 100, 100
+    M.gravity = 0.25
+    M.solid = function(_, y) return y >= 110 end
+    local a, s = t.place({ worm = owner })
+    for _ = 1, 40 do a.on(a) end
+    check(kind .. ": contact callback is enabled on the same feet actor", type(a.contact) == "function")
+    local x, y, hp = s.x, s.y, s.health
+    a.contact(a, { other = owner, vx = 8, vy = -4 })
+    check(kind .. ": passage for the original planter also excludes pushes", s.vx == 0 and s.vy == 0)
+    owner.x = 5000; a.on(a)
+    a.contact(a, { other = enemy, vx = 8, vy = -4 })
+    check(kind .. ": another jumping worm transfers velocity without damage", s.vx == 4 and s.vy == -2 and s.health == hp and not s.disabled)
+    a.on(a)
+    check(kind .. ": a jump contact moves sideways and up", a.x > x and a.y < y)
+    for _ = 1, 80 do a.on(a) end
+    check(kind .. ": settles and friction stops ground sliding", s.planted and s.vx == 0 and s.vy == 0 and s.health == hp)
+    -- Reset position between independent obstacle cases, without new bodies.
+    s.x, s.y, a.x, a.y = x, y, x, y
+    a.contact(a, { other = { kind = "arrow", uid = 501, alive = false }, vx = -8, vy = 0 })
+    check(kind .. ": a freed stock arrow supplies quarter incoming momentum", s.vx == -2 and s.health == hp)
+    a.on(a)
+    check(kind .. ": a horizontal push slides on supported ground", a.x < x and s.planted and s.vx > -2)
+    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 100, 0, true
+    M.solid = function(px, py) return py >= 110 or px >= 125 end
+    a.on(a)
+    check(kind .. ": fast rightward motion cannot tunnel through a one-pixel wall", a.x > x and a.x < 125 and s.vx == 0)
+    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, -100, 0, true
+    M.solid = function(px, py) return py >= 110 or px <= 75 end
+    a.on(a)
+    check(kind .. ": fast leftward motion stops at the authored feet", a.x < x and a.x > 75 and s.vx == 0)
+    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 0, -50, false
+    M.solid = function(_, py) return py >= 110 or py <= 60 end
+    a.on(a)
+    check(kind .. ": upward momentum stops below a ceiling", a.y < y and a.y - 22 > 60 and s.vy == 0)
+    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 20, 0, true
+    M.solid = function(px, py) return px < 105 and py >= 110 end
+    a.on(a); a.on(a)
+    check(kind .. ": sliding beyond support retains momentum and starts falling", a.x > 120 and a.y > y and not s.planted and s.vx > 0)
+    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 0, 0, true
+    M.solid = function(_, py) return py >= 110 end
+    owner.x, owner.y = 140, 100
+    local other = t.place({ worm = owner })
+    for _ = 1, 40 do other.on(other) end
+    owner.x = 5000
+    s.vx = 60; a.on(a)
+    check(kind .. ": another sentry stops sliding with no overlapping silhouettes",
+      not require("lib/sentry_mask").intersects(a.x, a.y, other.x, other.y) and a.x < other.x and s.vx == 0)
+    s.vx, s.vy = 0, 0
+    t.projectile_hit(a, s, 20, 2, -1, 777)
+    a.contact(a, { other = { kind = "missile", uid = 777, alive = false }, vx = 8, vy = -4 })
+    check(kind .. ": Javelin contact does not add its impulse twice", s.vx == 2 and s.vy == -1 and s.health == hp - 20)
+    M.solid, M.gravity = nil, nil
+  end
+end
+
 print("Sentry placement: at the planter, clear of other worms and walls; buried visual feet")
 do
   for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
@@ -1296,7 +1522,7 @@ do
       -- The original feet are at source row49, 17px below its quad centre.
       local visible_feet = centre_y + 17
       check(kind .. ": full feet art remains 8px below the buried mask anchor", math.abs(visible_feet-body.y-8) < 0.000001
-        and visible_feet > 100 and body.y >= 107 and body.y < 108
+        and visible_feet > 100 and body.y >= 103 and body.y < 104
         and base.depth == wa.depth.BEHIND_TERRAIN)
       body:despawn(); t.state[body.id] = nil
       -- An allied worm stands exactly where the first candidate would be.
@@ -2710,6 +2936,20 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing" and #M.spawned == n
     and w.gravity == 1 and not w.steered and w.body_visible == true)
+  -- A native sentry bullet puts the flying worm in WA's hit state. The
+  -- Helicopter must release its steering/art without replacing the knock.
+  w.state = "prefiring"
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "jetpacking"
+  M.message(w, wa.msg.FRAME_FINISH)
+  local flying = M.spawned[#M.spawned]
+  w.state, w.vx, w.vy = "hit", 3, -2
+  n = #M.spawned
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("a bullet hit cancels flight and preserves WA's hit state and push",
+    w.state == "hit" and w.vx == 3 and w.vy == -2 and w.gravity == 1
+    and w.wind == 0 and not w.steered and w.body_visible == true
+    and flying.dead and #M.spawned == n)
   -- The last Helicopter: WA clears the selection when it fires.
   w.state, w.weapon, w.vy = "prefiring", "jet_pack", 0
   M.message(w, wa.msg.FRAME_FINISH)
@@ -3831,7 +4071,7 @@ do
   local id = 0
   local function impact(vx, vy)
     id = id + 1
-    M.missile({ weapon = "prod", id = id, phase = "pre", vx = vx, vy = vy })
+    M.missile({ weapon = "prod", id = id, uid = id + 1000, phase = "pre", vx = vx, vy = vy })
     -- WA's explosion reports the missile's owner, which is not a worm.
     spec.on_explode({ x = 100, y = 100, missile = id, worm = { owner_object = true } })
   end
@@ -3883,6 +4123,23 @@ do
   local n = #M.stamps
   M.draw()
   check("drawing never writes terrain", #M.stamps == n)
+  -- Sentries are absent from the native electrical object list.
+  nearby = {}
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y = 100, 108
+  M.solid = function() return false end
+  local t = require("lib/shared").sentry_gun
+  local a, state = t.place({ worm = owner })
+  owner.x, owner.y = 5000, 5000
+  local hp, stamps = state.health, #M.stamps
+  impact(8, -4)
+  check("Javelin finds scripted sentry bodies and deals 20 damage without a terrain stamp",
+    state.health == hp - 20 and state.disabled and #M.stamps == stamps)
+  check("Javelin gives the sentry quarter incoming velocity", state.vx == 2 and state.vy == -1)
+  a.contact(a, { other = { kind = "missile", uid = id + 1000, alive = false }, vx = 8, vy = -4 })
+  check("the same native Javelin contact cannot double the push", state.vx == 2 and state.vy == -1)
+  M.solid = nil
+
 end
 
 print("pack sounds: every WAV registered")

@@ -28,6 +28,16 @@ local rows = {
 }
 local mask = { rows = rows, top = 22, left = -13, right = 7, burial = 8 }
 
+-- Constant-time membership in the exact authored row runs.
+function mask.contains(x, y, px, py)
+  local row = rows[py - y + mask.top + 1]
+  if not row then return false end
+  for i = 2, #row, 2 do
+    if px >= x + row[i] and px <= x + row[i + 1] then return true end
+  end
+  return false
+end
+
 function mask.overlaps_worm(x, y, worm)
   x, y = math.floor(x), math.floor(y)
   local wx, wy = worm.x, worm.y

@@ -2,7 +2,7 @@
 -- PxSentryLaser and CLaserRayS, by rafa``2), on the Dragon Ball slot as
 -- PX's Highlander scheme has it. Projectile defence: the turret of
 -- lib/turret.lua, aimed not at worms but at the nearest moving missile, mine
--- or Bowling Ball of another colour within 300 px that it can see. Each of
+-- or Bowling Ball of another colour within 300 px, in sight beyond its barrel-sweep grace area. Each of
 -- its 4 shots a turn is a short laser in its owner's colour that
 -- disintegrates the target (gone, no explosion) and burns what is in
 -- between: worms 10, crates and oil drums 20, a mine armed, a 4 px hole
@@ -144,11 +144,9 @@ end
 -- and disintegrates the target.
 local function fire(t, a, s, target)
   local ang = math.rad(s.angle)
-  local px, py = a.x, a.y - t.muzzle_up
-  local x0 = px + (wa.math.sin(ang) * MUZZLE_OUT)
-  local y0 = py + (wa.math.cos(ang) * MUZZLE_OUT)
+  local x0, y0 = turret.muzzle(t, a, s.angle)
   local hx, hy = target.x, target.y
-  local land = wa.land.trace(x0, y0, hx, hy)
+  local land = turret.trace(a, x0, y0, hx, hy)
   if land then hx, hy = land.x, land.y end
   local lx, ly = (hx - x0), (hy - y0)
   local length = math.sqrt(lx * lx + ly * ly)
@@ -174,19 +172,20 @@ local function fire(t, a, s, target)
     fx_hit_object(r, obj.x + (3 * dx), obj.y + (3 * dy))
   end
 
-  -- Disintegrate: the target goes without bursting.
-  if target.ball then
-    shared.remove_bowling_ball(target.ball)
-  elseif target.obj then
-    target.obj:remove()
+  -- A shot stopped by intervening terrain cannot destroy a target beyond it.
+  if not land then
+    if target.ball then
+      shared.remove_bowling_ball(target.ball)
+    elseif target.obj then
+      target.obj:remove()
+    end
+    fx_disintegrate(r, target.x, target.y)
+    a:sound(SND .. "sentrylaserdisin.wav")
+    -- The target is gone: acquire the next one with its own beep and delay.
+    s.tid, s.had_target = nil, false
   end
-  fx_disintegrate(r, target.x, target.y)
-  a:sound(SND .. "sentrylaserdisin.wav")
   ray_actor(r, a)
 
-  -- The target is gone: the turret takes the next one as a new one (a beep,
-  -- then its delay).
-  s.tid, s.had_target = nil, false
   t.stop_firing(a, s)
   s.recoil = RECOIL_FRAMES
   s.ammo = s.ammo - 1
@@ -195,6 +194,7 @@ end
 
 local sentry = turret.new({
   kind = "sentry_laser", slot = "dragon_ball",
+  muzzle_out = MUZZLE_OUT,
   sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
   rot_active = 5.0, aim_tolerance = 5.0, health = 35, hold_own_turn = false,
   art = { base = ART .. "turret_base", mask = ART .. "turret_mask.png", gun = ART .. "turret_body", barrel = ART .. "turret_barrel", light = ART .. "turret_light.png" },
