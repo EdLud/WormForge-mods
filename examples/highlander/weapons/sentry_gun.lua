@@ -101,8 +101,8 @@ local function fire(t, a, s)
 end
 
 local gun = turret.new({
-  kind = "sentry",
-  art = { base = ART .. "turret_base", gun = ART .. "turret_gun", flare = ART .. "turret_flare" },
+  kind = "sentry", slot = "kamikaze",
+  art = { base = ART .. "turret_base", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun", flare = ART .. "turret_flare", light = ART .. "turret_light.png" },
   sounds = {
     place = SND .. "sentryplace.wav", beep = SND .. "sentrybeeps2.wav",
     fire_loop = SND .. "sentryfireloop.wav", fire_end = SND .. "sentryfireend.wav",

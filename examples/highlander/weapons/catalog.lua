@@ -125,8 +125,8 @@ local PX_ART = {
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing", "sprites/sentry_gun/turret_base",
-      "sprites/sentry_gun/turret_gun", "sprites/sentry_gun/turret_flare",
+      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing", "sprites/sentry_gun/turret_base", "sprites/sentry_gun/turret_mask.png",
+      "sprites/sentry_gun/turret_gun", "sprites/sentry_gun/turret_flare", "sprites/sentry_gun/turret_light.png",
     },
     sounds = {
       "sounds/sentry_gun/sentryplace.wav", "sounds/sentry_gun/sentrybeeps2.wav",
@@ -139,7 +139,7 @@ local PX_ART = {
       -- The take-out and placing play frame by frame, not as aim sheets.
       worm_sprites_animate = true,
       -- The turret between terrain (0x180000) and soil (0x1B0000): the
-      -- landscape hides its sunk feet. The worm's sheets stay in front.
+      -- real landscape can occlude its feet. The worm's sheets stay in front.
       depth = wa.depth.BEHIND_TERRAIN,
       depth_prefix = "sprites/sentry_gun/turret_",
       gpu_prefix = "sprites/sentry_gun/turret_",
@@ -168,8 +168,8 @@ local PX_ART = {
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_laser/turret_base", "sprites/sentry_laser/turret_body",
-      "sprites/sentry_laser/turret_barrel",
+      "sprites/sentry_laser/turret_base", "sprites/sentry_laser/turret_mask.png", "sprites/sentry_laser/turret_body",
+      "sprites/sentry_laser/turret_barrel", "sprites/sentry_laser/turret_light.png",
     },
     sounds = {
       "sounds/sentry_laser/sentrylaserplace.wav", "sounds/sentry_laser/sentrylaserbeep.wav",

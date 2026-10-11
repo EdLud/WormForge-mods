@@ -509,11 +509,17 @@ local function new_match(opts)
         local a = { id = M.next_actor_id, sprite = spec.sprite, x = spec.x, y = spec.y,
                     vx = spec.vx or 0, vy = spec.vy or 0, dead = false,
                     explode = spec.explode, on = on, hit = hit, owner = spec.owner, as_object = spec.as_object,
-                    shape = spec.shape }
+                    shape = spec.shape, spec = spec }
         function a:gfx(g)
           self.angle, self.scale, self.tint, self.blend, self.depth = g.angle, g.scale, g.tint, g.blend, g.depth
         end
         function a:frame(i) self.shown = i end
+        a.ignored_worms, a.ignore_calls = {}, {}
+        function a:collision_ignore(w, enabled)
+          self.ignored_worms[w.id] = enabled or nil
+          self.ignore_calls[#self.ignore_calls + 1] = { worm = w.id, enabled = enabled }
+          return true
+        end
         -- As the engine's a:fits: here a 3-pixel shape against M.solid.
         function a:fits(x, y)
           if not M.solid then return true end
@@ -537,7 +543,7 @@ local function new_match(opts)
         end
         function a:advance() end
         function a:in_water() return self.y >= (M.water or 32767.99998474121) end
-        function a:despawn() self.dead = true end
+        function a:despawn() self.dead = true; self.ignored_worms = {} end
         -- a.explode is the spawn's explode spec and a:explode(opts) the
         -- method, as on the engine's actor: a callable table.
         a.explode = setmetatable(a.explode or {}, { __call = function(_, self, opts)
@@ -551,6 +557,7 @@ local function new_match(opts)
         end
         M.spawned = M.spawned or {}
         M.spawned[#M.spawned + 1] = a
+        if spec.explode and spec.explode.now then a:explode(spec.explode) end
         return a
       end,
     },
@@ -1025,13 +1032,16 @@ do
   M.solid = function(_, y) return y >= 110 end
   M.gravity, M.spawned, M.actor_sounds, M.actor_booms = 0.25, {}, {}, {}
   spec.on_fire({ worm = owner })
-  local body, head = M.spawned[#M.spawned - 2], M.spawned[#M.spawned - 1]
-  check("a body, a head and a flare, in front of the worm", body.sprite == "sprites/sentry_gun/turret_base"
-    and head.sprite == "sprites/sentry_gun/turret_gun" and M.spawned[#M.spawned].sprite == "sprites/sentry_gun/turret_flare"
-    and body.x == 105)
+  local body = M.spawned[#M.spawned]
+  local turret = require("lib/shared").sentry_gun
+  local state = turret.state[body.id]
+  check("one persistent body carries indestructible feet for worms and weapons", #M.spawned == 1
+    and body.sprite == "sprites/sentry_gun/turret_mask.png" and body.x == 100
+    and body.spec.mask and body.spec.mask_worms and body.spec.mask_weapons
+    and not body.spec.mask_land and not body.spec.mask_actors and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it falls and plants on the land, with PX's sound",
-    body.y >= 110 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
+    body.y >= 117 and body.y < 118 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
   local function impacts()
     local n = 0
     for _, a in ipairs(M.spawned) do if a.sprite == "sprites/sentry_gun/impact.png" then n = n + 1 end end
@@ -1048,7 +1058,10 @@ do
   check("it waits 60 frames once it has a target", impacts() == 0)
   run(40)
   check("then it fires at the enemy, rounds bursting at it", impacts() >= 3, impacts())
-  check("its head is drawn in its owner's colour", head.tint == 0xFF6447 and head.depth == wa.depth.FRONT)
+  M.quads = {}; M.draw()
+  local head
+  for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun" then head = q end end
+  check("its head is drawn in its coalition colour", head and (head.color & 0xFFFFFF) == 0xFF6447 and head.depth == wa.depth.FRONT)
   M.message(owner, wa.msg.START_TURN)
   local before = impacts()
   run(60)
@@ -1058,20 +1071,22 @@ do
   run(100)
   check("and fires again on the enemy's", impacts() > before, impacts() - before)
   check("its rounds are its owner's while the owner lives", M.spawned[#M.spawned].owner == owner)
-  -- WA frees a worm that dies: the turret owns its rounds then.
+  -- Losing the placing worm does not lose coalition ownership.
   for i, w in ipairs(worms) do if w == owner then table.remove(worms, i) break end end
   before = impacts()
   run(20)
-  check("its owner dead, it fires on, its rounds its own", impacts() > before
-    and M.spawned[#M.spawned].owner == body)
+  check("after the placing worm dies, a live coalition member parents its rounds", impacts() > before
+    and M.spawned[#M.spawned].owner == worm(17))
   worms[#worms + 1] = owner
+  body.hit(body, { kind = "blast", damage = 10, vy = 0 })
   body.on(body, { damage = 10 })
+  check("blast damage is counted once, ignoring its repeated frame accumulator", state.health == 40)
   before = impacts()
   run(120)
   check("a blast disables it for the turn", impacts() == before)
-  body.on(body, { damage = 40 })
+  body.hit(body, { kind = "hit", damage = 40 })
   check("at 0 of its 50 health it explodes, damage 50, blast 100, and its head goes",
-    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and M.actor_booms[1].opts.id == 100 and head.dead)
+    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and M.actor_booms[1].opts.id == 100 and body.dead and turret.state[body.id] == nil)
   M.solid, M.gravity = nil, nil
 end
 
@@ -1090,9 +1105,10 @@ do
   M.solid = function(_, y) return y >= 110 end
   M.gravity, M.spawned, M.actor_sounds, M.actor_booms, M.digs = 0.25, {}, {}, {}, {}
   spec.on_fire({ worm = owner })
-  local body, head, barrel = M.spawned[#M.spawned - 2], M.spawned[#M.spawned - 1], M.spawned[#M.spawned]
-  check("a base, a body and a barrel", body.sprite == "sprites/sentry_laser/turret_base"
-    and head.sprite == "sprites/sentry_laser/turret_body" and barrel.sprite == "sprites/sentry_laser/turret_barrel")
+  local body = M.spawned[#M.spawned]
+  local turret = require("lib/shared").sentry_laser
+  check("one body, with the head and barrel rendered separately", #M.spawned == 1
+    and body.sprite == "sprites/sentry_laser/turret_mask.png" and body.spec.mask and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it plants with PX's sound", M.actor_sounds[#M.actor_sounds] == "sounds/sentry_laser/sentrylaserplace.wav")
   local function disintegrations()
@@ -1161,10 +1177,329 @@ do
   for _ = 1, 60 do body.on(body) end
   check("an enemy's moving Bowling Ball is disintegrated too, its own colour's spared",
     disintegrations() == 6 and ball.gone and not own_ball.gone, disintegrations())
-  body.on(body, { damage = 35 })
+  body.hit(body, { kind = "blast", damage = 35 })
   check("at 0 of its 35 health it explodes, damage 50, blast 100, body and barrel gone",
-    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and head.dead and barrel.dead)
+    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and body.dead and turret.state[body.id] == nil)
   M.solid, M.gravity, M.missiles = nil, nil, {}
+end
+
+print("Sentries: movable feet, damage, lights and coalition capture")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match()
+    local shared = require("lib/shared")
+    local t = shared[kind]
+    local owner, ally, enemy = worm(16), worm(17), worm(32)
+    for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+    owner.x, owner.y = 100, 100
+    -- Allied team with its own physical ammo group, same coalition colour.
+    ally.team, ally.ammo_group = 9, 9
+    local floor = 110
+    M.solid = function(_, y) return y >= floor end
+    M.gravity, M.spawned, M.actor_sounds, M.actor_booms = 0.25, {}, {}, {}
+    local body, s = t.place({ worm = owner })
+    for _ = 1, 40 do body.on(body) end
+    local x, y, hp = body.x, body.y, s.health
+    check(kind .. ": mask overlaps the ground by the requested settling depth", s.planted and y >= 117 and y < 118)
+    for _ = 1, 30 do body.on(body) end
+    check(kind .. ": no repeated planting or downward creep", s.planted and body.y == y)
+    local mask = require("lib/sentry_mask")
+    local stamped_x, stamped_y = math.floor(s.x), math.floor(s.y)
+    floor = 200
+    M.solid = function(px, py)
+      px, py = math.floor(px), math.floor(py)
+      if py >= floor then return true end
+      for _, row in ipairs(mask.rows) do
+        if py == stamped_y + row[1] then
+          for i = 2, #row, 2 do
+            if px >= stamped_x + row[i] and px <= stamped_x + row[i+1] then return true end
+          end
+        end
+      end
+      return false
+    end
+    body.on(body)
+    check(kind .. ": destroying support starts a fall despite its old stamped mask", not s.planted and body.y > y and s.health == hp)
+    M.solid = function(_, py) return py >= floor end
+    for _ = 1, 60 do body.on(body) end
+    check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 207 and body.y < 208 and #M.spawned == 1)
+    y = body.y
+    body.hit(body, { kind = "blast", damage = 3, vx = 9, vy = -4 })
+    body.on(body, { damage = 3 })
+    check(kind .. ": blast moves up only, counted once and disabled", body.x == x and body.y < y and s.health == hp - 3 and s.disabled and not s.active)
+    for _ = 1, 60 do body.on(body) end
+    check(kind .. ": damage lockout survives landing", s.planted and s.disabled and not s.active)
+    M.message(enemy, wa.msg.START_TURN)
+    body.on(body)
+    local rgb, _, status = t.status(s)
+    check(kind .. ": next turn reactivates with a green light", not s.disabled and rgb == 0x30FF50 and status == "ready")
+    s.had_target = true
+    check(kind .. ": tracking is red", t.status(s) == 0xFF3030)
+    s.had_target, s.ammo = false, 0
+    check(kind .. ": empty is grey", t.status(s) == 0x808080)
+    M.message(enemy, wa.msg.START_TURN)
+    body.hit(body, { kind = "hit", damage = 0, vx = -8, vy = -2 })
+    body.on(body)
+    check(kind .. ": zero-damage push lifts without damage lockout", not s.planted and not s.disabled and body.x == x and s.health == hp - 3)
+    for _ = 1, 50 do body.on(body) end
+    local before_rng, before_spawn = rng, #M.spawned
+    M.quads = {}; s.tick = 0; M.draw()
+    local light, head
+    for _, q in ipairs(M.quads) do
+      if q.sprite == "sprites/" .. kind .. "/turret_light.png" then light = q end
+      if q.sprite == t.art.gun then head = q end
+    end
+    check(kind .. ": added light follows the head, no RNG or bodies", light and head and (light.color & 0xFFFFFF) == 0x30FF50 and rng == before_rng and #M.spawned == before_spawn)
+    s.tick = 15; M.quads = {}; M.draw()
+    for _, q in ipairs(M.quads) do if q.sprite == t.art.light then light = q end end
+    check(kind .. ": light flashes on simulation ticks", (light.color & 0xFFFFFF) == ((0x30FF50 & 0xFEFEFE) >> 1))
+    owner.hp = 0
+    check(kind .. ": living allied team is its shot parent", t.owner(body, s) == ally)
+    local ammo = s.ammo
+    check(kind .. ": capture changes coalition, preserving health and ammo", t.capture(body, s, enemy.alliance) and s.alliance == enemy.alliance and s.health == hp - 3 and s.ammo == ammo and s.disabled and t.owner(body, s) == enemy)
+    M.quads = {}; M.draw()
+    for _, q in ipairs(M.quads) do if q.sprite == t.art.gun then head = q end end
+    check(kind .. ": captured housing follows new coalition colour", (head.color & 0xFFFFFF) == t.tints[enemy.alliance + 1])
+    M.message(ally, wa.msg.START_TURN); body.on(body)
+    check(kind .. ": capture lockout ends on the next turn", not s.disabled)
+    check(kind .. ": gun holds allied turns; laser remains active", select(3, t.status(s)) == "ready")
+    M.message(enemy, wa.msg.START_TURN); body.on(body)
+    check(kind .. ": own coalition turn follows captured ownership", select(3, t.status(s)) == (t.hold_own_turn and "inactive" or "ready"))
+    M.water = body.y - 1; body.on(body)
+    check(kind .. ": water removes the single actor and visual state", body.dead and t.state[body.id] == nil)
+    M.water, M.solid, M.gravity = nil, nil, nil
+  end
+end
+
+print("Sentry placement: at the planter, clear of other worms and walls; buried visual feet")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, facing in ipairs({ -1, 1 }) do
+      new_match()
+      local t = require("lib/shared")[kind]
+      local mask = require("lib/sentry_mask")
+      local owner, ally = worm(16), worm(17)
+      for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+      owner.x, owner.y, owner.facing = 100, 100, facing
+      M.solid = function(_, y) return y >= 100 end
+      M.gravity, M.spawned = 0.25, {}
+      local body, s = t.place({ worm = owner })
+      check(kind .. ": plants at the worm without launch momentum, facing " .. facing,
+        body and body.x == owner.x and body.y == owner.y - 8 and body.vx == 0 and body.vy == 0
+        and body.ignored_worms[owner.id] and mask.clear(body.x, body.y, { owner }, owner.id, t.settle_px))
+      check(kind .. ": only the mechanical mask is hidden", body.tint == 0 and body.blend == "add" and body.spec.mask)
+      for _ = 1, 40 do body.on(body) end
+      M.quads = {}; M.draw()
+      local base
+      for _, q in ipairs(M.quads) do if q.sprite == t.art.base then base = q end end
+      local centre_y = (base.points[1][2] + base.points[3][2]) / 2
+      -- The original feet are at source row49, 17px below its quad centre.
+      local visible_feet = centre_y + 17
+      check(kind .. ": full feet art remains 8px below the buried mask anchor", math.abs(visible_feet-body.y-8) < 0.000001
+        and visible_feet > 100 and body.y >= 107 and body.y < 108
+        and base.depth == wa.depth.BEHIND_TERRAIN)
+      body:despawn(); t.state[body.id] = nil
+      -- An allied worm stands exactly where the first candidate would be.
+      ally.x, ally.y = owner.x, owner.y
+      local other, os = t.place({ worm = owner })
+      check(kind .. ": searches around another worm, allied or enemy", other and mask.clear(other.x, other.y, { owner, ally }, owner.id, t.settle_px)
+        and (other.x ~= ally.x or other.y ~= owner.y - 8))
+      other:despawn(); t.state[other.id] = nil
+      ally.visible, ally.alliance = false, 1
+      local hidden = t.place({ worm = owner })
+      check(kind .. ": hidden opponents also retain body clearance", hidden and mask.clear(hidden.x, hidden.y, { owner, ally }, owner.id, t.settle_px))
+      hidden:despawn(); t.state[hidden.id] = nil
+      ally.visible = true
+      ally.x, ally.y = 1000, 1000
+      -- Thin wall next to the worm. Free terrain beyond it is inaccessible.
+      M.solid = function(x, y) return y >= 100 or (x >= 110 and x <= 114) end
+      M.trace_hit = function(x0, _, x1)
+        if (x0-112)*(x1-112) <= 0 then return { hit = true, x = 112, y = 90 } end
+      end
+      local around = t.place({ worm = owner })
+      check(kind .. ": placement never crosses a thin wall", around and around.x + mask.right < 110
+        and mask.clear(around.x, around.y, { owner }, owner.id, t.settle_px))
+      -- Even when an obstacle touches just an extremity, reject the candidate.
+      M.solid = function(x, y) return x == 100 + mask.left and y == 100 - 11 end
+      check(kind .. ": terrain clearance covers side of silhouette", not mask.clear(100,100,{}))
+      M.solid = function() return true end
+      local before, ammo = #M.spawned, owner:ammo(t.slot)
+      local failed = t.place({ worm = owner })
+      check(kind .. ": blocked search makes no trapping mask and refunds finite ammo", failed == nil and #M.spawned == before
+        and owner:ammo(t.slot) == ammo + 1)
+      owner:ammo(t.slot, { set = -1 })
+      t.place({ worm = owner })
+      check(kind .. ": blocked search preserves infinite ammo", owner:ammo(t.slot) == -1)
+      M.solid, M.gravity, M.trace_hit = nil, nil, nil
+    end
+  end
+end
+
+print("Sentry placement: bounded native work when a second placement exhausts the search")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match({ per_team = 24 })
+    local shared = require("lib/shared")
+    local t, owner = shared[kind], worms[1]
+    for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+    owner.x, owner.y = 100, 100
+    M.solid = function(_, y) return y >= 100 end
+    local first = shared.sentry_gun.place({ worm = owner })
+    local reads, probes, sorts, traces, duplicates = 0, 0, 0, 0, 0
+    for i = 2, #worms do
+      local values = worms[i]
+      -- Like native userdata, reads cross the API boundary; count those reads
+      -- independently of host speed so the test also works on slower machines.
+      worms[i] = setmetatable({}, { __index = function(_, key)
+        reads = reads + 1
+        return values[key]
+      end })
+    end
+    local solid, sorted, seen = wa.land.solid, wa.sorted, {}
+    wa.land.solid = function(x, y)
+      probes = probes + 1
+      local key = x .. ":" .. y
+      if seen[key] then duplicates = duplicates + 1 end
+      seen[key] = true
+      return solid(x, y)
+    end
+    wa.sorted = function(tab) sorts = sorts + 1; return sorted(tab) end
+    -- The current stamped feet obstruct the ray from the planter, forcing
+    -- every otherwise clear candidate to fail, as in the profiling log.
+    M.trace_hit = function() traces = traces + 1; return { hit = true, starts_solid = true } end
+    local before, ammo = #M.spawned, owner:ammo(t.slot)
+    local failed = t.place({ worm = owner })
+    check(kind .. ": exhaustive second placement preserves its failure and refund",
+      first and failed == nil and #M.spawned == before and owner:ammo(t.slot) == ammo + 1 and traces > 100)
+    check(kind .. ": each other worm is snapshotted once, not per mask pixel", reads == 47 * 4, reads)
+    check(kind .. ": live sentry lists are sorted once per weapon type", sorts == 2, sorts)
+    check(kind .. ": each terrain pixel is probed once, including empty pixels",
+      duplicates == 0 and probes < 20000, probes)
+    -- A new fire must see terrain changes; caches may not survive the callback.
+    M.solid = function() return true end
+    seen, probes = {}, 0
+    t.place({ worm = owner })
+    check(kind .. ": the next placement reads the updated terrain", probes > 0)
+  end
+end
+
+print("Sentry passage: only the planter, until clear, independent of turns and ownership")
+do
+  new_match()
+  local shared, mask = require("lib/shared"), require("lib/sentry_mask")
+  local owner = worm(16)
+  for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+  owner.x, owner.y = 100, 100
+  M.solid = function(_, y) return y >= 100 end
+  M.gravity, M.spawned = 0, {}
+  local first = shared.sentry_gun.place({ worm = owner })
+  local second = shared.sentry_laser.place({ worm = owner })
+  check("a second sentry searches nearby without overlapping the first mask",
+    first and second and not mask.intersects(first.x, first.y, second.x, second.y))
+  -- Burial admits soil only in the configured bottom band.
+  M.solid = function(_, y) return y >= 100 end
+  check("placement accepts its configured burial depth", mask.clear(100,107,{},nil,8))
+  check("placement rejects terrain above its burial band", not mask.clear(100,108,{},nil,8))
+  check("burial never exempts another worm", not mask.clear(100,107,{owner},nil,8))
+  M.solid, M.gravity = nil, nil
+  new_match()
+  local t = require("lib/shared").sentry_gun
+  local planter = worm(16)
+  for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+  planter.x, planter.y = 100, 100
+  M.solid = function(_, y) return y >= 500 end
+  M.gravity, M.spawned = 0, {}
+  local falling, fs = t.place({ worm = planter })
+  fs.vy = 40
+  falling.on(falling)
+  check("falling retains passage while the frame's old stamp overlaps the planter", fs.planter ~= nil
+    and not mask.overlaps_worm(fs.x, fs.y, planter) and falling.ignored_worms[planter.id])
+  falling.on(falling)
+  check("falling clears passage once old and moved feet are both clear", fs.planter == nil
+    and not falling.ignored_worms[planter.id])
+  M.solid, M.gravity = nil, nil
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, exit in ipairs({ "left", "right", "jump", "death", "gone" }) do
+      new_match()
+      local t, mask = require("lib/shared")[kind], require("lib/sentry_mask")
+      local owner, ally, enemy = worm(16), worm(17), worm(32)
+      for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+      owner.x, owner.y, owner.vx, owner.vy = 100, 100, 7, -3
+      M.solid = function(_, y) return y >= 100 end
+      M.gravity, M.spawned = 0, {}
+      local body, s = t.place({ worm = owner })
+      check(kind .. ": passage is pair-specific (" .. exit .. ")", body.ignored_worms[owner.id]
+        and not body.ignored_worms[ally.id] and not body.ignored_worms[enemy.id] and body.vx == 0 and body.vy == 0)
+      M.message(enemy, wa.msg.START_TURN)
+      body.on(body)
+      check(kind .. ": a turn change retains passage while overlapping", s.planter_id == owner.id and body.ignored_worms[owner.id])
+      t.capture(body, s, enemy.alliance)
+      body.on(body)
+      check(kind .. ": coalition capture retains the original planter", s.alliance == enemy.alliance and s.planter_id == owner.id
+        and body.ignored_worms[owner.id] and not body.ignored_worms[enemy.id])
+      if exit == "left" or exit == "right" then
+        local side = exit == "left" and -1 or 1
+        owner.y = body.y - 10
+        owner.x = body.x + (side < 0 and mask.left - 10 or mask.right + 10)
+        body.on(body)
+        check(kind .. ": touching the silhouette still retains passage (" .. exit .. ")", s.planter ~= nil)
+        owner.x = owner.x + side
+      elseif exit == "jump" then
+        owner.y = body.y - mask.top - 7
+      elseif exit == "death" then owner.hp = 0
+      else
+        for i, w in ipairs(worms) do if w == owner then table.remove(worms, i); break end end
+      end
+      body.on(body)
+      check(kind .. ": passage ends after " .. exit, s.planter == nil and not body.ignored_worms[owner.id]
+        and #body.ignore_calls == 2 and body.ignore_calls[2].enabled == false)
+      owner.x, owner.y, owner.hp = body.x, body.y, 100
+      body.on(body)
+      body.hit(body, { kind = "hit", damage = 0, vy = -1 })
+      body.on(body)
+      M.message(owner, wa.msg.START_TURN)
+      body.on(body)
+      check(kind .. ": returning, falling and later turns never grant passage again", #body.ignore_calls == 2
+        and not body.ignored_worms[owner.id])
+      M.solid, M.gravity = nil, nil
+    end
+  end
+end
+
+print("Lightning Strike: captures the selected sentry for the caster colour")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, blocked in ipairs({ false, true }) do
+      new_match()
+      local t = require("lib/shared")[kind]
+      local owner, caster = worm(16), worm(32)
+      for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+      owner.x, owner.y = 100, 100
+      caster.alliance, caster.team, caster.ammo_group = 4, 8, 3
+      M.solid = function(_, y) return y >= 110 end
+      M.gravity, M.spawned, M.actor_sounds = 0.25, {}, {}
+      local body, s = t.place({ worm = owner })
+      for _ = 1, 40 do body.on(body) end
+      local lightning
+      for _, spec in ipairs(replaced) do if spec.weapon == "napalm_strike" then lightning = spec end end
+      -- The ray passes down-right through the body centre.
+      local dx, dy = 0.5, 0.8660254037844386
+      local cx, cy = s.x, s.y - t.capture_up
+      if blocked then M.trace_hit = { x = cx - dx * 70, y = cy - dy * 70 } end
+      lightning.on_click({ worm = caster, x = cx, y = cy, vx = -1 })
+      local effect = M.spawned[#M.spawned]
+      caster.alliance = 1 -- the warning retains the colour at fire time
+      for _ = 1, 166 do effect.on(effect) end
+      check(kind .. ": Lightning " .. (blocked and "cannot capture through terrain" or "captures for snapshotted coalition colour"), s.alliance == (blocked and 0 or 4) and (blocked or s.disabled))
+      local registry = require("lib/turret")
+      local entry = { t = t, s = s, body = body }
+      check(kind .. ": moved sentry cannot be captured at stale beam endpoint",
+        not registry.capture_hit(entry, s.x + 100, s.y - 16, 2))
+      t.state[body.id] = nil
+      check(kind .. ": destroyed sentry cannot be captured", not registry.capture_hit(entry, s.x, s.y - 16, 2))
+      M.solid, M.gravity = nil, nil
+    end
+  end
 end
 
 print("Kamikaze Rocket: Ctrl + Space, steered, digging, then a blast into the water")

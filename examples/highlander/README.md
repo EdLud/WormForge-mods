@@ -198,7 +198,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | baseball_bat | Electromagnet | icon, the magnet (both poles, damaged), its rings and sparks, the worm's deploy | dropped at the worm, it falls and settles as a mine does (a circle traced against the land, bouncing a little) and stays: for four of its owner's turns its field (170 pixels) pushes (repel) or pulls (attract) WA's own mines and missiles (`object:impulse`) and the Bowling Balls at a quarter, and triggers the mines it catches, an attracting one setting their fuses close together. + (synchronized, `wa.world.keys().plus_key`) switches the turn's worm between repel and attract; the HUD names the mode. Blasts, guns and fires hit it; at 0 of its 80 health it explodes. The Hellish Hand-Grenade slows down in a field. Not PX's: 300 frames after the turn ends, the field lets go of missiles instead of exploding them. The worm takes it out and puts it away with PX's magnet in place of the Dynamite: blue repelling, red attracting (`worm_sprites_toggle`), the take-out playing again in the new colour when + switches |
 | donkey | Crate Strike | icon | three crates on parachutes from 50 pixels above the map, at the click and 50 to either side (`wa.crates.spawn`); each a weapon, utility or health crate at random, WA picking what is inside; a health crate gives 20-40, 40-60 or 60-80 by its place |
 | freeze | Weapon Crate | icon, the worm's take-out and hold | PX's record: placed as WA places a mine (its take-out, placing and ammo), and the turn goes on; what it places is one of WA's weapon crates, its contents WA's pick, teleported in 40 pixels in front of the worm (`wa.crates.spawn`), for the worm to collect. Every worm gets one each turn. |
-| kamikaze | Sentry Gun | icon, the turret (base, head, flare), casings, impact, the worm's take-out and placing, its sounds | placed as WA places a mine, it falls and plants in front of the worm; its head sweeps, takes the nearest moving enemy in sight within 360 pixels, turns to it and fires 20 rounds a turn (PX's spread, casings), holds fire on its owner's colour's turns, reloads each turn; a blast disables it for the turn, and at 0 of its 50 health it explodes. Its head is drawn in its owner's colour, and so is the housing the worm carries (`worm_sprites_team_tint`). The shared turret (`lib/turret.lua`) is for the Sentry Laser too |
+| kamikaze | Sentry Gun | icon, the turret (base, head, flare), casings, impact, the worm's take-out and placing, its sounds | placed as WA places a mine, it plants where the worm stands with passage for the planter until clear, searching nearby if blocked; its head sweeps, takes the nearest moving enemy in sight within 360 pixels, turns to it and fires 20 rounds a turn (PX's spread, casings), holds fire on its owner's colour's turns, reloads each turn; positive damage disables it for the turn, and at 0 of its 50 health it explodes. Its head is drawn in its owner's colour, and so is the housing the worm carries (`worm_sprites_team_tint`). The shared turret (`lib/turret.lua`) is for the Sentry Laser too |
 | dragon_ball | Sentry Laser | icon, the turret (base, body, barrel), the worm's take-out and placing, its sounds | placed as the Sentry Gun; it shoots the nearest moving missile, mine or Bowling Ball of another colour within 300 pixels that it can see (`object.team`), 20 frames after it finds it, turning 5 degrees a frame; each of its 4 shots a turn is a short beam in its owner's colour that disintegrates the target without a blast (`object:remove()`), burns worms (10) and crates and oil drums (20) in between, arms a mine it crosses, and cuts a 4-pixel hole where it stops; it fires on every colour's turn, and at 0 of its 35 health it explodes. Its body is drawn in its owner's colour, the barrel grey, and so is the body the worm carries. Not PX's: WA's arrows are not listed to Lua, so it ignores them. |
 | suicide_bomber | Kamikaze Rocket | icon, the take-out, the launch, the rocket in flight | PX's scheme record, WA's Kamikaze's: WA flies the worm, digs its way and hits the worms it passes. Fired only with Ctrl held (Ctrl + Space; without, nothing is used and the HUD says so). The worm becomes a rocket from where it stood, along its aim at 8 pixels a frame, turned 9 degrees a frame by left and right, digging an 8-pixel hole each frame, for 4 seconds (counted down on the HUD); then it blows up (damage 30, blast 100) and the worm goes into the water. As PX's, it ends sooner if WA's Kamikaze does: in the water, or out of the map. |
 
@@ -646,3 +646,38 @@ Tests: `lua mods/examples/highlander/test_portals.lua`, plus the existing
 scheme mock and native Windows engine/Lua tests. The port was playtested in
 WA, including endpoint visibility and effects. Replay/network playback is
 still unverified.
+
+### Sentry feet, activity and ownership
+
+Both sentries use one persistent actor with an indestructible moving feet mask.
+Placement starts where the worm stands, without launch momentum. If another
+worm, sentry or terrain blocks that point, it searches visible free points on
+4-pixel rings within 64 pixels. The mask keeps clearance for other living worms,
+including hidden opponents, while permitting the configured terrain burial.
+A blocked search spawns nothing and refunds the native ammo charge.
+Only the planter can pass through its new sentry, using
+`actor:collision_ignore(worm, true)`. Once its walking-clearance rectangle
+clears the feet, Lua restores collision permanently. Passage persists across
+turn changes while overlapping, follows the original planter through coalition
+capture, and ends if that worm dies or disappears. Other worms and weapons,
+including the planter's projectiles, collide immediately. Real terrain and
+overlapping masks from other actors remain solid during the planter's queries.
+The original foot art is unchanged: its bottom
+8 pixels have no collision, so the feet sit in the ground while the trimmed
+mask can overlap the soil by a further 8 pixels. The support probes sit
+beside the buried silhouette so it cannot support itself after terrain is
+removed. The feet are drawn behind terrain, which hides the buried pixels.
+Worms and weapons collide with the feet; removing the ground beneath them makes
+the sentry fall and settle again. Hits preserve vertical knockback only. Damage
+is counted once and disables the sentry until the next turn. The original
+health (Gun 50, Laser 35), ammo and targeting rules remain.
+
+The added light flashes green while ready, red while tracking or firing, and
+grey when empty. It is dark while falling, damaged or holding fire. The head,
+barrel and light are visual draw calls that follow the same actor.
+
+Ownership belongs to coalition colour, including allied teams. A Lightning
+Strike that directly selects a sentry captures it for the caster's colour at
+fire time, preserves its health and ammo, and disables it for the current turn.
+A living coalition member supplies WA's required parent for subsequent shots;
+the placing worm's death does not change ownership.

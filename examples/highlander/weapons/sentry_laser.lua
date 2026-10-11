@@ -194,10 +194,10 @@ local function fire(t, a, s, target)
 end
 
 local sentry = turret.new({
-  kind = "sentry_laser",
+  kind = "sentry_laser", slot = "dragon_ball",
   sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
   rot_active = 5.0, aim_tolerance = 5.0, health = 35, hold_own_turn = false,
-  art = { base = ART .. "turret_base", gun = ART .. "turret_body", barrel = ART .. "turret_barrel" },
+  art = { base = ART .. "turret_base", mask = ART .. "turret_mask.png", gun = ART .. "turret_body", barrel = ART .. "turret_barrel", light = ART .. "turret_light.png" },
   sounds = {
     place = SND .. "sentrylaserplace.wav", beep = SND .. "sentrylaserbeep.wav",
     servo_start = SND .. "sentrylaserstart.wav", servo_loop = SND .. "sentrylaserloop.wav",
@@ -212,7 +212,7 @@ local sentry = turret.new({
 local place = sentry.place
 sentry.place = function(fire_ev)
   local body, s = place(fire_ev)
-  s.armed = {}
+  if s then s.armed = {} end
   return body, s
 end
 

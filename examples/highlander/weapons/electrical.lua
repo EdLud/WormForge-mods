@@ -4,6 +4,7 @@
 local function sq(v) return v * v end
 
 local shared = require("lib/shared")
+local turret = require("lib/turret")
 local current_worm = shared.current_worm
 local first = shared.first
 local held = shared.held
@@ -75,6 +76,7 @@ end
 local function strike_hit(s)
   if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
   if not s.hit then return end
+  turret.capture_hit(s.sentry, s.ex, s.ey, s.alliance)
   local radius2 = sq(6)
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(s.ex, s.ey, 24, true) or electrical_targets(true)
@@ -179,12 +181,17 @@ shared.lightning_click = function(ev)
     bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
   end
   if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
+  -- With no stock hit, scripted sentries can still stop the full ray.
+  local reach = hit and math.sqrt(sq(ex - sx) + sq(ey - sy)) or 10000
+  local tx, ty, sentry = turret.on_beam(sx, sy, dirx, diry, reach)
+  if tx then ex, ey, hit = tx, ty, { x = tx, y = ty } end
   local distance = math.sqrt(sq(ex - sx) + sq(ey - sy))
   if hit and distance > 300 then
     sx, sy = ex - (300 * dirx), ey - (300 * diry)
   end
   local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit, dirx = dirx, diry = diry,
-    delay = 150, life = 16, tail = 60, owner = ev.worm, ticks = 0,
+    delay = 150, life = 16, tail = 60, owner = ev.worm, alliance = ev.worm.alliance,
+    sentry = sentry, ticks = 0,
     seed = (ex // 1 * 7919 + ey // 1) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
   strikes[#strikes + 1] = s
   wa.sound.play(ev.worm, "sounds/lightning/thunder.wav")

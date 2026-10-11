@@ -1,14 +1,46 @@
 -- Highlander: Project X's sentry turrets (weapon_sentry_gun's PxSentryGun,
 -- weapon_sentry_laser's PxSentryLaser), the part they share: a body dropped
--- in front of the worm that falls and plants itself, a head that sweeps,
+-- where the worm stands, with passage for the planter until clear, a head that sweeps,
 -- picks the nearest moving enemy it can see, turns to it and fires, reloads
--- each turn, and is disabled for the turn by a blast and explodes at 0
+-- each turn, and is disabled for the turn by positive damage and explodes at 0
 -- health. What it aims at and what it fires are the weapon's: `targets` (by
 -- default the worms) and `fire(t, a, s, target)`.
 --
 -- From the standalone sentry_gun port (mods/examples/sentry_gun_old), with
 -- its numbers as the defaults. Angles: 0 down, 90 right, 180 up, 270 left.
 local turret = {}
+local turrets = {}
+local feet = require("lib/sentry_mask")
+
+-- Scripted bodies are not in the stock electrical target list. Include
+-- their whole body circle in Lightning's existing beam selection in Lua.
+function turret.on_beam(x0, y0, dx, dy, length)
+  local best, entry
+  for _, t in ipairs(turrets) do
+    for _, id in ipairs(wa.sorted(t.state)) do
+      local s = t.state[id]
+      if s.body.id == id then
+        local cx, cy = s.x - x0, s.y - t.capture_up - y0
+        local along = cx * dx + cy * dy
+        local miss = cx * cx + cy * cy - along * along
+        if miss <= t.capture_radius * t.capture_radius then
+          local at = along - math.sqrt(math.max(0, t.capture_radius * t.capture_radius - miss))
+          if at > 0 and at < length and (not best or at < best) then
+            best, entry = at, { t = t, s = s, body = s.body }
+          end
+        end
+      end
+    end
+  end
+  if best then return x0 + best * dx, y0 + best * dy, entry end
+end
+
+function turret.capture_hit(entry, x, y, alliance)
+  if not entry or entry.t.state[entry.body.id] ~= entry.s then return false end
+  local dx, dy = entry.s.x - x, entry.s.y - entry.t.capture_up - y
+  if dx * dx + dy * dy > (entry.t.capture_radius + 6) * (entry.t.capture_radius + 6) then return false end
+  return entry.t.capture(entry.body, entry.s, alliance)
+end
 
 local DEFAULTS = {
   sensor_px = 360,      -- detection radius
@@ -22,9 +54,13 @@ local DEFAULTS = {
   aim_tolerance = 1.5,  -- PX fires only after rotation reaches the target
   require_motion = true, -- PX only acquires walking/jumping/moving worms
   hold_own_turn = true, -- the Sentry Gun holds fire on its colour's turns
-  sink_px = 8,          -- pixels the planted turret settles into the ground
-  muzzle_up = 25,       -- pixels from the anchor up to the turret pivot
-  front_px = 5,         -- the body lands this far in front of the worm
+  settle_px = 8,        -- mask may overlap real terrain by this depth
+  foot_offsets = { -6, 7 }, -- support beside the buried mask, never inside it
+  top_px = feet.top,         -- top of the feet/hub silhouette above its anchor
+  capture_radius = 24, -- Lightning's circle around the body
+  capture_up = 16 - feet.burial,
+  muzzle_up = 25 - feet.burial,       -- pixels from the anchor up to the turret pivot
+  placement_reach = 64, -- bounded clear-space search around the planting worm
   health = 50,
   boom = { damage = 50, id = 100, below = false },
   -- Occlusion band for the head: in front of terrain (0x180000), so the
@@ -171,9 +207,6 @@ function turret.new(cfg)
   end
 
   local function think(a, s)
-    -- A planted turret is immovable: blasts would otherwise add up.
-    if s.px then a.x, a.y = s.px, s.py end
-    a.vx, a.vy = 0, 0
     if not cfg.targets then
     for _, w in ipairs(wa.worms.all()) do note_motion(s, w) end
     end
@@ -259,115 +292,233 @@ function turret.new(cfg)
     end
   end
 
-  -- The body is the actor; the head and its flare ride on it, drawn only.
-  local function sync(a, s)
-    local gun = s.gun
-    if not gun or gun.dead then return end
-    gun.x, gun.y, gun.vx, gun.vy = a.x, a.y - t.muzzle_up, 0, 0
-    local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
-    local barrel = s.barrel
-    -- With a barrel layer, the gun's frames are its art and its mirror.
-    local look = barrel and (s.side < 0 and 1 or 0) or pose
-    if look ~= s.look then
-      gun:frame(look)
-      s.look = look
+  -- Coalition owns the sentry. A living member is only WA's required
+  -- spawn/shot parent, chosen in stable worm-id order; it is not the owner.
+  function t.owner(a, s)
+    local best
+    for _, w in ipairs(wa.worms.all()) do
+      if w.hp > 0 and w.alliance == s.alliance and (not best or w.id < best.id) then best = w end
     end
-    if barrel and not barrel.dead then
-      barrel.x, barrel.y, barrel.vx, barrel.vy = gun.x, gun.y, 0, 0
-      if pose ~= s.pose then barrel:frame(pose) end
-      barrel:gfx({ angle = (90 - s.angle) % 360, tint = 0xFFFFFF, depth = t.head_depth + 1 })
-    end
-    s.pose = pose
-    local flare = s.flare
-    if flare and not flare.dead then
-      flare.x, flare.y, flare.vx, flare.vy = gun.x, gun.y, 0, 0
-      local lit = (pose == 1) and 1 or 0
-      if lit ~= s.lit then
-        flare:frame(lit)
-        s.lit = lit
+    return best or a
+  end
+
+  local function disable(a, s)
+    s.disabled, s.active = true, false
+    s.had_target, s.lost, s.tid = false, false, nil
+    t.stop_firing(a, s)
+    update_servo(a, s, false)
+  end
+
+  local function destroy(a, s, explode)
+    state[a.id] = nil
+    if explode then
+      -- The blast's stock parent must come from the owning colour too.
+      -- This instant, invisible emission has no collision or lasting body.
+      local owner = t.owner(a, s)
+      if owner ~= a then
+        local e = wa.actors.spawn({ sprite = false, owner = owner,
+          x = a.x, y = a.y + feet.burial - 20, gravity = false, collide = false,
+          explode = { damage = t.boom.damage, id = t.boom.id, now = true } })
+        e:despawn()
+      else
+        a:explode(t.boom)
       end
-      flare:gfx({ angle = (90 - s.angle) % 360, tint = 0xFFFFFF, blend = "add", depth = t.head_depth })
     end
-    -- The head art faces right; the renderer takes clockwise screen degrees.
-    gun:gfx({ angle = (90 - s.angle) % 360, tint = t.tints[s.alliance + 1] or t.tints[1], depth = t.head_depth })
+    a:despawn()
   end
 
-  local function remove(s)
-    if s.gun and not s.gun.dead then s.gun:despawn() end
-    if s.flare and not s.flare.dead then s.flare:despawn() end
-    if s.barrel and not s.barrel.dead then s.barrel:despawn() end
-  end
-
-  local function brain(a, ev)
+  local function hit(a, ev)
     local s = state[a.id]
     if not s then return end
-    ev = ev or {}
-    if (ev.damage or 0) > 0 then
-      s.health = s.health - ev.damage
-      s.active = false
+    local damage = math.max(0, ev.damage or 0)
+    if damage > 0 then
+      s.health = s.health - damage
+      disable(a, s)
+      if s.health <= 0 then destroy(a, s, true); return end
+    end
+    -- Oil-drum style: keep the vertical push, discard horizontal knock.
+    s.vx, a.vx = 0, 0
+    local push = ev.vy or 0
+    if push ~= 0 then
+      s.vy = s.vy + push
+      a.vy = 0
+      s.planted = false
+      t.stop_firing(a, s)
+    end
+  end
+
+  -- Feet are a moving, indestructible silhouette, overlapping the real
+  -- soil when planted. At the support level (7px above the mask anchor),
+  -- these two probes lie outside the stem and the bottom row, so its own
+  -- stamped bits cannot hold it up. Subpixel state stays in Lua.
+  local function contact(x, y, above)
+    local py = above and y - t.top_px - 1 or y - t.settle_px + 1
+    local offsets = above and { -3, 4 } or t.foot_offsets
+    for _, dx in ipairs(offsets) do
+      if wa.land.solid(x + dx, py) then return true end
+    end
+    return false
+  end
+
+  local function motion(a, s)
+    if s.planted and not contact(s.x, s.y, false) then
+      s.planted, s.vx, s.vy = false, 0, 0
       t.stop_firing(a, s)
       update_servo(a, s, false)
-      if s.health <= 0 then
-        remove(s)
-        state[a.id] = nil
-        -- PX explodes at PosY-20: the body, not the feet.
-        a:explode(t.boom)
-        a:despawn()
-        return
+    end
+    if not s.planted then
+      s.vy = s.vy + wa.world.gravity()
+      local n = math.max(1, math.ceil(math.max(math.abs(s.vx), math.abs(s.vy))))
+      local dx, dy = s.vx / n, s.vy / n
+      for _ = 1, n do
+        local x, y = s.x + dx, s.y + dy
+        if contact(x, y, dy < 0) then
+          s.vx, s.vy = 0, 0
+          if dy >= 0 then
+            s.x, s.y = x, y
+            s.planted = true
+            wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
+              t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.settle_px + 1, t.settle_px))
+            play(a, t.sounds.place)
+          end
+          break
+        end
+        s.x, s.y = x, y
       end
     end
-    -- `recoil`: frames the firing pose lingers after a shot the weapon ended
-    -- at once (the laser's).
+    a.x, a.y, a.vx, a.vy = s.x, s.y, 0, 0
+    -- Native movement is off: the shared collision mask rides on these
+    -- positions, while all gravity and settling decisions stay in Lua.
+    if a:in_water() then destroy(a, s, false); return false end
+    return true
+  end
+
+  local function brain(a)
+    local s = state[a.id]
+    if not s then return end
+    -- Damage is consumed only by on.hit; the legacy frame damage accumulator
+    -- may describe the same blast and must not deduct health twice.
+    s.tick = s.tick + 1
     if s.recoil > 0 then s.recoil = s.recoil - 1 end
     if s.firing or s.recoil > 0 then s.anim = s.anim + 1 end
-
-    if not s.planted then
-      a:gravity()
-      local hit = a:move({ terrain = true, worms = false })
-      if hit.land then
-        a.vx, a.vy = 0, 0
-        s.planted = true
-        s.px, s.py = a.x, a.y + t.sink_px
-        play(a, t.sounds.place)
-        sync(a, s)
-        return
+    local stamped_x, stamped_y = s.x, s.y
+    if not motion(a, s) then return end
+    if s.planter then
+      local planter
+      for _, w in ipairs(wa.worms.all()) do
+        if w.id == s.planter_id and w.hp > 0 then planter = w; break end
       end
-      a:advance()
-      if a:in_water() then
-        remove(s)
-        state[a.id] = nil
-        a:despawn()
-        return
+      -- WA uses the stamp from the frame's start until the next frame.
+      -- When falling, clear both that footprint and the moved feet before
+      -- ending passage, so a remaining old stamp cannot trap the planter.
+      if not planter or (not feet.overlaps_worm(s.x, s.y, planter)
+        and not feet.overlaps_worm(stamped_x, stamped_y, planter)) then
+        a:collision_ignore(s.planter, false)
+        wa.log(string.format("Sentry passage ended %s id=%d planter=%d (%s)",
+          t.kind, a.id, s.planter_id, planter and "clear" or "gone"))
+        s.planter, s.planter_id = nil, nil
       end
-    else
-      think(a, s)
     end
-    sync(a, s)
+    s.active = not s.disabled and s.ammo > 0
+    if s.planted then think(a, s) end
   end
 
-  -- Who owns what the turret fires: the worm that placed it, as WA lists it
-  -- now, else the turret itself. The handle kept from the placing names WA's
-  -- freed worm once that worm has died, and a spawn refuses such an owner.
-  function t.owner(a, s)
+  local function status(s)
+    if s.ammo <= 0 then return 0x808080, true, "empty" end
+    if not s.planted or not s.active or (t.hold_own_turn and active_alliance == s.alliance) then
+      return 0x202020, false, "inactive"
+    end
+    if s.firing or s.had_target or s.lost or s.recoil > 0 then return 0xFF3030, true, "tracking" end
+    return 0x30FF50, true, "ready"
+  end
+  t.status = status
+
+  -- One gameplay actor; its head, barrel, flare and added LED are draw calls.
+  local function sheet(path, x, y, frame, angle, rgb, depth, blend, size)
+    local h = (size or 144) / 2
+    local r = math.rad(angle)
+    local c, sn = math.cos(r), math.sin(r)
+    local points = {}
+    for i, p in ipairs({ {-h,-h}, {h,-h}, {h,h}, {-h,h} }) do
+      points[i] = { x + p[1] * c - p[2] * sn, y + p[1] * sn + p[2] * c }
+    end
+    wa.draw.quad({ sprite = path, points = points, frame = frame,
+      color = 0xFF000000 | rgb, depth = depth, blend = blend or "alpha" })
+  end
+  if wa.on.draw then
+    wa.on.draw(function()
+      for _, id in ipairs(wa.sorted(state)) do
+        local s = state[id]
+        if s.body.id == id then
+          sheet(t.art.base, s.x + 1, s.y - 9, 0, 0, 0xFFFFFF, wa.depth.BEHIND_TERRAIN, "alpha", 64)
+          local x, y, angle = s.x, s.y - t.muzzle_up, (90 - s.angle) % 360
+          local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
+          if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
+          local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
+          sheet(t.art.gun, x, y, look, angle, t.tints[s.alliance + 1] or t.tints[1], t.head_depth)
+          if t.art.flare then
+            sheet(t.art.flare, x, y, pose == 1 and 1 or 0, angle, 0xFFFFFF, t.head_depth, "add")
+          end
+          local rgb, flash = status(s)
+          if flash and (s.tick % 30) >= 15 then rgb = (rgb & 0xFEFEFE) >> 1 end
+          local r = math.rad(angle)
+          local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
+          sheet(t.art.light, x + lx, y + ly, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
+        end
+      end
+    end)
+  end
+
+  function t.capture(a, s, alliance)
+    if alliance < 0 or alliance > 5 then return false end
+    s.alliance = alliance
+    disable(a, s)
+    return true
+  end
+
+  -- Prefer the worm's position, then deterministic 4px rings if blocked.
+  -- The planter can walk out; every other worm keeps its body clearance.
+  local function placement(worm, facing)
+    local wx, wy, planter_id = worm.x, worm.y, worm.id
+    local x, y = wx, wy - feet.burial
+    -- Nothing moves during this callback. Snapshot native handles once and
+    -- share terrain reads across the overlapping candidates in this search.
+    local worms, obstacles, land = {}, {}, {}
     for _, w in ipairs(wa.worms.all()) do
-      if w.id == s.owner_id then return w end
+      local id, hp = w.id, w.hp
+      if id ~= planter_id and hp > 0 then
+        worms[#worms + 1] = { id = id, hp = hp, x = w.x, y = w.y }
+      end
     end
-    return a
-  end
-
-  -- Slightly in front of the worm, unless a wall is that close.
-  local function placement_x(worm, facing)
-    local x = worm.x + facing * t.front_px
-    if wa.land.trace(worm.x, worm.y, x, worm.y) then return worm.x end
-    return x
-  end
-
-  local function rider(sheet, x, y, worm, kind)
-    return wa.actors.spawn({
-      sprite = sheet, x = x, y = y, vx = 0, vy = 0, gravity = false, collide = false,
-      loop = false, origin = "center", owner = worm, kind = kind, persist = true,
-      on = function() end,
-    })
+    for _, other_t in ipairs(turrets) do
+      for _, id in ipairs(wa.sorted(other_t.state)) do
+        local other = other_t.state[id]
+        if other.body.id == id then obstacles[#obstacles + 1] = { x = other.x, y = other.y } end
+      end
+    end
+    local function solid(px, py)
+      local row = land[py]
+      if not row then row = {}; land[py] = row end
+      local value = row[px]
+      if value == nil then value = wa.land.solid(px, py); row[px] = value end
+      return value
+    end
+    for radius = 0, t.placement_reach, 4 do
+      local step = radius == 0 and 360 or math.max(15, math.floor(360 / (radius / 2)))
+      for deg = 0, 359, step do
+        local angle = math.rad(deg)
+        local tx = x + facing * radius * wa.math.cos(angle)
+        local ty = y + radius * wa.math.sin(angle)
+        local blocked = false
+        for _, other in ipairs(obstacles) do
+          if feet.intersects(tx, ty, other.x, other.y) then blocked = true; break end
+        end
+        if not blocked and feet.clear(tx, ty, worms, planter_id, t.settle_px, solid) then
+          local hit = wa.land.trace(wx, wy - 8, tx, ty - feet.top / 2)
+          if not hit or not hit.hit then return tx, ty end
+        end
+      end
+    end
   end
 
   -- Drop a turret for the firing worm, its owner's colour (not worm.team,
@@ -378,25 +529,40 @@ function turret.new(cfg)
     if alliance < 0 or alliance > 5 then alliance = 0 end
     local facing = worm.facing
     local idle = facing < 0 and 270 or 90
-    local x = placement_x(worm, facing)
+    local x, y = placement(worm, facing)
+    if not x then
+      -- The native placed shot consumes one charge; retain it on failure.
+      local slot = t.slot
+      local ammo = worm:ammo(slot)
+      if ammo >= 0 then worm:ammo(slot, { set = ammo + 1 }) end
+      wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
+      return nil
+    end
     local body = wa.actors.spawn({
-      sprite = t.art.base, x = x, y = worm.y,
-      -- A small nudge, whatever the aim or charge.
-      vx = (worm.vx / 2) + facing * 0.3000030517578125, vy = (worm.vy / 2) - 0.149993896484375,
-      loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true, on = brain,
+      sprite = t.art.mask, x = x, y = y,
+      vx = 0, vy = 0,
+      loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
+      gravity = false, collide = false, drown = false, as_object = true,
+      mask = true, mask_worms = true, mask_weapons = true, mask_land = false, mask_actors = false,
+      on = { frame = brain, hit = hit },
     })
+    assert(body:collision_ignore(worm, true), "Sentry: could not register planter passage")
     local s = {
-      alliance = alliance, owner = worm, owner_id = worm.id, planted = false, active = true, ammo = t.ammo,
+      alliance = alliance, planted = false, active = true, disabled = false, ammo = t.ammo,
+      x = x, y = y, vx = body.vx, vy = body.vy, tick = 0,
       health = t.health, angle = idle, idle = idle, side = facing < 0 and -1 or 1,
       sweep_dir = 1, shots = 0, firing = false, anim = 0, rotating = false,
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,
+      planter = worm, planter_id = worm.id,
     }
     state[body.id] = s
-    s.gun = rider(t.art.gun, x, worm.y - t.muzzle_up, worm, t.kind .. "_head")
-    if t.art.flare then s.flare = rider(t.art.flare, x, worm.y - t.muzzle_up, worm, t.kind .. "_flare") end
-    if t.art.barrel then s.barrel = rider(t.art.barrel, x, worm.y - t.muzzle_up, worm, t.kind .. "_barrel") end
-    sync(body, s)
+    s.body = body
+    body:frame(0)
+    -- Zero additive colour hides the mechanical mask without removing its alpha.
+    body:gfx({ tint = 0, blend = "add", depth = wa.depth.BEHIND_TERRAIN })
+    wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) passage=on",
+      t.kind, body.id, worm.id, x, y))
     return body, s
   end
 
@@ -405,12 +571,15 @@ function turret.new(cfg)
   wa.on.worm_message(function(worm, msg)
     if msg ~= wa.msg.START_TURN then return end
     active_alliance = worm.alliance
-    for _, s in pairs(state) do
-      s.ammo, s.active, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, nil, false, {}
+    for id, s in pairs(state) do
+      if s.body.id ~= id then state[id] = nil else
+        s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}
+      end
     end
   end, { msgs = { wa.msg.START_TURN } })
 
   t.state = state -- for the Highlander mock
+  turrets[#turrets + 1] = t
   return t
 end
 
