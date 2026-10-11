@@ -1,5 +1,7 @@
--- A scheme component: overrides for the weapons its preset places, and its
--- round rules. Only the fields it sets change; the rest stay the weapon's.
+-- A scheme component: overrides for the weapons its preset places. Only the
+-- fields it sets change; the rest stay the weapon's. A scheme may also return
+-- install = function(ctx) ... end with round rules, if its mod.toml entry
+-- declares changes_rules = true (the loader then says so).
 return {
   weapons = {
     ["demo.big_bazooka"] = { delay = 1 },
@@ -11,12 +13,4 @@ return {
     ["stock.skip_go"] = { ammo = { round_start = -1 } },
     ["stock.surrender"] = { ammo = { round_start = -1 } },
   },
-  install = function(ctx)
-    local ids = {}
-    for id in pairs(ctx.weapons) do ids[#ids + 1] = id end
-    table.sort(ids)
-    for _, id in ipairs(ids) do
-      wa.log(("scheme places %s on %s"):format(id, ctx.weapons[id].stock_slot))
-    end
-  end,
 }
