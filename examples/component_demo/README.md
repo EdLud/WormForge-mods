@@ -25,4 +25,6 @@ The weapon data is written into WA's scheme for the round, whatever scheme
 the lobby picked, and the scheme owns the whole panel: every team starts
 with infinite Big Bazookas (usable from the second round of turns, a delay
 of 1), grenades, shotguns, five ropes and two teleports, and every other
-slot is empty and never comes in a crate.
+slot is empty and never comes in a crate. Each turn a weapon crate drops
+with a 40% chance, a health crate 10% and a utility crate 20% (the
+scheme's `crates`), whatever the lobby's crate settings.

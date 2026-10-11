@@ -3,6 +3,8 @@
 -- install = function(ctx) ... end with round rules, if its mod.toml entry
 -- declares changes_rules = true (the loader then says so).
 return {
+  -- Chance per turn of each crate kind, in %; the rest is no crate.
+  crates = { weapon = 40, health = 10, utility = 20 },
   weapons = {
     ["demo.big_bazooka"] = { delay = 1 },
     -- Stock weapons have no defaults: unset fields keep the lobby scheme's.
