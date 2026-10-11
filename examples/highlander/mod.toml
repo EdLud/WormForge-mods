@@ -30,6 +30,7 @@ type = "weapon"
 name = "Double Bazooka"
 description = "Highlander's Double Bazooka, on the bazooka slot."
 entry = "components/weapon.lua"
+icon = "sprites/double_bazooka/double_bazooka_ico.png"
 default_position = { row = "F1", column = 1 }
 
 [[components]]
@@ -38,6 +39,7 @@ type = "weapon"
 name = "Igniter"
 description = "Highlander's Igniter, on the homing_missile slot."
 entry = "components/weapon.lua"
+icon = "sprites/igniter/igniter_ico.png"
 default_position = { row = "F1", column = 2 }
 
 [[components]]
@@ -46,6 +48,7 @@ type = "weapon"
 name = "S.M.A.R.T Bomb"
 description = "Highlander's S.M.A.R.T Bomb, on the mortar slot."
 entry = "components/weapon.lua"
+icon = "sprites/smart_bomb/smart_ico.png"
 default_position = { row = "F1", column = 3 }
 
 [[components]]
@@ -54,6 +57,7 @@ type = "weapon"
 name = "Blaster Worm"
 description = "Highlander's Blaster Worm, on the homing_pigeon slot."
 entry = "components/weapon.lua"
+icon = "sprites/blaster_worm/bworm_ico.png"
 default_position = { row = "F1", column = 4 }
 
 [[components]]
@@ -62,6 +66,7 @@ type = "weapon"
 name = "Burning Sheep Launcher"
 description = "Highlander's Burning Sheep Launcher, on the sheep_launcher slot."
 entry = "components/weapon.lua"
+icon = "sprites/launchers/burning_sheep_launcher_ico.png"
 default_position = { row = "F1", column = 5 }
 
 [[components]]
@@ -70,6 +75,7 @@ type = "weapon"
 name = "Sticky Bomb"
 description = "Highlander's Sticky Bomb, on the grenade slot."
 entry = "components/weapon.lua"
+icon = "sprites/sticky_bomb/sbico.png"
 default_position = { row = "F2", column = 1 }
 
 [[components]]
@@ -78,6 +84,7 @@ type = "weapon"
 name = "Windy Cluster"
 description = "Highlander's Windy Cluster, on the cluster_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/windy_cluster/ico_windyc.png"
 default_position = { row = "F2", column = 2 }
 
 [[components]]
@@ -86,6 +93,7 @@ type = "weapon"
 name = "Super Gravedigger"
 description = "Highlander's Super Gravedigger, on the banana_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/super_gravedigger/sgrave_ico.png"
 default_position = { row = "F2", column = 3 }
 
 [[components]]
@@ -94,6 +102,7 @@ type = "weapon"
 name = "Thumper Nade"
 description = "Highlander's Thumper Nade, on the battle_axe slot."
 entry = "components/weapon.lua"
+icon = "sprites/thumper_nade/thumpern_ico.png"
 default_position = { row = "F2", column = 4 }
 
 [[components]]
@@ -102,6 +111,7 @@ type = "weapon"
 name = "Electric Grenade"
 description = "Highlander's Electric Grenade, on the earthquake slot."
 entry = "components/weapon.lua"
+icon = "sprites/electric_grenade/icon.png"
 default_position = { row = "F2", column = 5 }
 
 [[components]]
@@ -110,6 +120,7 @@ type = "weapon"
 name = "Real Shotgun"
 description = "Highlander's Real Shotgun, on the shotgun slot."
 entry = "components/weapon.lua"
+icon = "sprites/real_shotgun/real_shotgun_ico.png"
 default_position = { row = "F3", column = 1 }
 
 [[components]]
@@ -118,6 +129,7 @@ type = "weapon"
 name = "Sniper Rifle"
 description = "Highlander's Sniper Rifle, on the handgun slot."
 entry = "components/weapon.lua"
+icon = "sprites/sniper_rifle/srico.png"
 default_position = { row = "F3", column = 2 }
 
 [[components]]
@@ -126,6 +138,7 @@ type = "weapon"
 name = "Laser Gun"
 description = "Highlander's Laser Gun, on the uzi slot."
 entry = "components/weapon.lua"
+icon = "sprites/laser_gun/ico_lasergun.png"
 default_position = { row = "F3", column = 3 }
 
 [[components]]
@@ -134,6 +147,7 @@ type = "weapon"
 name = "Burst Rifle"
 description = "Highlander's Burst Rifle, on the minigun slot."
 entry = "components/weapon.lua"
+icon = "sprites/burst_rifle/ico_burstr.png"
 default_position = { row = "F3", column = 4 }
 
 [[components]]
@@ -142,6 +156,7 @@ type = "weapon"
 name = "Shadow-Bolt"
 description = "Highlander's Shadow-Bolt, on the longbow slot."
 entry = "components/weapon.lua"
+icon = "sprites/shadow_bolt/ico_shadowb.png"
 default_position = { row = "F3", column = 5 }
 
 [[components]]
@@ -150,6 +165,7 @@ type = "weapon"
 name = "Fire Jump"
 description = "Highlander's Fire Jump, on the fire_punch slot."
 entry = "components/weapon.lua"
+icon = "sprites/fire_jump/fire_jump_ico.png"
 default_position = { row = "F4", column = 1 }
 
 [[components]]
@@ -158,6 +174,7 @@ type = "weapon"
 name = "Sentry Laser"
 description = "Highlander's Sentry Laser, on the dragon_ball slot."
 entry = "components/weapon.lua"
+icon = "sprites/sentry_laser/icon.png"
 default_position = { row = "F4", column = 2 }
 
 [[components]]
@@ -166,6 +183,7 @@ type = "weapon"
 name = "Sentry Gun"
 description = "Highlander's Sentry Gun, on the kamikaze slot."
 entry = "components/weapon.lua"
+icon = "sprites/sentry_gun/icon.png"
 default_position = { row = "F4", column = 3 }
 
 [[components]]
@@ -174,6 +192,7 @@ type = "weapon"
 name = "Kamikaze Rocket"
 description = "Highlander's Kamikaze Rocket, on the suicide_bomber slot."
 entry = "components/weapon.lua"
+icon = "sprites/kamikaze_rocket/icon.png"
 default_position = { row = "F4", column = 4 }
 
 [[components]]
@@ -182,6 +201,7 @@ type = "weapon"
 name = "Javelin"
 description = "Highlander's Javelin, on the prod slot."
 entry = "components/weapon.lua"
+icon = "sprites/javelin/icon.png"
 default_position = { row = "F4", column = 5 }
 
 [[components]]
@@ -190,6 +210,7 @@ type = "weapon"
 name = "Dynamite"
 description = "Highlander's Dynamite, on the dynamite slot."
 entry = "components/weapon.lua"
+icon = "dynamite"
 default_position = { row = "F5", column = 1 }
 
 [[components]]
@@ -198,6 +219,7 @@ type = "weapon"
 name = "Nuke Rocket"
 description = "Highlander's Nuke Rocket, on the mine slot."
 entry = "components/weapon.lua"
+icon = "sprites/nuke_rocket/nuke_rocket_ico.png"
 default_position = { row = "F5", column = 2 }
 
 [[components]]
@@ -206,6 +228,7 @@ type = "weapon"
 name = "Pogo Sheep"
 description = "Highlander's Pogo Sheep, on the sheep slot."
 entry = "components/weapon.lua"
+icon = "sprites/pogo_sheep/psheep_ico.png"
 default_position = { row = "F5", column = 3 }
 
 [[components]]
@@ -214,6 +237,7 @@ type = "weapon"
 name = "Ghost Sheep"
 description = "Highlander's Ghost Sheep, on the aqua_sheep slot."
 entry = "components/weapon.lua"
+icon = "sprites/ghost_sheep/ghost_sheep_ico.png"
 default_position = { row = "F5", column = 5 }
 
 [[components]]
@@ -222,6 +246,7 @@ type = "weapon"
 name = "Gravler"
 description = "Highlander's Gravler, on the mole_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/gravler/gravler_ico.png"
 default_position = { row = "F5", column = 6 }
 
 [[components]]
@@ -230,6 +255,7 @@ type = "weapon"
 name = "Mortar Strike"
 description = "Highlander's Mortar Strike, on the air_strike slot."
 entry = "components/weapon.lua"
+icon = "sprites/mortar_strike/ico_mortarst.png"
 default_position = { row = "F6", column = 1 }
 
 [[components]]
@@ -238,6 +264,7 @@ type = "weapon"
 name = "Lightning Strike"
 description = "Highlander's Lightning Strike, on the napalm_strike slot."
 entry = "components/weapon.lua"
+icon = "sprites/lightning/icon.png"
 default_position = { row = "F6", column = 2 }
 
 [[components]]
@@ -246,6 +273,7 @@ type = "weapon"
 name = "Pigeon Strike"
 description = "Highlander's Pigeon Strike, on the mail_strike slot."
 entry = "components/weapon.lua"
+icon = "sprites/pigeon_strike/ico_pigeonst.png"
 default_position = { row = "F6", column = 3 }
 
 [[components]]
@@ -254,6 +282,7 @@ type = "weapon"
 name = "Gravler Strike"
 description = "Highlander's Gravler Strike, on the mole_squadron slot."
 entry = "components/weapon.lua"
+icon = "sprites/gravler/gravlerst_ico.png"
 default_position = { row = "F6", column = 5 }
 
 [[components]]
@@ -262,6 +291,7 @@ type = "weapon"
 name = "BlowTorch"
 description = "Highlander's BlowTorch, on the blow_torch slot."
 entry = "components/weapon.lua"
+icon = "blow_torch"
 default_position = { row = "F7", column = 1 }
 
 [[components]]
@@ -270,6 +300,7 @@ type = "weapon"
 name = "Super Drill"
 description = "Highlander's Super Drill, on the pneumatic_drill slot."
 entry = "components/weapon.lua"
+icon = "sprites/super_drill/ico_superdrill.png"
 default_position = { row = "F7", column = 2 }
 
 [[components]]
@@ -278,6 +309,7 @@ type = "weapon"
 name = "Baseball Bat"
 description = "Highlander's Baseball Bat, on the girder slot."
 entry = "components/weapon.lua"
+icon = "baseball_bat"
 default_position = { row = "F7", column = 3 }
 
 [[components]]
@@ -286,6 +318,7 @@ type = "weapon"
 name = "Electromagnet"
 description = "Highlander's Electromagnet, on the baseball_bat slot."
 entry = "components/weapon.lua"
+icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
 
 [[components]]
@@ -294,6 +327,7 @@ type = "weapon"
 name = "3 Girder Pack"
 description = "Highlander's 3 Girder Pack, on the girder_pack slot."
 entry = "components/weapon.lua"
+icon = "girder_pack"
 default_position = { row = "F7", column = 5 }
 
 [[components]]
@@ -302,6 +336,7 @@ type = "weapon"
 name = "Jump"
 description = "Highlander's Jump, on the ninja_rope slot."
 entry = "components/weapon.lua"
+icon = "sprites/jump/jumpic.png"
 default_position = { row = "F8", column = 1 }
 
 [[components]]
@@ -310,6 +345,7 @@ type = "weapon"
 name = "Hot Air Balloon"
 description = "Highlander's Hot Air Balloon, on the bungee slot."
 entry = "components/weapon.lua"
+icon = "sprites/balloon/balloon_icon.png"
 default_position = { row = "F8", column = 2 }
 
 [[components]]
@@ -318,6 +354,7 @@ type = "weapon"
 name = "Hang-Glider"
 description = "Highlander's Hang-Glider, on the parachute slot."
 entry = "components/weapon.lua"
+icon = "sprites/hang_glider/ico_glider.png"
 default_position = { row = "F8", column = 3 }
 
 [[components]]
@@ -326,6 +363,7 @@ type = "weapon"
 name = "Super Tele"
 description = "Highlander's Super Tele, on the teleport slot."
 entry = "components/weapon.lua"
+icon = "sprites/super_tele/icon.png"
 default_position = { row = "F8", column = 4 }
 
 [[components]]
@@ -334,6 +372,7 @@ type = "weapon"
 name = "Portal Gun"
 description = "Highlander's Portal Gun, on the scales_of_justice slot."
 entry = "components/weapon.lua"
+icon = "sprites/portal_gun/icon.png"
 default_position = { row = "F8", column = 5 }
 
 [[components]]
@@ -342,6 +381,7 @@ type = "weapon"
 name = "Chilli Bomb"
 description = "Highlander's Chilli Bomb, on the super_banana slot."
 entry = "components/weapon.lua"
+icon = "sprites/chilli_bomb/chilli_ico.png"
 default_position = { row = "F9", column = 1 }
 
 [[components]]
@@ -350,6 +390,7 @@ type = "weapon"
 name = "Hellish Hand-Grenade"
 description = "Highlander's Hellish Hand-Grenade, on the holy_grenade slot."
 entry = "components/weapon.lua"
+icon = "sprites/hellish/hhh_ico.png"
 default_position = { row = "F9", column = 2 }
 
 [[components]]
@@ -358,6 +399,7 @@ type = "weapon"
 name = "Flame Thrower"
 description = "Highlander's Flame Thrower, on the flame_thrower slot."
 entry = "components/weapon.lua"
+icon = "flame_thrower"
 default_position = { row = "F9", column = 3 }
 
 [[components]]
@@ -366,6 +408,7 @@ type = "weapon"
 name = "Ferret"
 description = "Highlander's Ferret, on the salvation_army slot."
 entry = "components/weapon.lua"
+icon = "sprites/ferret/icon.png"
 default_position = { row = "F9", column = 4 }
 
 [[components]]
@@ -374,6 +417,7 @@ type = "weapon"
 name = "Banana Express"
 description = "Highlander's Banana Express, on the mb_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/banana_express/banana_express_ico.png"
 default_position = { row = "F9", column = 5 }
 
 [[components]]
@@ -382,6 +426,7 @@ type = "weapon"
 name = "Valyrian Fire"
 description = "Highlander's Valyrian Fire, on the petrol_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/valyrian_fire/icon.png"
 default_position = { row = "F10", column = 1 }
 
 [[components]]
@@ -390,6 +435,7 @@ type = "weapon"
 name = "Remote Roller"
 description = "Highlander's Remote Roller, on the skunk slot."
 entry = "components/weapon.lua"
+icon = "sprites/remote_roller/rroller_ico.png"
 default_position = { row = "F10", column = 2 }
 
 [[components]]
@@ -398,6 +444,7 @@ type = "weapon"
 name = "Priceless Ming Vase"
 description = "Highlander's Priceless Ming Vase, on the ming_vase slot."
 entry = "components/weapon.lua"
+icon = "ming_vase"
 default_position = { row = "F10", column = 3 }
 
 [[components]]
@@ -406,6 +453,7 @@ type = "weapon"
 name = "Bowling Ball Strike"
 description = "Highlander's Bowling Ball Strike, on the sheep_strike slot."
 entry = "components/weapon.lua"
+icon = "sprites/bowling_ball/strike_icon.png"
 default_position = { row = "F10", column = 4 }
 
 [[components]]
@@ -414,6 +462,7 @@ type = "weapon"
 name = "Thumper Nade Strike"
 description = "Highlander's Thumper Nade Strike, on the carpet_bomb slot."
 entry = "components/weapon.lua"
+icon = "sprites/thumper_nade/thumpernst_ico.png"
 default_position = { row = "F10", column = 5 }
 
 [[components]]
@@ -422,6 +471,7 @@ type = "weapon"
 name = "Cow Launcher"
 description = "Highlander's Cow Launcher, on the mad_cow slot."
 entry = "components/weapon.lua"
+icon = "sprites/launchers/cow_launcher_ico.png"
 default_position = { row = "F11", column = 1 }
 
 [[components]]
@@ -430,6 +480,7 @@ type = "weapon"
 name = "Old Woman Launcher"
 description = "Highlander's Old Woman Launcher, on the old_woman slot."
 entry = "components/weapon.lua"
+icon = "sprites/launchers/old_woman_launcher_ico.png"
 default_position = { row = "F11", column = 2 }
 
 [[components]]
@@ -438,6 +489,7 @@ type = "weapon"
 name = "Crate Strike"
 description = "Highlander's Crate Strike, on the donkey slot."
 entry = "components/weapon.lua"
+icon = "sprites/crate_strike/icon.png"
 default_position = { row = "F11", column = 3 }
 
 [[components]]
@@ -446,6 +498,7 @@ type = "weapon"
 name = "Reinforcement"
 description = "Highlander's Reinforcement, on the nuclear_test slot."
 entry = "components/weapon.lua"
+icon = "sprites/reinforcement/icon.png"
 default_position = { row = "F11", column = 4 }
 
 [[components]]
@@ -454,6 +507,7 @@ type = "weapon"
 name = "Ice Arrow"
 description = "Highlander's Ice Arrow, on the armageddon slot."
 entry = "components/weapon.lua"
+icon = "sprites/ice_arrow/icon.png"
 default_position = { row = "F11", column = 5 }
 
 [[components]]
@@ -462,6 +516,7 @@ type = "weapon"
 name = "Skip Go/Surrender"
 description = "Highlander's Skip Go/Surrender, on the skip_go slot."
 entry = "components/weapon.lua"
+icon = "sprites/skip_go/icon.png"
 default_position = { row = "F12", column = 1 }
 
 [[components]]
@@ -470,6 +525,7 @@ type = "weapon"
 name = "Wind Changer"
 description = "Highlander's Wind Changer, on the surrender slot."
 entry = "components/weapon.lua"
+icon = "sprites/wind_changer/ico_windchanger.png"
 default_position = { row = "F12", column = 2 }
 
 [[components]]
@@ -478,6 +534,7 @@ type = "weapon"
 name = "Weapon Crate"
 description = "Highlander's Weapon Crate, on the freeze slot."
 entry = "components/weapon.lua"
+icon = "sprites/weapon_crate/icon.png"
 default_position = { row = "F12", column = 4 }
 
 [[components]]
@@ -486,6 +543,7 @@ type = "weapon"
 name = "Cluster Bomb"
 description = "Highlander's Cluster Bomb, on the magic_bullet slot."
 entry = "components/weapon.lua"
+icon = "cluster_bomb"
 default_position = { row = "F12", column = 5 }
 
 [[components]]
@@ -494,6 +552,7 @@ type = "weapon"
 name = "Helicopter"
 description = "Highlander's Helicopter, on the jet_pack slot."
 entry = "components/weapon.lua"
+icon = "sprites/helicopter/heli_ico.png"
 default_position = { row = "utility", column = 1 }
 
 [[components]]
@@ -502,6 +561,7 @@ type = "weapon"
 name = "Gravity Control"
 description = "Highlander's Gravity Control, on the low_gravity slot."
 entry = "components/weapon.lua"
+icon = "sprites/gravity_control/gravity_control_ico.png"
 default_position = { row = "utility", column = 2 }
 
 [[components]]
@@ -510,6 +570,7 @@ type = "weapon"
 name = "Fast Walk"
 description = "Highlander's Fast Walk, on the fast_walk slot."
 entry = "components/weapon.lua"
+icon = "fast_walk"
 default_position = { row = "utility", column = 3 }
 
 [[components]]
@@ -518,6 +579,7 @@ type = "weapon"
 name = "Swim Suit"
 description = "Highlander's Swim Suit, on the laser_sight slot."
 entry = "components/weapon.lua"
+icon = "sprites/swim_suit/ico_swimsuit.png"
 default_position = { row = "utility", column = 4 }
 
 [[components]]
@@ -526,6 +588,7 @@ type = "weapon"
 name = "Teleport"
 description = "Highlander's Teleport, on the invisibility slot."
 entry = "components/weapon.lua"
+icon = "teleport"
 default_position = { row = "utility", column = 5 }
 
 [[components]]
@@ -534,6 +597,7 @@ type = "weapon"
 name = "Skunk"
 description = "Highlander's Skunk, on the damage_x2 slot."
 entry = "components/weapon.lua"
+icon = "skunk"
 default_position = { row = "utility", column = 6 }
 
 [[components]]
@@ -542,6 +606,7 @@ type = "weapon"
 name = "Crate Spy"
 description = "Highlander's Crate Spy, on the crate_spy slot."
 entry = "components/weapon.lua"
+icon = "crate_spy"
 default_position = { row = "utility", column = 7 }
 
 [[components]]
@@ -550,6 +615,7 @@ type = "weapon"
 name = "Mole Bomb"
 description = "Highlander's Mole Bomb, on the double_turn_time slot."
 entry = "components/weapon.lua"
+icon = "mole_bomb"
 default_position = { row = "utility", column = 8 }
 
 [[components]]
@@ -558,6 +624,7 @@ type = "weapon"
 name = "Crate Shower"
 description = "Highlander's Crate Shower, on the crate_shower slot."
 entry = "components/weapon.lua"
+icon = "crate_shower"
 default_position = { row = "utility", column = 9 }
 
 # Every slot: Highlander's weapons, and WA's own on the three it leaves alone.
