@@ -87,14 +87,12 @@ local TRAIL_LIFE = 30
 -- circle's own place it looked to float over the ground. In front of the
 -- terrain (actors are behind it by default), behind the worms (0xD0000).
 local SPRITE_DROP = 4
-local LIFT = 0x8000           -- half a pixel, 16.16
-local BALL_DEPTH = 0x000E0000
+local LIFT = 0.5           -- half a pixel
+local BALL_DEPTH = wa.depth.OBJECTS
 local GLOW_DEPTH, SHEEN_DEPTH, SPARK_DEPTH = BALL_DEPTH + 1, BALL_DEPTH - 1, BALL_DEPTH - 2
-local P = 0x10000
--- WA keeps positions in 16.16, so it can place nothing past +-32767 px; a
 -- ball flung that far off the map (it flies on, WA drawing its arrow at the
 -- edge) is gone once its next move would leave that range.
-local EDGE = 32000 * P
+local EDGE = 32000
 
 -- What the ball rolls on: PX's DefaultColGroup, and without worms when fast
 -- (NoWormsColGroup).
@@ -148,7 +146,7 @@ local function think(b)
     return 0
   end
   local speed = math.sqrt(b.rvx * b.rvx + b.rvy * b.rvy)
-  local vx2, vy2 = b.vx, b.vy + wa.world.gravity() / P
+  local vx2, vy2 = b.vx, b.vy + wa.world.gravity()
   local bounce, friction, ix, iy = BOUNCE, FRICTION, INERTIA_X, INERTIA_Y
   if b.low then
     bounce, friction, ix, iy = LOW_BOUNCE, LOW_FRICTION, LOW_INERTIA_X, LOW_INERTIA_Y
@@ -158,7 +156,7 @@ local function think(b)
   if vx2 == 0 and vy2 == 0 then vy2 = b.vy + 0.1 end
   local with = speed > FAST and SOLID_FAST or SOLID
   local x, y = b.x, b.y
-  local dx, dy = trunc(vx2 * P), trunc(vy2 * P)
+  local dx, dy = vx2, vy2
   if math.abs(x + dx) > EDGE or math.abs(y + dy) > EDGE then
     b.gone = true
     return 0
@@ -195,17 +193,17 @@ local function think(b)
     -- Rest half a pixel off the surface, as PX's ball does (it stops a
     -- step short, up to a pixel): touching it, a ball gliding along would
     -- hit it at once every frame and stand still at speed.
-    local lx, ly = x + trunc(res.nx * LIFT), y + trunc(res.ny * LIFT)
+    local lx, ly = x + res.nx * LIFT, y + res.ny * LIFT
     local lift = wa.world.trace({ x0 = x, y0 = y, x1 = lx, y1 = ly, radius = RADIUS, with = with })
     if not (lift and (lift.hit or lift.starts_solid)) then x, y = lx, ly end
   else
     b.vx, b.vy = vx2, vy2
-    x, y = x + trunc(vx2 * P), y + trunc(vy2 * P)
+    x, y = x + vx2, y + vy2
   end
   b.vx = b.vx + ix * (b.vx - b.lvx)
   b.vy = b.vy + iy * (b.vy - b.lvy)
   b.lvx, b.lvy = b.vx, b.vy
-  b.rvx, b.rvy = (x - b.lx) / P, (y - b.ly) / P
+  b.rvx, b.rvy = (x - b.lx), (y - b.ly)
   b.lx, b.ly = x, y
   b.x, b.y = x, y
   -- Slow for long enough: low speed, no inertia, so it settles.
@@ -217,7 +215,7 @@ local function think(b)
   end
   b.sleep_timer = b.sleep_timer - 1
   if b.sleep_timer <= 0 then
-    local dx, dy = (x - b.rec_x) / P, (y - b.rec_y) / P
+    local dx, dy = (x - b.rec_x), (y - b.rec_y)
     if math.sqrt(dx * dx + dy * dy) < SLEEP_DISTANCE then sleep(b) end
     b.sleep_timer, b.rec_x, b.rec_y = SLEEP_PERIOD, x, y
   end
@@ -237,7 +235,7 @@ local function tick(id)
 end
 
 local function overlaps(b, obj)
-  local dx, dy = (obj.x - b.x) / P, (obj.y - b.y) / P
+  local dx, dy = (obj.x - b.x), (obj.y - b.y)
   local r = RADIUS + target_radius(obj) + TOUCH
   return dx * dx + dy * dy <= r * r
 end
@@ -248,7 +246,7 @@ local function push_balls(id, b, speed)
   local push = PUSH_FORCE * math.sqrt(speed)
   for other_id, o in pairs(shared.bowling_balls) do
     if other_id ~= id then
-      local dx, dy = (o.x - b.x) / P, (o.y - b.y) / P
+      local dx, dy = (o.x - b.x), (o.y - b.y)
       local d2 = dx * dx + dy * dy
       if d2 > 0 and d2 <= (2 * RADIUS) * (2 * RADIUS) then
         local d = math.sqrt(d2)
@@ -293,9 +291,9 @@ local function hit_others(a, b, speed)
       fx, fy = fx * DAMAGE_FORCE, fy * DAMAGE_FORCE
     end
     if obj.kind == "worm" then
-      obj:hurt({ amount = damage, vx = trunc(fx * P), vy = trunc(fy * P) })
+      obj:hurt({ amount = damage, vx = fx, vy = fy })
     else
-      obj:hit(damage, trunc(fx * P), trunc(fy * P))
+      obj:hit(damage, fx, fy)
     end
     a:sound(crushed and SOUND_CRUSH or SOUND_HIT)
   end
@@ -336,7 +334,7 @@ shared.kick_bowling_balls = function(x, y, reach, vx, vy)
   local r = reach + RADIUS
   for _, id in ipairs(balls_in_order()) do
     local b = shared.bowling_balls[id]
-    local dx, dy = (b.x - x) / P, (b.y - y) / P
+    local dx, dy = (b.x - x), (b.y - y)
     if dx * dx + dy * dy <= r * r then
       wake(b)
       b.vx, b.vy = vx, vy
@@ -345,7 +343,7 @@ shared.kick_bowling_balls = function(x, y, reach, vx, vy)
 end
 
 -- PX's magnet (CMagnet::ApplyForce): a ball in its field gets its push
--- (16.16; the ball's speed is in pixels a frame). A sleeping ball is left
+-- (pixels/frame). A sleeping ball is left
 -- alone unless `waking` (the magnet moving, discharging or exploding).
 shared.magnet_bowling_balls = function(force, waking)
   for _, id in ipairs(balls_in_order()) do
@@ -353,8 +351,8 @@ shared.magnet_bowling_balls = function(force, waking)
     local dx, dy = force(b.x, b.y)
     if dx and (waking or not b.asleep) then
       if waking then wake(b) end
-      b.vx = b.vx + dx / P
-      b.vy = b.vy + dy / P
+      b.vx = b.vx + dx
+      b.vy = b.vy + dy
     end
   end
 end
@@ -363,7 +361,7 @@ shared.zap_bowling_balls = function(x, y)
   local reach = (ZAP_REACH + RADIUS) * (ZAP_REACH + RADIUS)
   for _, id in ipairs(balls_in_order()) do
     local b = shared.bowling_balls[id]
-    local dx, dy = (b.x - x) / P, (b.y - y) / P
+    local dx, dy = (b.x - x), (b.y - y)
     if dx * dx + dy * dy <= reach then zap(b) end
   end
 end
@@ -371,7 +369,7 @@ end
 -- The Electric Grenade's arc (PX's Tazer, whose targets include the ball):
 -- the balls as targets, at the middle of the drawn ball, in id order.
 local function as_target(id, b)
-  return { kind = "ball", id = id, x = b.x, y = b.y + SPRITE_DROP * P,
+  return { kind = "ball", id = id, x = b.x, y = b.y + SPRITE_DROP,
     alliance = b.alliance, moving = b.vx ~= 0 or b.vy ~= 0 }
 end
 
@@ -410,7 +408,7 @@ shared.bowling_ball_on_beam = function(x0, y0, dx, dy, len)
   local best
   for _, id in ipairs(balls_in_order()) do
     local b = shared.bowling_balls[id]
-    local cx, cy = (b.x - x0) / P, (b.y - y0) / P
+    local cx, cy = (b.x - x0), (b.y - y0)
     local along = cx * dx + cy * dy
     local miss = cx * cx + cy * cy - along * along
     if miss <= RADIUS * RADIUS then
@@ -418,7 +416,7 @@ shared.bowling_ball_on_beam = function(x0, y0, dx, dy, len)
       if t > 0 and t < len and (not best or t < best) then best = t end
     end
   end
-  if best then return x0 + trunc(best * dx * P), y0 + trunc(best * dy * P) end
+  if best then return x0 + (best * dx), y0 + (best * dy) end
 end
 
 -- The electrified look, a game frame on: the spark's cycle, and the trail
@@ -440,7 +438,7 @@ local function electrified_frame(b)
     b.seed = (b.seed * 1103515245 + 12345) % 0x80000000
     local a = b.seed / 0x80000000 * 2 * math.pi
     b.seed = (b.seed * 1103515245 + 12345) % 0x80000000
-    local v = b.seed / 0x80000000 * 0.3 * P
+    local v = b.seed / 0x80000000 * 0.3
     b.trail[#b.trail + 1] = { x = b.x, y = b.y, vx = wa.math.cos(a) * v, vy = wa.math.sin(a) * v, age = 0 }
   end
 end
@@ -448,8 +446,8 @@ end
 local function take_hit(b, hit)
   wake(b)
   local k = hit.kind == "blast" and BLAST_FORCE or GUN_FORCE
-  b.vx = b.vx + k * hit.vx / P
-  b.vy = b.vy + k * hit.vy / P
+  b.vx = b.vx + k * hit.vx
+  b.vy = b.vy + k * hit.vy
 end
 
 local function spawn_ball(owner, x, y, vx, vy)
@@ -459,7 +457,7 @@ local function spawn_ball(owner, x, y, vx, vy)
     asleep = false, alliance = owner and owner.alliance,
   }
   local a = wa.actors.spawn({
-    sprite = SHEET, x = x, y = y + SPRITE_DROP * P, gravity = false, collide = false, owner = owner,
+    sprite = SHEET, x = x, y = y + SPRITE_DROP, gravity = false, collide = false, owner = owner,
     as_object = true,
     on = {
       hit = function(_, hit) take_hit(b, hit) end,
@@ -481,15 +479,15 @@ local function spawn_ball(owner, x, y, vx, vy)
         if shared.portals and next(shared.portals.pairs) then
           local proxy = {
             id = a.id, kind = "actor", x = b.x, y = b.y,
-            vx = trunc(b.vx * P), vy = trunc(b.vy * P),
+            vx = b.vx, vy = b.vy,
             fits = function(_, x, y)
               return not wa.world.collides({ x = x, y = y, radius = RADIUS, with = {"terrain"} })
             end,
             warp = function(_, spec)
-              b.x, b.y, b.vx, b.vy = spec.x, spec.y, spec.vx / P, spec.vy / P
+              b.x, b.y, b.vx, b.vy = spec.x, spec.y, spec.vx, spec.vy
               wake(b)
               b.lvx, b.lvy, b.rvx, b.rvy = b.vx, b.vy, b.vx, b.vy
-              a:warp({ x = b.x, y = b.y + SPRITE_DROP * P, vx = 0, vy = 0 })
+              a:warp({ x = b.x, y = b.y + SPRITE_DROP, vx = 0, vy = 0 })
               return true
             end,
           }
@@ -503,7 +501,7 @@ local function spawn_ball(owner, x, y, vx, vy)
         end
         if speed > PUSH_SPEED then push_balls(a.id, b, speed) end
         if speed > FAST then hit_others(a, b, speed) end
-        a.x, a.y, a.vx, a.vy = b.x, b.y + SPRITE_DROP * P, 0, 0
+        a.x, a.y, a.vx, a.vy = b.x, b.y + SPRITE_DROP, 0, 0
         a:gfx({ angle = math.deg(b.rot) % 360, depth = BALL_DEPTH, tint = b.zapped and ZAPPED_TINT or 0xFFFFFF })
       end,
     },
@@ -518,13 +516,13 @@ shared.spawn_bowling_ball = spawn_ball
 -- falls to y1: think's flight through the air, gravity and PX's inertia,
 -- frame by frame (no trig, the same on every machine).
 local function drift(y0, y1, vx)
-  local g = wa.world.gravity() / P
+  local g = wa.world.gravity()
   if g <= 0 then return 0 end
   local x, y, vy, lvy = 0, y0, 0, 0
   for _ = 1, 3000 do
     if y >= y1 then break end
     local vy2 = vy + g
-    x, y = x + trunc(vx * P), y + trunc(vy2 * P)
+    x, y = x + vx, y + vy2
     vy = vy2 + INERTIA_Y * (vy2 - lvy)
     lvy = vy
   end
@@ -533,11 +531,11 @@ end
 
 fires.bowling_strike = function(ev)
   local dir = (ev.vx or 0) < 0 and -1 or 1
-  local y0 = STRIKE_Y * P
-  local back = drift(y0, ev.y - RADIUS * P, STRIKE_SPEED * dir)
+  local y0 = STRIKE_Y
+  local back = drift(y0, ev.y - RADIUS, STRIKE_SPEED * dir)
   for i = 1, STRIKE_BALLS do
     local offset = (i - (STRIKE_BALLS + 1) / 2) * STRIKE_SPACING
-    spawn_ball(ev.worm, ev.x - back + math.floor(offset * P), y0, STRIKE_SPEED * dir, 0)
+    spawn_ball(ev.worm, ev.x - back + offset, y0, STRIKE_SPEED * dir, 0)
   end
 end
 
@@ -549,7 +547,7 @@ if wa.on.draw and wa.draw.quad then
     local c, s = wa.math.cos(rot), wa.math.sin(rot)
     local p = QUAD.points
     local function corner(i, dx, dy)
-      p[i][1], p[i][2] = x + math.floor((dx * c - dy * s) * half), y + math.floor((dx * s + dy * c) * half)
+      p[i][1], p[i][2] = x + ((dx * c - dy * s) * half), y + ((dx * s + dy * c) * half)
     end
     corner(1, -1, -1)
     corner(2, 1, -1)
@@ -565,18 +563,18 @@ if wa.on.draw and wa.draw.quad then
     for _, id in ipairs(balls_in_order()) do
       local b = shared.bowling_balls[id]
       if b.zapped then
-        local drop = SPRITE_DROP * P
+        local drop = SPRITE_DROP
         for _, t in ipairs(b.trail) do
           local k = t.age / TRAIL_LIFE
-          quad(GLOW_SHEET, 0, zap_color(1 - k), GLOW_DEPTH, t.x, t.y + drop, (0.3 + 0.2 * k) * GLOW_SIZE / 2 * P, 0)
+          quad(GLOW_SHEET, 0, zap_color(1 - k), GLOW_DEPTH, t.x, t.y + drop, (0.3 + 0.2 * k) * GLOW_SIZE / 2, 0)
         end
         local x, y = b.x, b.y + drop
-        local glow = (0.3 + 0.1 * wa.draw.random()) * GLOW_SIZE / 2 * P
+        local glow = (0.3 + 0.1 * wa.draw.random()) * GLOW_SIZE / 2
         for _ = 1, 3 do quad(GLOW_SHEET, 0, FULL, GLOW_DEPTH, x, y, glow, 0) end
-        quad(SHEEN_SHEET, 0, SHEEN_COLOR, SHEEN_DEPTH, x, y, SPARK_SIZE / 2 * P, b.rot)
+        quad(SHEEN_SHEET, 0, SHEEN_COLOR, SHEEN_DEPTH, x, y, SPARK_SIZE / 2, b.rot)
         if b.spark <= 1 then
           local frame = math.min(SPARK_FRAMES - 1, math.floor(b.spark * SPARK_FRAMES))
-          quad(SPARK_SHEET, frame, 0xFFFFFFFF, SPARK_DEPTH, x, y, SPARK_SIZE / 2 * P, b.rot)
+          quad(SPARK_SHEET, frame, 0xFFFFFFFF, SPARK_DEPTH, x, y, SPARK_SIZE / 2, b.rot)
         end
       end
     end

@@ -1,24 +1,21 @@
 -- Dynamite slot, mine placement. Space plants a persist LuaActor.
 -- LOS with wa.land.trace, hitscan with worm:hurt. No stock blast.
-
-local PX = 0x10000
-
-local SENSOR_PX    = 360
-local AMMO         = 20
-local DAMAGE       = 2
-local SHOT_FRAMES  = 6
-local ARM_FRAMES   = 30
-local BEEP_FRAMES  = 60
-local ROT_IDLE     = 3
-local ROT_ACTIVE   = 8
+local SENSOR_PX = 360
+local AMMO = 20
+local DAMAGE = 2
+local SHOT_FRAMES = 6
+local ARM_FRAMES = 30
+local BEEP_FRAMES = 60
+local ROT_IDLE = 3
+local ROT_ACTIVE = 8
 local AIM_TOLERANCE = 1.5
-local HIT_PX       = 10
-local KNOCK        = 0x1C000
-local STEPS        = 120
-local SINK_PX      = 8
-local MUZZLE_UP    = 25
-local MUZZLE_OUT   = 11
-local SPARK_LIFE   = 10
+local HIT_PX = 10
+local KNOCK = 1.75
+local STEPS = 120
+local SINK_PX = 8
+local MUZZLE_UP = 25
+local MUZZLE_OUT = 11
+local SPARK_LIFE = 10
 
 local SPREAD = { 0.0, 1.5, -1.0, 2.0, -2.0, 1.0, -1.5, 0.5 }
 
@@ -44,8 +41,8 @@ end
 
 -- 0 = down, 90 = right: source art faces right, screen y grows down.
 local function angle_to(ax, ay, tx, ty)
-  local dx = (tx - ax) // PX
-  local dy = (ty - ay) // PX
+  local dx = (tx - ax) // 1
+  local dy = (ty - ay) // 1
   local deg = math.deg(wa.math.atan(dx, dy))
   if deg < 0 then
     deg = deg + 360
@@ -95,9 +92,9 @@ local function sees(a, s, w)
   if not enemy(s, w) or not moving(s, w) then
     return false
   end
-  local ex, ey = a.x, a.y - MUZZLE_UP * PX
-  local dx = (w.x - ex) // PX
-  local dy = (w.y - ey) // PX
+  local ex, ey = a.x, a.y - MUZZLE_UP
+  local dx = (w.x - ex) // 1
+  local dy = (w.y - ey) // 1
   if dx * dx + dy * dy > SENSOR_PX * SENSOR_PX then
     return false
   end
@@ -105,12 +102,12 @@ local function sees(a, s, w)
 end
 
 local function acquire(a, s)
-  local ex, ey = a.x, a.y - MUZZLE_UP * PX
+  local ex, ey = a.x, a.y - MUZZLE_UP
   local best, best_d
   for _, w in ipairs(wa.worms.all()) do
     if sees(a, s, w) then
-      local dx = (w.x - ex) // PX
-      local dy = (w.y - ey) // PX
+      local dx = (w.x - ex) // 1
+      local dy = (w.y - ey) // 1
       local d = dx * dx + dy * dy
       if not best_d or d < best_d or (d == best_d and w.id < best.id) then
         best, best_d = w, d
@@ -183,30 +180,30 @@ local function fire(a, s)
 
   local rad = math.rad(s.angle + dev)
   local dx, dy = wa.math.sin(rad), wa.math.cos(rad)
-  local mx = a.x + math.floor(dx * MUZZLE_OUT * PX)
-  local my = a.y - MUZZLE_UP * PX + math.floor(dy * MUZZLE_OUT * PX)
-  local reach = SENSOR_PX * PX
-  local ex = mx + math.floor(dx * reach)
-  local ey = my + math.floor(dy * reach)
+  local mx = a.x + (dx * MUZZLE_OUT)
+  local my = a.y - MUZZLE_UP + (dy * MUZZLE_OUT)
+  local reach = SENSOR_PX
+  local ex = mx + (dx * reach)
+  local ey = my + (dy * reach)
 
   local hit = wa.land.trace(mx, my, ex, ey)
   local hx, hy = ex, ey
   if hit then
     hx, hy = hit.x, hit.y
   end
-  local rx, ry = (hx - mx) // PX, (hy - my) // PX
+  local rx, ry = (hx - mx) // 1, (hy - my) // 1
   local hit_px = rx * rx + ry * ry
   local victim
   for _, w in ipairs(wa.worms.all()) do
     if enemy(s, w) then
-      local wx = (w.x - mx) // PX
-      local wy = (w.y - my) // PX
+      local wx = (w.x - mx) // 1
+      local wy = (w.y - my) // 1
       local along = wx * dx + wy * dy
       if along > 0 and along * along < hit_px then
         local off = wx * dy - wy * dx
         if off * off <= HIT_PX * HIT_PX then
-          hx = mx + math.floor(dx * along * PX)
-          hy = my + math.floor(dy * along * PX)
+          hx = mx + (dx * along)
+          hy = my + (dy * along)
           hit_px = along * along
           victim = w
         end
@@ -216,8 +213,8 @@ local function fire(a, s)
 
   if victim then
     victim:hurt(DAMAGE)
-    victim.vx = victim.vx + math.floor(dx * KNOCK)
-    victim.vy = victim.vy + math.floor(dy * KNOCK)
+    victim.vx = victim.vx + (dx * KNOCK)
+    victim.vy = victim.vy + (dy * KNOCK)
   end
   spark_at(hx, hy)
 
@@ -253,7 +250,7 @@ local function think(a, s)
       end
     end
     s.had_target = true
-    want = angle_to(a.x, a.y - MUZZLE_UP * PX, target.x, target.y)
+    want = angle_to(a.x, a.y - MUZZLE_UP, target.x, target.y)
     s.angle = turn_toward(s.angle, want, ROT_ACTIVE)
   else
     s.had_target = false
@@ -320,7 +317,7 @@ local function brain(a, ev)
     if hit.land then
       a.vx, a.vy = 0, 0
       s.planted = true
-      s.px, s.py = a.x, a.y + SINK_PX * PX
+      s.px, s.py = a.x, a.y + SINK_PX
       s.arm = ARM_FRAMES
       a:sound("sounds/sentryplace.wav")
       sync(a, s)
@@ -371,8 +368,8 @@ wa.weapons.replace({
       sprite = turret_sheet(team, 0),
       x = worm.x,
       y = worm.y,
-      vx = (worm.vx // 2) + facing * 19661,
-      vy = (worm.vy // 2) - 9830,
+      vx = (worm.vx / 2) + facing * 0.3000030517578125,
+      vy = (worm.vy / 2) - 0.149993896484375,
       loop = false,
       origin = "bottom",
       owner = worm,

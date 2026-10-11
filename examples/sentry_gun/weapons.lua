@@ -2,20 +2,17 @@
 -- Baked sheets keep the base, firing barrel and housing in one draw, with
 -- 120 angles per pose. a:frame() selects idle/firing without changing feet.
 -- Angles: 0 down, 90 right, 180 up, 270 left.
-
-local PX = 0x10000
-
-local SENSOR_PX     = 360   -- detection radius
-local AMMO          = 20    -- rounds per turn
-local DAMAGE        = 2     -- per round
-local SHOT_FRAMES   = 6     -- frames between rounds
-local ACTIVATE      = 60    -- frames after acquiring before the first shot
-local BEEP_FRAMES   = 60    -- minimum gap between alert beeps
-local ROT_IDLE      = 0.5   -- degrees per frame while sweeping
-local ROT_ACTIVE    = 1.5   -- PX tracking speed, degrees per frame
-local SWEEP         = 10    -- PX idle sweep amplitude, degrees
+local SENSOR_PX = 360   -- detection radius
+local AMMO = 20    -- rounds per turn
+local DAMAGE = 2     -- per round
+local SHOT_FRAMES = 6     -- frames between rounds
+local ACTIVATE = 60    -- frames after acquiring before the first shot
+local BEEP_FRAMES = 60    -- minimum gap between alert beeps
+local ROT_IDLE = 0.5   -- degrees per frame while sweeping
+local ROT_ACTIVE = 1.5   -- PX tracking speed, degrees per frame
+local SWEEP = 10    -- PX idle sweep amplitude, degrees
 local AIM_TOLERANCE = 1.5   -- PX fires only after rotation reaches the target
-local HIT_PX        = 10    -- how near a ray passes a worm to count as a hit
+local HIT_PX = 10    -- how near a ray passes a worm to count as a hit
 local SELF_BLAST_PX = 24    -- never detonate a round closer than this
 local REQUIRE_MOTION = true -- PX only acquires walking/jumping/moving worms
 
@@ -23,9 +20,9 @@ local REQUIRE_MOTION = true -- PX only acquires walking/jumping/moving worms
 -- sprite's bottom opaque row), so a near-horizontal ray traced from there hits
 -- the ground the turret is standing on and every shot is cancelled as a
 -- self-blast. These match the bake's pivot and bore offsets.
-local SINK_PX     = 8      -- pixels the planted turret settles into the ground
-local MUZZLE_UP   = 25     -- pixels from the anchor up to the turret pivot
-local MUZZLE_OUT  = 11     -- pixels from the pivot along the bore
+local SINK_PX = 8      -- pixels the planted turret settles into the ground
+local MUZZLE_UP = 25     -- pixels from the anchor up to the turret pivot
+local MUZZLE_OUT = 11     -- pixels from the pivot along the bore
 
 -- Barrel deviation, in tenths of a degree so the draw stays integer.
 -- PX rolled this at random and kept every 5th round pin-point. This pack used
@@ -43,15 +40,15 @@ local SPREAD_TENTHS = 20 -- +-2.0 degrees
 -- sprites/casing is the native uzicase.spr frames (WA's own Gfx0), extracted
 -- and black-keyed exactly like the turret's own key_black() convention,
 -- driven the same way every other multi-frame sheet in this pack is.
-local CASING        = "sprites/casing"
+local CASING = "sprites/casing"
 local CASING_FRAMES = 16
-local CASING_LIFE   = 100    -- PX SetLifeTime(100)
+local CASING_LIFE = 100    -- PX SetLifeTime(100)
 -- PX's RandomFloat(-0.3, 0.3) rad (~+-17 deg) and RandomFloat(2.0, 3.0)
 -- speed, drawn now rather than approximated by a fixed table. Integer ranges:
 -- degrees directly, speed in hundredths.
 local CASING_JITTER_DEG = 17
-local CASING_SPEED_MIN  = 200
-local CASING_SPEED_MAX  = 300
+local CASING_SPEED_MIN = 200
+local CASING_SPEED_MAX = 300
 
 local state = {}
 -- Alliance currently taking its turn; that side's turrets hold fire.
@@ -76,8 +73,8 @@ end
 -- Greyscale is deliberate: the team colour is a vertex tint, and keeping the
 -- source art's own shading is what makes it read as tinted metal rather than
 -- a flat colour.
-local BASE  = "sprites/turret_base"
-local GUN   = "sprites/turret_gun"
+local BASE = "sprites/turret_base"
+local GUN = "sprites/turret_gun"
 -- The muzzle flash is its own additive quad, never part of the gun sheet:
 -- tint is per-quad, so the team colour would multiply the flame too and a
 -- blue turret's muzzle would come out dark olive. PX drew it separately with
@@ -87,7 +84,7 @@ local FLARE = "sprites/turret_flare"
 -- Occlusion band for the parts that sit above the landscape. Terrain's own
 -- queue depth is 0x180000; anything below that ignores terrain and is
 -- occluded only by the HUD.
-local IN_FRONT_OF_TERRAIN = 0x10000
+local IN_FRONT_OF_TERRAIN = wa.depth.FRONT
 
 -- Tints for a greyscale housing, from PX's own render rather than its script.
 -- Sampling its red housing gives G/R about 0.39 and B/R about 0.28; the
@@ -99,11 +96,11 @@ local function tint(r, g, b)
   return r * 0x10000 + g * 0x100 + b
 end
 local TEAM_TINT = {
-  tint(255, 100,  71),   -- 1 red
+  tint(255, 100, 71),   -- 1 red
   tint( 71, 100, 255),   -- 2 blue
   tint( 71, 255, 100),   -- 3 green
-  tint(230, 230,  71),   -- 4 yellow
-  tint(230,  71, 230),   -- 5 magenta
+  tint(230, 230, 71),   -- 4 yellow
+  tint(230, 71, 230),   -- 5 magenta
   tint( 71, 230, 230),   -- 6 cyan
 }
 
@@ -115,8 +112,8 @@ local SPRITES = { IMPACT, CASING, BASE, GUN, FLARE }
 
 -- 0 = down, 90 = right: the source art faces right, and screen y grows down.
 local function angle_to(ax, ay, tx, ty)
-  local dx = (tx - ax) // PX
-  local dy = (ty - ay) // PX
+  local dx = (tx - ax) // 1
+  local dy = (ty - ay) // 1
   local deg = math.deg(wa.math.atan(dx, dy))
   if deg < 0 then
     deg = deg + 360
@@ -175,9 +172,9 @@ local function sees(a, s, w, need_motion)
   if need_motion and REQUIRE_MOTION and not moving(s, w) then
     return false
   end
-  local ex, ey = a.x, a.y - MUZZLE_UP * PX
-  local dx = (w.x - ex) // PX
-  local dy = (w.y - ey) // PX
+  local ex, ey = a.x, a.y - MUZZLE_UP
+  local dx = (w.x - ex) // 1
+  local dy = (w.y - ey) // 1
   if dx * dx + dy * dy > SENSOR_PX * SENSOR_PX then
     return false
   end
@@ -185,12 +182,12 @@ local function sees(a, s, w, need_motion)
 end
 
 local function acquire(a, s)
-  local ex, ey = a.x, a.y - MUZZLE_UP * PX
+  local ex, ey = a.x, a.y - MUZZLE_UP
   local best, best_d
   for _, w in ipairs(wa.worms.all()) do
     if sees(a, s, w, true) then
-      local dx = (w.x - ex) // PX
-      local dy = (w.y - ey) // PX
+      local dx = (w.x - ex) // 1
+      local dy = (w.y - ey) // 1
       local d = dx * dx + dy * dy
       if not best_d or d < best_d or (d == best_d and w.id < best.id) then
         best, best_d = w, d
@@ -265,11 +262,11 @@ local function fire(a, s)
 
   local rad = math.rad(s.angle + dev)
   local dx, dy = wa.math.sin(rad), wa.math.cos(rad)
-  local mx = a.x + math.floor(dx * MUZZLE_OUT * PX)
-  local my = a.y - MUZZLE_UP * PX + math.floor(dy * MUZZLE_OUT * PX)
-  local reach = SENSOR_PX * PX
-  local ex = mx + math.floor(dx * reach)
-  local ey = my + math.floor(dy * reach)
+  local mx = a.x + (dx * MUZZLE_OUT)
+  local my = a.y - MUZZLE_UP + (dy * MUZZLE_OUT)
+  local reach = SENSOR_PX
+  local ex = mx + (dx * reach)
+  local ey = my + (dy * reach)
 
   -- Shell ejection: perpendicular to the barrel, kicked to whichever side
   -- the turret currently faces (s.side, PX's TurretSide), a fixed pattern
@@ -282,9 +279,9 @@ local function fire(a, s)
   wa.actors.spawn({
     sprite = CASING,
     x = a.x,
-    y = a.y - MUZZLE_UP * PX,
-    vx = math.floor(edx * speed * PX),
-    vy = math.floor(edy * speed * PX),
+    y = a.y - MUZZLE_UP,
+    vx = (edx * speed),
+    vy = (edy * speed),
     gravity = false,
     collide = false,
     owner = s.owner,
@@ -312,18 +309,18 @@ local function fire(a, s)
   if hit then
     hx, hy = hit.x, hit.y
   end
-  local rx, ry = (hx - mx) // PX, (hy - my) // PX
+  local rx, ry = (hx - mx) // 1, (hy - my) // 1
   local hit_px = rx * rx + ry * ry
   for _, w in ipairs(wa.worms.all()) do
     if w.alliance ~= s.alliance and w.visible ~= false then
-      local wx = (w.x - mx) // PX
-      local wy = (w.y - my) // PX
+      local wx = (w.x - mx) // 1
+      local wy = (w.y - my) // 1
       local along = wx * dx + wy * dy
       if along > 0 and along * along < hit_px then
         local off = wx * dy - wy * dx       -- perpendicular distance to the ray
         if off * off <= HIT_PX * HIT_PX then
-          hx = mx + math.floor(dx * along * PX)
-          hy = my + math.floor(dy * along * PX)
+          hx = mx + (dx * along)
+          hy = my + (dy * along)
           hit_px = along * along
         end
       end
@@ -390,13 +387,13 @@ local function think(a, s)
     s.had_target = true
     s.lost = false
     s.tx, s.ty = target.x, target.y
-    want = angle_to(a.x, a.y - MUZZLE_UP * PX, target.x, target.y)
+    want = angle_to(a.x, a.y - MUZZLE_UP, target.x, target.y)
     s.angle = turn_toward(s.angle, want, ROT_ACTIVE)
   elseif s.had_target then
     -- PX stops firing at once, turns to the last visible point, then drops it.
     if not s.lost then stop_firing(a, s) end
     s.lost = true
-    want = angle_to(a.x, a.y - MUZZLE_UP * PX, s.tx, s.ty)
+    want = angle_to(a.x, a.y - MUZZLE_UP, s.tx, s.ty)
     s.angle = turn_toward(s.angle, want, ROT_ACTIVE)
     if angle_gap(s.angle, want) <= AIM_TOLERANCE then
       s.had_target = false
@@ -483,7 +480,7 @@ local function sync(a, s)
   end
   -- The gun's pivot is the housing centre, which the bake put at the frame
   -- centre, so rotating the quad about its centre matches PX's AddSpriteEx.
-  gun.x, gun.y = a.x, a.y - MUZZLE_UP * PX
+  gun.x, gun.y = a.x, a.y - MUZZLE_UP
   gun.vx, gun.vy = 0, 0
 
   local pose = s.firing and (1 + ((s.anim // 3) % 2)) or 0
@@ -567,7 +564,7 @@ local function brain(a, ev)
     if hit.land then
       a.vx, a.vy = 0, 0
       s.planted = true
-      s.px, s.py = a.x, a.y + SINK_PX * PX
+      s.px, s.py = a.x, a.y + SINK_PX
       a:sound("sounds/sentryplace.wav")
       sync(a, s)
       return                     -- planted this tick: skip the drown check
@@ -609,7 +606,7 @@ end
 local FRONT_PX = 5
 
 local function placement_x(worm, facing)
-  local x = worm.x + facing * FRONT_PX * PX
+  local x = worm.x + facing * FRONT_PX
   if wa.land.trace(worm.x, worm.y, x, worm.y) then
     return worm.x
   end
@@ -652,7 +649,7 @@ wa.weapons.replace({
     -- equip/unequip above are one-shot animations played frame by frame, not
     -- aim-angle sheets like the web editor's aiming GIFs (the default).
     worm_sprites_animate = true,
-    depth = 0x190000,
+    depth = wa.depth.BEHIND_TERRAIN,
     depth_prefix = "sprites/turret_",
     -- The GPU renderer takes these sheets: packed into a texture atlas,
     -- drawn as rotated and tinted quads, occupying none of the 223 shared WA
@@ -691,8 +688,8 @@ wa.weapons.replace({
       x = x,
       y = worm.y,
       -- Small placement nudge, independent of aim or charged power.
-      vx = (worm.vx // 2) + facing * 19661,
-      vy = (worm.vy // 2) - 9830,
+      vx = (worm.vx / 2) + facing * 0.3000030517578125,
+      vy = (worm.vy / 2) - 0.149993896484375,
       loop = false,
       origin = "bottom",
       owner = worm,
@@ -734,7 +731,7 @@ wa.weapons.replace({
     state[body.id].gun = wa.actors.spawn({
       sprite = GUN,
       x = x,
-      y = worm.y - MUZZLE_UP * PX,
+      y = worm.y - MUZZLE_UP,
       vx = 0, vy = 0,
       gravity = false,
       collide = false,
@@ -748,7 +745,7 @@ wa.weapons.replace({
     state[body.id].flare = wa.actors.spawn({
       sprite = FLARE,
       x = x,
-      y = worm.y - MUZZLE_UP * PX,
+      y = worm.y - MUZZLE_UP,
       vx = 0, vy = 0,
       gravity = false,
       collide = false,

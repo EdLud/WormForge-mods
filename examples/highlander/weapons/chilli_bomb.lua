@@ -40,13 +40,12 @@ wa.on.worm_message(function(worm, msg)
     chilli_shooter = worm
   elseif msg == wa.msg.FRAME_FINISH and #chilli_pending > 0 then
     -- After the blast, as the Double Bazooka's second shell.
-    local P = 0x10000
     local owner = chilli_shooter or worm
     for _, p in ipairs(chilli_pending) do
       for _ = 1, CHILLI_CHILD.count do
         -- RandomFloat(3, -3), then RandomFloat(-7, -10).
-        local vx = wa.random(-3 * P, 3 * P)
-        local vy = wa.random(-10 * P, -7 * P)
+        local vx = wa.random(-196608, 196608) / 65536
+        local vy = wa.random(-655360, -458752) / 65536
         local id = wa.weapons.launch({
           weapon = "super_banana", owner = owner, x = p.x, y = p.y, vx = vx, vy = vy,
           damage = CHILLI_CHILD.damage, fuse = CHILLI_CHILD.fuse, countdown = 0,

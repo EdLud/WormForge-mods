@@ -14,7 +14,7 @@ fires.teleports = {} -- worm id -> frozen target and elapsed frames
 local function super_tele_arrive(worm, x, y)
   worm.x, worm.y = x, y
   for _, rise in ipairs({ 0, 10, 22 }) do
-    wa.land.dig({ x = x, y = y - rise * 0x10000, radius = 12 })
+    wa.land.dig({ x = x, y = y - rise, radius = 12 })
   end
 end
 
@@ -26,7 +26,7 @@ local SOUND_TELEPORT, SOUND_COMMUNICATOR, SOUND_WORM_POP = 67, 68, 54
 local PLACEMENT_POP_FRAMES = 21
 
 -- During manual placement WA keeps unplaced worms at (960, -10000).
-local function unplaced(worm) return worm.y == -10000 * 0x10000 end
+local function unplaced(worm) return worm.y == -10000 end
 
 -- WA's own teleport places a worm at the click, with no wind-up. Super
 -- Tele's record is a click weapon, which winds up first: for an unplaced
@@ -42,7 +42,7 @@ fires.super_tele_click = function(ev)
   local worm = ev.worm
   if worm.hp <= 0 then return end
   local y = ev.y
-  if wa.world.cavern() and y < 19 * 0x10000 then y = 19 * 0x10000 end
+  if wa.world.cavern() and y < 19 then y = 19 end
   local previous = fires.teleports[worm.id]
   if previous and previous.marker then previous.marker:despawn() end
   -- Waiting 50 frames there makes an unplaced worm fall and take damage

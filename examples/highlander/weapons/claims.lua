@@ -58,16 +58,15 @@ do
   -- wall the muzzle poked through). The muzzle is tried first, then rings
   -- every 4 pixels out to 40, at finer angles the wider the ring; failing
   -- all, she starts at the worm.
-  local P = 0x10000
-  local CLEAR = 3 * P
-  local REACH = 40 * P
-  local RING = 4 * P
+  local CLEAR = 3
+  local REACH = 40
+  local RING = 4
 
   local function clear(x, y)
     if wa.land.solid(x, y) then return false end
     for i = 0, 7 do
       local a = (i / 8) * 2 * math.pi
-      if wa.land.solid(x + math.floor(CLEAR * wa.math.cos(a)), y + math.floor(CLEAR * wa.math.sin(a))) then
+      if wa.land.solid(x + (CLEAR * wa.math.cos(a)), y + (CLEAR * wa.math.sin(a))) then
         return false
       end
     end
@@ -77,11 +76,11 @@ do
   local function launch_point(x, y, w)
     local r = 0
     while r <= REACH do
-      local step = (r == 0) and 360 or math.max(15, math.floor(360 / ((r / P) / 2)))
+      local step = (r == 0) and 360 or math.max(15, math.floor(360 / (r / 2)))
       local deg = 0
       while deg < 360 do
         local a = deg * math.pi / 180
-        local tx, ty = x + math.floor(r * wa.math.cos(a)), y + math.floor(r * wa.math.sin(a))
+        local tx, ty = x + (r * wa.math.cos(a)), y + (r * wa.math.sin(a))
         if clear(tx, ty) then
           local hit = wa.land.trace(tx, ty, w.x, w.y)
           if not hit or not hit.hit then return tx, ty end

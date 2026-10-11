@@ -10,8 +10,6 @@
 local function sq(v) return v * v end
 
 local shared = require("lib/shared")
-local P = 0x10000
--- PX's parameters, squared where its InitializeParameters squares them.
 local RANGE2 = 170 * 170           -- MaxRange
 local SYNC2 = RANGE2 // 4          -- MaxSyncRange: MaxRange * 0.25
 local FORCE, COEFFICIENT = 12, 14000
@@ -35,9 +33,9 @@ local DAMPING = 0.985
 -- a little and rubbing along what it lands on until it rests.
 local RADIUS = 8
 local BOUNCE, FRICTION = 0.3, 0.3
-local REST = P // 8                -- slower on contact than 1/8 pixel a frame: at rest
-local SINK = P // 2                -- in the water it sinks half a pixel a frame
-local SUNK = 200 * P               -- and is gone this far below the surface
+local REST = (1 / 8)                -- slower on contact than 1/8 pixel a frame: at rest
+local SINK = (1 / 2)                -- in the water it sinks half a pixel a frame
+local SUNK = 200                -- and is gone this far below the surface
 local BODY = "sprites/electromagnet/"
 local magnets = {}
 local polarity = {} -- worm id -> +1 repel, -1 attract (PX's MagnetPolarity)
@@ -45,16 +43,16 @@ local plus_held = {} -- worm id -> the synchronized + key last frame
 
 local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
 
--- PX's CalculateMagneticForce at (x, y), 16.16: the push in 16.16 a frame,
+-- PX's CalculateMagneticForce at (x, y), pixels: the push in pixels/frame,
 -- or nil out of range or discharged. Distances in pixels, as PX's.
 local function force(m, x, y, scale)
   if m.turns <= 0 or not m.alive then return nil end
-  local dx, dy = (x - m.x) / P, (y - m.y) / P
+  local dx, dy = (x - m.x), (y - m.y)
   local r2 = dx * dx + dy * dy + (m.pol < 0 and ATTRACT_OFFSET or REPEL_OFFSET)
   if r2 > RANGE2 then return nil end
   local strength = math.min(FORCE, COEFFICIENT / r2) * (scale or 1) * m.pol
   local r = math.sqrt(r2)
-  return trunc(dx / r * strength * P), trunc(dy / r * strength * P)
+  return (dx / r * strength), (dy / r * strength)
 end
 
 -- PX's TriggerMine: a random-fuse mine gets 1 to 5 seconds; an attracting
@@ -68,7 +66,7 @@ local function trigger_mine(m, mine, mines)
       local longest = 1000
       for _, other in ipairs(mines) do
         if other.id ~= mine.id then
-          local dx, dy = (other.x - m.x) / P, (other.y - m.y) / P
+          local dx, dy = (other.x - m.x), (other.y - m.y)
           if dx * dx + dy * dy < SYNC2 then longest = math.max(longest, other.fuse) end
         end
       end
@@ -132,7 +130,7 @@ local function move(m)
     -- Inside the land (dropped in a tunnel, or the land moved): out where
     -- the path comes free, else a pixel up a frame until it does.
     if not res.left_x then
-      m.y, m.vx, m.vy = m.y - P, 0, 0
+      m.y, m.vx, m.vy = m.y - 1, 0, 0
       return
     end
     m.x, m.y = res.left_x, res.left_y
@@ -141,8 +139,8 @@ local function move(m)
   if res and res.hit then
     local spn = vx * res.nx + vy * res.ny
     local spt = vx * res.tx + vy * res.ty
-    vx = trunc(vx - spn * res.nx * (1 + BOUNCE) - spt * res.tx * FRICTION)
-    vy = trunc(vy - spn * res.ny * (1 + BOUNCE) - spt * res.ty * FRICTION)
+    vx = vx - spn * res.nx * (1 + BOUNCE) - spt * res.tx * FRICTION
+    vy = vy - spn * res.ny * (1 + BOUNCE) - spt * res.ty * FRICTION
     if math.abs(vx) < REST and math.abs(vy) < REST then vx, vy = 0, 0 end
     m.x, m.y = res.x, res.y
   else
@@ -169,7 +167,7 @@ local function frame(m, a)
   if m.health <= 0 then
     field(m, 0, true)
     remove(m)
-    a.y = m.y - 20 * P
+    a.y = m.y - 20
     a:explode(BOOM)
     a:despawn()
     return
@@ -179,19 +177,19 @@ local function frame(m, a)
     m.spark = (m.spark + 0.02) % 1.4
   end
   -- PX's UpdateRotation: spun by its speed, at most half a radian a frame.
-  local speed = math.sqrt(sq(m.vx / P) + sq(m.vy / P))
+  local speed = math.sqrt(sq(m.vx) + sq(m.vy))
   m.angle = m.angle + (m.vx < 0 and -1 or 1) * math.min(0.5, 0.04 * speed)
   local s = sprite(m)
   if s ~= m.sprite then a:look(s); m.sprite = s end
-  a:gfx({ angle = math.deg(m.angle + math.pi) % 360, depth = 0x000E0000 })
+  a:gfx({ angle = math.deg(m.angle + math.pi) % 360, depth = wa.depth.OBJECTS })
 end
 
--- PX's TakeExplosionDamage (less the further off: dmg * (1 - d^2 / (4 dmg^2)))
+-- PX's TakeExplosionDamage (less the further off: dmg * (1 - (d * d) / (4 (dmg * dmg))))
 -- and TakeDamage (type 10, the Battle Axe's, takes that share of its health).
 local function hit(m, a, event)
   local damage = math.max(0, event.damage or 0)
   if event.kind == "blast" and damage > 0 then
-    local dx, dy = (a.x - (event.x or a.x)) / P, (a.y - (event.y or a.y)) / P
+    local dx, dy = (a.x - (event.x or a.x)), (a.y - (event.y or a.y))
     damage = trunc((1 - (dx * dx + dy * dy) / (damage * damage * 4)) * damage)
   elseif event.hit_kind == 10 then
     damage = trunc(m.health * damage / 100)
@@ -210,8 +208,8 @@ shared.fires.electromagnet = function(fire)
   local pol = (fire.polarity == 1 or fire.polarity == -1) and fire.polarity or polarity[worm.id] or 1
   local m = { pol = pol, turns = TURNS, health = HEALTH, age = 0, angle = 0, spark = 0, alive = true,
     x = fire.x or worm.x, y = fire.y or worm.y,
-    vx = worm.vx + (worm.facing < 0 and -1 or 1) * trunc(0.3 * P),
-    vy = worm.vy - trunc(0.15 * P) }
+    vx = worm.vx + (worm.facing < 0 and -1 or 1) * 0.3,
+    vy = worm.vy - 0.15 }
   local a = wa.actors.spawn({
     sprite = BODY .. (pol < 0 and "magnet.png" or "magnet2.png"),
     x = m.x, y = m.y, gravity = false, collide = false, owner = worm,
@@ -246,7 +244,7 @@ wa.on.missile_frame(function(missile)
   if missile.phase ~= "pre" or not DAMPED[missile.weapon] then return end
   for _, m in ipairs(magnets) do
     if force(m, missile.x, missile.y) then
-      missile.vx, missile.vy = trunc(missile.vx * DAMPING), trunc(missile.vy * DAMPING)
+      missile.vx, missile.vy = missile.vx * DAMPING, missile.vy * DAMPING
       return
     end
   end
@@ -275,7 +273,7 @@ end
 
 if wa.on.draw and wa.draw.quad then
   local function square(x, y, h, angle)
-    local c, s = math.cos(angle) * h, math.sin(angle) * h
+    local c, s = wa.math.cos(angle) * h, wa.math.sin(angle) * h
     return { { x - c + s, y - s - c }, { x + c + s, y + s - c }, { x + c - s, y + s + c }, { x - c - s, y - s + c } }
   end
   wa.on.draw(function()
@@ -291,12 +289,12 @@ if wa.on.draw and wa.draw.quad then
           if radius >= 5 and radius <= 120 then
             local alpha = math.max(0, math.min(255, math.floor((120 - radius) * 255 / 120)))
             wa.draw.quad({ sprite = BODY .. ring, blend = "add", color = (alpha << 24) | 0xFFFFFF,
-              depth = 0x000E0001, points = square(x, y, trunc(radius * P), 0) })
+              depth = wa.depth.OBJECTS + 1, points = square(x, y, radius, 0) })
           end
         end
         if m.spark <= 1 then
           wa.draw.quad({ sprite = BODY .. "magnetsparks", frame = math.min(9, math.floor(m.spark * 10)),
-            blend = "add", depth = 0x000DFFFF, points = square(x, y, 13 * P, m.angle) })
+            blend = "add", depth = wa.depth.OBJECTS - 1, points = square(x, y, 13, m.angle) })
         end
       end
     end

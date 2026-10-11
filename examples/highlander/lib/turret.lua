@@ -8,8 +8,6 @@
 --
 -- From the standalone sentry_gun port (mods/examples/sentry_gun_old), with
 -- its numbers as the defaults. Angles: 0 down, 90 right, 180 up, 270 left.
-local P = 0x10000
-
 local turret = {}
 
 local DEFAULTS = {
@@ -31,15 +29,15 @@ local DEFAULTS = {
   boom = { damage = 50, id = 100, below = false },
   -- Occlusion band for the head: in front of terrain (0x180000), so the
   -- landscape never buries it.
-  head_depth = 0x10000,
+  head_depth = wa.depth.FRONT,
 }
 
 -- 0 = down, 90 = right: the art faces right, and screen y grows down.
 -- wa.math: an aim reaches the simulation (what the turret sees and hits), so
 -- it must come out the same on every machine.
 function turret.angle_to(ax, ay, tx, ty)
-  local dx = (tx - ax) // P
-  local dy = (ty - ay) // P
+  local dx = (tx - ax) // 1
+  local dy = (ty - ay) // 1
   local deg = math.deg(wa.math.atan(dx, dy))
   if deg < 0 then deg = deg + 360 end
   return deg
@@ -112,8 +110,8 @@ function turret.new(cfg)
   local function sees(a, s, c, need_motion)
     if c.alliance == s.alliance then return false end
     if need_motion and t.require_motion and not c.moving then return false end
-    local ex, ey = a.x, a.y - t.muzzle_up * P
-    local dx, dy = (c.x - ex) // P, (c.y - ey) // P
+    local ex, ey = a.x, a.y - t.muzzle_up
+    local dx, dy = (c.x - ex) // 1, (c.y - ey) // 1
     if dx * dx + dy * dy > t.sensor_px * t.sensor_px then return false end
     return not wa.land.trace(ex, ey, c.x, c.y)
   end
@@ -121,11 +119,11 @@ function turret.new(cfg)
   -- The nearest moving enemy in sight; ties to the first listed, the same
   -- everywhere.
   local function acquire(a, s, list)
-    local ex, ey = a.x, a.y - t.muzzle_up * P
+    local ex, ey = a.x, a.y - t.muzzle_up
     local best, best_d
     for _, c in ipairs(list) do
       if sees(a, s, c, true) then
-        local dx, dy = (c.x - ex) // P, (c.y - ey) // P
+        local dx, dy = (c.x - ex) // 1, (c.y - ey) // 1
         local d = dx * dx + dy * dy
         if not best_d or d < best_d then best, best_d = c, d end
       end
@@ -190,7 +188,7 @@ function turret.new(cfg)
       end
     end
     local want
-    local hx, hy = a.x, a.y - t.muzzle_up * P
+    local hx, hy = a.x, a.y - t.muzzle_up
     if target then
       if not s.had_target then
         s.activate = t.activate
@@ -265,7 +263,7 @@ function turret.new(cfg)
   local function sync(a, s)
     local gun = s.gun
     if not gun or gun.dead then return end
-    gun.x, gun.y, gun.vx, gun.vy = a.x, a.y - t.muzzle_up * P, 0, 0
+    gun.x, gun.y, gun.vx, gun.vy = a.x, a.y - t.muzzle_up, 0, 0
     local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
     local barrel = s.barrel
     -- With a barrel layer, the gun's frames are its art and its mirror.
@@ -329,7 +327,7 @@ function turret.new(cfg)
       if hit.land then
         a.vx, a.vy = 0, 0
         s.planted = true
-        s.px, s.py = a.x, a.y + t.sink_px * P
+        s.px, s.py = a.x, a.y + t.sink_px
         play(a, t.sounds.place)
         sync(a, s)
         return
@@ -359,7 +357,7 @@ function turret.new(cfg)
 
   -- Slightly in front of the worm, unless a wall is that close.
   local function placement_x(worm, facing)
-    local x = worm.x + facing * t.front_px * P
+    local x = worm.x + facing * t.front_px
     if wa.land.trace(worm.x, worm.y, x, worm.y) then return worm.x end
     return x
   end
@@ -384,7 +382,7 @@ function turret.new(cfg)
     local body = wa.actors.spawn({
       sprite = t.art.base, x = x, y = worm.y,
       -- A small nudge, whatever the aim or charge.
-      vx = (worm.vx // 2) + facing * 19661, vy = (worm.vy // 2) - 9830,
+      vx = (worm.vx / 2) + facing * 0.3000030517578125, vy = (worm.vy / 2) - 0.149993896484375,
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true, on = brain,
     })
     local s = {
@@ -395,9 +393,9 @@ function turret.new(cfg)
       had_target = false, lost = false, seen = {}, recoil = 0,
     }
     state[body.id] = s
-    s.gun = rider(t.art.gun, x, worm.y - t.muzzle_up * P, worm, t.kind .. "_head")
-    if t.art.flare then s.flare = rider(t.art.flare, x, worm.y - t.muzzle_up * P, worm, t.kind .. "_flare") end
-    if t.art.barrel then s.barrel = rider(t.art.barrel, x, worm.y - t.muzzle_up * P, worm, t.kind .. "_barrel") end
+    s.gun = rider(t.art.gun, x, worm.y - t.muzzle_up, worm, t.kind .. "_head")
+    if t.art.flare then s.flare = rider(t.art.flare, x, worm.y - t.muzzle_up, worm, t.kind .. "_flare") end
+    if t.art.barrel then s.barrel = rider(t.art.barrel, x, worm.y - t.muzzle_up, worm, t.kind .. "_barrel") end
     sync(body, s)
     return body, s
   end

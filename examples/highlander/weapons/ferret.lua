@@ -10,8 +10,7 @@ local fires = shared.fires
 -- and Bowling Balls up (PX's ball is a mine) and walks on. At most 10 walk:
 -- a new one makes the oldest vanish. PX's IsMoving says no, so WA doesn't
 -- wait for a Ferret, and Ferrets walk on through later turns.
-local P = 0x10000
-local STEP = 3 * P          -- frt_maxdist
+local STEP = 3           -- frt_maxdist
 local MAX_FAILS = 4         -- frt_maxfails
 local MAX_OPS = 12          -- frt_maxoper
 local GRACE = 60            -- frt_framesdam
@@ -28,7 +27,7 @@ local LIFT = 13
 -- What it runs into is its body: 8 pixels about the body's centre.
 local BODY = 8
 local SCALE = 0.95          -- frt_sprscale
-local DEPTH = 0xE0000       -- in front of the terrain, as the Bowling Ball
+local DEPTH = wa.depth.OBJECTS       -- in front of the terrain, as the Bowling Ball
 local WALK = "sprites/ferret/walk"
 local FRAMES = 10
 local SOUND = "sounds/ferret/walk.wav"
@@ -62,7 +61,7 @@ end
 local function rise_clear(f)
   for _ = 1, MAX_RISE do
     if not land_at(f, f.x, f.y) then return end
-    f.y = f.y - P
+    f.y = f.y - 1
   end
 end
 
@@ -104,7 +103,7 @@ end
 
 -- Its body's centre, LIFT from the traced point along the land's normal.
 local function body(f, x, y)
-  return x + math.floor(f.ux * LIFT * P), y + math.floor(f.uy * LIFT * P)
+  return x + (f.ux * LIFT), y + (f.uy * LIFT)
 end
 
 -- frt_checkinteract, at a point of its way: what its body touches.
@@ -115,12 +114,12 @@ local function interact(f, x, y)
     if obj.kind == "worm" then
       local current = shared.current_worm()
       if f.grace > 0 and current and current.id == obj.id then return end
-      obj.vx, obj.vy = f.side * P, WORM_UP * P
+      obj.vx, obj.vy = f.side, WORM_UP
       f.boom, f.walking, f.tracing, f.why = true, false, false, "a worm"
     elseif obj.kind == "oil" then
       f.boom, f.walking, f.tracing, f.why = true, false, false, "an oil drum"
     elseif obj.kind == "mine" then
-      obj.vx, obj.vy = f.side * P, MINE_UP * P
+      obj.vx, obj.vy = f.side, MINE_UP
     end
   end
   if shared.kick_bowling_balls then
@@ -134,7 +133,7 @@ end
 local function turn(f, x, y)
   f.steps = f.steps + 1
   if f.steps % TURN_EVERY ~= 0 then return end
-  local dx, dy = (x - f.rx) / P, (y - f.ry) / P
+  local dx, dy = (x - f.rx), (y - f.ry)
   local len = math.sqrt(dx * dx + dy * dy)
   if len > 0 then
     f.ux, f.uy = f.side * dy / len, -f.side * dx / len
@@ -165,8 +164,8 @@ end
 -- stops where its shape would touch the land.
 local function fly(f)
   f.vy = f.vy + wa.world.gravity()
-  local n = math.min(64, math.max(math.abs(f.vx), math.abs(f.vy)) // P + 1)
-  local sx, sy = f.vx // n, f.vy // n
+  local n = math.min(64, math.max(math.abs(f.vx), math.abs(f.vy)) // 1 + 1)
+  local sx, sy = f.vx / n, f.vy / n
   for _ = 1, n do
     if land_at(f, f.x + sx, f.y + sy) then
       f.vx, f.vy = 0, 0
@@ -196,7 +195,7 @@ end
 
 local function explode(f, a)
   wa.log(string.format("Ferret explodes on %s at (%d, %d), %d frames after it was placed",
-    f.why or "?", f.x // P, f.y // P, f.age))
+    f.why or "?", f.x // 1, f.y // 1, f.age))
   f.dead = true
   forget(f)
   a:explode(BOOM)

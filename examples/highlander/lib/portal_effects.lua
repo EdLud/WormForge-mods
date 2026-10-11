@@ -3,7 +3,7 @@
 -- This local random stream drives looks only, never WA's gameplay RNG.
 local Effects = {}
 Effects.__index = Effects
-local P, TAU = 0x10000, 2 * math.pi
+local TAU = 2 * math.pi
 local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
 local function palette(colour, shift)
   if colour == 1 then return {255,255-shift,0}, {255,80-shift,0} end
@@ -27,7 +27,7 @@ function Effects:particle(x, y, spec)
   if #self.particles >= 1024 then return end
   local angle, speed = self:random(0, TAU), self:random(spec.speed[1], spec.speed[2])
   self.particles[#self.particles+1] = {
-    x = x/P, y = y/P, vx = wa.math.cos(angle)*speed, vy = wa.math.sin(angle)*speed,
+    x = x, y = y, vx = wa.math.cos(angle)*speed, vy = wa.math.sin(angle)*speed,
     age = 0, life = spec.life, sprite = spec.sprite or "lightning_glow.png",
     pixels = spec.pixels or 128, size = spec.size, end_size = spec.end_size or 0.01,
     start = spec.start, finish = spec.finish, alpha = spec.alpha or 255,
@@ -78,7 +78,7 @@ function Effects:tick(gravity)
     else
       p.angle = (p.angle+p.spin+math.pi) % TAU-math.pi
       p.x, p.y = p.x+p.vx, p.y+p.vy
-      p.vx, p.vy = p.vx*p.resistance, p.vy*p.resistance+p.gravity*gravity/P
+      p.vx, p.vy = p.vx*p.resistance, p.vy*p.resistance+p.gravity*gravity
       if p.randomness > 0 then
         local angle, speed = self:random(0,TAU), self:random(0,p.randomness)
         p.vx, p.vy = p.vx+wa.math.cos(angle)*speed, p.vy+wa.math.sin(angle)*speed
@@ -93,7 +93,7 @@ function Effects:draw(quad)
     for i=1,3 do rgb[i]=trunc(p.start[i]+t*(p.finish[i]-p.start[i])) end
     local size = p.pixels*(p.size+t*(p.end_size-p.size))
     local colour = (p.alpha << 24) | (rgb[1] << 16) | (rgb[2] << 8) | rgb[3]
-    quad(p.sprite, trunc(p.x*P), trunc(p.y*P), size, size, p.angle, colour, "add", 0x000BFFFF)
+    quad(p.sprite, p.x, p.y, size, size, p.angle, colour, "add", wa.depth.EFFECTS - 1)
   end
 end
 return Effects

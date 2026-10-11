@@ -42,12 +42,12 @@ local SWIM_SUIT_MASK = 134342 -- 0x20CC6: the worm's 0x420CC6 without SWIM_WATER
 local SWIM_WATER = 0x400000
 local SWIM_MISSILE_MASK = 0x40007C -- a missile in the water that hits worms
 local SWIM_SPLASH = 57        -- WA's sound
-local SWIM_BODY_DEPTH = 0x10000
-local SWIM_RING_DEPTH = 0x10001
+local SWIM_BODY_DEPTH = wa.depth.FRONT
+local SWIM_RING_DEPTH = wa.depth.FRONT + 1
 -- Ring sheet is 50×50; wa.draw.quad corners are centred on the worm like a:gfx.
-local SWIM_RING_HALF = 25 * 0x10000
+local SWIM_RING_HALF = 25
 -- The land a swimmer stops at: its body, 4 pixels either side, 6 above and below.
-local SWIM_HALF_W, SWIM_HALF_H = 4 * 0x10000, 6 * 0x10000
+local SWIM_HALF_W, SWIM_HALF_H = 4, 6
 
 local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
 local swim_in_game = false    -- SwimInGame: someone has worn the suit
@@ -101,14 +101,13 @@ local function swim_frame(worm)
   if not s or not s.suit then
     return
   end
-  local P = 0x10000
   local water = wa.world.water()
   local cap = SWIM_CAP * swim_speed
   if worm.y >= water and s.plopready and worm.state ~= "teleporting" then
     wa.sound.play(worm, SWIM_SPLASH)
     s.plopready, s.plopped = false, true
     s.x, s.y = worm.x, worm.y
-    s.vx, s.vy = math.min(worm.vx / P, cap), math.min(worm.vy / P, cap)
+    s.vx, s.vy = math.min(worm.vx, cap), math.min(worm.vy, cap)
     worm:take{ turn = "run" }
     s.plophase = 0
   end
@@ -168,9 +167,9 @@ local function swim_frame(worm)
     -- The engine clears the keys after this hook. Move, stopping at land
     -- on each axis (unless it is already in land, so it can swim free).
     local stuck = swim_blocked(s.x, s.y)
-    local nx = s.x + trunc(vx * P)
+    local nx = s.x + vx
     if not stuck and swim_blocked(nx, s.y) then vx = 0 else s.x = nx end
-    local ny = s.y + trunc(vy * P)
+    local ny = s.y + vy
     if not stuck and swim_blocked(s.x, ny) then vy = 0 else s.y = ny end
     s.vx, s.vy = vx, vy
     -- Out of the water: on through the air, as from a jump.
@@ -179,11 +178,11 @@ local function swim_frame(worm)
       s.plopready, s.plopped = true, false
       -- Where the swim took it: its last pin is still under the surface.
       worm.x, worm.y = s.x, s.y
-      worm:release(trunc(vx * P), trunc(vy * P))
+      worm:release(vx, vy)
     else
       worm:carry(s.x, s.y)
       -- Too deep: the suit gives out.
-      local y, w = s.y / P, water / P
+      local y, w = s.y, water
       local deep
       if not wa.world.cavern() then
         deep = y > w + SWIM_DEPTH
@@ -193,7 +192,7 @@ local function swim_frame(worm)
         deep = y > 768
       end
       if deep then
-        suit_off(worm, s, true, trunc(vx * P), trunc(vy * P))
+        suit_off(worm, s, true, vx, vy)
         return
       end
     end
@@ -233,7 +232,7 @@ local function swim_frame(worm)
 end
 
 -- Bubble while the suit is worn: draw-only, from the live worm position each
--- rendered frame (keeps the 16.16 fraction). A follower LuaActor + a:gfx was
+-- rendered frame (keeps the subpixel fraction). A follower LuaActor + a:gfx was
 -- pixel-snapped and could wobble when airborne.
 if wa.on.draw then
   wa.on.draw(function()
@@ -308,7 +307,7 @@ if wa.on.contact then
         sprite = false, x = other.x, y = other.y, gravity = false, collide = false,
         owner = worm, explode = { damage = 100, id = 50, now = true },
       })
-      other.y = wa.world.water() + 0x10000 * 4096
+      other.y = wa.world.water() + 4096
     end
   end)
 end

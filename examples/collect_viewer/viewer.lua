@@ -9,7 +9,7 @@ local CONFIG = {
   lifetime = 2,          -- simulation seconds, paused with the game
   fade = 1.5,            -- final seconds fade linearly; lifetime - fade is opaque
 }
-local P, FPS, TAU = 0x10000, 50, 2 * math.pi
+local FPS, TAU = 50, 2 * math.pi
 local popups = {}
 local sequence = 0
 local visuals = {}
@@ -50,8 +50,8 @@ wa.on.weapon_grant(function(event)
     sequence = sequence + 1
     local scale = CONFIG.size / math.max(v.width, v.height)
     popups[#popups + 1] = {
-      x = event.x / P + (column - (row_count - 1) / 2) * CONFIG.spacing,
-      y = event.y / P + (row - (rows - 1) / 2) * CONFIG.spacing,
+      x = event.x + (column - (row_count - 1) / 2) * CONFIG.spacing,
+      y = event.y + (row - (rows - 1) / 2) * CONFIG.spacing,
       born = event.frame, alliance = event.alliance,
       phase = (sequence % 4) * TAU / 4,
       w = v.width * scale, h = v.height * scale, art = v,
@@ -83,12 +83,12 @@ wa.on.draw(function()
         local remaining = CONFIG.lifetime - age / FPS
         local alpha = CONFIG.fade > 0
           and math.floor(255 * math.min(1, remaining / CONFIG.fade) + 0.5) or 255
-        local left, right = (x - p.w / 2) * P, (x + p.w / 2) * P
-        local top, bottom = (y - p.h / 2) * P, (y + p.h / 2) * P
+        local left, right = (x - p.w / 2), (x + p.w / 2)
+        local top, bottom = (y - p.h / 2), (y + p.h / 2)
         wa.draw.quad({
           points = {{left, top}, {right, top}, {right, bottom}, {left, bottom}},
           sprite = p.art.sprite, frame = p.art.frame,
-          color = alpha * 0x1000000 + 0xffffff, blend = "alpha", depth = 0x10000,
+          color = alpha * 0x1000000 + 0xffffff, blend = "alpha", depth = wa.depth.FRONT,
         })
       end
     else

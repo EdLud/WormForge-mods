@@ -1,6 +1,5 @@
 -- Highlander: Wind Changer, Gravity Control. Split from rules.lua by tools/split_highlander.py.
 local shared = require("lib/shared")
-local FX = shared.FX
 local current_worm = shared.current_worm
 local trunc = shared.trunc
 
@@ -95,7 +94,7 @@ wa.on.worm_message(function(worm, msg)
     local f = wind_force
     wa.sound.play(worm, f == 0 and "sounds/wind_changer/breeze.wav"
       or f < 6 and "sounds/wind_changer/calm_wind.wav" or "sounds/wind_changer/strong_wind.wav")
-    wa.world.set_wind(trunc(f * WIND_STEP * FX) * worm.facing)
+    wa.world.set_wind((f * WIND_STEP) * worm.facing)
   elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == "low_gravity" then
     if not gravity_choice then
       wa.sound.play(worm, "sounds/gravity_control/error.wav")
@@ -105,7 +104,7 @@ wa.on.worm_message(function(worm, msg)
     gravity_factor, gravity_choice = GRAVITY_FACTORS[gravity_choice], nil
     clock_seen = {}
     wa.sound.play(worm, "sounds/gravity_control/activate.wav")
-    wa.world.set_gravity(trunc(gravity_initial * gravity_factor))
+    wa.world.set_gravity(gravity_initial * gravity_factor)
   end
 end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.FIRE_WEAPON } })
 

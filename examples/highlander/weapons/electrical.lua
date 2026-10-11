@@ -14,8 +14,7 @@ do
 -- PX's lightningstrike.txt and tazer.txt share these target classes and beam
 -- textures. Only gameplay advances in the actor brains. Drawing below may run
 -- at any frame rate and consumes only wa.draw.random(), never WA's sim RNG.
-local EP = 0x10000
-local ELECTRIC_DEPTH = 0x00190000 -- behind WA terrain, in the GPU occlusion mask
+local ELECTRIC_DEPTH = wa.depth.BEHIND_TERRAIN -- behind WA terrain, in the GPU occlusion mask
 local BEAM = "sprites/lightning/beam.png"
 local GLOW = "sprites/lightning/glow.png"
 local CLOUD = "sprites/lightning/cloud.png" -- a puff made for the pack, in place of WA's cloudl
@@ -49,20 +48,20 @@ local function target_radius(obj)
 end
 
 -- A ray against terrain and the objects PX's collision mask names. Projection
--- is done in world pixels; the chosen endpoint is converted back to 16.16.
+-- and the chosen endpoint both use world pixels.
 -- Equal-distance objects retain the engine's entity traversal order.
 local function electrical_trace(x0, y0, dx, dy)
   local far = 10000
   if wa.world.electrical_trace then
-    return wa.world.electrical_trace(math.floor(x0), math.floor(y0),
-      math.floor(x0 + dx * far * EP), math.floor(y0 + dy * far * EP))
+    return wa.world.electrical_trace(x0, y0,
+      (x0 + dx * far), (y0 + dy * far))
   end
-  local land = wa.land.trace(math.floor(x0), math.floor(y0),
-    math.floor(x0 + dx * far * EP), math.floor(y0 + dy * far * EP))
-  local best = land and math.sqrt(sq((land.x - x0) / EP) + sq((land.y - y0) / EP)) or far
+  local land = wa.land.trace(x0, y0,
+    (x0 + dx * far), (y0 + dy * far))
+  local best = land and math.sqrt(sq(land.x - x0) + sq(land.y - y0)) or far
   local hit = land and { x = land.x, y = land.y, obj = nil } or nil
   for _, obj in ipairs(electrical_targets(true)) do
-    local ox, oy = (obj.x - x0) / EP, (obj.y - y0) / EP
+    local ox, oy = (obj.x - x0), (obj.y - y0)
     local along = ox * dx + oy * dy
     local across = math.abs(ox * dy - oy * dx)
     if along > 0 and along < best and across <= target_radius(obj) then
@@ -76,12 +75,12 @@ end
 local function strike_hit(s)
   if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
   if not s.hit then return end
-  local radius2 = sq(6 * EP)
+  local radius2 = sq(6)
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(s.ex, s.ey, 24, true) or electrical_targets(true)
   for _, obj in ipairs(targets) do
     local dx, dy = obj.x - s.ex, obj.y - s.ey
-    local r = (target_radius(obj) + 6) * EP
+    local r = (target_radius(obj) + 6)
     if dx * dx + dy * dy <= math.max(radius2, r * r) then
       if obj.kind == "worm" then
         if not revived_by_lightning[obj.id] then obj:heal(25) end
@@ -124,8 +123,8 @@ end
 local function strike_puff(s, life, drag, s0, s1)
   local xvel = strike_rand(s) * 2 - 1
   local yvel = 1 - xvel * xvel
-  s.cloud[#s.cloud + 1] = { x = s.sx, y = s.sy, vx = 16 * xvel * EP,
-    vy = (strike_rand(s) * 9 - 8) * yvel * EP, drag = drag, age = 0, life = life, s0 = s0, s1 = s1 }
+  s.cloud[#s.cloud + 1] = { x = s.sx, y = s.sy, vx = 16 * xvel,
+    vy = (strike_rand(s) * 9 - 8) * yvel, drag = drag, age = 0, life = life, s0 = s0, s1 = s1 }
 end
 
 local function strike_particles(s)
@@ -138,7 +137,7 @@ local function strike_particles(s)
     end
     if s.delay == 0 and s.life > 0 and s.hit then
       local a = strike_rand(s) * 2 * math.pi
-      local v = (1 + strike_rand(s) * 2) * EP
+      local v = (1 + strike_rand(s) * 2)
       s.sparks[#s.sparks + 1] = { x = s.ex, y = s.ey, vx = wa.math.cos(a) * v, vy = wa.math.sin(a) * v, age = 0 }
     end
   end
@@ -158,7 +157,7 @@ local function strike_particles(s)
     if p.age >= 50 then
       table.remove(s.sparks, i)
     else
-      p.x, p.y, p.vy = p.x + p.vx, p.y + p.vy, p.vy + EP // 8
+      p.x, p.y, p.vy = p.x + p.vx, p.y + p.vy, p.vy + 1 / 8
     end
   end
 end
@@ -168,25 +167,25 @@ shared.lightning_click = function(ev)
   -- arrow keys set, is negative (lightningstrike.txt: SpX < 0 -> -DirX).
   local dirx = 0.5 * ((ev.vx or 0) < 0 and -1 or 1)
   local diry = math.sqrt(3) / 2
-  local sy = -270 * EP
-  local sx = math.floor(ev.x - ((ev.y - sy) / EP) * dirx / diry * EP)
+  local sy = -270
+  local sx = (ev.x - (ev.y - sy) * dirx / diry)
   local hit = electrical_trace(sx, sy, dirx, diry)
-  local ex, ey = hit and hit.x or sx + math.floor(300 * dirx * EP),
-    hit and hit.y or sy + math.floor(300 * diry * EP)
+  local ex, ey = hit and hit.x or sx + (300 * dirx),
+    hit and hit.y or sy + (300 * diry)
   -- A bowling ball on the way stops the beam, as PX's does.
   local bx, by = nil, nil
   if shared.bowling_ball_on_beam then
-    local reach = math.sqrt(sq((ex - sx) / EP) + sq((ey - sy) / EP))
+    local reach = math.sqrt(sq(ex - sx) + sq(ey - sy))
     bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
   end
   if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
-  local distance = math.sqrt(sq((ex - sx) / EP) + sq((ey - sy) / EP))
+  local distance = math.sqrt(sq(ex - sx) + sq(ey - sy))
   if hit and distance > 300 then
-    sx, sy = ex - math.floor(300 * dirx * EP), ey - math.floor(300 * diry * EP)
+    sx, sy = ex - (300 * dirx), ey - (300 * diry)
   end
   local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit, dirx = dirx, diry = diry,
     delay = 150, life = 16, tail = 60, owner = ev.worm, ticks = 0,
-    seed = (ex // EP * 7919 + ey // EP) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
+    seed = (ex // 1 * 7919 + ey // 1) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
   strikes[#strikes + 1] = s
   wa.sound.play(ev.worm, "sounds/lightning/thunder.wav")
   effect_actor(ex, ey, ev.worm, function(a)
@@ -224,7 +223,7 @@ local function find_target(key)
 end
 
 local function closest_target(arc)
-  local best, distance = nil, sq(200 * EP)
+  local best, distance = nil, sq(200)
   local targets = wa.world.electrical_nearby
     and wa.world.electrical_nearby(arc.x, arc.y, 200, false) or electrical_targets(false)
   local function consider(obj)
@@ -278,11 +277,11 @@ local function zap_target(arc, pending)
   if not obj then return end
   if obj.kind == "worm" then
     obj:hurt(24)
-    obj.vx, obj.vy = pending.side * 1.2 * EP, -4 * EP
+    obj.vx, obj.vy = pending.side * 1.2, -4
   elseif obj.kind == "mine" then
     obj:arm(400)
   elseif obj.kind == "crate" or obj.kind == "oil" then
-    obj:hit(12, pending.side * 1.2 * EP, -4 * EP)
+    obj:hit(12, pending.side * 1.2, -4)
   elseif obj.kind == "ball" then
     shared.zap_bowling_ball(obj.id)
   end
@@ -317,7 +316,7 @@ local function progress_arc(arc)
   if target then
     local dx, dy = target.x - arc.x, target.y - arc.y
     local d = math.sqrt(distance)
-    if d <= 10 * EP then
+    if d <= 10 then
       local key = target_key(target)
       arc.ignore[key] = true
       arc.pending[#arc.pending + 1] = { key = key, side = dx < 0 and -1 or 1, time = 24 }
@@ -338,7 +337,7 @@ local function progress_arc(arc)
       add_point(arc)
       return
     end
-    local pull = math.min(1, math.sqrt(10 * EP / d))
+    local pull = math.min(1, math.sqrt(10 / d))
     arc.dx = arc.dx + ((dx / d) - arc.dx) * pull
     arc.dy = arc.dy + ((dy / d) - arc.dy) * pull
   else
@@ -347,22 +346,22 @@ local function progress_arc(arc)
   end
   local norm = math.sqrt(arc.dx * arc.dx + arc.dy * arc.dy)
   if norm < 0.01 then arc.dx, arc.dy = 0, -1 else arc.dx, arc.dy = arc.dx / norm, arc.dy / norm end
-  local nx, ny = arc.x + arc.dx * 20 * EP, arc.y + arc.dy * 20 * EP
-  local land = wa.land.trace(math.floor(arc.x), math.floor(arc.y), math.floor(nx), math.floor(ny))
+  local nx, ny = arc.x + arc.dx * 20, arc.y + arc.dy * 20
+  local land = wa.land.trace(arc.x, arc.y, nx, ny)
   if land then
     if land.starts_solid then arc.life = 0; return end
     -- Follow the tangent that moves closer to the target, as PX's arc does.
     local tx, ty = land.tx or 1, land.ty or 0
     if target then
-      local a = sq(target.x - (land.x + tx * 10 * EP)) + sq(target.y - (land.y + ty * 10 * EP))
-      local b = sq(target.x - (land.x - tx * 10 * EP)) + sq(target.y - (land.y - ty * 10 * EP))
+      local a = sq(target.x - (land.x + tx * 10)) + sq(target.y - (land.y + ty * 10))
+      local b = sq(target.x - (land.x - tx * 10)) + sq(target.y - (land.y - ty * 10))
       if b < a then tx, ty = -tx, -ty end
     end
     arc.dx, arc.dy = tx, ty
-    arc.x, arc.y = land.x + (land.nx or 0) * 10 * EP + tx * 10 * EP,
-      land.y + (land.ny or -1) * 10 * EP + ty * 10 * EP
+    arc.x, arc.y = land.x + (land.nx or 0) * 10 + tx * 10,
+      land.y + (land.ny or -1) * 10 + ty * 10
   else
-    arc.x, arc.y = arc.x + arc.dx * 10 * EP, arc.y + arc.dy * 10 * EP
+    arc.x, arc.y = arc.x + arc.dx * 10, arc.y + arc.dy * 10
   end
   add_point(arc)
 end
@@ -412,7 +411,7 @@ if wa.on.draw and wa.draw.ribbon then
     wa.draw.quad(QUAD)
   end
   local function glow(x, y, size, color)
-    local h = size * EP / 2
+    local h = size / 2
     square(GLOW, 0, "add", color, ELECTRIC_DEPTH, x, y, h, h)
   end
   -- One ribbon's points, refilled: point(i, ...) sets the i-th, ribbon(n)
@@ -465,7 +464,7 @@ if wa.on.draw and wa.draw.ribbon then
   -- towards the end.
   local function beam(noise, off, divs, width, endwidth, scale, x1, y1, x2, y2, glowalpha)
     if divs < 2 then return end
-    local dx, dy = (x2 - x1) / EP, (y2 - y1) / EP
+    local dx, dy = (x2 - x1), (y2 - y1)
     local dd = math.sqrt(dx * dx + dy * dy)
     if dd <= 0 then return end
     dx, dy = dx / dd, dy / dd
@@ -473,8 +472,8 @@ if wa.on.draw and wa.draw.ribbon then
     for i = 0, divs - 1 do
       local f = i / d
       local n = noise[off + i] or 0
-      local x = lerp(f, x1, x2) + scale * dy * n * EP
-      local y = lerp(f, y1, y2) - scale * dx * n * EP
+      local x = lerp(f, x1, x2) + scale * dy * n
+      local y = lerp(f, y1, y2) - scale * dx * n
       point(i + 1, x, y, 2 * lerp(f, width, endwidth), f, colour(255, LR, LG, LB))
       local a = 255 * glowalpha * (1 - f)
       if a >= 1 then glow(x, y, 64, colour(a, LR, LG, LB)) end
@@ -486,7 +485,7 @@ if wa.on.draw and wa.draw.ribbon then
     for _, p in ipairs(s.cloud) do
       local t = p.age / p.life
       local size = lerp(t, p.s0, p.s1)
-      square(CLOUD, 0, "alpha", colour(255 * t, 45, 40, 60), CLOUD_DEPTH, p.x, p.y, 64 * size * EP, 40 * size * EP)
+      square(CLOUD, 0, "alpha", colour(255 * t, 45, 40, 60), CLOUD_DEPTH, p.x, p.y, 64 * size, 40 * size)
     end
     for _, p in ipairs(s.sparks) do
       local t = p.age / 50
@@ -506,14 +505,14 @@ if wa.on.draw and wa.draw.ribbon then
     for i = 0, divs - 1 do
       if s.attach[i] and d > 0 then
         local f = i / d
-        local x = lerp(f, s.sx, ex) + 10 * s.diry * s.noise[i] * EP
-        local y = lerp(f, s.sy, ey) - 10 * s.dirx * s.noise[i] * EP
+        local x = lerp(f, s.sx, ex) + 10 * s.diry * s.noise[i]
+        local y = lerp(f, s.sy, ey) - 10 * s.dirx * s.noise[i]
         beam(s.noise, 9 + 9 * sub, 9, lerp(f, 10, 1), 0.1, 15 * (1 - f), x, y,
-          x + s.dirx * 100 * (1 - f) * EP, y + s.diry * 100 * (1 - f) * EP, 0.5 * (1 - f))
+          x + s.dirx * 100 * (1 - f), y + s.diry * 100 * (1 - f), 0.5 * (1 - f))
         sub = sub + 1
       end
     end
-    glow(s.sx + 10 * s.dirx * EP, s.sy + 10 * s.diry * EP, 230, colour(255, LR, LG, LB))
+    glow(s.sx + 10 * s.dirx, s.sy + 10 * s.diry, 230, colour(255, LR, LG, LB))
     if s.delay == 0 and s.hit then glow(s.ex, s.ey, 128 * s.ground, colour(255, LR, LG, LB)) end
   end
   wa.on.draw(function()
@@ -522,7 +521,7 @@ if wa.on.draw and wa.draw.ribbon then
     end
     for _, arc in ipairs(arcs) do
       if arc.explosion < 10 then
-        local h = 75 * EP
+        local h = 75
         square(GRENADE_BURST, arc.explosion, "add", 0x551E14EB, ELECTRIC_DEPTH, arc.burst_x, arc.burst_y, h, h)
       end
       if #arc.points >= 2 then
@@ -546,10 +545,10 @@ if wa.on.draw and wa.draw.ribbon then
           local x, y = arc.points[i + 1][1], arc.points[i + 1][2]
           if i > 0 and i < num then
             local px, py = arc.points[i][1], arc.points[i][2]
-            local nx, ny = (y - py) / EP, (px - x) / EP
+            local nx, ny = (y - py), (px - x)
             local d = math.sqrt(nx * nx + ny * ny)
             if d > 0 then
-              local n = 10 * (arc.noise[i - 1] or 0) / d * EP
+              local n = 10 * (arc.noise[i - 1] or 0) / d
               x, y = x + n * nx, y + n * ny
             end
           end
@@ -575,7 +574,7 @@ if wa.on.draw and wa.draw.ribbon then
       local worm = find_target(key)
       if worm then
         local x, y = worm.x, worm.y
-        local h = 30 * EP
+        local h = 30
         square(hold.sheet, math.floor(wa.draw.random() * 4), "alpha", 0xFFFFFFFF, ELECTRIC_DEPTH, x, y, h, h)
         -- PX's tazed worm: a glow 0.4 to 0.7 of the sheet, flickering.
         glow(x, y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255))

@@ -1,11 +1,11 @@
 -- Run from the checkout: lua mods/examples/collect_viewer/test_viewer.lua
-local P = 0x10000
 local path = 'mods/examples/collect_viewer/viewer.lua'
 local input = assert(io.open(path)):read('*a')
 local function near(a, b) assert(math.abs(a-b) < 1e-6, a .. ' ~= ' .. b) end
 local function setup(source)
   local frame, owned, hooks, quads, reads = 10, true, {}, {}, 0
   local env = setmetatable({ wa = {
+    depth = { FRONT = 0x10000, EFFECTS = 0xC0000, WORMS = 0xD0000, OBJECTS = 0xE0000, TERRAIN = 0x180000, BEHIND_TERRAIN = 0x190000 },
     on = setmetatable({}, {__index = function(_, name)
       assert(name == 'weapon_grant' or name == 'draw')
       return function(fn) hooks[name] = fn end
@@ -25,7 +25,7 @@ local function setup(source)
   assert(load(source or input, path, 't', env))()
   return {
     grant=function(amount)
-      hooks.weapon_grant({x=100*P,y=200*P,frame=frame,alliance=4,
+      hooks.weapon_grant({x=100,y=200,frame=frame,alliance=4,
         items={{weapon='grenade',amount=amount},{weapon='jet_pack',amount=1}}})
     end,
     draw=function(f,visible)
@@ -34,7 +34,7 @@ local function setup(source)
   }
 end
 local function center(q)
-  return (q.points[1][1]+q.points[3][1])/(2*P), (q.points[1][2]+q.points[3][2])/(2*P)
+  return (q.points[1][1]+q.points[3][1])/(2), (q.points[1][2]+q.points[3][2])/(2)
 end
 local v=setup(); v.grant(4)
 local start,reads=v.draw(10,true)
@@ -43,8 +43,8 @@ assert(#start==5 and reads==1)
 local expected={58,86,114,142,100}
 for n,q in ipairs(start) do
   local x,y=center(q); near(x,expected[n]); near(y,n<=4 and 186 or 214)
-  near((q.points[2][1]-q.points[1][1])/P,24)
-  near((q.points[3][2]-q.points[2][2])/P,8)
+  near((q.points[2][1]-q.points[1][1]),24)
+  near((q.points[3][2]-q.points[2][2]),8)
   assert(q.sprite=='another-pack:'..(n<=4 and 'grenade' or 'jet_pack'))
   assert(q.frame==3 and q.color==0xffffffff and q.blend=='alpha')
 end
@@ -70,7 +70,7 @@ local tuned=input:gsub('size = 24','size = 20'):gsub('rise = 48','rise = 80')
   :gsub('lifetime = 2','lifetime = 1'):gsub('fade = 1.5','fade = 0.5')
 local t=setup(tuned);t.grant(1)
 local a=t.draw(10,true); local ax,ay=center(a[1]);near(ax,80);near(ay,200)
-near((a[1].points[2][1]-a[1].points[1][1])/P,20)
+near((a[1].points[2][1]-a[1].points[1][1]),20)
 local b=t.draw(35,true);local bx,by=center(b[1]);near(bx,ax-6);near(by,ay-40)
 assert(b[1].color==0xffffffff) -- half of the tuned one-second lifetime
 assert(t.draw(36,true)[1].color==0xf5ffffff)

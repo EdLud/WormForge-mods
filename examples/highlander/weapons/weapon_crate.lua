@@ -6,11 +6,9 @@
 -- in 40 px in front of the worm, for the worm to go and collect. Every worm
 -- gets one each turn (scheme/rules.lua).
 local shared = require("lib/shared")
-local P = 0x10000
-
 local AHEAD = 40 -- px in front of the worm
 
 shared.fires.weapon_crate = function(fire)
   local worm = fire.worm
-  wa.crates.spawn({ x = worm.x + worm.facing * AHEAD * P, y = worm.y, kind = "weapon", drop = "teleport" })
+  wa.crates.spawn({ x = worm.x + worm.facing * AHEAD, y = worm.y, kind = "weapon", drop = "teleport" })
 end

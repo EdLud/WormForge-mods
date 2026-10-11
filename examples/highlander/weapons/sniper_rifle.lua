@@ -45,19 +45,18 @@ local LASER_RED, LASER_START, LASER_TIP =
 STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
 
 local function laser_length(x, y, dx, dy, shooter)
-  local P = 0x10000
   local len = LASER_LEN
-  local hit = wa.land.trace(math.floor(x), math.floor(y),
-    math.floor(x + dx * LASER_LEN * P), math.floor(y + dy * LASER_LEN * P))
+  local hit = wa.land.trace(x, y,
+    (x + dx * LASER_LEN), (y + dy * LASER_LEN))
   if hit then
-    len = math.sqrt(((hit.x - x) / P) ^ 2 + ((hit.y - y) / P) ^ 2)
+    len = math.sqrt(((hit.x - x) * (hit.x - x)) + ((hit.y - y) * (hit.y - y)))
   end
   for _, s in ipairs(STOPPERS) do
     local list, r = s[1], s[2]
     if list and list.all then
       for _, o in ipairs(list.all()) do
         if o.id ~= shooter then
-          local ox, oy = (o.x - x) / P, (o.y - y) / P
+          local ox, oy = (o.x - x), (o.y - y)
           local t = ox * dx + oy * dy
           if t > 0 and t < len and math.abs(ox * dy - oy * dx) < r then
             len = t
@@ -71,13 +70,12 @@ end
 
 -- laserray's MakeLaserRayF, point for point.
 local function laser_ray(x, y, ang, len)
-  local P = 0x10000
-  local rdx, rdy = math.sin(ang - 1.57), -math.cos(ang - 1.57)
-  local dx, dy = math.sin(ang), -math.cos(ang)
+  local rdx, rdy = wa.math.sin(ang - 1.57), -wa.math.cos(ang - 1.57)
+  local dx, dy = wa.math.sin(ang), -wa.math.cos(ang)
   local tx, ty = x, y
   local nparts = math.floor(len / 100)
   local w = (wa.draw.random() / 4 + 0.85) * LASER_WIDTH / 2
-  local wdx, wdy = w * rdx * P, w * rdy * P
+  local wdx, wdy = w * rdx, w * rdy
   local wscale = 1
   local lastl = len - nparts * 100
   local colors
@@ -86,9 +84,9 @@ local function laser_ray(x, y, ang, len)
     if l <= 0 then break end
     local p0, p3 = { tx + wdx, ty + wdy }, { tx - wdx, ty - wdy }
     w = wscale * (wa.draw.random() / 3 + 0.82) * LASER_WIDTH
-    wdx, wdy = w * rdx * P, w * rdy * P
+    wdx, wdy = w * rdx, w * rdy
     wscale = wscale - 0.75 / (nparts + 1)
-    local ex, ey = tx + dx * l * P, ty + dy * l * P
+    local ex, ey = tx + dx * l, ty + dy * l
     colors = { LASER_RED, LASER_RED, LASER_RED, LASER_RED }
     if i == 0 then
       colors[1], colors[4] = LASER_START, LASER_START
@@ -99,7 +97,7 @@ local function laser_ray(x, y, ang, len)
     })
     tx, ty = ex, ey
   end
-  local ex, ey = tx + dx * 7 * P, ty + dy * 7 * P
+  local ex, ey = tx + dx * 7, ty + dy * 7
   wa.draw.quad({
     points = { { tx + wdx, ty + wdy }, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, { tx - wdx, ty - wdy } },
     colors = { LASER_RED, LASER_TIP, LASER_TIP, LASER_RED },
@@ -119,12 +117,10 @@ if wa.on.draw then
         if worm.facing < 0 then
           ang = 6.28318 - ang
         end
-        local P = 0x10000
-        -- The art's left, turned with the aim and mirrored with the worm.
-        local side = LASER_BARREL * worm.facing * P
-        local x = worm.x + math.sin(ang) * 12 * P - math.cos(ang) * side
-        local y = worm.y - math.cos(ang) * 12 * P - math.sin(ang) * side
-        laser_ray(x, y, ang, laser_length(x, y, math.sin(ang), -math.cos(ang), worm.id))
+        local side = LASER_BARREL * worm.facing
+        local x = worm.x + wa.math.sin(ang) * 12 - wa.math.cos(ang) * side
+        local y = worm.y - wa.math.cos(ang) * 12 - wa.math.sin(ang) * side
+        laser_ray(x, y, ang, laser_length(x, y, wa.math.sin(ang), -wa.math.cos(ang), worm.id))
       end
     end
   end)

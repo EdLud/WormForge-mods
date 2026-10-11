@@ -29,7 +29,7 @@ do
     return math.min(trunc(24 + 3 * -vy / -vx), 31)
   end
   local function within(o, x, y, r)
-    return o and math.abs(x - o.x) < r * 0x10000 and math.abs(y - o.y) < r * 0x10000
+    return o and math.abs(x - o.x) < r and math.abs(y - o.y) < r
   end
   fires.javelin = function(ev)
     local v = ev.missile and speed[ev.missile]
@@ -47,9 +47,9 @@ do
       if within(active, ev.x, ev.y, 25) then target = active end
     end
     if target then
-      target.vx, target.vy = trunc(vx / 4), trunc(vy / 4)
+      target.vx, target.vy = vx / 4, vy / 4
       if target.kind == "worm" then target:hurt(20)
-      else target:hit(20, trunc(vx / 2), trunc(vy / 2), "projectile") end
+      else target:hit(20, vx / 2, vy / 2, "projectile") end
       return
     end
     -- Centred on the impact, as PX's, so its front half lies in the land:

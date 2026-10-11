@@ -10,9 +10,7 @@
 --                   team-colour cursor (what Teleport shows), snapped to
 --                   wa.world.pointer() natively every frame before `on` runs.
 --                   Grab/drag/throw use the actor position.
-
-local PX = 0x10000
-local GRAB_R2 = (48 * PX) * (48 * PX)
+local GRAB_R2 = 48 * 48
 
 local owner_id
 local live
@@ -48,7 +46,7 @@ local function release()
   held:drop()
   held.vx = vx
   held.vy = vy
-  wa.log(string.format("worm_toss throw vx=%d vy=%d", vx // PX, vy // PX))
+  wa.log(string.format("worm_toss throw vx=%d vy=%d", vx // 1, vy // 1))
   held = nil
   origin = nil
   hist = {}

@@ -3,7 +3,7 @@ local shared = require("lib/shared")
 
 -- -------------------------------------------------------------- Helicopter
 -- Shared with later sections; the rest of this section is local to it.
-local FX, trunc
+local trunc
 do
 --
 -- PX's helicopter_user_script, on WA's jet pack. While the jet pack runs,
@@ -18,14 +18,12 @@ do
 -- climb-in animation while WA winds the jet pack up; its labels, the fuel
 -- counter among them, stay, as with PX's RenderWorm override.
 --
--- PX's speeds and factors are fixed point: 1.0 is 0x10000 here, and its
--- arithmetic truncates.
+-- Speeds and factors use Lua floats; the engine rounds writes to WA fields.
 
 local HELI_FUEL = 100            -- FuelAmount
 local HELI_REALISTIC = true      -- gravity and wind act on it, at 0.2
 local HELI_EXPLODE_ON_TURN_END = true
-local HELI_DEPTH = 0x10000       -- in front of worms and terrain
-FX = 0x10000
+local HELI_DEPTH = wa.depth.FRONT       -- in front of worms and terrain
 
 local helis = {} -- worm id -> { flying, launch, jumpin, jump_phase, frame, ticks, body, climb }
 
@@ -66,8 +64,8 @@ local function heli_crash(worm, h, sx, sy)
   if not h.flying then
     return
   end
-  local speed = (math.abs(sy) + math.abs(sx)) / 2 / FX
-  local size = trunc((worm.fuel / FX - 75) / 10 * speed)
+  local speed = (math.abs(sy) + math.abs(sx)) / 2
+  local size = trunc((worm.fuel - 75) / 10 * speed)
   if size < 10 then size = 10 end
   -- The worm's own explosion: a spawn needs an owner, and outside a brain
   -- (from wa.on.contact) there is none to inherit.
@@ -75,7 +73,7 @@ local function heli_crash(worm, h, sx, sy)
     sprite = false, x = worm.x, y = worm.y, gravity = false, collide = false,
     owner = worm, explode = { damage = size * 2, id = size, now = true },
   })
-  worm.gravity = FX
+  worm.gravity = 1
   worm.wind = 0
   local oops = HELI_OOPS[wa.random(1, 10)]
   if oops then wa.sound.play(worm, oops) end
@@ -88,10 +86,10 @@ end
 -- PX: if (SpY > -1) SpY -= 0.2; if (SpY > -4) SpY -= 0.4; ... for up.
 local function push(v, dir)
   local s = -dir * v
-  if s > -1 * FX then s = s - 0.2 * FX end
-  if s > -4 * FX then s = s - 0.4 * FX end
-  if s > -8 * FX then s = s - 0.15 * FX end
-  if s > -10 * FX then s = s - 0.05 * FX end
+  if s > -1 then s = s - 0.2 end
+  if s > -4 then s = s - 0.4 end
+  if s > -8 then s = s - 0.15 end
+  if s > -10 then s = s - 0.05 end
   return -dir * s
 end
 
@@ -109,7 +107,7 @@ local function heli_frame(worm)
   end
   -- FireFinal: the jet pack it wound up has started.
   if h and h.armed and state == "jetpacking" and not h.flying then
-    worm.gravity = HELI_REALISTIC and trunc(0.2 * FX) or 0
+    worm.gravity = HELI_REALISTIC and 0.2 or 0
     worm:jetpack_steer(true)
     h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
   elseif h and h.armed and not worm.turn then
@@ -123,7 +121,7 @@ local function heli_frame(worm)
       -- WA owns the landing and its resulting state. Only remove our art
       -- and physics overrides when WA has ended the jet pack.
       worm:jetpack_steer(false)
-      worm.gravity, worm.wind = FX, 0
+      worm.gravity, worm.wind = 1, 0
       h.flying = false
       heli_drop_art(h, worm)
       return
@@ -143,9 +141,9 @@ local function heli_frame(worm)
       return
     end
     if h.launch then
-      worm.fuel = HELI_FUEL * FX
+      worm.fuel = HELI_FUEL
       h.jump_phase, h.jumpin, h.launch = 0, false, false
-      if HELI_REALISTIC then worm.wind = trunc(0.2 * FX) end
+      if HELI_REALISTIC then worm.wind = 0.2 end
     end
     local k = worm.keys
     local up, down, left, right = k.up, k.down, k.left, k.right
@@ -162,28 +160,28 @@ local function heli_frame(worm)
     h.frame = (h.frame + 1) % 3
     local fuel = worm.fuel
     local burn = wa.world.retreat() == 0
-    if burn then fuel = fuel - 0.020 * FX end
+    if burn then fuel = fuel - 0.020 end
     local shift = wa.world.keys().shift
     if up then
-      if burn then fuel = fuel - 0.2 * FX end
+      if burn then fuel = fuel - 0.2 end
       vy = push(vy, -1)
     end
     if down then
-      if burn then fuel = fuel - 0.020 * FX end
+      if burn then fuel = fuel - 0.020 end
       vy = push(vy, 1)
     end
     if left then
-      if burn then fuel = fuel - 0.1 * FX end
+      if burn then fuel = fuel - 0.1 end
       if not shift then worm.facing = -1 end
       vx = push(vx, -1)
     end
     if right then
-      if burn then fuel = fuel - 0.1 * FX end
+      if burn then fuel = fuel - 0.1 end
       if not shift then worm.facing = 1 end
       vx = push(vx, 1)
     end
-    worm.vx, worm.vy, worm.fuel = trunc(vx), trunc(vy), trunc(fuel)
-    if worm.fuel <= 0.1 * FX then
+    worm.vx, worm.vy, worm.fuel = vx, vy, fuel
+    if worm.fuel <= 0.1 then
       heli_crash(worm, h, worm.vx, worm.vy)
       return
     end
@@ -200,13 +198,13 @@ local function heli_frame(worm)
     local a = h.body
     a.x, a.y, a.vx, a.vy, a.facing = worm.x, worm.y, 0, 0, f
     a:frame(h.frame)
-    a:gfx({ angle = math.deg(wa.math.sin(worm.vx / FX / 24)) % 360, depth = HELI_DEPTH })
+    a:gfx({ angle = math.deg(wa.math.sin(worm.vx / 24)) % 360, depth = HELI_DEPTH })
     worm.body_visible = false
   elseif h.jumpin and state == "prefiring" then
     h.climb = h.climb or heli_actor(worm, "sprites/helicopter/jumpin")
     local a = h.climb
-    a.x = worm.x + trunc((f > 0 and -11.5 or 12.5) * FX)
-    a.y, a.vx, a.vy, a.facing = worm.y + FX, 0, 0, f
+    a.x = worm.x + (f > 0 and -11.5 or 12.5)
+    a.y, a.vx, a.vy, a.facing = worm.y + 1, 0, 0, f
     a:frame(math.min(math.floor(h.jump_phase * 23), 22))
     a:gfx({ depth = HELI_DEPTH })
     worm.body_visible = false
@@ -229,7 +227,7 @@ if wa.on.contact then
   wa.on.contact(function(worm, other, c)
     local h = helis[worm.id]
     if h and h.flying and other.kind ~= "mine"
-        and (math.abs(c.vx) > FX or math.abs(c.vy) > FX) then
+        and (math.abs(c.vx) > 1 or math.abs(c.vy) > 1) then
       heli_crash(worm, h, c.vx, c.vy)
     end
   end)
@@ -239,6 +237,5 @@ end
 -- Shared by the balloon and glider handlers to recognize the equipped weapon.
 local balloons = {}
 
-shared.FX = FX
 shared.balloons = balloons
 shared.trunc = trunc

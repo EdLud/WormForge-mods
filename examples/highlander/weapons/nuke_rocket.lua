@@ -18,8 +18,6 @@ do
 --
 -- Not ported: PX's particle trails, and carrying mines, crates, oil drums
 -- and bowling balls (their speed is not writable from Lua).
-
-local P16 = 0x10000
 local NR_HISS = 66    -- the fusing rocket's hiss, every 10 frames
 local NR_CLIMB = 53   -- frames the nuke climbs (PX: "1.1-1.2 second")
 local NR_CARRY = 17   -- pixels: what the climbing nuke carries along
@@ -35,7 +33,7 @@ local nr_shooter       -- the worm that fired (PX's ClWT / ClWN)
 local nr_expect        -- fired: the next mine-slot missile is the rocket
 
 local function near(ax, ay, bx, by)
-  local r = NR_CARRY * P16
+  local r = NR_CARRY
   return math.abs(ax - bx) < r and math.abs(ay - by) < r
 end
 
@@ -46,10 +44,11 @@ wa.on.missile_frame(function(m)
     if m.phase ~= "pre" then
       return
     end
+    -- Retain the original lottery and RNG draw count; convert its speed to pixels.
     if t < NR_CLIMB then
-      m.vy = m.vy - wa.random(19661, 52429) -- 0.3 to 0.8 a frame
+      m.vy = m.vy - wa.random(19661, 52429) / 65536 -- 0.3 to 0.8 a frame
       if t % 2 == 1 then
-        m.vx = m.vx + wa.random(-19661, 19661) -- up to 0.3 either way
+        m.vx = m.vx + wa.random(-19661, 19661) / 65536 -- up to 0.3 either way
       end
       nr_climbing[m.id] = { x = m.x, y = m.y, vx = m.vx, vy = m.vy }
       for _, w in ipairs(wa.worms.all()) do
@@ -60,7 +59,7 @@ wa.on.missile_frame(function(m)
     else
       nr_climbing[m.id] = nil
       if m.vy < 0 then
-        m.vy = m.vy + 13107 -- 0.2: slows the climb without faking gravity
+        m.vy = m.vy + 0.1999969482421875 -- 0.2: slows the climb without faking gravity
       end
     end
     nr_nuke[m.id] = t + 1

@@ -31,7 +31,6 @@ local fires = shared.fires
 
 -- Its own block: the file is at Lua's 200 locals for one chunk.
 do
-  local LASER_FX = laser.FX
   local LASER_LIFE = 250
   local LASER_REACH = 2048
   local LASER_LOOP_FRAMES = 51 -- laser_loop.wav is 1.02 s
@@ -49,10 +48,10 @@ do
     local ang = (1 - w.aim) * math.pi
     if w.facing < 0 then ang = 2 * math.pi - ang end
     r.dx, r.dy = wa.math.sin(ang), -wa.math.cos(ang)
-    r.x = w.x + math.floor((2 * w.facing * r.dy - r.dx) * LASER_FX)
-    r.y = w.y + math.floor((-2 - r.dy) * LASER_FX)
-    r.gx = r.x + math.floor(24 * r.dx * LASER_FX)
-    r.gy = r.y + math.floor(24 * r.dy * LASER_FX)
+    r.x = w.x + (2 * w.facing * r.dy - r.dx)
+    r.y = w.y + (-2 - r.dy)
+    r.gx = r.x + (24 * r.dx)
+    r.gy = r.y + (24 * r.dy)
   end
 
   local function laser_sparks(r, n, v0, v1, s0, s1)
@@ -62,8 +61,8 @@ do
       local ang = base + laser_between(r, -0.8, 0.8)
       local v = laser_between(r, v0, v1)
       local s = laser_between(r, s0, s1)
-      laser_particle(r, { x = r.gx, y = r.gy, vx = v * wa.math.sin(ang) * LASER_FX,
-        vy = -v * wa.math.cos(ang) * LASER_FX, life = 30, drag = 0.3, grav = 0.8,
+      laser_particle(r, { x = r.gx, y = r.gy, vx = v * wa.math.sin(ang),
+        vy = -v * wa.math.cos(ang), life = 30, drag = 0.3, grav = 0.8,
         s0 = s, s1 = 0.01, c0 = { 255, 0, 0 }, c1 = { 80, 0, 0 } })
     end
   end
@@ -82,16 +81,16 @@ do
 
   -- PerformTrace with damage: the cut, then everything touching the beam.
   local function laser_trace(r, w)
-    local x1 = r.x + math.floor(LASER_REACH * r.dx * LASER_FX)
-    local y1 = r.y + math.floor(LASER_REACH * r.dy * LASER_FX)
+    local x1 = r.x + (LASER_REACH * r.dx)
+    local y1 = r.y + (LASER_REACH * r.dy)
     local land = wa.land.trace(r.x, r.y, x1, y1)
     local hx, hy = land and land.x or x1, land and land.y or y1
     if land then
       if r.hit and r.dx == r.last_dx and r.dy == r.last_dy then
         -- The aim held: a clean cut from the last hit to this one.
-        local steps = math.max(1, math.floor(math.sqrt(sq((hx - r.hx) / LASER_FX) + sq((hy - r.hy) / LASER_FX)) / 2))
+        local steps = math.max(1, math.floor(math.sqrt(sq(hx - r.hx) + sq(hy - r.hy)) / 2))
         for i = 0, steps do
-          wa.land.dig({ x = r.hx + (hx - r.hx) * i // steps, y = r.hy + (hy - r.hy) * i // steps, radius = 4 })
+          wa.land.dig({ x = r.hx + (hx - r.hx) * i / steps, y = r.hy + (hy - r.hy) * i / steps, radius = 4 })
         end
       else
         wa.land.dig({ x = hx, y = hy, radius = 4 })
@@ -103,11 +102,11 @@ do
         s0 = 0.6, s1 = 0.1, c0 = { 200, 0, 0 }, c1 = { 0, 0, 0 } })
     end
     r.hx, r.hy, r.hit = hx, hy, land ~= nil
-    local lx, ly = (hx - r.x) / LASER_FX, (hy - r.y) / LASER_FX
+    local lx, ly = (hx - r.x), (hy - r.y)
     r.draw_beam = lx * lx + ly * ly > 24 * 24
     local length = math.sqrt(lx * lx + ly * ly)
     for _, obj in ipairs(laser_objects()) do
-      local ox, oy = (obj.x - r.x) / LASER_FX, (obj.y - r.y) / LASER_FX
+      local ox, oy = (obj.x - r.x), (obj.y - r.y)
       local along = ox * r.dx + oy * r.dy
       local across = math.abs(ox * r.dy - oy * r.dx)
       if along >= 0 and along <= length and across <= 5 + (LASER_RADIUS[obj.kind] or 6)
@@ -121,19 +120,19 @@ do
             r.taken[key] = taken + amount
           end
         elseif obj.kind == "oil" or obj.kind == "crate" then
-          obj:hit(obj.kind == "oil" and 4 or 1, math.floor(r.dx * LASER_FX), math.floor(r.dy * LASER_FX))
+          obj:hit(obj.kind == "oil" and 4 or 1, r.dx, r.dy)
         elseif obj.kind == "mine" and not r.armed[key] then
           r.armed[key] = true
           obj:arm(obj.fuse < 0 and wa.random(1000, 5000) or obj.fuse)
         end
         -- FX_HitObject: a yellow flash and two sparks.
-        local px, py = obj.x - math.floor(3 * r.dx * LASER_FX), obj.y - math.floor(3 * r.dy * LASER_FX)
+        local px, py = obj.x - (3 * r.dx), obj.y - (3 * r.dy)
         local tone = math.floor(laser_between(r, 0, 50))
         laser_particle(r, { x = px, y = py, life = 10, drag = 0, grav = 0,
           s0 = laser_between(r, 0.4, 0.8), s1 = 0.01, c0 = { 210, 210 - tone, 0 }, c1 = { 210, 50 - tone, 0 } })
         for _ = 1, 2 do
           local a, v = laser_between(r, 0, 2 * math.pi), laser_between(r, 0.5, 1.8)
-          laser_particle(r, { x = px, y = py, vx = v * wa.math.cos(a) * LASER_FX, vy = v * wa.math.sin(a) * LASER_FX,
+          laser_particle(r, { x = px, y = py, vx = v * wa.math.cos(a), vy = v * wa.math.sin(a),
             life = 30, drag = 0.05, grav = 1, s0 = laser_between(r, 0.2, 0.4), s1 = 0.01,
             c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } })
         end
@@ -155,7 +154,7 @@ do
     -- Each of WA's shots comes here; one beam per worm, as PX's LaserRayObj.
     if lasers[w.id] then return end
     local r = { worm_id = w.id, life = LASER_LIFE, counter = 0, size = 1.0, first = true,
-      taken = {}, armed = {}, fx = {}, seed = (w.x // LASER_FX * 7919 + w.y // LASER_FX) % 0x80000000 }
+      taken = {}, armed = {}, fx = {}, seed = (w.x // 1 * 7919 + w.y // 1) % 0x80000000 }
     r.aim, r.facing = w.aim, w.facing
     laser_aim(r, w)
     r.hx, r.hy, r.last_dx, r.last_dy = r.x, r.y, r.dx, r.dy

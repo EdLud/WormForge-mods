@@ -1,7 +1,7 @@
 id = "ktk_control"
 version = "1.0.0"
 author = "WormForge Porting Engine"
-api_version = 1
+api_version = 2
 entry = "init.lua"
 
 [weapons]

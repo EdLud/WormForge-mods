@@ -140,7 +140,7 @@ local PX_ART = {
       worm_sprites_animate = true,
       -- The turret between terrain (0x180000) and soil (0x1B0000): the
       -- landscape hides its sunk feet. The worm's sheets stay in front.
-      depth = 0x190000,
+      depth = wa.depth.BEHIND_TERRAIN,
       depth_prefix = "sprites/sentry_gun/turret_",
       gpu_prefix = "sprites/sentry_gun/turret_",
     },
@@ -179,7 +179,7 @@ local PX_ART = {
     params = {
       sprite_columns = 1,
       worm_sprites_animate = true,
-      depth = 0x190000,
+      depth = wa.depth.BEHIND_TERRAIN,
       depth_prefix = "sprites/sentry_laser/turret_",
       gpu_prefix = "sprites/sentry_laser/turret_",
     },

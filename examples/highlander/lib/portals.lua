@@ -1,7 +1,6 @@
 -- Reusable portal pairs. The gun supplies placement/controls/art; a pair
 -- owns traversal, return suppression, clearance and its velocity strategy.
 local default_velocity = require("lib/portal_velocity")
-local P = 0x10000
 local Network = {}
 Network.__index = Network
 local OFFSET = { {0,1}, {-1,1}, {-1,0}, {-1,-1}, {0,-1}, {1,-1}, {1,0}, {1,1} }
@@ -49,8 +48,8 @@ end
 function Network.new(options)
   options = options or {}
   return setmetatable({ pairs = {}, last_exit = {}, age = 0,
-    width = (options.width or 40) * P, height = (options.height or 50) * P,
-    offset = (options.offset or 10) * P,
+    width = (options.width or 40), height = (options.height or 50),
+    offset = (options.offset or 10),
     velocity = options.velocity or default_velocity,
     clearance = options.clearance,
     on_transport = options.on_transport,
@@ -65,8 +64,8 @@ function Network:place(group, colour, x, y, nx, ny, team_colour)
   local pair = self.pairs[group] or { active = true }
   local other = pair[3 - colour]
   -- PX's exclusion uses the impact point and the other rect plus 10px.
-  if other and math.abs(x - other.x) < other.w / 2 + 10 * P
-    and math.abs(y - other.y) < other.h / 2 + 10 * P then return nil end
+  if other and math.abs(x - other.x) < other.w / 2 + 10
+    and math.abs(y - other.y) < other.h / 2 + 10 then return nil end
   local fresh = pair[colour] == nil
   local p = pair[colour] or {}
   p.group, p.colour, p.team_colour = group, colour, team_colour
@@ -77,8 +76,8 @@ function Network:place(group, colour, x, y, nx, ny, team_colour)
   -- diagonals use the inner x edge and one/ two thirds down the rectangle.
   p.exit_x, p.exit_y = p.x, p.y
   if dir == 2 or dir == 4 or dir == 6 or dir == 8 then
-    p.exit_x = p.x + OFFSET[dir][1] * (p.w / 2 - 5 * P)
-    p.exit_y = trunc((p.y + OFFSET[dir][2] * p.h / 6) / P) * P
+    p.exit_x = p.x + OFFSET[dir][1] * (p.w / 2 - 5)
+    p.exit_y = trunc(p.y + OFFSET[dir][2] * p.h / 6)
   end
   pair[colour] = p
   self.pairs[group] = pair
@@ -132,7 +131,7 @@ function Network:move(body)
   end
   if not entry then return false end
   if best > 0 then
-    local hit = wa.land.trace(x, y, x + trunc(vx * best), y + trunc(vy * best))
+    local hit = wa.land.trace(x, y, x + vx * best, y + vy * best)
     if hit and hit.hit then return false end
   end
   local tx, ty = exit.exit_x, exit.exit_y

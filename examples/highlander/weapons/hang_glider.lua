@@ -21,7 +21,7 @@ do
   -- sheet 289, wparbak, for it).
   --
   -- PX's speeds and angles are pixels per frame and radians; WA's gravity,
-  -- wind and worm speeds are 16.16.
+  -- wind and worm speeds use pixel units.
 
   local GLIDER_GRAVITY = 0.75           -- GliderGravityFactor
   local GLIDER_WIND = 3.0               -- GliderWindFactor
@@ -32,7 +32,7 @@ do
   local GLIDER_LERP = 0.03              -- GliderRotationLerp
   local GLIDER_PUSH = 0.02              -- GliderMoveAcceleration
   local GLIDER_MAX_ANGLE = 1.5          -- about 86 degrees either way
-  local GLIDER_DEPTH = 0x10000          -- in front of worms and terrain
+  local GLIDER_DEPTH = wa.depth.FRONT          -- in front of worms and terrain
   -- wgldbak: 6 frames, loaded at 24 frames a second; WA runs 50.
   local GLIDER_PACK_FRAMES, GLIDER_PACK_FPS = 6, 24
   -- How long after coming down onto land WA may take to stand the worm up for
@@ -40,7 +40,7 @@ do
   local GLIDER_PACK_WAIT = 50
   -- WA's fall damage begins at 8 pixels/frame of downward impact speed. Its
   -- fixed-point formula includes one 16.16 unit of bias.
-  local GLIDER_SAFE_LANDING_SPEED = 8 * 0x10000 - 1
+  local GLIDER_SAFE_LANDING_SPEED = 8 - 1 / 65536
   local GLIDER_PI = 3.141593
 
   local gliders = {} -- worm id -> { enabled, deployed, x, y, ang, target, cycle, sx, sy, art, pack, pack_t, landing }
@@ -96,11 +96,10 @@ do
   -- touch there by WA's own test of its shape (worm:fits, every 2 pixels),
   -- and anything else in the way by the Sniper Rifle's estimate of its mask.
   local function glider_blocked(worm, x, y, sx, sy)
-    local P = 0x10000
-    local x1, y1 = x + trunc(1.1 * sx * P), y + trunc(1.1 * sy * P)
+    local x1, y1 = x + (1.1 * sx), y + (1.1 * sy)
     local n = math.max(1, math.ceil(math.sqrt(sx * sx + sy * sy) * 1.1 / 2))
     for i = 1, n do
-      if not worm:fits(x + (x1 - x) * i // n, y + (y1 - y) * i // n) then
+      if not worm:fits(x + (x1 - x) * i / n, y + (y1 - y) * i / n) then
         return true
       end
     end
@@ -114,7 +113,7 @@ do
       if list and list.all then
         for _, o in ipairs(list.all()) do
           if o.id ~= worm.id then
-            local ox, oy = (o.x - x) / P, (o.y - y) / P
+            local ox, oy = (o.x - x), (o.y - y)
             local t = ox * dx + oy * dy
             if t > 0 and t < len and math.abs(ox * dy - oy * dx) < r then
               return true
@@ -142,15 +141,14 @@ do
 
   -- CWormGlider::Think's physics, once deployed: the new speed.
   local function glider_think(worm, g)
-    local P = 0x10000
     local f = worm.facing
     local ang = f < 0 and g.ang or GLIDER_PI - g.ang
     local fwd_x, fwd_y = -wa.math.cos(ang), wa.math.sin(ang)
     local up_x, up_y
     if f < 0 then up_x, up_y = -fwd_y, fwd_x else up_x, up_y = fwd_y, -fwd_x end
     local sx, sy = g.sx, g.sy
-    sy = sy + wa.world.gravity() / P * GLIDER_GRAVITY
-    local wind = up_x * wa.world.wind() / P * GLIDER_WIND
+    sy = sy + wa.world.gravity() * GLIDER_GRAVITY
+    local wind = up_x * wa.world.wind() * GLIDER_WIND
     sx, sy = sx + wind * up_x, sy + wind * up_y
     local up_vel = sx * up_x + sy * up_y
     sx, sy = sx - up_x * up_vel * GLIDER_FRICTION, sy - up_y * up_vel * GLIDER_FRICTION
@@ -176,7 +174,6 @@ do
   -- Only a collision
   -- elsewhere needs the short guard against WA standing it up in mid-air.
   local function glider_close(worm, g, landing, hard_landing)
-    local P = 0x10000
     g.deployed = false
     -- A gentle landing can spend several frames falling under WA's control
     -- before WA stands the worm up. Keep the wing over its body until the
@@ -191,7 +188,7 @@ do
     g.landing = landing and GLIDER_PACK_WAIT or nil
     g.unstand = not (landing or hard_landing) and GLIDER_UNSTAND or nil
     if worm.taken then
-      local vx, vy = trunc(g.sx * P), trunc(g.sy * P)
+      local vx, vy = g.sx, g.sy
       if hard_landing then
         worm:release(vx, vy, { suppress_auto_parachute = true })
       else
@@ -219,7 +216,6 @@ do
       end
       g = glider_of(worm)
     end
-    local P = 0x10000
     if g.deployed then
       -- The engine let go: the turn ended, or WA knocked the worm flying.
       if not worm.taken then
@@ -231,12 +227,12 @@ do
       if glider_blocked(worm, g.x, g.y, g.sx, g.sy) then
         -- Onto land below it: WA handles the impact with the glider's full
         -- speed. Only a fall below its damage threshold gets the pack-away.
-        local below = g.sy > 0 and not worm:fits(g.x, g.y + trunc((1.1 * g.sy + 4) * P))
-        local hard_landing = below and trunc(g.sy * P) >= GLIDER_SAFE_LANDING_SPEED
+        local below = g.sy > 0 and not worm:fits(g.x, g.y + (1.1 * g.sy + 4))
+        local hard_landing = below and g.sy >= GLIDER_SAFE_LANDING_SPEED
         glider_close(worm, g, below and not hard_landing, hard_landing)
         return
       end
-      local x, y = g.x + trunc(g.sx * P), g.y + trunc(g.sy * P)
+      local x, y = g.x + g.sx, g.y + g.sy
       if y >= wa.world.water() then
         glider_close(worm, g, false)
         return
@@ -289,7 +285,7 @@ do
         local keys = worm.keys or {}
         local moving = keys.left or keys.right or state == "walking"
           or state == "jump_prepare" or state == "jumping"
-          or math.abs(worm.x - g.pack_x) > P
+          or math.abs(worm.x - g.pack_x) > 1
         local landing_state = state == "standing" or state == "sliding"
           or state == "jump_falling" or state == "falling"
         if frame >= GLIDER_PACK_FRAMES or moving or not landing_state
@@ -305,7 +301,7 @@ do
         end
       end
       -- Its speed carries over into the glide.
-      g.sx, g.sy = worm.vx / P, worm.vy / P
+      g.sx, g.sy = worm.vx, worm.vy
       return
     end
     g.enabled = equipped == "parachute"

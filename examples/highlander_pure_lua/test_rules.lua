@@ -92,6 +92,7 @@ local function new_match(opts)
     ammo[a].skip_go = -1
   end
   wa = {
+    depth = { FRONT = 0x10000, EFFECTS = 0xC0000, WORMS = 0xD0000, OBJECTS = 0xE0000, TERRAIN = 0x180000, BEHIND_TERRAIN = 0x190000 },
     log = function(s) logs[#logs + 1] = s end,
     hud = { line = function() end },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34 },

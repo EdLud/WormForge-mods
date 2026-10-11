@@ -4,14 +4,13 @@
 local shared = require("lib/shared")
 local Portals = require("lib/portals")
 local Effects = require("lib/portal_effects")
-local P, SLOT, ART = 0x10000, "scales_of_justice", "sprites/portal_gun/"
+local SLOT, ART = "scales_of_justice", "sprites/portal_gun/"
 local SPEED = 35
 local chosen, held, half_used = {}, {}, {}
 local bolts, effects = {}, Effects.new()
 local ticker
 local colours = { 0xFFDF6400, 0xFF003FEF }
 local team_colours = { 0xD21400, 0x0014DC, 0x00DC00, 0xFADC00, 0xDC00DC, 0x00E6E6 }
-local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
 local function sound(name, worm) wa.sound.play(worm, "sounds/" .. name .. ".wav") end
 local network = Portals.new({ grace = 0, on_transport = function(body, entry)
   effects:transport(entry)
@@ -45,7 +44,7 @@ local function tick()
 end
 local function ensure_ticker(worm)
   if ticker then return end
-  ticker = wa.actors.spawn({ sprite = ART .. "portal_glow.png", x = 0, y = -1000 * P,
+  ticker = wa.actors.spawn({ sprite = ART .. "portal_glow.png", x = 0, y = -1000,
     owner = worm, gravity = false, collide = false, on = { frame = tick } })
   ticker:scale(0)
 end
@@ -53,7 +52,7 @@ end
 -- PX's CheckWall: at least one of its four diagonal traces touches land.
 local function supported(x, y)
   for _, d in ipairs({ {-15,-15}, {15,15}, {-15,15}, {15,-15} }) do
-    local hit = wa.land.trace(x, y, x + d[1] * P, y + d[2] * P)
+    local hit = wa.land.trace(x, y, x + d[1], y + d[2])
     if hit and hit.hit then return true end
   end
   return false
@@ -88,7 +87,7 @@ end
 local function bolt_frame(b)
   b.age = b.age + 1
   local size = wa.world.size()
-  if b.x < 0 or b.x > size.w * P or b.y < -size.h * P then b.vy = b.vy + wa.world.gravity() end
+  if b.x < 0 or b.x > size.w or b.y < -size.h then b.vy = b.vy + wa.world.gravity() end
   local hit = wa.world.trace({ x0 = b.x, y0 = b.y, x1 = b.x + b.vx, y1 = b.y + b.vy,
     with = {"terrain"}, radius = 0 })
   if hit and hit.hit then
@@ -97,12 +96,12 @@ local function bolt_frame(b)
     return
   end
   b.x, b.y = b.x + b.vx, b.y + b.vy
-  if b.y >= wa.world.water() or b.age > 600 or math.abs(b.x) > 32000 * P or math.abs(b.y) > 32000 * P then
+  if b.y >= wa.world.water() or b.age > 600 or math.abs(b.x) > 32000 or math.abs(b.y) > 32000 then
     remove(b); return
   end
   b.a.x, b.a.y = b.x, b.y
   b.a:frame((b.age // 2) % 20)
-  b.a:gfx({ scale = 0.12, tint = colours[b.colour] & 0xFFFFFF, depth = 0x000E0000 })
+  b.a:gfx({ scale = 0.12, tint = colours[b.colour] & 0xFFFFFF, depth = wa.depth.OBJECTS })
   effects:trail(b.x, b.y, b.colour)
 end
 local function air_aim(worm, keys)
@@ -122,8 +121,8 @@ shared.fires.portal_gun = function(fire)
   local angle = (1 - aim) * math.pi
   local dx, dy = wa.math.sin(angle) * worm.facing, -wa.math.cos(angle)
   local power = fire.power or 1
-  local b = { x = worm.x + trunc(dx * P), y = worm.y + trunc(dy * P),
-    vx = trunc(dx * SPEED * power * P), vy = trunc(dy * SPEED * power * P),
+  local b = { x = worm.x + dx, y = worm.y + dy,
+    vx = (dx * SPEED * power), vy = (dy * SPEED * power),
     worm_id = worm.id, team = worm.team, team_colour = team_colours[worm.alliance + 1],
     colour = colour, age = 0 }
   -- Native ground fire consumes ammo after this callback; airborne fire
@@ -132,7 +131,7 @@ shared.fires.portal_gun = function(fire)
   local a = wa.actors.spawn({ sprite = ART .. "portal_ball", x = b.x, y = b.y,
     owner = worm, gravity = false, collide = false, on = { frame = function() bolt_frame(b) end } })
   b.a, b.id = a, a.id
-  a:gfx({ scale = 0.12, tint = colours[colour] & 0xFFFFFF, depth = 0x000E0000 })
+  a:gfx({ scale = 0.12, tint = colours[colour] & 0xFFFFFF, depth = wa.depth.OBJECTS })
   bolts[b.id] = b
   sound("portal_gun_shoot", worm)
 end
@@ -170,13 +169,13 @@ end) end
 
 if wa.on.draw then
   local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame)
-    local c, s = math.cos(angle or 0), math.sin(angle or 0)
+    local c, s = wa.math.cos(angle or 0), wa.math.sin(angle or 0)
     local points = {}
     for _, v in ipairs({ {-w/2,-h/2}, {w/2,-h/2}, {w/2,h/2}, {-w/2,h/2} }) do
-      points[#points + 1] = { x + trunc((v[1]*c-v[2]*s)*P), y + trunc((v[1]*s+v[2]*c)*P) }
+      points[#points + 1] = { x + (v[1]*c-v[2]*s), y + (v[1]*s+v[2]*c) }
     end
     wa.draw.quad({sprite = ART .. sprite, points = points, color = colour, blend = blend,
-      depth = depth or 0x000E0000, frame = frame or 0})
+      depth = depth or wa.depth.OBJECTS, frame = frame or 0})
   end
   wa.on.draw(function()
     for _, group in ipairs(wa.sorted(network.pairs)) do
@@ -187,12 +186,12 @@ if wa.on.draw then
           -- PX's CAnimation draws the endpoint independently of CPortal's
           -- linked/active state. Its alpha=50 is a percentage and draws the
           -- image repeatedly, not a byte alpha that makes singles disappear.
-          local angle = math.pi / 2 - math.atan(p.nx, p.ny)
+          local angle = math.pi / 2 - wa.math.atan(p.nx, p.ny)
           quad(colour == 1 and "portal_orange.png" or "portal_blue.png", p.draw_x, p.draw_y,
             40, 100, angle, 0xFFFFFFFF, "add")
           quad("portal_black_mask", p.draw_x - (p.x-p.draw_x)*2, p.draw_y - (p.y-p.draw_y)*2,
             12.5, 12.5, 0, (135 << 24) | (p.team_colour or 0xFFFFFF), "alpha",
-            0x000DFFFF, (network.age // 50) % 2)
+            wa.depth.OBJECTS - 1, (network.age // 50) % 2)
         end
       end
     end

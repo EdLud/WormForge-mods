@@ -17,7 +17,6 @@ local follow_drill = shared.follow_drill
 --
 -- WA keeps the worm in its punch state until it has stopped, so the punch
 -- itself cuts the way up and burns worms on it, all jump long: PX adds no cut.
-local PX = 0x10000
 local jumps = {}   -- worm id -> frames since the punch
 local winding = {} -- worm id -> frames since fire was pressed
 -- A wind-up never takes this long; give up rather than fire late.
@@ -25,14 +24,14 @@ local WIND_UP_MAX = 100
 
 local function fire_jump(worm, t)
   if t == 1 then
-    worm.vy = -9 * PX
+    worm.vy = -9
   elseif t == 30 then
-    worm.vx = worm.facing * 4 * PX
+    worm.vx = worm.facing * 4
   elseif t == 60 then
-    worm.vy = worm.vy - PX
+    worm.vy = worm.vy - 1
   end
-  if t > 80 and t < 210 and worm.vy > 5 * PX then
-    worm.vy = 4 * PX
+  if t > 80 and t < 210 and worm.vy > 5 then
+    worm.vy = 4
   end
 end
 

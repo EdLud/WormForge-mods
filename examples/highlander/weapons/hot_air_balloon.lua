@@ -1,6 +1,5 @@
 -- Highlander: Hot Air Balloon. Split from rules.lua by tools/split_highlander.py.
 local shared = require("lib/shared")
-local FX = shared.FX
 local balloons = shared.balloons
 
 -- --------------------------------------------------------- Hot Air Balloon
@@ -25,10 +24,10 @@ do
   -- It still opens as WA's parachute (the patched bungee, by hand or
   -- automatically); the pack takes the worm on the first frame of it.
 
-  local BALLOON_DAMP = 0xCCCC       -- WA's parachute damping, 0.8
+  local BALLOON_DAMP = 0.79998779296875       -- WA's parachute damping, 0.8
   local BALLOON_WIND = 100          -- the patched bungee's fire_method, in percent
-  local BALLOON_DEPTH = 0x10001     -- behind the basket, in front of worms
-  local BASKET_DEPTH = 0x10000
+  local BALLOON_DEPTH = wa.depth.FRONT + 1     -- behind the basket, in front of worms
+  local BASKET_DEPTH = wa.depth.FRONT
   -- PX's GetTeamColorRGB, by WA's colour index (worm.alliance, 0 red .. 5 cyan).
   -- PX adds it to its dark grey balloon (SetColorMod mode 8); the GPU tint
   -- multiplies, so the pack's balloon art is PX's lightened to white, and the
@@ -89,12 +88,12 @@ do
     end
     b.balloon = b.balloon or art("sprites/balloon/balloon")
     b.basket = b.basket or art("sprites/balloon/basket")
-    local x = b.x + 6 * f * FX
-    b.balloon.x, b.balloon.y, b.balloon.vx, b.balloon.vy = x, b.y - 43 * FX, 0, 0
+    local x = b.x + 6 * f
+    b.balloon.x, b.balloon.y, b.balloon.vx, b.balloon.vy = x, b.y - 43, 0, 0
     b.balloon:frame(math.min((b.ticks % 200) * 16 // 200, 15))
     b.balloon:gfx({ tint = 0xFF000000 | (TEAM_RGB[(worm.alliance or 0) + 1] or 0xFFFFFF),
       depth = BALLOON_DEPTH })
-    b.basket.x, b.basket.y, b.basket.vx, b.basket.vy = x, b.y + 3 * FX, 0, 0
+    b.basket.x, b.basket.y, b.basket.vx, b.basket.vy = x, b.y + 3, 0, 0
     b.basket.facing = -f
     b.basket:frame(math.min((b.ticks % 80) * 17 // 80, 16))
     b.basket:gfx({ depth = BASKET_DEPTH })
@@ -133,7 +132,6 @@ do
       balloon_stop(worm, b)
       return
     end
-    local P = 0x10000
     local vx, vy = b.vx, b.vy
     -- The arrow keys, as WA's parachute takes them (0x514AC0, 0x513EB0).
     local k = worm.keys or {}
@@ -141,16 +139,16 @@ do
     if left and right then left, right = false, false end
     if up and down then up, down = false, false end
     local g = wa.world.gravity()
-    local push = g >= 0 and g // 2 or -(-g // 2)
+    local push = g / 2
     vx = vx + (right and push or 0) - (left and push or 0)
     vy = vy + (down and push or 0) - (up and push or 0)
     -- WA's parachute physics, gravity upside down (0x4FCB30).
-    vy = vy - g * worm.gravity // P
-    local side = wa.world.wind() >= 0 and P or -P
+    vy = vy - g * worm.gravity
+    local side = wa.world.wind() >= 0 and 1 or -1
     if worm:fits(b.x + side, b.y) then
-      vx = vx + wa.world.wind() * (BALLOON_WIND * P // 100) // P
+      vx = vx + wa.world.wind() * (BALLOON_WIND / 100)
     end
-    vx, vy = vx * BALLOON_DAMP // P, vy * BALLOON_DAMP // P
+    vx, vy = vx * BALLOON_DAMP, vy * BALLOON_DAMP
     b.vx, b.vy = vx, vy
     local x, y = b.x + vx, b.y + vy
     -- It pops on touching land, as WA's parachute closes there: where WA's

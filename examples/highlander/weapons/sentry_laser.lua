@@ -14,8 +14,6 @@
 local shared = require("lib/shared")
 local turret = require("lib/turret")
 local laser = require("lib/laser")
-local P = 0x10000
-
 local ART = "sprites/sentry_laser/"
 local SND = "sounds/sentry_laser/"
 local RAY_LIFE = 10          -- CLaserRayS LifeTime: frames the beam shows
@@ -65,7 +63,7 @@ local function touched(x0, y0, dx, dy, length, skip)
   for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
     for _, obj in ipairs(group.all()) do
       if obj.id ~= skip then
-        local ox, oy = (obj.x - x0) / P, (obj.y - y0) / P
+        local ox, oy = (obj.x - x0), (obj.y - y0)
         local along = ox * dx + oy * dy
         local across = math.abs(ox * dy - oy * dx)
         if along >= 0 and along <= length and across <= (RADIUS[obj.kind] or 6) then
@@ -85,7 +83,7 @@ local function fx_hit_object(r, x, y)
   for _ = 1, 3 do
     local a, v = laser.between(r, 0, 2 * math.pi), laser.between(r, 0.5, 1.8)
     tone = math.floor(laser.between(r, 0, 50))
-    laser.particle(r, { x = x, y = y, vx = v * wa.math.cos(a) * P, vy = v * wa.math.sin(a) * P,
+    laser.particle(r, { x = x, y = y, vx = v * wa.math.cos(a), vy = v * wa.math.sin(a),
       life = 50, drag = 0.05, grav = 1, jitter = 0.2, s0 = laser.between(r, 0.5, 0.7), s1 = 0.01,
       c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } })
   end
@@ -97,7 +95,7 @@ local function fx_disintegrate(r, x, y)
   for _ = 1, 5 do -- FX_InitialBurst
     local v = laser.between(r, 5, 8)
     local ang = r.ang + laser.between(r, -0.25, 0.25)
-    laser.particle(r, { x = r.x, y = r.y, vx = -v * wa.math.sin(ang) * P, vy = -v * wa.math.cos(ang) * P,
+    laser.particle(r, { x = r.x, y = r.y, vx = -v * wa.math.sin(ang), vy = -v * wa.math.cos(ang),
       life = 40, drag = 0.1, grav = 0.4, jitter = 0.5, s0 = laser.between(r, 0.4, 0.7), s1 = 0.01,
       c0 = c, c1 = dim, alpha = 215 })
   end
@@ -105,12 +103,12 @@ local function fx_disintegrate(r, x, y)
     c0 = c, c1 = dim, alpha = 225 }) -- FX_BarrelFlash
   local tone = math.floor(laser.between(r, 0, 50))
   local v = laser.between(r, 2, 5)
-  laser.particle(r, { x = r.x, y = r.y, vx = v * wa.math.sin(r.ang) * P, vy = -v * wa.math.cos(r.ang) * P,
+  laser.particle(r, { x = r.x, y = r.y, vx = v * wa.math.sin(r.ang), vy = -v * wa.math.cos(r.ang),
     life = 30, drag = 0.3, grav = 0.8, jitter = 0.8, s0 = laser.between(r, 0.2, 0.5), s1 = 0.01,
     c0 = { 255, 255 - tone, 0 }, c1 = { 255, 80 - tone, 0 } }) -- FX_MuzzleSparks
   for i = 0, 3 do -- FX_Disintegrate
     local a = math.pi / 4 + math.pi / 2 * i
-    laser.particle(r, { x = x, y = y, vx = 1.5 * wa.math.sin(a) * P, vy = 1.5 * wa.math.cos(a) * P,
+    laser.particle(r, { x = x, y = y, vx = 1.5 * wa.math.sin(a), vy = 1.5 * wa.math.cos(a),
       life = 60, drag = 0.05, grav = 0, s0 = 0.5, s1 = 0.01, c0 = c, c1 = dim })
   end
   fx_hit_object(r, x, y)
@@ -146,20 +144,20 @@ end
 -- and disintegrates the target.
 local function fire(t, a, s, target)
   local ang = math.rad(s.angle)
-  local px, py = a.x, a.y - t.muzzle_up * P
-  local x0 = px + math.floor(wa.math.sin(ang) * MUZZLE_OUT * P)
-  local y0 = py + math.floor(wa.math.cos(ang) * MUZZLE_OUT * P)
+  local px, py = a.x, a.y - t.muzzle_up
+  local x0 = px + (wa.math.sin(ang) * MUZZLE_OUT)
+  local y0 = py + (wa.math.cos(ang) * MUZZLE_OUT)
   local hx, hy = target.x, target.y
   local land = wa.land.trace(x0, y0, hx, hy)
   if land then hx, hy = land.x, land.y end
-  local lx, ly = (hx - x0) / P, (hy - y0) / P
+  local lx, ly = (hx - x0), (hy - y0)
   local length = math.sqrt(lx * lx + ly * ly)
   local dx, dy = 0, 0
   if length > 0 then dx, dy = lx / length, ly / length end
 
   local r = { x = x0, y = y0, hx = hx, hy = hy, life = RAY_LIFE, size = 1.0, fx = {},
     ang = ang, rgb = BEAM_RGB[s.alliance + 1] or { 125, 125, 125 },
-    seed = (x0 // P * 7919 + y0 // P) % 0x80000000 }
+    seed = (x0 // 1 * 7919 + y0 // 1) % 0x80000000 }
   rays[#rays + 1] = r
   a:sound("sounds/laser_gun/laser_start.wav")
 
@@ -168,12 +166,12 @@ local function fire(t, a, s, target)
     if obj.kind == "worm" then
       if obj.hp > 0 then obj:hurt(WORM_DAMAGE) end
     elseif obj.kind == "crate" or obj.kind == "oil" then
-      obj:hit(OBJECT_DAMAGE, math.floor(dx * P), math.floor(dy * P))
+      obj:hit(OBJECT_DAMAGE, dx, dy)
     elseif obj.kind == "mine" and not s.armed[obj.id] then
       s.armed[obj.id] = true
       obj:arm(obj.fuse < 0 and wa.random(1000, 5000) or obj.fuse)
     end
-    fx_hit_object(r, obj.x + math.floor(3 * dx * P), obj.y + math.floor(3 * dy * P))
+    fx_hit_object(r, obj.x + (3 * dx), obj.y + (3 * dy))
   end
 
   -- Disintegrate: the target goes without bursting.

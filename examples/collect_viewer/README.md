@@ -28,7 +28,7 @@ renderer, as the other `wa.draw` packs do.
 Crates and virtual inventory acquisitions/transfers report grants automatically.
 Initial deals, inventory apply, turn refills, refunds and removals are silent.
 `inventory:transfer(from, to, {x = ..., y = ...})` can supply a captured acquisition
-position in 16.16 coordinates; otherwise it defaults to the receiving worm.
+position in pixel coordinates; otherwise it defaults to the receiving worm.
 Highlander supplies the victim's position without changing the recipient or coalition.
 A script granting directly through `worm:ammo` can report it afterwards:
 
@@ -41,7 +41,7 @@ wa.weapons.notify_grant({
 ```
 
 `notify_grant` never changes ammo. It snapshots the recipient's position unless
-`x` and `y` (16.16) are supplied; only call it from a simulation callback.
+`x` and `y` (pixels) are supplied; only call it from a simulation callback.
 `wa.on.weapon_grant(fn)` receives `worm_id`, `items`, `x`, `y`, `alliance`,
 `frame` and `source` (`crate`, `inventory`, `script`). Delivery waits until the
 stock simulation frame has finished; no live worm handle is retained.

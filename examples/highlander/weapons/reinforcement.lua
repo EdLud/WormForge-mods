@@ -1,7 +1,5 @@
 -- Highlander: Reinforcement (PX utility_reinforcement: reinforcement_SCRIPT.txt).
 local shared = require("lib/shared")
-local P = 0x10000
--- PX's new worm: RessurectWormEx(GetFreeWormIndex(team), team, 0, 0,
 -- "Reinforcement", 200).
 local NAME, HEALTH = "Reinforcement", 200
 -- Its centre this far above the land it stands on: WA's standing worm
@@ -13,8 +11,8 @@ local STAND = 12
 local function ground(x)
   local size = wa.world.size()
   local y = 0
-  while y < size.h and wa.land.solid(x * P, y * P) do y = y + 1 end
-  while y < size.h and not wa.land.solid(x * P, y * P) do y = y + 1 end
+  while y < size.h and wa.land.solid(x, y) do y = y + 1 end
+  while y < size.h and not wa.land.solid(x, y) do y = y + 1 end
   if y >= size.h then return nil end
   return y
 end
@@ -28,10 +26,10 @@ end
 -- team!").
 shared.fires.reinforcement = function(ev)
   local worm = ev.worm
-  local x = ev.x // P
+  local x = ev.x // 1
   local y = ground(x)
-  local at = y and (y - STAND) * P or wa.world.water() - STAND * P
-  local ok, err = pcall(wa.worms.spawn, { team = worm.team, x = x * P, y = at, name = NAME, health = HEALTH })
+  local at = y and (y - STAND) or wa.world.water() - STAND
+  local ok, err = pcall(wa.worms.spawn, { team = worm.team, x = x, y = at, name = NAME, health = HEALTH })
   if not ok then
     wa.log("Reinforcement: " .. tostring(err))
     wa.sound.play(worm, "sounds/gravity_control/error.wav")

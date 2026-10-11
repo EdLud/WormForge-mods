@@ -2,9 +2,7 @@
 -- Indexed by entry/exit surface: 1 down, 2 down-left, 3 left,
 -- 4 up-left, 5 up, 6 up-right, 7 right, 8 down-right (outward normals).
 -- Keep the two sets separate: PX deliberately treats worms differently.
--- Speeds inside these rules are pixels/frame. The public boundary is 16.16.
-local P = 0x10000
-local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
+-- Speeds inside these rules are pixels/frame. The public boundary also uses pixels/frame.
 local rules = { worm = {}, object = {} }
 rules.worm[1] = {
   [1] = function(vx, vy, face)
@@ -1200,6 +1198,6 @@ rules.object[8] = {
 }
 return function(kind, entry, exit, vx, vy, facing)
   local f = assert(rules[kind == "worm" and "worm" or "object"][entry][exit])
-  local x, y, face = f(vx / P, vy / P, facing or 1)
-  return trunc(x * P), trunc(y * P), face
+  local x, y, face = f(vx, vy, facing or 1)
+  return x, y, face
 end

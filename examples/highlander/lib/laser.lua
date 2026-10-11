@@ -5,10 +5,9 @@
 -- effects come out the same on every machine.
 local laser = {}
 
-laser.FX = 0x10000
 laser.GLOW = "sprites/laser_gun/laser_glow.png"
 laser.BEAM = "sprites/laser_gun/laser_beam.png"
-laser.DEPTH = 0x10000
+laser.DEPTH = wa.depth.FRONT
 
 function laser.rand(r)
   r.seed = (r.seed * 1103515245 + 12345) % 0x80000000
@@ -20,7 +19,7 @@ function laser.between(r, lo, hi)
 end
 
 -- A PX particle: moved, pulled and slowed each game frame, drawn additive.
--- { x, y, vx, vy (16.16), life, drag, grav, jitter, s0, s1 (sizes, 1 = 32
+-- { x, y (pixels), vx, vy (pixels/frame), life, drag, grav, jitter, s0, s1 (sizes, 1 = 32
 -- px), c0, c1 ({ r, g, b } at birth and death), alpha (255) }.
 function laser.particle(r, p)
   p.age, p.vx, p.vy = 0, p.vx or 0, p.vy or 0
@@ -36,10 +35,10 @@ function laser.step(r)
       table.remove(r.fx, i)
     else
       if p.jitter then
-        p.vx = p.vx + math.floor(laser.between(r, -p.jitter, p.jitter) * laser.FX)
+        p.vx = p.vx + (laser.between(r, -p.jitter, p.jitter))
       end
-      p.vy = p.vy + math.floor(p.grav * laser.FX / 10)
-      p.vx, p.vy = math.floor(p.vx * (1 - p.drag)), math.floor(p.vy * (1 - p.drag))
+      p.vy = p.vy + (p.grav / 10)
+      p.vx, p.vy = p.vx * (1 - p.drag), p.vy * (1 - p.drag)
       p.x, p.y = p.x + p.vx, p.y + p.vy
     end
   end
@@ -53,7 +52,7 @@ end
 
 -- The glow sprite, `px` across, centred on (x, y).
 function laser.glow(x, y, px, color)
-  local h = px * laser.FX / 2
+  local h = px / 2
   wa.draw.quad({ sprite = laser.GLOW, blend = "add", color = color, depth = laser.DEPTH,
     points = { { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h } } })
 end

@@ -59,8 +59,6 @@ local CONFIG = {
   },
 }
 
--- WA Fixed 16.16 shift (0x10000 = 1 pixel)
-local PX = 0x10000
 local MS_PER_FRAME = 20 -- 50 fps lockstep (1000ms / 50 = 20ms per frame)
 
 -- State Variables (Pure functions of simulation frames)
@@ -96,7 +94,7 @@ local function init_king(cfg, id)
   -- Scan rectangle for initial solid terrain pixels
   for x = x1, x2 do
     for y = y1, y2 do
-      if wa.land.solid(x * PX, y * PX) then
+      if wa.land.solid(x, y) then
         totalSolid = totalSolid + 1
       end
     end
@@ -145,7 +143,7 @@ local function check_king_damage(king)
   local count = 0
   for x = king.x1, king.x2 do
     for y = king.y1, king.y2 do
-      if wa.land.solid(x * PX, y * PX) then
+      if wa.land.solid(x, y) then
         count = count + 1
       end
     end

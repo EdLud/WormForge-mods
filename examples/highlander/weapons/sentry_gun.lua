@@ -6,8 +6,6 @@
 -- (mods/examples/sentry_gun_old).
 local shared = require("lib/shared")
 local turret = require("lib/turret")
-local P = 0x10000
-
 local ART = "sprites/sentry_gun/"
 local SND = "sounds/sentry_gun/"
 local DAMAGE = 2           -- per round
@@ -44,8 +42,8 @@ local function casing(t, a, s, rad)
   local speed = wa.random(CASING_SPEED_MIN, CASING_SPEED_MAX) / 100
   local life, spin = CASING_LIFE, 0
   wa.actors.spawn({
-    sprite = CASING, x = a.x, y = a.y - t.muzzle_up * P,
-    vx = math.floor(wa.math.sin(eject) * speed * P), vy = math.floor(wa.math.cos(eject) * speed * P),
+    sprite = CASING, x = a.x, y = a.y - t.muzzle_up,
+    vx = (wa.math.sin(eject) * speed), vy = (wa.math.cos(eject) * speed),
     gravity = false, collide = false, owner = t.owner(a, s), kind = "casing",
     on = function(c)
       life = life - 1
@@ -66,25 +64,25 @@ local function fire(t, a, s)
   if s.shots % 5 ~= 0 then dev = wa.random(-SPREAD_TENTHS, SPREAD_TENTHS) / 10 end
   local rad = math.rad(s.angle + dev)
   local dx, dy = wa.math.sin(rad), wa.math.cos(rad)
-  local mx = a.x + math.floor(dx * MUZZLE_OUT * P)
-  local my = a.y - t.muzzle_up * P + math.floor(dy * MUZZLE_OUT * P)
-  local reach = t.sensor_px * P
-  local ex, ey = mx + math.floor(dx * reach), my + math.floor(dy * reach)
+  local mx = a.x + (dx * MUZZLE_OUT)
+  local my = a.y - t.muzzle_up + (dy * MUZZLE_OUT)
+  local reach = t.sensor_px
+  local ex, ey = mx + (dx * reach), my + (dy * reach)
   -- Cosmetic, so even a round the self-blast check cancels ejects one.
   casing(t, a, s, rad)
   local hit = wa.land.trace(mx, my, ex, ey)
   local hx, hy = ex, ey
   if hit then hx, hy = hit.x, hit.y end
-  local rx, ry = (hx - mx) // P, (hy - my) // P
+  local rx, ry = (hx - mx) // 1, (hy - my) // 1
   local hit_px = rx * rx + ry * ry
   for _, w in ipairs(wa.worms.all()) do
     if w.alliance ~= s.alliance and w.visible ~= false then
-      local wx, wy = (w.x - mx) // P, (w.y - my) // P
+      local wx, wy = (w.x - mx) // 1, (w.y - my) // 1
       local along = wx * dx + wy * dy
       if along > 0 and along * along < hit_px then
         local off = wx * dy - wy * dx -- its distance from the round's line
         if off * off <= HIT_PX * HIT_PX then
-          hx, hy = mx + math.floor(dx * along * P), my + math.floor(dy * along * P)
+          hx, hy = mx + (dx * along), my + (dy * along)
           hit_px = along * along
         end
       end

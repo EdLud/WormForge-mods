@@ -6,9 +6,7 @@ local fires = shared.fires
 -- click's x, 50 to its left and 50 to its right. Each is a weapon, utility
 -- or health crate, drawn in that order from WA's RNG, as PX's RandomInt(1,
 -- 3); WA picks what is inside (PX's WCT_RANDOM). A health crate gives 20 to
--- 40, 40 to 60 or 60 to 80, by its place. PX takes the click's whole pixel.
-local P = 0x10000
-local DROP_Y = -50 * P
+-- 40, 40 to 60 or 60 to 80, by its place.
 local KINDS = { "weapon", "utility", "health" }
 local DROPS = {
   { dx = 0, lo = 20, hi = 40 },
@@ -17,11 +15,11 @@ local DROPS = {
 }
 
 fires.crate_strike = function(ev)
-  local x = ev.x // P
+  local x = ev.x
   for _, d in ipairs(DROPS) do
     local kind = KINDS[wa.random(1, 3)]
     local health = wa.random(d.lo, d.hi)
-    local crate = { x = (x + d.dx) * P, y = DROP_Y, kind = kind, health = health, drop = "chute" }
+    local crate = { x = (x + d.dx), y = ev.sky, kind = kind, health = health, drop = "chute" }
     -- A match whose crates hold no weapon (or no utility) refuses that
     -- kind; a health crate drops in its place.
     if not pcall(wa.crates.spawn, crate) then

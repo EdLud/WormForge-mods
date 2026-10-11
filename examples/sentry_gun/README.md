@@ -48,7 +48,7 @@ timing.
 - `copy_from = "mine"` with `on_fire` keeps stock placement but routes the body
   through the existing Lua spawn hook. The stock mine slot remains unchanged.
 
-These additions retain `api_version = 1`; existing names and behavior remain.
+These additions retain `api_version = 2`; existing names and behavior remain.
 
 ## Rebuild and verify
 

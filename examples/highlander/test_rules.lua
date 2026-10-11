@@ -121,7 +121,7 @@ function Worm:jetpack_steer(on) self.steered = on ~= false end
 -- side of the worm and 6 above and below.
 function Worm:fits(x, y)
   if not M.solid then return true end
-  local w, h = 4 * 0x10000, 6 * 0x10000
+  local w, h = 4, 6
   return not (M.solid(x, y) or M.solid(x - w, y) or M.solid(x + w, y)
     or M.solid(x, y - h) or M.solid(x, y + h))
 end
@@ -250,7 +250,7 @@ local function new_match(opts)
         id = (per_team > 2 and team * 1000 or team * 16) + index, team = team,
         alliance = team - 1, ammo_group = team - 1, hp = 100,
         kind = "worm", x = 0, y = 0, vx = 0, vy = 0, facing = 1,
-        gravity = 0x10000, -- WA's normal
+        gravity = 1, -- WA's normal
       }, Worm)
     end
   end
@@ -263,6 +263,7 @@ local function new_match(opts)
     ammo[a].skip_go = -1
   end
   wa = {
+    depth = { FRONT = 0x10000, EFFECTS = 0xC0000, WORMS = 0xD0000, OBJECTS = 0xE0000, TERRAIN = 0x180000, BEHIND_TERRAIN = 0x190000 },
     sorted = function(t)
       local out = {}
       for k in pairs(t) do out[#out + 1] = k end
@@ -276,7 +277,7 @@ local function new_match(opts)
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
       turn_clock = function() return M.turn_clock or 0 end,
-      water = function() return M.water or 0x7FFFFFFF end,
+      water = function() return M.water or 32767.99998474121 end,
       size = function() return { w = M.map_w or 2000, h = M.map_h or 1000 } end,
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
@@ -286,12 +287,11 @@ local function new_match(opts)
       end,
       set_gravity = function(v) M.gravity = v end,
       set_wind = function(v) M.wind = v end,
-      sky = -0xD00000,
+      sky = -208,
       -- As the engine's wa.world.collides: terrain from M.solid at the
       -- circle's centre and rim; worms, mines, oil drums and crates as circles
       -- of the engine's sizes (6, 5, 9, 9), the first in the list touched.
       collides = function(q)
-        local P = 0x10000
         local r = q.radius or 0
         local want = {}
         for _, w in ipairs(q.with or { "terrain" }) do want[w] = true end
@@ -299,7 +299,7 @@ local function new_match(opts)
           if M.solid(q.x, q.y) then return true end
           for k = 0, 15 do
             local t = k * math.pi / 8
-            if M.solid(q.x + math.floor(r * math.cos(t) * P), q.y + math.floor(r * math.sin(t) * P)) then
+            if M.solid(q.x + (r * math.cos(t)), q.y + (r * math.sin(t))) then
               return true
             end
           end
@@ -311,7 +311,7 @@ local function new_match(opts)
         for _, g in ipairs(groups) do
           if want[g[1]] then
             for _, o in ipairs(g[2]) do
-              local dx, dy = (o.x - q.x) / P, (o.y - q.y) / P
+              local dx, dy = (o.x - q.x), (o.y - q.y)
               local reach = r + g[3]
               if (g[4] ~= "worm" or (o.hp or 1) > 0) and dx * dx + dy * dy <= reach * reach then
                 o.kind = o.kind or g[4]
@@ -328,11 +328,9 @@ local function new_match(opts)
       -- that are solid. Crates and oil drums asked for are 9-pixel circles,
       -- as the engine's; a hit on one takes its normal from its centre.
       trace = function(q)
-        local P = 0x10000
-        -- The engine takes 16.16 i32s: a Lua integer past them is an error.
         for _, k in ipairs({ "x0", "y0", "x1", "y1" }) do
           local v = q[k]
-          if v and (v > 0x7FFFFFFF or v < -0x80000000) then
+          if v and (v > 32767.99998474121 or v < -32768) then
             error("error converting Lua integer to i32 (out of range)")
           end
         end
@@ -349,18 +347,18 @@ local function new_match(opts)
         end
         local function body_at(x, y)
           for _, o in ipairs(bodies) do
-            local dx, dy = (x - o.x) / P, (y - o.y) / P
+            local dx, dy = (x - o.x), (y - o.y)
             if dx * dx + dy * dy < (r + 9) * (r + 9) then return o end
           end
         end
-        local function solid_at(x, y) return M.solid((x // P) * P, (y // P) * P) end
+        local function solid_at(x, y) return M.solid((x // 1), (y // 1)) end
         local function overlaps(x, y)
           if body_at(x, y) then return true end
           if not M.solid then return false end
           if solid_at(x, y) then return true end
           for rr = r, 1, -4 do
             for _, d in ipairs(RIM) do
-              if solid_at(x + math.floor(d[1] * rr * P), y + math.floor(d[2] * rr * P)) then return true end
+              if solid_at(x + (d[1] * rr), y + (d[2] * rr)) then return true end
             end
           end
           return false
@@ -368,14 +366,14 @@ local function new_match(opts)
         local function normal(x, y)
           local o = body_at(x, y)
           if o then
-            local dx, dy = (x - o.x) / P, (y - o.y) / P
+            local dx, dy = (x - o.x), (y - o.y)
             local len = math.sqrt(dx * dx + dy * dy)
             if len > 0 then return dx / len, dy / len end
           end
           local sx, sy = 0, 0
           for _, reach in ipairs({ r + 1, r + 2 }) do
             for _, d in ipairs(RIM) do
-              if solid_at(x + math.floor(d[1] * reach * P), y + math.floor(d[2] * reach * P)) then
+              if solid_at(x + (d[1] * reach), y + (d[2] * reach)) then
                 sx, sy = sx - d[1], sy - d[2]
               end
             end
@@ -386,8 +384,8 @@ local function new_match(opts)
           return sx / len, sy / len
         end
         local dx, dy = q.x1 - q.x0, q.y1 - q.y0
-        local n = math.max(1, math.max(math.abs(dx), math.abs(dy)) // P + 1)
-        local function at(i) return q.x0 + (dx * i) // n, q.y0 + (dy * i) // n end
+        local n = math.max(1, math.max(math.abs(dx), math.abs(dy)) // 1 + 1)
+        local function at(i) return q.x0 + (dx * i) / n, q.y0 + (dy * i) / n end
         local out, from = { starts_solid = false, hit = false }, 0
         if overlaps(at(0)) then
           out.starts_solid = true
@@ -522,7 +520,7 @@ local function new_match(opts)
           if M.solid(x, y) then return false end
           for k = 0, 7 do
             local t = k * math.pi / 4
-            if M.solid(x + math.floor(3 * math.cos(t) * 0x10000), y + math.floor(3 * math.sin(t) * 0x10000)) then
+            if M.solid(x + (3 * math.cos(t)), y + (3 * math.sin(t))) then
               return false
             end
           end
@@ -538,7 +536,7 @@ local function new_match(opts)
           return { land = M.solid ~= nil and M.solid(self.x, self.y) or false }
         end
         function a:advance() end
-        function a:in_water() return self.y >= (M.water or 0x7FFFFFFF) end
+        function a:in_water() return self.y >= (M.water or 32767.99998474121) end
         function a:despawn() self.dead = true end
         -- a.explode is the spawn's explode spec and a:explode(opts) the
         -- method, as on the engine's actor: a callable table.
@@ -735,6 +733,7 @@ local function hand(id)
   end
 end
 
+local function near(a, b) return math.abs(a - b) <= 1 / 65536 end
 local fails = 0
 local function check(name, cond, detail)
   print(("  %s %s%s"):format(cond and "ok  " or "FAIL", name, detail and ("   [" .. detail .. "]") or ""))
@@ -847,12 +846,12 @@ print("Ice Arrow: only its own arrow freezes after the bow hit")
 do
   new_match()
   local target, other = worm(32), worm(17)
-  target.state, target.vx = "tumbling", 3 * 0x10000
+  target.state, target.vx = "tumbling", 3
   M.hurt({ phase = "post", source_weapon = "longbow", kind = "hit", worm = other })
   M.hurt({ phase = "pre", source_weapon = "armageddon", kind = "hit", worm = other })
   M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
   check("bow impulse remains until the target's next frame",
-    target.state == "tumbling" and target.vx == 3 * 0x10000 and other.state ~= "frozen")
+    target.state == "tumbling" and target.vx == 3 and other.state ~= "frozen")
   M.message(other, wa.msg.FRAME_FINISH)
   M.message(target, wa.msg.FRAME_FINISH)
   check("the hit target alone enters frozen state", target.state == "frozen" and other.state ~= "frozen")
@@ -865,23 +864,22 @@ end
 print("Reinforcement: a new worm for the team, on the ground under the click")
 do
   new_match()
-  local p = 0x10000
-  local click
+    local click
   for _, spec in ipairs(replaced) do if spec.weapon == "nuclear_test" then click = spec.on_click end end
   local w = worm(16)
-  M.solid = function(_, y) return y >= 300 * p end
+  M.solid = function(_, y) return y >= 300 end
   M.worm_spawns, M.sounds = {}, {}
-  click({ worm = w, x = 250 * p + 0x4000, y = 40 * p })
+  click({ worm = w, x = 250 + 0.25, y = 40 })
   local s = M.worm_spawns[1]
   check("PX's Reinforcement: the team's, 200 health, at the click's column, standing on the ground",
     s and s.team == w.team and s.name == "Reinforcement" and s.health == 200
-      and s.x == 250 * p and s.y == (300 - 12) * p, s and (s.x / p .. "," .. s.y / p) or "none")
+      and s.x == 250 and s.y == (300 - 12), s and (s.x .. "," .. s.y) or "none")
   M.solid = function() return false end
-  M.water = 500 * p
-  click({ worm = w, x = 100 * p, y = 40 * p })
-  check("over the water it drops in at the surface", M.worm_spawns[2] and M.worm_spawns[2].y == (500 - 12) * p)
+  M.water = 500
+  click({ worm = w, x = 100, y = 40 })
+  check("over the water it drops in at the surface", M.worm_spawns[2] and M.worm_spawns[2].y == (500 - 12))
   M.team_full = true
-  click({ worm = w, x = 100 * p, y = 40 * p })
+  click({ worm = w, x = 100, y = 40 })
   check("a full team gets no worm, and an error sound", #M.worm_spawns == 2
     and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav")
   M.team_full, M.water, M.solid = nil, nil, nil
@@ -890,19 +888,19 @@ end
 print("Electromagnet: plus-key polarity, stock object force and discharge")
 do
   new_match()
-  local p, w = 0x10000, worm(16)
-  w.x, w.y, w.weapon, w.turn = 100 * p, 100 * p, "baseball_bat", true
+  local w = worm(16)
+  w.x, w.y, w.weapon, w.turn = 100, 100, "baseball_bat", true
   local shot = assert((function()
     for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
   end)())
   local function mine_at(id, x, fuse)
-    local mine = { id = id, x = x * p, y = 100 * p, fuse = fuse }
+    local mine = { id = id, x = x, y = 100, fuse = fuse }
     function mine:arm(ms) self.armed = ms; return true end
     function mine:impulse(dx, dy) self.dx, self.dy = dx, dy; return true end
     return mine
   end
   local mine, timed = mine_at(101, 150, -1), mine_at(103, 160, 2000)
-  local missile = { id = 102, x = 50 * p, y = 100 * p }
+  local missile = { id = 102, x = 50, y = 100 }
   function missile:impulse(dx, dy) self.dx, self.dy = dx, dy; return true end
   M.mines, M.missiles = { mine, timed }, { missile }
   M.hud()
@@ -914,7 +912,7 @@ do
   check("a random-fuse mine it catches gets 1 to 5 seconds", mine.armed >= 1000 and mine.armed <= 4999)
   check("a mine with a fuse is triggered with its own", timed.armed == 2000)
   local other = worm(17)
-  other.x, other.y, other.weapon = 100 * p, 100 * p, "baseball_bat"
+  other.x, other.y, other.weapon = 100, 100, "baseball_bat"
   M.plus_key = true
   M.message(other, wa.msg.FRAME_FINISH)
   check("+ held on another worm's turn changes nothing for it", (function()
@@ -939,12 +937,12 @@ do
   attract.on(attract)
   check("one plus press switches the next magnet to attract", mine.dx < 0)
   -- The Hellish Hand-Grenade slows in a live field; another missile doesn't.
-  local hellish = { phase = "pre", weapon = "holy_grenade", x = 120 * p, y = 100 * p, vx = 1000 * p, vy = 0 }
-  local bazooka = { phase = "pre", weapon = "bazooka", x = 120 * p, y = 100 * p, vx = 1000 * p, vy = 0 }
+  local hellish = { phase = "pre", weapon = "holy_grenade", x = 120, y = 100, vx = 1000, vy = 0 }
+  local bazooka = { phase = "pre", weapon = "bazooka", x = 120, y = 100, vx = 1000, vy = 0 }
   M.missile(hellish)
   M.missile(bazooka)
-  check("the Hellish Hand-Grenade is damped in a field", hellish.vx == math.floor(1000 * p * 0.985)
-    and bazooka.vx == 1000 * p)
+  check("the Hellish Hand-Grenade is damped in a field", hellish.vx == math.floor(1000 * 0.985)
+    and bazooka.vx == 1000)
   -- 300 frames after the turn ended, missiles and mines are let go (a dud
   -- mine held against a magnet would never rest, and the turn never end).
   M.turn_end({ worm = w })
@@ -961,7 +959,7 @@ do
   check("and caught again from the next turn", missile.dx ~= 0 and mine.dx ~= 0)
   -- A blast hurts it less the further off (PX's TakeExplosionDamage).
   local function blast(m, damage, dist)
-    m.hit(m, { kind = "blast", damage = damage, x = m.x + dist * p, y = m.y, vx = 0, vy = 0 })
+    m.hit(m, { kind = "blast", damage = damage, x = m.x + dist, y = m.y, vx = 0, vy = 0 })
   end
   shot({ worm = w })
   local target = M.spawned[#M.spawned]
@@ -991,21 +989,21 @@ end
 print("Electromagnet: it lands and rests on the land, and sinks in the water")
 do
   new_match()
-  local p, w = 0x10000, worm(16)
-  w.x, w.y, w.facing = 100 * p, 150 * p, 1
+  local w = worm(16)
+  w.x, w.y, w.facing = 100, 150, 1
   local shot = assert((function()
     for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
   end)())
-  M.gravity, M.solid = p // 4, function(_, y) return y >= 200 * p end
+  M.gravity, M.solid = 0.25, function(_, y) return y >= 200 end
   shot({ worm = w })
   local magnet = M.spawned[#M.spawned]
   for _ = 1, 200 do magnet.on(magnet) end
   local y = magnet.y
   for _ = 1, 20 do magnet.on(magnet) end
   check("it falls onto the floor and rests on it, its body above the land",
-    magnet.y == y and y > 185 * p and y < 200 * p and magnet.x > w.x, magnet.y / p)
+    magnet.y == y and y > 185 and y < 200 and magnet.x > w.x, magnet.y)
   check("the engine is told where, and moves nothing itself", magnet.vx == 0 and magnet.vy == 0)
-  M.water = 190 * p
+  M.water = 190
   for _ = 1, 600 do if not magnet.dead then magnet.on(magnet) end end
   check("in the water it sinks out of sight and is gone", magnet.dead)
   M.water, M.gravity, M.solid = nil, nil, nil
@@ -1014,8 +1012,7 @@ end
 print("Sentry Gun: placed, it plants, picks a moving enemy, fires, reloads")
 do
   new_match()
-  local p = 0x10000
-  local spec
+    local spec
   for _, s in ipairs(replaced) do if s.weapon == "kamikaze" then spec = s end end
   check("it claims Kamikaze, placed as a mine, its housing tinted per team",
     spec and spec.copy_from == "mine" and spec.name == "Sentry Gun" and type(spec.on_fire) == "function"
@@ -1023,18 +1020,18 @@ do
       and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_gun/equip_housing"
       and #spec.worm_sprites_team_tint.colours == 6)
   local owner, enemy = worm(16), worm(32)
-  for _, w in ipairs(worms) do w.x, w.y = 5000 * p, 5000 * p end
-  owner.x, owner.y, owner.facing = 100 * p, 100 * p, 1
-  M.solid = function(_, y) return y >= 110 * p end
-  M.gravity, M.spawned, M.actor_sounds, M.actor_booms = p // 4, {}, {}, {}
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y, owner.facing = 100, 100, 1
+  M.solid = function(_, y) return y >= 110 end
+  M.gravity, M.spawned, M.actor_sounds, M.actor_booms = 0.25, {}, {}, {}
   spec.on_fire({ worm = owner })
   local body, head = M.spawned[#M.spawned - 2], M.spawned[#M.spawned - 1]
   check("a body, a head and a flare, in front of the worm", body.sprite == "sprites/sentry_gun/turret_base"
     and head.sprite == "sprites/sentry_gun/turret_gun" and M.spawned[#M.spawned].sprite == "sprites/sentry_gun/turret_flare"
-    and body.x == 105 * p)
+    and body.x == 105)
   for _ = 1, 40 do body.on(body) end
   check("it falls and plants on the land, with PX's sound",
-    body.y >= 110 * p and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y / p)
+    body.y >= 110 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
   local function impacts()
     local n = 0
     for _, a in ipairs(M.spawned) do if a.sprite == "sprites/sentry_gun/impact.png" then n = n + 1 end end
@@ -1042,22 +1039,22 @@ do
   end
   local function run(n)
     for _ = 1, n do
-      enemy.x = enemy.x + p -- moving: PX notices only what moves
+      enemy.x = enemy.x + 1 -- moving: PX notices only what moves
       body.on(body)
     end
   end
-  enemy.x, enemy.y = 300 * p, 90 * p
+  enemy.x, enemy.y = 300, 90
   run(50)
   check("it waits 60 frames once it has a target", impacts() == 0)
   run(40)
   check("then it fires at the enemy, rounds bursting at it", impacts() >= 3, impacts())
-  check("its head is drawn in its owner's colour", head.tint == 0xFF6447 and head.depth == 0x10000)
+  check("its head is drawn in its owner's colour", head.tint == 0xFF6447 and head.depth == wa.depth.FRONT)
   M.message(owner, wa.msg.START_TURN)
   local before = impacts()
   run(60)
   check("it holds fire on its owner's colour's turns", impacts() == before)
   M.message(enemy, wa.msg.START_TURN)
-  enemy.x = 300 * p -- back in range: it has walked on meanwhile
+  enemy.x = 300  -- back in range: it has walked on meanwhile
   run(100)
   check("and fires again on the enemy's", impacts() > before, impacts() - before)
   check("its rounds are its owner's while the owner lives", M.spawned[#M.spawned].owner == owner)
@@ -1081,18 +1078,17 @@ end
 print("Sentry Laser: shoots enemy projectiles out of the air, not worms")
 do
   new_match()
-  local p = 0x10000
-  local spec
+    local spec
   for _, s in ipairs(replaced) do if s.weapon == "dragon_ball" then spec = s end end
   check("it claims Dragon Ball, placed as a mine, its body tinted per team",
     spec and spec.copy_from == "mine" and spec.name == "Sentry Laser" and type(spec.on_fire) == "function"
       and spec.worm_sprites.weaponlnk == "sprites/sentry_laser/equip"
       and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_laser/equip_housing")
   local owner, enemy = worm(16), worm(32)
-  for _, w in ipairs(worms) do w.x, w.y = 5000 * p, 5000 * p end
-  owner.x, owner.y, owner.facing = 100 * p, 100 * p, 1
-  M.solid = function(_, y) return y >= 110 * p end
-  M.gravity, M.spawned, M.actor_sounds, M.actor_booms, M.digs = p // 4, {}, {}, {}, {}
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y, owner.facing = 100, 100, 1
+  M.solid = function(_, y) return y >= 110 end
+  M.gravity, M.spawned, M.actor_sounds, M.actor_booms, M.digs = 0.25, {}, {}, {}, {}
   spec.on_fire({ worm = owner })
   local body, head, barrel = M.spawned[#M.spawned - 2], M.spawned[#M.spawned - 1], M.spawned[#M.spawned]
   check("a base, a body and a barrel", body.sprite == "sprites/sentry_laser/turret_base"
@@ -1105,7 +1101,7 @@ do
     return n
   end
   local function missile(id, alliance, x)
-    local m = { id = id, kind = "missile", x = x * p, y = 80 * p, vx = p, vy = 0, alliance = alliance }
+    local m = { id = id, kind = "missile", x = x, y = 80, vx = 1, vy = 0, alliance = alliance }
     function m:remove()
       self.removed = true
       for i, o in ipairs(M.missiles) do if o == self then table.remove(M.missiles, i) break end end
@@ -1115,12 +1111,12 @@ do
   end
   local function run(n)
     for _ = 1, n do
-      enemy.x = enemy.x + p
+      enemy.x = enemy.x + 1
       for _, m in ipairs(M.missiles) do m.x = m.x + m.vx end
       body.on(body)
     end
   end
-  enemy.x, enemy.y = 200 * p, 90 * p
+  enemy.x, enemy.y = 200, 90
   local own = missile(901, owner.alliance, 150)
   M.missiles = { own }
   run(60)
@@ -1145,10 +1141,10 @@ do
   local foes = {}
   for i = 1, 4 do
     foes[i] = missile(910 + i, enemy.alliance, 220)
-    foes[i].y = 70 * p
+    foes[i].y = 70
   end
   -- Halfway from the turret's head to them.
-  enemy.x, enemy.y = (body.x + 220 * p) // 2, (body.y - 25 * p + 70 * p) // 2
+  enemy.x, enemy.y = (body.x + 220) // 2, (body.y - 25 + 70) // 2
   M.missiles = foes
   local hp = enemy.hp
   for _ = 1, 200 do body.on(body) end
@@ -1160,8 +1156,8 @@ do
   -- An enemy's Bowling Ball rolling by is shot too.
   local shared = require("lib/shared")
   M.message(enemy, wa.msg.START_TURN)
-  local _, ball = shared.spawn_bowling_ball(enemy, 220 * p, 60 * p, 2, 0)
-  local _, own_ball = shared.spawn_bowling_ball(owner, 180 * p, 60 * p, 2, 0)
+  local _, ball = shared.spawn_bowling_ball(enemy, 220, 60, 2, 0)
+  local _, own_ball = shared.spawn_bowling_ball(owner, 180, 60, 2, 0)
   for _ = 1, 60 do body.on(body) end
   check("an enemy's moving Bowling Ball is disintegrated too, its own colour's spared",
     disintegrations() == 6 and ball.gone and not own_ball.gone, disintegrations())
@@ -1174,15 +1170,14 @@ end
 print("Kamikaze Rocket: Ctrl + Space, steered, digging, then a blast into the water")
 do
   new_match()
-  local p = 0x10000
-  local spec
+    local spec
   for _, s in ipairs(replaced) do if s.weapon == "suicide_bomber" then spec = s end end
   check("it claims Suicide Bomber with PX's record and the Kamikaze's sheets",
     spec and spec.wep == "weps/suicide_bomber.wep" and spec.worm_sprites.wkamlnk == "sprites/kamikaze_rocket/take_out"
       and spec.worm_sprites.wkamjmp == "sprites/kamikaze_rocket/launch")
   local w = worm(16)
-  w.x, w.y, w.weapon, w.turn, w.aim, w.facing, w.state = 100 * p, 100 * p, "suicide_bomber", true, 0.5, 1, "ready"
-  M.ctrl, M.digs, M.actor_booms, M.water = false, {}, {}, 500 * p
+  w.x, w.y, w.weapon, w.turn, w.aim, w.facing, w.state = 100, 100, "suicide_bomber", true, 0.5, 1, "ready"
+  M.ctrl, M.digs, M.actor_booms, M.water = false, {}, {}, 500
   check("without Ctrl the fire is eaten: nothing is used", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
   M.hud_lines = {}
   M.hud()
@@ -1190,11 +1185,11 @@ do
   M.ctrl = true
   check("with Ctrl it fires", M.message(w, wa.msg.FIRE_WEAPON) == nil)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("nothing moves before WA's Kamikaze begins", w.x == 100 * p and w.visible ~= false)
+  check("nothing moves before WA's Kamikaze begins", w.x == 100 and w.visible ~= false)
   w.state = "kamikaze"
   M.message(w, wa.msg.FRAME_FINISH)
   check("then it flies along the aim, 8 px a frame, the worm hidden, digging 8",
-    w.x == 108 * p and w.y == 100 * p and w.visible == false and M.digs[#M.digs].radius == 8, w.x / p .. "," .. w.y / p)
+    w.x == 108 and w.y == 100 and w.visible == false and M.digs[#M.digs].radius == 8, w.x .. "," .. w.y)
   local y = w.y
   M.right = true
   M.message(w, wa.msg.FRAME_FINISH)
@@ -1355,19 +1350,18 @@ end
 print("Weapon Crate: placed, a weapon crate teleported in front of the worm")
 do
   new_match()
-  local p = 0x10000
-  local spec
+    local spec
   for _, s in ipairs(replaced) do if s.weapon == "freeze" then spec = s end end
   check("it claims Freeze with PX's record, placed through on_fire",
     spec and spec.wep == "weps/freeze.wep" and type(spec.on_fire) == "function"
       and spec.worm_sprites.weaponlnk == "sprites/weapon_crate/take_out")
   local w = worm(16)
-  w.x, w.y, w.facing = 100 * p, 50 * p, -1
+  w.x, w.y, w.facing = 100, 50, -1
   M.crate_spawns = {}
   spec.on_fire({ worm = w })
   local c = M.crate_spawns[1]
   check("one weapon crate, teleported in 40 px in front", #M.crate_spawns == 1 and c.kind == "weapon"
-    and c.drop == "teleport" and c.x == 60 * p and c.y == 50 * p)
+    and c.drop == "teleport" and c.x == 60 and c.y == 50)
 end
 
 print("turn: only the active worm's hand is usable, one of each")
@@ -1413,14 +1407,14 @@ do
   frame()
   turn(16)
   local victim = hand(32)
-  worm(32).x, worm(32).y = 321 * 0x10000, 123 * 0x10000
-  worm(16).x, worm(16).y = 50 * 0x10000, 40 * 0x10000
+  worm(32).x, worm(32).y = 321, 123
+  worm(16).x, worm(16).y = 50, 40
   kill(32)
   local reward = M.transfers[#M.transfers]
   check("reward icons start at the killed worm", reward.from == 32 and reward.to == 16
-    and reward.x == 321 * 0x10000 and reward.y == 123 * 0x10000)
-  worm(32).x = 999 * 0x10000
-  check("reward origin is captured", reward.x == 321 * 0x10000)
+    and reward.x == 321 and reward.y == 123)
+  worm(32).x = 999
+  check("reward origin is captured", reward.x == 321)
   local expect = {}
   for _, n in ipairs(hand(16)) do expect[#expect + 1] = n end
   for _, n in ipairs(victim) do expect[#expect + 1] = n end
@@ -1537,29 +1531,28 @@ do
   for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
   check("nothing during the wind-up", w.vx == 0 and w.vy == 0, w.vx .. " " .. w.vy)
   -- FireFinal: WA's setup_Punching starts the worm up at 6.
-  local PX = 0x10000
-  w.vy = -6 * PX
+  w.vy = -6
   local at = {}
   for t = 1, 215 do
-    if t == 100 then w.vy = 8 * PX end -- falling fast mid-glide
+    if t == 100 then w.vy = 8 end -- falling fast mid-glide
     M.message(w, wa.msg.FRAME_FINISH)
     at[t] = { vx = w.vx, vy = w.vy }
   end
-  check("up at 9 on the punch's first frame", at[1].vy == -9 * PX, tostring(at[1].vy))
-  check("forward, the way it faces, 30 frames in", at[30].vx == -4 * PX and at[29].vx == 0,
+  check("up at 9 on the punch's first frame", at[1].vy == -9, tostring(at[1].vy))
+  check("forward, the way it faces, 30 frames in", at[30].vx == -4 and at[29].vx == 0,
     tostring(at[30].vx))
-  check("a little higher at 60", at[60].vy == -10 * PX, tostring(at[60].vy))
-  check("a fall past 5 goes back to 4", at[100].vy == 4 * PX, tostring(at[100].vy))
-  w.vy = 8 * PX
+  check("a little higher at 60", at[60].vy == -10, tostring(at[60].vy))
+  check("a fall past 5 goes back to 4", at[100].vy == 4, tostring(at[100].vy))
+  w.vy = 8
   M.message(w, wa.msg.FRAME_FINISH)
-  check("and lets go after 210 frames", w.vy == 8 * PX, tostring(w.vy))
+  check("and lets go after 210 frames", w.vy == 8, tostring(w.vy))
   check("no cut of its own: WA's punch cuts", not M.cuts)
   local other = worm(32)
   other.weapon, other.vy = "bazooka", 0
   M.message(other, wa.msg.FIRE_WEAPON)
-  other.vy = -6 * PX
+  other.vy = -6
   M.message(other, wa.msg.FRAME_FINISH)
-  check("another weapon does not jump", other.vy == -6 * PX)
+  check("another weapon does not jump", other.vy == -6)
 end
 
 print("fire jump: a wind-up that never ends in a punch")
@@ -1571,9 +1564,9 @@ do
   ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
-  w.vy = -3 * 0x10000 -- a later jump of some other kind
+  w.vy = -3  -- a later jump of some other kind
   M.message(w, wa.msg.FRAME_FINISH)
-  check("is forgotten", w.vy == -3 * 0x10000, tostring(w.vy))
+  check("is forgotten", w.vy == -3, tostring(w.vy))
 end
 
 print("px holds: each replacement carries declarative engine hold data")
@@ -1605,12 +1598,11 @@ print("sniper rifle: PX's laser sight, drawn only")
 do
   new_match()
   frame()
-  local P = 0x10000
   local w = worm(16)
   for _, o in ipairs(worms) do
-    o.x, o.y = -5000 * P, 0 -- behind the ray
+    o.x, o.y = -5000, 0 -- behind the ray
   end
-  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn = "handgun", 1, 100 * P, 50 * P, true, 0.5, true
+  w.weapon, w.facing, w.x, w.y, w.aiming, w.aim, w.turn = "handgun", 1, 100, 50, true, 0.5, true
   M.message(w, wa.msg.FRAME_FINISH) -- the rifle is drawn with this aim
   w.aim = 0.53 -- WA's crosshair, rewritten at render time: the ray keeps the rifle's
   M.draw()
@@ -1619,17 +1611,17 @@ do
   -- The quad's first corner is the start plus half the ray's width, across.
   local sx, sy = (q.points[1][1] + q.points[4][1]) / 2, (q.points[1][2] + q.points[4][2]) / 2
   check("from 12 pixels out along the aim, on the barrel 2 above the centre line",
-    math.abs(sx - 112 * P) < P / 8 and math.abs(sy - 48 * P) < P / 8, sx / P .. "," .. sy / P)
+    math.abs(sx - 112) < 1 / 8 and math.abs(sy - 48) < 1 / 8, sx .. "," .. sy)
   check("added, red, brighter at the start", q.blend == "add" and q.colors[1] == 0xC0FF6060
     and q.colors[2] == 0xFFFF3030)
   local tip = M.quads[#M.quads]
   check("fading out at the tip", tip.colors[2] == 0x10FF3030 and tip.colors[1] == 0xFFFF3030)
-  M.quads, M.trace_hit = {}, { x = 312 * P, y = 50 * P }
+  M.quads, M.trace_hit = {}, { x = 312, y = 50 }
   M.draw()
   check("stops at terrain 200 pixels on", #M.quads == 3, tostring(#M.quads))
   M.quads, M.trace_hit = {}, nil
   local other = worm(32)
-  other.x, other.y = 172 * P, 52 * P
+  other.x, other.y = 172, 52
   M.draw()
   check("and at a worm in the way", #M.quads == 2, tostring(#M.quads))
   M.quads = {}
@@ -1639,13 +1631,13 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   M.draw()
   check("only the current worm, only while aiming", #M.quads == 0)
-  w.aiming, w.facing, w.x, w.aim = true, -1, 300 * P, 0.5
+  w.aiming, w.facing, w.x, w.aim = true, -1, 300, 0.5
   M.message(w, wa.msg.FRAME_FINISH)
   M.draw()
   q = M.quads[1]
   sx, sy = (q.points[1][1] + q.points[4][1]) / 2, (q.points[1][2] + q.points[4][2]) / 2
   check("facing left: 12 out to the left, the barrel still above",
-    math.abs(sx - 288 * P) < P / 8 and math.abs(sy - 48 * P) < P / 8, sx / P .. "," .. sy / P)
+    math.abs(sx - 288) < 1 / 8 and math.abs(sy - 48) < 1 / 8, sx .. "," .. sy)
   M.quads = {}
   w.aiming = false
   M.message(w, wa.msg.FRAME_FINISH)
@@ -1658,7 +1650,6 @@ print("double bazooka: a second shell carries on")
 do
   new_match()
   frame()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "bazooka" then spec = r end
@@ -1672,23 +1663,23 @@ do
   w.weapon = "bazooka"
   ammo[w.ammo_group].bazooka = 1
   M.message(w, wa.msg.FIRE_WEAPON)
-  M.missile({ id = 500, phase = "pre", weapon = "bazooka", x = 90 * P, y = 52 * P, vx = 0, vy = 0 })
-  M.missile({ id = 500, phase = "post", weapon = "bazooka", x = 100 * P, y = 50 * P, vx = 6 * P, vy = -P })
-  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 1, missile = 500 })
+  M.missile({ id = 500, phase = "pre", weapon = "bazooka", x = 90, y = 52, vx = 0, vy = 0 })
+  M.missile({ id = 500, phase = "post", weapon = "bazooka", x = 100, y = 50, vx = 6, vy = -1 })
+  spec.on_explode({ x = 100, y = 50, slot = 1, missile = 500 })
   check("the first shell cuts PX's 50-pixel hole", M.digs and #M.digs == 1
-    and M.digs[1].x == 100 * P and M.digs[1].y == 50 * P and M.digs[1].radius == 50)
+    and M.digs[1].x == 100 and M.digs[1].y == 50 and M.digs[1].radius == 50)
   check("no second shell during the blast", not M.launched)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   local l = M.launched and M.launched[1]
   check("a second shell after it, at the first one's speed, for the shooter", l and #M.launched == 1
-    and l.weapon == "bazooka" and l.owner == w and l.x == 100 * P and l.y == 50 * P
-    and l.vx == 6 * P and l.vy == -P)
+    and l.weapon == "bazooka" and l.owner == w and l.x == 100 and l.y == 50
+    and l.vx == 6 and l.vy == -1)
   check("with PX's damage 40 and 5 s fuse, and the record's own bazooka shell (not PX's 54, a cluster bit here)",
     l.damage == 40 and l.fuse == 5000 and l.sprite == nil)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   check("launched once", #M.launched == 1)
-  M.missile({ id = 9001, phase = "post", weapon = "bazooka", x = 140 * P, y = 44 * P, vx = 6 * P, vy = 0 })
-  spec.on_explode({ x = 140 * P, y = 44 * P, slot = 1, missile = 9001 })
+  M.missile({ id = 9001, phase = "post", weapon = "bazooka", x = 140, y = 44, vx = 6, vy = 0 })
+  spec.on_explode({ x = 140, y = 44, slot = 1, missile = 9001 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("the second shell's explosion ends it", #M.launched == 1 and #M.digs == 1)
   spec.on_explode({ x = 1, y = 1, slot = 1 })
@@ -1712,7 +1703,6 @@ end
 print("old woman launcher: launch the Old Woman from a clear point")
 do
   new_match()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "old_woman" then spec = r end
@@ -1721,30 +1711,30 @@ do
     spec and spec.copy_from == "old_woman" and type(spec.on_fire) == "function"
       and spec.patch.fire_type == 1 and spec.patch.fire_method == 3)
   local w = worm(17)
-  w.x, w.y = 100 * P, 100 * P
-  M.solid = function(x) return x <= 91 * P end
-  spec.on_fire({ worm = w, x = 86 * P, y = w.y, vx = -12 * P, vy = 0 })
+  w.x, w.y = 100, 100
+  M.solid = function(x) return x <= 91 end
+  spec.on_fire({ worm = w, x = 86, y = w.y, vx = -12, vy = 0 })
   check("a wall at the muzzle moves the Old Woman into clear space",
     #M.launched == 1 and M.launched[1].weapon == "old_woman"
-      and M.launched[1].x >= 94 * P and M.launched[1].fuse == 5000)
+      and M.launched[1].x >= 94 and M.launched[1].fuse == 5000)
   M.solid = nil
-  spec.on_fire({ worm = w, x = 114 * P, y = w.y, vx = 12 * P, vy = 0 })
+  spec.on_fire({ worm = w, x = 114, y = w.y, vx = 12, vy = 0 })
   check("a clear muzzle keeps WA's original launch point",
-    #M.launched == 2 and M.launched[2].x == 114 * P)
+    #M.launched == 2 and M.launched[2].x == 114)
   -- A thin wall (105-108) between the worm and a clear muzzle beyond it:
   -- the worm can't see the muzzle, so she starts on the worm's side.
-  M.solid = function(x) return x >= 105 * P and x < 109 * P end
+  M.solid = function(x) return x >= 105 and x < 109 end
   M.trace_hit = function(x0, _, x1)
-    local wall = 107 * P
+    local wall = 107
     if (x0 - wall) * (x1 - wall) < 0 then return { hit = true, x = wall, y = w.y } end
   end
-  spec.on_fire({ worm = w, x = 114 * P, y = w.y, vx = 12 * P, vy = 0 })
+  spec.on_fire({ worm = w, x = 114, y = w.y, vx = 12, vy = 0 })
   check("a muzzle past a thin wall moves her back to the worm's side",
-    #M.launched == 3 and M.launched[3].x < 105 * P and M.launched[3].x > w.x - 40 * P,
-    #M.launched == 3 and M.launched[3].x / P or #M.launched)
+    #M.launched == 3 and M.launched[3].x < 105 and M.launched[3].x > w.x - 40,
+    #M.launched == 3 and M.launched[3].x or #M.launched)
   M.trace_hit = nil
   M.solid = function() return true end
-  spec.on_fire({ worm = w, x = 86 * P, y = w.y, vx = -12 * P, vy = 0 })
+  spec.on_fire({ worm = w, x = 86, y = w.y, vx = -12, vy = 0 })
   check("with no clear point within 40 pixels she starts at the worm",
     #M.launched == 4 and M.launched[4].x == w.x and M.launched[4].y == w.y)
   M.solid = nil
@@ -1753,7 +1743,6 @@ end
 print("valyrian fire: PX's bottle, thrown further out, refunded from the water")
 do
   new_match()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "petrol_bomb" then spec = r end
@@ -1763,26 +1752,26 @@ do
     and spec.sprite == "petrolbm" and type(spec.on_fire) == "function"
     and spec.hold and spec.hold.sheet == "sprites/px_hold/valyrian_fire.png")
   local w = worm(17)
-  w.x, w.y = 100 * P, 100 * P
-  spec.on_fire({ worm = w, x = 110 * P, y = 100 * P, vx = 3 * P, vy = -4 * P })
+  w.x, w.y = 100, 100
+  spec.on_fire({ worm = w, x = 110, y = 100, vx = 3, vy = -4 })
   local l = M.launched and M.launched[1]
   check("the bottle starts 15 pixels further along the throw, at the throw's speed", l
-    and l.weapon == "petrol_bomb" and l.owner == w and l.vx == 3 * P and l.vy == -4 * P
-    and l.x == 110 * P + 9 * P and l.y == 100 * P - 12 * P,
-    l and (l.x / P .. "," .. l.y / P))
-  M.water = 90 * P
+    and l.weapon == "petrol_bomb" and l.owner == w and l.vx == 3 and l.vy == -4
+    and l.x == 110 + 9 and l.y == 100 - 12,
+    l and (l.x .. "," .. l.y))
+  M.water = 90
   ammo[w.ammo_group].petrol_bomb = 0
-  spec.on_fire({ worm = w, x = 110 * P, y = 100 * P, vx = 3 * P, vy = -4 * P })
+  spec.on_fire({ worm = w, x = 110, y = 100, vx = 3, vy = -4 })
   check("from the water nothing is thrown and the bottle goes back to the team",
     #M.launched == 1 and ammo[w.ammo_group].petrol_bomb == 1)
   M.water = nil
   -- The impact: PX's 51 fires on a 3-pixel ring, for the turn's worm.
   w.turn = true
-  spec.on_explode({ worm = worm(32), x = 300 * P, y = 200 * P })
+  spec.on_explode({ worm = worm(32), x = 300, y = 200 })
   local f = M.fires or {}
   local near, pxs = true, true
   for _, fire in ipairs(f) do
-    local dx, dy = (fire.x - 300 * P) / P, (fire.y - 200 * P) / P
+    local dx, dy = (fire.x - 300), (fire.y - 200)
     if dx * dx + dy * dy > 9.0001 then near = false end
     if fire.owner ~= w or fire.count ~= 0 or fire.duration ~= 6000 or fire.up_power ~= 0
       or fire.damage ~= 0 or fire.damage_scale ~= 1.25 or fire.knock_scale ~= 2
@@ -1791,19 +1780,18 @@ do
   check("51 fires on a 3-pixel ring around the impact", #f == 51 and near, tostring(#f))
   check("each with PX's fire values, green, hitting 25% harder and knocking twice as far, for the turn's worm", pxs)
   check("PX's first fire: x + 3 cos(360), y - 3 sin(360)",
-    f[1] and f[1].x == 300 * P - 55776 and f[1].y == 200 * P - 188531)
+    f[1] and f[1].x == 300 - 0.85107421875 and f[1].y == 200 - 2.8767547607421875)
   w.turn = nil
 end
 
 print("ferret: thrown, it walks the terrain's outline and blows up on worms")
 do
-  local P = 0x10000
   local function setup(solid)
     new_match()
-    M.gravity = P // 4
+    M.gravity = (1 / 4)
     M.solid = solid
     M.spawned, M.actor_booms, M.mines, M.oil = {}, {}, {}, {}
-    for _, w in ipairs(worms) do w.x, w.y, w.turn = -9000 * P, -9000 * P, false end
+    for _, w in ipairs(worms) do w.x, w.y, w.turn = -9000, -9000, false end
     local spec
     for _, r in ipairs(replaced) do
       if r.weapon == "salvation_army" then spec = r end
@@ -1815,24 +1803,24 @@ do
       for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
     end
   end
-  local floor = function(_, y) return y >= 200 * P end
+  local floor = function(_, y) return y >= 200 end
   local spec = setup(floor)
   check("the Ferret takes the scheme's record, its icon, its hold and a throw", spec
     and spec.wep == "weps/salvation_army.wep" and spec.panel_icon == "sprites/ferret/icon.png"
     and spec.hold and spec.hold.sheet == "sprites/ferret/hold.png" and type(spec.on_fire) == "function")
   local thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = P, vy = 0 })
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 1, vy = 0 })
   local f = M.spawned[1]
   run(40)
   local landed_y = f.y
   check("it falls to the floor and stands on it with WA's missile shape (the Skunk's), its body drawn above",
-    f.shape == "missile" and landed_y > 180 * P and landed_y < 190 * P, landed_y / P)
+    f.shape == "missile" and landed_y > 180 and landed_y < 190, landed_y)
   check("a walking sound once it lands", #M.sounds > 0 and M.sounds[#M.sounds] == "sounds/ferret/walk.wav")
   local x0 = f.x
   run(30)
   check("it walks the way its thrower faced, 2 steps of 3 pixels a frame along the floor",
-    f.x > x0 + 120 * P and math.abs(f.y - landed_y) <= 3 * P, (f.x - x0) / P)
+    f.x > x0 + 120 and math.abs(f.y - landed_y) <= 3, (f.x - x0))
   check("upright on the floor, animated", f.angle ~= nil and (f.angle < 1 or f.angle > 359) and f.shown ~= nil,
     tostring(f.angle))
   -- As WA places it: at its worm standing on the floor, no speed. Its
@@ -1841,79 +1829,79 @@ do
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
-  thrower.x, thrower.y = 100 * P, 192 * P
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 192 * P, vx = 0, vy = 0 })
+  thrower.x, thrower.y = 100, 192
+  spec.on_fire({ worm = thrower, x = 100, y = 192, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(120)
   check("placed at its worm, it rises clear of the ground and walks off, sparing it",
-    not f.dead and #M.actor_booms == 0 and f.x > 300 * P and math.abs(f.y - landed_y) <= 3 * P,
-    (f.x / P) .. "," .. (f.y / P))
+    not f.dead and #M.actor_booms == 0 and f.x > 300 and math.abs(f.y - landed_y) <= 3,
+    (f.x) .. "," .. (f.y))
   -- Placed beside another worm, 15 pixels off: it only goes off once it
   -- walks into it, not on the spot.
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
-  thrower.x, thrower.y = 100 * P, 192 * P
+  thrower.x, thrower.y = 100, 192
   local neighbour = worm(17)
-  neighbour.x, neighbour.y, neighbour.vx, neighbour.vy = 115 * P, 192 * P, 0, 0
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 192 * P, vx = 0, vy = 0 })
+  neighbour.x, neighbour.y, neighbour.vx, neighbour.vy = 115, 192, 0, 0
+  spec.on_fire({ worm = thrower, x = 100, y = 192, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(1)
   local first = f.dead
   run(60)
   check("placed beside a worm, it doesn't go off at once, but on walking into it",
-    not first and f.dead and neighbour.vy == -5 * P, tostring(first))
+    not first and f.dead and neighbour.vy == -5, tostring(first))
   check("and says why", logs[#logs] and logs[#logs]:find("Ferret explodes on a worm") ~= nil, logs[#logs])
   -- A cliff: the floor at 200 up to x = 400, at 300 beyond.
-  spec = setup(function(x, y) return y >= (x < 400 * P and 200 or 300) * P end)
-  spec.on_fire({ worm = thrower, x = 300 * P, y = 120 * P, vx = 0, vy = 0 })
+  spec = setup(function(x, y) return y >= (x < 400 and 200 or 300) end)
+  spec.on_fire({ worm = thrower, x = 300, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(200)
   check("off a ledge it follows the cliff down instead of falling, and walks on below",
-    not f.dead and f.x > 420 * P and f.y > 270 * P and f.y < 290 * P, (f.x / P) .. "," .. (f.y / P))
+    not f.dead and f.x > 420 and f.y > 270 and f.y < 290, (f.x) .. "," .. (f.y))
   -- A worm in the way: the turn's worm is spared at first, any other is not.
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
   local victim = worm(17)
-  victim.x, victim.y, victim.vx, victim.vy = 260 * P, 190 * P, 0, 0
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  victim.x, victim.y, victim.vx, victim.vy = 260, 190, 0, 0
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(120)
   check("it blows up on a worm, thrown up first (SpX = TurnSide, SpY = -5)",
     f.dead and #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 100 and M.actor_booms[1].opts.id == 50
-    and victim.vy == -5 * P and victim.vx == P, #M.actor_booms)
+    and victim.vy == -5 and victim.vx == 1, #M.actor_booms)
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
-  thrower.x, thrower.y = 140 * P, 190 * P
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  thrower.x, thrower.y = 140, 190
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(55) -- it falls for some 23 frames, then walks past its thrower
-  check("the turn's worm is spared for its first 60 frames", not f.dead and f.x > 180 * P, f.x / P)
+  check("the turn's worm is spared for its first 60 frames", not f.dead and f.x > 180, f.x)
   -- Mines are flicked up and it walks on; oil drums and the water end it.
   spec = setup(floor)
-  local mine = { id = 901, x = 200 * P, y = 195 * P, vx = 0, vy = 0 }
+  local mine = { id = 901, x = 200, y = 195, vx = 0, vy = 0 }
   M.mines = { mine }
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(60)
   check("a mine is flicked up (SpX = TurnSide, SpY = -7) and it walks on",
-    mine.vy == -7 * P and mine.vx == P and not f.dead)
+    mine.vy == -7 and mine.vx == 1 and not f.dead)
   spec = setup(floor)
-  M.oil = { { id = 902, x = 200 * P, y = 191 * P } }
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  M.oil = { { id = 902, x = 200, y = 191 } }
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   run(60)
   check("it blows up on an oil drum", M.spawned[1].dead and #M.actor_booms == 1)
   spec = setup(floor)
-  M.water = 150 * P
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  M.water = 150
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   run(30)
   M.water = nil
   check("and in the water", M.spawned[1].dead and #M.actor_booms == 1)
   -- A Ferret nothing sets off goes off by itself after 15 seconds.
-  spec = setup(function(x, y) return y >= 200 * P and x >= 0 and x < 4000 * P end)
-  spec.on_fire({ worm = thrower, x = 100 * P, y = 120 * P, vx = 0, vy = 0 })
+  spec = setup(function(x, y) return y >= 200 and x >= 0 and x < 4000 end)
+  spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
   run(749)
   local alive_at_749 = not f.dead
@@ -1923,7 +1911,7 @@ do
   -- At most ten walk: the eleventh makes the oldest vanish, without a bang.
   spec = setup(floor)
   for i = 1, 11 do
-    spec.on_fire({ worm = thrower, x = (100 + 20 * i) * P, y = 120 * P, vx = 0, vy = 0 })
+    spec.on_fire({ worm = thrower, x = (100 + 20 * i), y = 120, vx = 0, vy = 0 })
   end
   run(2)
   local walking = 0
@@ -1936,7 +1924,6 @@ end
 print("bowling ball strike: three balls from the sky, rolling on PX's physics")
 do
   new_match()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "sheep_strike" then spec = r end
@@ -1950,16 +1937,16 @@ do
     end
   end
   local w = worm(16)
-  M.gravity = P // 4
-  M.solid = function(_, y) return y >= 200 * P end
+  M.gravity = (1 / 4)
+  M.solid = function(_, y) return y >= 200 end
   M.spawned = {}
   -- WA's arrow turned to the right-to-left: the shot's x speed negative.
   -- The click is on the floor.
-  spec.on_click({ worm = w, x = 300 * P, y = 200 * P, vx = -5 * P, vy = 0 })
+  spec.on_click({ worm = w, x = 300, y = 200, vx = -5, vy = 0 })
   local xs = {}
-  for i, a in ipairs(M.spawned) do xs[i] = a.x // P end
+  for i, a in ipairs(M.spawned) do xs[i] = a.x // 1 end
   check("three balls 48 apart from PX's plane height, set back upwind of the click", #M.spawned == 3
-    and xs[2] > 300 and xs[1] == xs[2] - 48 and xs[3] == xs[2] + 48 and M.spawned[2].y == -128 * P + 4 * P,
+    and xs[2] > 300 and xs[1] == xs[2] - 48 and xs[3] == xs[2] + 48 and M.spawned[2].y == -128 + 4,
     table.concat(xs, ","))
   local ball = M.spawned[2]
   local x_start = ball.x
@@ -1968,18 +1955,18 @@ do
   local landed_x
   for _ = 1, 200 do
     run(1)
-    if not landed_x and ball.y >= (200 - 16) * P then landed_x = ball.x end
+    if not landed_x and ball.y >= (200 - 16) then landed_x = ball.x end
   end
-  check("the middle ball comes down on the click", landed_x and math.abs(landed_x - 300 * P) <= 6 * P,
-    landed_x and tostring(landed_x / P))
-  check("drawn in front of the terrain", ball.depth == 0xE0000)
+  check("the middle ball comes down on the click", landed_x and math.abs(landed_x - 300) <= 6,
+    landed_x and tostring(landed_x))
+  check("drawn in front of the terrain", ball.depth == wa.depth.OBJECTS)
   run(600)
-  local rest = ball.y / P
+  local rest = ball.y
   check("it comes to rest on the floor, its 16-pixel circle on it, drawn 4 lower", rest > 186 and rest < 188,
     tostring(rest))
   local x0, angle0 = ball.x, ball.angle
   run(50)
-  check("and stays there, asleep", ball.x == x0 and ball.y / P == rest)
+  check("and stays there, asleep", ball.x == x0 and ball.y == rest)
   check("asleep, it stops turning (PX zeroes its real speed)", ball.angle == angle0)
   check("it spun while it rolled", ball.angle ~= nil)
   -- A slope down to the right: solid below y = 200 + x / 2.
@@ -1988,33 +1975,33 @@ do
     if r.weapon == "sheep_strike" then spec = r end
   end
   w = worm(16)
-  M.gravity = P // 4
-  M.solid = function(x, y) return 2 * (y // P) >= 400 + x // P end
+  M.gravity = (1 / 4)
+  M.solid = function(x, y) return 2 * (y // 1) >= 400 + x // 1 end
   M.spawned = {}
   -- No arrow pressed: the strike comes from the left (x speed 0 or more).
-  spec.on_click({ worm = w, x = 200 * P, y = 0, vx = 0, vy = 0 })
+  spec.on_click({ worm = w, x = 200, y = 0, vx = 0, vy = 0 })
   local start2 = M.spawned[2].x
   run(1)
-  check("unturned, the strike comes from the left", start2 < 200 * P and M.spawned[2].x > start2)
+  check("unturned, the strike comes from the left", start2 < 200 and M.spawned[2].x > start2)
   ball = M.spawned[2]
   run(120)
   local landed = ball.x
   run(60)
   check("on a slope it rolls downhill, whichever way it fell", ball.x > landed,
-    (landed // P) .. " -> " .. (ball.x // P))
+    (landed // 1) .. " -> " .. (ball.x // 1))
   -- The hits (PX's ProcessBallOnOtherCollision and BallOnBall), on a floor.
   local shared = require("lib/shared")
   local function rolling(x, vx, vy, y)
     new_match()
     shared = require("lib/shared") -- each match loads the pack afresh
-    M.gravity = P // 4
-    M.solid = function(_, yy) return yy >= 200 * P end
+    M.gravity = (1 / 4)
+    M.solid = function(_, yy) return yy >= 200 end
     M.spawned, M.actor_sounds = {}, {}
-    local a, b = shared.spawn_bowling_ball(worm(16), x * P, (y or 183) * P, vx, vy or 0)
+    local a, b = shared.spawn_bowling_ball(worm(16), x, (y or 183), vx, vy or 0)
     return a, b
   end
   local function stand(w, x)
-    w.x, w.y, w.state = x * P, 194 * P, "standing"
+    w.x, w.y, w.state = x, 194, "standing"
     return w
   end
   rolling(100, 8)
@@ -2024,8 +2011,8 @@ do
     v.hp < 80 and v.hp >= 75 and #M.actor_sounds == 1 and M.actor_sounds[1] == 101,
     v.hp .. " " .. table.concat(M.actor_sounds, ","))
   check("and knocks it on and up, by 0.7 of how the ball moved (worm:hurt's vx, vy)",
-    v.knock and v.knock[1] > 4 * P and v.knock[1] < 6 * P and v.knock[2] < 0,
-    v.knock and (v.knock[1] / P .. "," .. v.knock[2] / P))
+    v.knock and v.knock[1] > 4 and v.knock[1] < 6 and v.knock[2] < 0,
+    v.knock and (v.knock[1] .. "," .. v.knock[2]))
   rolling(100, 3)
   v = stand(worm(17), 140)
   run(30)
@@ -2042,35 +2029,35 @@ do
   v = stand(worm(17), 300)
   run(20)
   check("falling straight on a standing worm crushes it: knocked straight down by 10", v.hp < 100
-    and M.actor_sounds[1] == 33 and v.knock and v.knock[1] == 0 and v.knock[2] == 10 * P,
+    and M.actor_sounds[1] == 33 and v.knock and v.knock[1] == 0 and v.knock[2] == 10,
     table.concat(M.actor_sounds, ","))
   -- Crates and drums are solid to the ball: it stops against one, touching,
   -- and that counts as a hit (WA then blows it up).
   local function took(obj) function obj:hit(damage, vx, vy) self.taken = { damage, vx, vy } end return obj end
   rolling(100, 8)
-  local crate = took({ id = 900, kind = "crate", x = 160 * P, y = 191 * P })
+  local crate = took({ id = 900, kind = "crate", x = 160, y = 191 })
   M.crates = { crate }
   run(30)
   check("a crate the ball stops against takes 100, pushed the way the ball rolled", crate.taken
     and crate.taken[1] == 100 and crate.taken[2] > 0 and crate.taken[3] < 0)
   rolling(100, 8)
-  local drum = took({ id = 902, kind = "oil", x = 160 * P, y = 191 * P })
+  local drum = took({ id = 902, kind = "oil", x = 160, y = 191 })
   M.oil = { drum }
   run(30)
   check("so does an oil drum", drum.taken and drum.taken[1] == 100)
   rolling(100, 8)
-  local mine = took({ id = 901, kind = "mine", x = 160 * P, y = 195 * P })
+  local mine = took({ id = 901, kind = "mine", x = 160, y = 195 })
   M.mines = { mine }
   run(30)
   check("a mine takes the speed's damage", mine.taken and mine.taken[1] >= 5 and mine.taken[1] < 30)
   local _, sleeper = rolling(400, 0)
   run(200)
   check("a ball left alone sleeps", sleeper.asleep)
-  local _, roller = shared.spawn_bowling_ball(worm(16), 330 * P, 183 * P, 8, 0)
+  local _, roller = shared.spawn_bowling_ball(worm(16), 330, 183, 8, 0)
   local x0 = sleeper.x
   run(30)
-  check("another ball rolling into it wakes it and pushes it on", sleeper.x > x0 + 4 * P,
-    (sleeper.x - x0) / P .. " " .. roller.x / P)
+  check("another ball rolling into it wakes it and pushes it on", sleeper.x > x0 + 4,
+    (sleeper.x - x0) .. " " .. roller.x)
   -- Flung off the map faster than gravity brings it down: it flies on (WA
   -- draws its arrow at the edge) until its next move would leave the range
   -- WA keeps positions in, and then it is gone, as in the water.
@@ -2081,20 +2068,20 @@ do
     if not ok then errors = errors + 1 end
   end
   check("a ball flung far off the map flies on while WA can place it, then is removed",
-    errors == 0 and flung_a.dead and flung.x > 30000 * P and flung.x <= 32767 * P, errors .. " " .. flung.x / P)
+    errors == 0 and flung_a.dead and flung.x > 30000 and flung.x <= 32767, errors .. " " .. flung.x)
   -- The Lightning Strike's overcharge.
   local zapped_actor, zapped = rolling(400, 0)
-  local _, far = shared.spawn_bowling_ball(worm(16), 600 * P, 183 * P, 0, 0)
+  local _, far = shared.spawn_bowling_ball(worm(16), 600, 183, 0, 0)
   run(200)
-  shared.zap_bowling_balls(400 * P, 199 * P)
+  shared.zap_bowling_balls(400, 199)
   check("struck within reach, a ball wakes, thrown up at 5 to 10 and nearly straight",
     zapped.zapped and not zapped.asleep and zapped.vy <= -5 and zapped.vy >= -10
     and math.abs(zapped.vx) <= 0.1 * 10, zapped.vx .. "," .. zapped.vy)
   check("one out of reach is left alone", not far.zapped and far.asleep)
-  local bx, by = shared.bowling_ball_on_beam(400 * P, 0, 0, 1, 1000)
-  check("a beam straight down meets the ball's circle at its top", bx == 400 * P
-    and math.abs(by - (zapped.y - 16 * P)) < P, tostring(by and by / P))
-  check("and a beam beside it misses", shared.bowling_ball_on_beam(440 * P, 0, 0, 1, 1000) == nil)
+  local bx, by = shared.bowling_ball_on_beam(400, 0, 0, 1, 1000)
+  check("a beam straight down meets the ball's circle at its top", bx == 400
+    and math.abs(by - (zapped.y - 16)) < 1, tostring(by and by))
+  check("and a beam beside it misses", shared.bowling_ball_on_beam(440, 0, 0, 1, 1000) == nil)
   -- PX's electrified look, drawn for the zapped ball only.
   run(5)
   M.quads = {}
@@ -2103,7 +2090,7 @@ do
   for _, q in ipairs(M.quads) do
     if q.sprite == "sprites/bowling_ball/glow.png" then
       glows = glows + 1
-      if q.blend ~= "add" or q.depth <= 0xE0000 then behind = false end
+      if q.blend ~= "add" or q.depth <= wa.depth.OBJECTS then behind = false end
     end
     if q.sprite == "sprites/bowling_ball/spark.png" then sparks[#sparks + 1] = q end
     if q.sprite == "sprites/bowling_ball/sheen.png" then sheen = q end
@@ -2111,11 +2098,11 @@ do
   check("an electrified ball glows behind itself: PX's glow three times, a trail glow for each frame since",
     glows == 3 + 5 and behind, tostring(glows))
   check("and its spark plays, added, in front of the ball", #sparks == 1 and sparks[1].frame == 1
-    and sparks[1].color == 0xFFFFFFFF and sparks[1].blend == "add" and sparks[1].depth < 0xE0000,
+    and sparks[1].color == 0xFFFFFFFF and sparks[1].blend == "add" and sparks[1].depth < wa.depth.OBJECTS,
     sparks[1] and tostring(sparks[1].frame))
   check("the ball itself turns electric blue: darkened, a blue sheen added in front, under the spark",
     zapped_actor.tint == 0x405980 and sheen and sheen.blend == "add" and sheen.color == 0xFF3C96FF
-    and sheen.depth < 0xE0000 and sheen.depth > sparks[1].depth)
+    and sheen.depth < wa.depth.OBJECTS and sheen.depth > sparks[1].depth)
   -- WA's hits: the ball is an object to WA (its oil-drum layer, as PX's), so
   -- its fires, guns and blasts reach it. Any wakes it; a blast pushes it
   -- whole, any other hit (a fire's) at 0.7.
@@ -2123,14 +2110,14 @@ do
   run(200)
   check("the ball is an object to WA, and takes its hits", ball_actor.as_object == true
     and type(ball_actor.hit) == "function" and resting.asleep)
-  ball_actor.hit(ball_actor, { kind = "hit", hit_kind = 1, vx = 2 * P, vy = -3 * P, damage = 5, team = 0 })
+  ball_actor.hit(ball_actor, { kind = "hit", hit_kind = 1, vx = 2, vy = -3, damage = 5, team = 0 })
   check("a fire's hit wakes it and pushes it at 0.7", not resting.asleep
     and math.abs(resting.vx - 1.4) < 1e-9 and math.abs(resting.vy + 2.1) < 1e-9,
     resting.vx .. "," .. resting.vy)
   local _, blasted = rolling(500, 0)
   run(200)
   local blasted_actor = M.spawned[1]
-  blasted_actor.hit(blasted_actor, { kind = "blast", hit_kind = 0, vx = -4 * P, vy = -6 * P, damage = 20, team = -1 })
+  blasted_actor.hit(blasted_actor, { kind = "blast", hit_kind = 0, vx = -4, vy = -6, damage = 20, team = -1 })
   check("a blast's push is taken whole", not blasted.asleep and blasted.vx == -4 and blasted.vy == -6)
   local x_before = blasted.x
   run(5)
@@ -2141,7 +2128,6 @@ end
 print("crate strike: PX's three parachute crates over the click")
 do
   new_match()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "donkey" then spec = r end
@@ -2150,14 +2136,14 @@ do
     and spec.wep == "weps/donkey.wep" and spec.panel_icon == "sprites/crate_strike/icon.png"
     and type(spec.on_click) == "function" and spec.on_select and spec.on_select.cursor)
   M.crate_spawns = {}
-  spec.on_click({ worm = worm(16), x = 300 * P + 0x8000, y = 400 * P })
+  spec.on_click({ worm = worm(16), x = 300 + 0.5, y = 400, sky = wa.world.sky })
   local c = M.crate_spawns
   local kinds = { weapon = true, utility = true, health = true }
-  check("three crates on parachutes, 50 above the map, at the click's pixel and 50 either side",
-    #c == 3 and c[1].x == 300 * P and c[2].x == 250 * P and c[3].x == 350 * P
-    and c[1].y == -50 * P and c[2].y == -50 * P and c[3].y == -50 * P
+  check("three crates on parachutes, at stock sky and the precise click plus 50 either side",
+    #c == 3 and c[1].x == 300.5 and c[2].x == 250.5 and c[3].x == 350.5
+    and c[1].y == wa.world.sky and c[2].y == wa.world.sky and c[3].y == wa.world.sky
     and c[1].drop == "chute" and c[2].drop == "chute" and c[3].drop == "chute",
-    #c == 3 and (c[1].x / P .. "," .. c[2].x / P .. "," .. c[3].x / P) or tostring(#c))
+    #c == 3 and (c[1].x .. "," .. c[2].x .. "," .. c[3].x) or tostring(#c))
   check("each a weapon, utility or health crate, health 20-40, 40-60, 60-80 by place",
     kinds[c[1].kind] and kinds[c[2].kind] and kinds[c[3].kind]
     and c[1].health >= 20 and c[1].health <= 40 and c[2].health >= 40 and c[2].health <= 60
@@ -2165,7 +2151,7 @@ do
   local seen = {}
   for _ = 1, 20 do
     M.crate_spawns = {}
-    spec.on_click({ worm = worm(16), x = 300 * P, y = 400 * P })
+    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky })
     for _, s in ipairs(M.crate_spawns) do seen[s.kind] = true end
   end
   check("all three kinds come up", seen.weapon and seen.utility and seen.health)
@@ -2178,7 +2164,7 @@ do
   local healths = 0
   for _ = 1, 20 do
     M.crate_spawns = {}
-    spec.on_click({ worm = worm(16), x = 300 * P, y = 400 * P })
+    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky })
     if #M.crate_spawns ~= 3 then healths = -1000 end
     for _, s in ipairs(M.crate_spawns) do
       if s.kind == "weapon" then healths = -1000 elseif s.kind == "health" then healths = healths + 1 end
@@ -2192,7 +2178,6 @@ print("chilli bomb: five more Chillis burst out")
 do
   new_match()
   frame()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "super_banana" then spec = r end
@@ -2204,14 +2189,14 @@ do
   w.weapon = "super_banana"
   M.launched = nil
   M.message(w, wa.msg.FIRE_WEAPON)
-  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 42, missile = 600 })
+  spec.on_explode({ x = 100, y = 50, slot = 42, missile = 600 })
   check("none during the blast", not M.launched)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   local l = M.launched or {}
   local ok = #l == 5
   for _, c in ipairs(l) do
-    ok = ok and c.weapon == "super_banana" and c.owner == w and c.x == 100 * P and c.y == 50 * P
-      and c.vx >= -3 * P and c.vx <= 3 * P and c.vy >= -10 * P and c.vy <= -7 * P
+    ok = ok and c.weapon == "super_banana" and c.owner == w and c.x == 100 and c.y == 50
+      and c.vx >= -3 and c.vx <= 3 and c.vy >= -10 and c.vy <= -7
   end
   check("five after it, for the thrower, up with PX's spread", ok, tostring(#l))
   local c = l[1] or {}
@@ -2219,13 +2204,13 @@ do
     c.damage == 30 and c.fuse == 8000 and c.countdown == 0 and c.explode_on_space == true
     and c.explode_into == "fire")
   check("and WA's sprite 0: only the chilli is drawn", c.sprite == 0)
-  local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = P, vy = 0, sprite = 51 }
+  local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
   local was_turn = w.turn
   w.turn = true -- thrown in its turn
   M.missile(m)
   w.turn = was_turn
   check("the thrown Chilli's own banana hidden in flight", m.sprite == 0)
-  local b = { id = 611, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = P, vy = 0, sprite = 48 }
+  local b = { id = 611, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 1, vy = 0, sprite = 48 }
   M.missile(b)
   check("other missiles keep theirs", b.sprite == 48)
   M.message(worm(32), wa.msg.FRAME_FINISH)
@@ -2235,7 +2220,7 @@ do
   M.turn_start({ worm = w })
   for _, x in ipairs(wa.worms.all()) do x.turn = false end
   M.spawned = {}
-  local child = { id = 620, phase = "post", weapon = "super_banana", x = 0, y = 0, vx = P, vy = -P, sprite = 0 }
+  local child = { id = 620, phase = "post", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = -1, sprite = 0 }
   M.missile(child)
   check("the five are drawn after the turn ends, for the last turn's worm",
     M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/chilli_bomb" and M.spawned[1].owner == w)
@@ -2253,7 +2238,6 @@ print("nuke rocket: a nuke climbs out of the fusing rocket")
 do
   new_match()
   frame()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "mine" then spec = r end
@@ -2263,36 +2247,36 @@ do
     and spec.sprite == "sprites/nuke_rocket/nuke_rocket_bullet.png" and type(spec.on_explode) == "function")
   check("its launch sound registered, so it can play", spec.sounds and spec.sounds[1] == "sounds/nuke_rocket_launch.wav")
   for _, o in ipairs(worms) do
-    o.x, o.y, o.vx, o.vy = -5000 * P, 0, 0, 0
+    o.x, o.y, o.vx, o.vy = -5000, 0, 0, 0
   end
   local w, near, far = worm(16), worm(17), worm(32)
-  w.weapon, w.x, w.y = "mine", 60 * P, 50 * P
-  near.x, near.y = 105 * P, 55 * P
-  far.x, far.y = 300 * P, 50 * P
+  w.weapon, w.x, w.y = "mine", 60, 50
+  near.x, near.y = 105, 55
+  far.x, far.y = 300, 50
   M.message(w, wa.msg.FIRE_WEAPON)
   -- WA's own shot is the first rocket: it fuses on the ground, hissing.
   for _ = 1, 10 do
-    M.missile({ id = 600, phase = "post", weapon = "mine", x = 100 * P, y = 50 * P, vx = 0, vy = 0 })
+    M.missile({ id = 600, phase = "post", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 })
   end
   check("the fusing rocket hisses every 10 frames", #M.sounds == 1 and M.sounds[1] == 66,
     tostring(M.sounds[1]))
-  spec.on_explode({ x = 100 * P, y = 50 * P, slot = 12, missile = 600 })
+  spec.on_explode({ x = 100, y = 50, slot = 12, missile = 600 })
   check("its explosion plays PX's launch sound", M.sounds[2] == "sounds/nuke_rocket_launch.wav")
   check("no nuke during the blast", not M.launched)
   M.message(far, wa.msg.FRAME_FINISH)
   local l = M.launched and M.launched[1]
   check("then a nuke from there, for the shooter", l and #M.launched == 1 and l.weapon == "mine"
-    and l.owner == w and l.x == 100 * P and l.y == 50 * P and l.vx == 0 and l.vy == 0)
+    and l.owner == w and l.x == 100 and l.y == 50 and l.vx == 0 and l.vy == 0)
   check("silent, a 1.6 s fuse, bursting into clustlets", l.fuse == 1600 and l.sound == 0
     and l.explode_into == "clustlets")
-  local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100 * P, y = 50 * P, vx = 0, vy = 0 }
-  local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110 * P, y = 45 * P, vx = P, vy = 0 }
+  local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 }
+  local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110, y = 45, vx = 1, vy = 0 }
   local climb_ok, jitter = true, 0
   for t = 0, 52 do
     local vy, vx = nuke.vy, nuke.vx
     M.missile(nuke)
     local up = vy - nuke.vy
-    if up < 19661 or up > 52429 then climb_ok = false end
+    if up < 19661 / 65536 or up > 52429 / 65536 then climb_ok = false end
     if nuke.vx ~= vx then
       jitter = jitter + 1
       if t % 2 == 0 then climb_ok = false end
@@ -2308,15 +2292,15 @@ do
     and jitter > 0)
   local vy = nuke.vy
   M.missile(nuke)
-  check("then it brakes by 0.2 a frame", nuke.vy == vy + 13107, tostring((nuke.vy - vy) / P))
+  check("then it brakes by 0.2 a frame", nuke.vy == vy + 13107 / 65536, tostring((nuke.vy - vy)))
   local sounds = #M.sounds
   for _ = 1, 10 do
-    M.missile({ id = 800, phase = "post", weapon = "mine", x = 90 * P, y = 40 * P, vx = 0, vy = 0 })
+    M.missile({ id = 800, phase = "post", weapon = "mine", x = 90, y = 40, vx = 0, vy = 0 })
   end
   check("later missiles of the slot (the cluster bits) are no fusing rocket: no hiss", #M.sounds == sounds)
   M.sounds = {}
   local before = M.spawned and #M.spawned or 0
-  spec.on_explode({ x = 100 * P, y = -200 * P, slot = 12, missile = 9001 })
+  spec.on_explode({ x = 100, y = -200, slot = 12, missile = 9001 })
   M.message(far, wa.msg.FRAME_FINISH)
   check("its explosion: sounds 85 and 70, and two 40/40 blasts", M.sounds[1] == 85 and M.sounds[2] == 70
     and #M.spawned == before + 2 and M.spawned[before + 1].explode.damage == 40
@@ -2328,10 +2312,9 @@ print("helicopter: PX's script on WA's jet pack")
 do
   new_match()
   frame()
-  local P = 0x10000
   local w = worm(16)
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "jet_pack", "prefiring", 100 * P, 50 * P, 0, 0, 1, true
-  w.fuel, w.gravity, w.wind, w.body_visible = 30 * P, P, 0, true
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "jet_pack", "prefiring", 100, 50, 0, 0, 1, true
+  w.fuel, w.gravity, w.wind, w.body_visible = 30, 1, 0, true
   w.keys = { up = false, down = false, left = false, right = false }
   function w:clear_keys() error("Helicopter must leave key consumption to the engine") end
   function w:set_state() error("Helicopter must leave landing state to WA") end
@@ -2343,9 +2326,9 @@ do
   w.state = "jetpacking"
   w.keys.up = true
   M.message(w, wa.msg.FRAME_FINISH)
-  check("launch: PX's fuel, gravity and wind", w.fuel < 100 * P and w.fuel > 99 * P and w.gravity == math.floor(0.2 * P)
-    and w.wind == math.floor(0.2 * P), w.fuel / P .. " " .. w.gravity .. " " .. w.wind)
-  check("up: a kick of 0.8 from standstill", w.vy == -math.floor(0.8 * P) - 0 or w.vy == -52428, tostring(w.vy))
+  check("launch: PX's fuel, gravity and wind", w.fuel < 100 and w.fuel > 99 and w.gravity == (0.2)
+    and w.wind == (0.2), w.fuel .. " " .. w.gravity .. " " .. w.wind)
+  check("up: a kick of 0.8 from standstill", near(w.vy, -0.8), tostring(w.vy))
   check("the engine owns the keys after the script reads them", w.steered and w.keys.up)
   check("the helicopter replaces the climb-in", climb.dead and M.spawned[#M.spawned].sprite == "sprites/helicopter/flying")
   -- In game, the engine consumes this key after the callback.
@@ -2359,26 +2342,26 @@ do
   check("no fuel burnt during retreat", w.fuel == fuel)
   M.retreat = 0
   -- Hitting a mine is fine; hitting a worm fast is not.
-  M.contact(w, { kind = "mine" }, { vx = 3 * P, vy = 0, flags = 0 })
+  M.contact(w, { kind = "mine" }, { vx = 3, vy = 0, flags = 0 })
   check("a mine does not crash it", #M.spawned == 2)
-  M.contact(w, { kind = "worm" }, { vx = P // 2, vy = 0, flags = 0 })
+  M.contact(w, { kind = "worm" }, { vx = (1 / 2), vy = 0, flags = 0 })
   check("a slow touch does not crash it", #M.spawned == 2)
-  M.contact(w, { kind = "land" }, { vx = 0, vy = P // 2, flags = 0 })
+  M.contact(w, { kind = "land" }, { vx = 0, vy = (1 / 2), flags = 0 })
   check("a slow landing does not crash it: PX's smooth landing", #M.spawned == 2)
-  M.contact(w, { kind = "worm" }, { vx = 3 * P, vy = 0, flags = 0 })
+  M.contact(w, { kind = "worm" }, { vx = 3, vy = 0, flags = 0 })
   local boom = M.spawned[#M.spawned]
   check("a fast hit crashes it: an explosion of at least 10", boom.explode and boom.explode.id == 10
     and boom.explode.damage == 20 and boom.explode.now, boom.explode and boom.explode.id)
   -- From wa.on.contact there is no brain to inherit an owner from.
   check("the explosion is the worm's own", boom.owner == w)
-  check("and lands the worm, shown again", w.gravity == P and w.wind == 0 and w.body_visible == true)
+  check("and lands the worm, shown again", w.gravity == 1 and w.wind == 0 and w.body_visible == true)
   -- Out of fuel.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
   w.state = "jetpacking"
   M.message(w, wa.msg.FRAME_FINISH)
   local n = #M.spawned
-  w.fuel = math.floor(0.05 * P)
+  w.fuel = (0.05)
   M.message(w, wa.msg.FRAME_FINISH)
   check("fuel below 0.1 crashes it", #M.spawned == n + 1 and M.spawned[#M.spawned].explode)
   -- WA ends the jet pack on the ground without a scripted state change.
@@ -2386,20 +2369,20 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   w.state = "jetpacking"
   M.message(w, wa.msg.FRAME_FINISH)
-  w.fuel, w.vy, w.vx = 50 * P, 0, 0
+  w.fuel, w.vy, w.vx = 50, 0, 0
   w.state = "standing"
   n = #M.spawned
   M.message(w, wa.msg.FRAME_FINISH)
   check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing" and #M.spawned == n
-    and w.gravity == P and not w.steered and w.body_visible == true)
+    and w.gravity == 1 and not w.steered and w.body_visible == true)
   -- The last Helicopter: WA clears the selection when it fires.
   w.state, w.weapon, w.vy = "prefiring", "jet_pack", 0
   M.message(w, wa.msg.FRAME_FINISH)
   w.state, w.weapon = "jetpacking", nil
   M.message(w, wa.msg.FRAME_FINISH)
-  check("the last one still flies: armed in the wind-up", w.fuel > 99 * P, tostring(w.fuel / P))
+  check("the last one still flies: armed in the wind-up", w.fuel > 99, tostring(w.fuel))
   local before = #M.spawned
-  M.contact(w, { kind = "land" }, { vx = 0, vy = 3 * P, flags = 0 })
+  M.contact(w, { kind = "land" }, { vx = 0, vy = 3, flags = 0 })
   check("a fast landing crashes it, as in PX", #M.spawned == before + 1 and M.spawned[#M.spawned].explode)
 end
 
@@ -2407,13 +2390,12 @@ print("hot air balloon: PX's balloon, flown with WA's parachute physics upside d
 do
   new_match()
   frame()
-  local P = 0x10000
-  M.gravity, M.wind, M.water, M.solid = 0x4000, 0, nil, nil
+  M.gravity, M.wind, M.water, M.solid = 0.25, 0, nil, nil
   local w = worm(16)
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "sliding", 100 * P, 50 * P, 0, P, 1, true
-  w.gravity, w.body_visible, w.alliance, w.keys = P, true, 1, {}
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "sliding", 100, 50, 0, 1, 1, true
+  w.gravity, w.body_visible, w.alliance, w.keys = 1, true, 1, {}
   for i, o in ipairs(worms) do
-    if o ~= w then o.x, o.y = -1000 * P * i, 0 end
+    if o ~= w then o.x, o.y = -1000 * i, 0 end
   end
   function w:set_state() error("the balloon takes and releases the worm; it sets no state") end
   M.spawned, M.sounds = {}, {}
@@ -2426,21 +2408,21 @@ do
   check("taken for the flight, the turn running", w.taken and w.taken.turn == "run")
   check("an inflate sound", M.sounds[1] and M.sounds[1]:find("inflate"))
   -- WA's step: gravity (upside down) in, then damped to 0.8.
-  check("its first step: the fall turned upward, damped", w.y - y0 == (P - 0x4000) * 0xCCCC // P,
-    tostring((w.y - y0) / P))
+  check("its first step: the fall turned upward, damped", w.y - y0 == (1 - 0.25) * 0.79998779296875,
+    tostring((w.y - y0)))
   local balloon, basket = M.spawned[1], M.spawned[2]
   check("the balloon in the team's colour, the basket below", balloon.sprite == "sprites/balloon/balloon"
     and balloon.tint == 0xFF0096FF and basket.sprite == "sprites/balloon/basket" and w.body_visible == false,
     string.format("%x", balloon.tint or 0))
   check("the balloon 43 above, 6 ahead; the basket's art mirrored facing right",
-    balloon.y == w.y - 43 * P and balloon.x == w.x + 6 * P and basket.facing == -1)
+    balloon.y == w.y - 43 and balloon.x == w.x + 6 and basket.facing == -1)
   -- It settles at four times gravity upward and four times the wind across.
-  M.wind = 0x100
+  M.wind = 0.00390625
   for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
   local x1, y1 = w.x, w.y
   M.message(w, wa.msg.FRAME_FINISH)
-  check("rising at four times gravity", math.abs((w.y - y1) + 4 * 0x4000) <= 8, tostring(w.y - y1))
-  check("drifting with four times the wind", math.abs((w.x - x1) - 4 * 0x100) <= 8, tostring(w.x - x1))
+  check("rising at four times gravity", math.abs((w.y - y1) + 4 * 0.25) <= 8, tostring(w.y - y1))
+  check("drifting with four times the wind", math.abs((w.x - x1) - 4 * 0.00390625) <= 8, tostring(w.x - x1))
   -- The arrow keys push it, half of gravity a frame, as WA's parachute:
   -- the new speed is (last + push + wind) damped, and it moves by it.
   local function step_x(keys)
@@ -2450,12 +2432,12 @@ do
     return w.x - before, last
   end
   local dx, last = step_x({ left = true })
-  check("left pushes it left by half of gravity", dx == (last - 0x2000 + 0x100) * 0xCCCC // P,
+  check("left pushes it left by half of gravity", near(dx, (last - 0.125 + 0.00390625) * 0.79998779296875),
     dx .. " " .. last)
   dx, last = step_x({ left = true, right = true })
-  check("left and right together cancel", dx == (last + 0x100) * 0xCCCC // P, dx .. " " .. last)
+  check("left and right together cancel", near(dx, (last + 0.00390625) * 0.79998779296875), dx .. " " .. last)
   dx, last = step_x({ right = true })
-  check("right pushes it right", dx == (last + 0x2000 + 0x100) * 0xCCCC // P, dx .. " " .. last)
+  check("right pushes it right", near(dx, (last + 0.125 + 0.00390625) * 0.79998779296875), dx .. " " .. last)
   w.keys = {}
   check("weapons fire from the basket", M.message(w, wa.msg.FIRE_WEAPON) ~= "eat" and w.taken)
   -- The jump key pops it: the worm back to WA, falling with its speed.
@@ -2470,7 +2452,7 @@ do
   end
   -- Up again, into land above it: it pops there.
   check("up again", up_again())
-  local top = w.y - 5 * P
+  local top = w.y - 5
   M.solid = function(_, y) return y < top end
   for _ = 1, 20 do
     M.message(w, wa.msg.FRAME_FINISH)
@@ -2513,11 +2495,10 @@ print("automatic parachute: only the equipped weapon opens")
 do
   new_match()
   frame()
-  local P = 0x10000
-  M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0x3AE, 0, nil, nil, nil
+  M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0.014373779296875, 0, nil, nil, nil
   local w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "bungee", "sliding", 100 * P, 50 * P, 0, P, true
+    "bungee", "sliding", 100, 50, 0, 1, true
   M.spawned, M.sounds = {}, {}
   M.message(w, wa.msg.FRAME_FINISH)
   -- WA has replaced the selected slot with stock Parachute while opening.
@@ -2536,7 +2517,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "parachute", "sliding", 100 * P, 50 * P, 0, P, true
+    "parachute", "sliding", 100, 50, 0, 1, true
   w.keys = {}
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
@@ -2550,7 +2531,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "shotgun", "sliding", 100 * P, 50 * P, 0, P, true
+    "shotgun", "sliding", 100, 50, 0, 1, true
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
   check("another equipped weapon keeps falling", w.state == "sliding" and #M.spawned == 0)
@@ -2563,7 +2544,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "parachute", "sliding", 100 * P, 50 * P, 0, P, true
+    "parachute", "sliding", 100, 50, 0, 1, true
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
   w.weapon = "shotgun"
@@ -2577,11 +2558,10 @@ print("hang-glider: PX's glider, flown by the pack")
 do
   new_match()
   frame()
-  local P = 0x10000
-  M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0x3AE, 0, nil, nil, nil -- a small pull, as WA's is
-  for i, o in ipairs(worms) do o.x, o.y = -1000 * P * i, 0 end
+  M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0.014373779296875, 0, nil, nil, nil -- a small pull, as WA's is
+  for i, o in ipairs(worms) do o.x, o.y = -1000 * i, 0 end
   local w = worm(16)
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "sliding", 100 * P, 50 * P, 3 * P, P, 1, true
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "sliding", 100, 50, 3, 1, 1, true
   w.body_visible, w.keys = true, {}
   function w:set_state() error("the glider takes and releases the worm; it sets no state") end
   M.spawned, M.sounds = {}, {}
@@ -2598,7 +2578,7 @@ do
   check("its art faces left, as WA's worms: mirrored facing right", art.facing == -1)
   -- Level, the wing's up side is straight up: a quarter of the fall goes.
   check("the speed carries on into the glide; the wing takes a quarter of the fall",
-    math.abs((w.x - x0) - 3 * P) <= 1 and math.abs((w.y - y0) - (1 + 0x3AE * 0.75 / P) * 0.75 * P) <= 1,
+    math.abs((w.x - x0) - 3) <= 1 and math.abs((w.y - y0) - (1 + 0.014373779296875 * 0.75) * 0.75) <= 1,
     (w.x - x0) .. " " .. (w.y - y0))
   for _ = 1, 30 do M.message(w, wa.msg.FRAME_FINISH) end
   check("and the nose follows the flight path", art.angle ~= 0, tostring(art.angle))
@@ -2610,7 +2590,7 @@ do
   w.keys = {}
   check("up turns the nose up", art.angle and art.angle > 180, tostring(art.angle))
   local function glide_again(vy)
-    w.state, w.weapon, w.vx, w.vy = "sliding", "parachute", 3 * P, vy or P
+    w.state, w.weapon, w.vx, w.vy = "sliding", "parachute", 3, vy or 1
     M.message(w, wa.msg.FRAME_FINISH)
     w.state, w.weapon = "parachuting", "none"
     M.message(w, wa.msg.FRAME_FINISH)
@@ -2619,7 +2599,7 @@ do
   -- Into something ahead, no land below: a crash, the worm back to WA with
   -- the glider's speed, and no pack-away.
   local n = #M.spawned
-  local wall = w.x + 7 * P
+  local wall = w.x + 7
   M.solid = function(x) return x >= wall end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
@@ -2633,7 +2613,7 @@ do
   -- Coming down onto land: let go, then begin the pack-away at WA's terrain
   -- contact instead of waiting for its delayed standing state.
   check("gliding again", glide_again())
-  local floor = w.y + 13 * P // 2
+  local floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
@@ -2642,7 +2622,7 @@ do
   check("gentle landing keeps the wing over the worm until contact",
     landing_art.sprite == "sprites/hang_glider/glider" and not landing_art.dead
     and w.body_visible == false)
-  w.state, w.x, w.y = "jump_falling", w.x + P, w.y + P
+  w.state, w.x, w.y = "jump_falling", w.x + 1, w.y + 1
   M.message(w, wa.msg.FRAME_FINISH)
   check("the wing follows the falling worm without exposing its body",
     landing_art.x == w.x and landing_art.y == w.y and not landing_art.dead
@@ -2663,7 +2643,7 @@ do
   -- A movement key interrupts the pack-away even before WA has changed the
   -- worm's landing state to walking.
   check("gliding again", glide_again())
-  floor = w.y + 13 * P // 2
+  floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
@@ -2675,7 +2655,7 @@ do
     interrupted_pack.dead and w.body_visible == true)
   w.keys = {}
   check("gliding again", glide_again())
-  floor = w.y + 13 * P // 2
+  floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
@@ -2684,7 +2664,7 @@ do
   check("jump interrupts pack-away without eating WA's jump",
     M.message(w, wa.msg.JUMP) ~= "eat" and jump_pack.dead and w.body_visible == true)
   check("gliding again", glide_again())
-  floor = w.y + 13 * P // 2
+  floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
@@ -2696,14 +2676,14 @@ do
   w.keys = {}
   -- A fast downward arrival gives WA the full speed. The engine holds the
   -- equipped chute closed until WA has resolved the impact and any damage.
-  check("gliding into a hard landing", glide_again(20 * P))
+  check("gliding into a hard landing", glide_again(20))
   n = #M.spawned
-  floor = w.y + 13 * P // 2
+  floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
   check("hard landing: fall at full speed without auto chute", not w.taken
-    and w.state == "sliding" and w.vy >= 8 * P - 1
+    and w.state == "sliding" and w.vy >= 8 - 1
     and w.release_options and w.release_options.suppress_auto_parachute == true,
     string.format("taken=%s state=%s vy=%s", tostring(w.taken), tostring(w.state), tostring(w.vy)))
   w.state = "standing"
@@ -2738,14 +2718,13 @@ print("swim suit: PX's swimming on WA's laser sight")
 do
   new_match()
   frame()
-  local P = 0x10000
-  M.water = 500 * P
+  M.water = 500
   local w = worm(16)
   for i, o in ipairs(worms) do
-    if o ~= w then o.x, o.y, o.turn = -1000 * P * i, 0, false end
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
   end
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100 * P, 400 * P, 0, 0, 1, true
-  w.gravity, w.body_visible, w.keys, w.collision_mask = P, true, {}, 0x420CC6
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
   function w:set_state(s) self.state = s end
   function w:clear_keys() self.keys = {} end
   local spent = 0
@@ -2758,7 +2737,7 @@ do
   M.draw()
   check("a bubble while worn", #M.quads == 1 and M.quads[1].sprite == "sprites/swim_suit/ring")
   local bubble = M.quads[1]
-  local h = 25 * P
+  local h = 25
   check("centred on the worm", bubble.points[1][1] == w.x - h and bubble.points[3][1] == w.x + h
     and bubble.points[1][2] == w.y - h and bubble.points[3][2] == w.y + h)
   function w:set_state() error("the Swim Suit takes and releases the worm; it sets no state") end
@@ -2771,29 +2750,29 @@ do
   end
   -- Into the water, falling fast: a splash, taken by the pack for the swim
   -- with the turn running, the speed capped.
-  w.state, w.y, w.vx, w.vy = "sliding", 510 * P, 9 * P, 12 * P
+  w.state, w.y, w.vx, w.vy = "sliding", 510, 9, 12
   local x0, y0 = w.x, w.y
   M.message(w, wa.msg.FRAME_FINISH)
   check("splash, taken for the swim, the turn running", M.sounds[#M.sounds] == 57 and w.taken
     and w.taken.turn == "run" and w.state == "sliding")
   local dx, dy = w.x - x0, w.y - y0
-  check("the speed capped at 5 (2.5 times the swim speed 2), then eased", dx < 5 * P and dy < 5 * P
-    and dx > 4 * P and dy > 4 * P, dx .. " " .. dy)
+  check("the speed capped at 5 (2.5 times the swim speed 2), then eased", dx < 5 and dy < 5
+    and dx > 4 and dy > 4, dx .. " " .. dy)
   check("the swim animation in its place, facing left art mirrored", w.body_visible == false
     and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim" and M.spawned[#M.spawned].facing == -1)
   -- Swimming left: a push that way, turned.
   x0, w.keys = w.x, { left = true }
   M.message(w, wa.msg.FRAME_FINISH)
-  check("left: 0.2 a frame slower, facing left", w.x - x0 == math.floor((5 / 1.05 - 0.2) * P)
-    and w.facing == -1, tostring((w.x - x0) / P))
+  check("left: 0.2 a frame slower, facing left", near(w.x - x0, 5 / 1.05 - 0.2)
+    and w.facing == -1, tostring((w.x - x0)))
   check("no jumping while it swims", M.message(w, wa.msg.JUMP) == "eat")
   local spent_before = spent
   check("no weapons while it swims", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == spent_before)
   -- Land in the way: it stops there.
-  M.solid = function(x) return x >= w.x + 6 * P end
+  M.solid = function(x) return x >= w.x + 6 end
   x0, w.keys = w.x, { right = true }
   M.message(w, wa.msg.FRAME_FINISH)
-  check("land stops it", w.x == x0 and w.taken, tostring((w.x - x0) / P))
+  check("land stops it", w.x == x0 and w.taken, tostring((w.x - x0)))
   M.solid = nil
   -- Still, no key: the float animation, once it has glided to a stop.
   w.keys = {}
@@ -2807,25 +2786,25 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("no second splash on the way out", not w.taken)
   -- Back in, then too deep: it gives out and the worm drowns.
-  w.y, w.vx, w.vy, w.keys = 510 * P, 0, 0, { down = true }
+  w.y, w.vx, w.vy, w.keys = 510, 0, 0, { down = true }
   frames(200, function() return w.state == "tumbling" end)
   check("too deep: out of control, the water's bit back, drawn as itself", w.state == "tumbling"
     and not w.taken and w.collision_mask == 134342 | 0x400000 and w.body_visible == true)
   -- Fast Walk: swim speed 6 for the turn.
   w.weapon, w.keys = "fast_walk", {}
   M.message(w, wa.msg.FIRE_WEAPON)
-  w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "sliding", 400 * P, 0, 0
+  w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "sliding", 400, 0, 0
   M.message(w, wa.msg.FIRE_WEAPON)
   x0 = w.x
-  w.y, w.vx, w.vy = 510 * P, 20 * P, 0
+  w.y, w.vx, w.vy = 510, 20, 0
   M.message(w, wa.msg.FRAME_FINISH)
-  check("Fast Walk: capped at 15", w.x - x0 > 14 * P and w.x - x0 <= 15 * P, tostring((w.x - x0) / P))
+  check("Fast Walk: capped at 15", w.x - x0 > 14 and w.x - x0 <= 15, tostring((w.x - x0)))
   -- A missile in the water hits worms, and blows up on a swimmer.
   local m = { id = 1, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 0, vy = 0, collision_mask = 0x400000 }
   M.missile(m)
   check("a missile in the water also hits worms", m.collision_mask == 0x40007C)
   local n = #M.spawned
-  local missile = { kind = "missile", x = 120 * P, y = 520 * P }
+  local missile = { kind = "missile", x = 120, y = 520 }
   M.contact(w, missile, { vx = 0, vy = 0, flags = 0 })
   local boom = M.spawned[n + 1]
   check("it blows up on the swimmer (100, 50) and is gone", boom and boom.explode and boom.explode.damage == 100
@@ -2843,9 +2822,8 @@ end
 print("wind changer and gravity control: 0-9 and 1-5, then fire")
 do
   new_match()
-  M.gravity, M.wind, M.digit = 0x3AE, 0, nil
+  M.gravity, M.wind, M.digit = 0.014373779296875, 0, nil
   frame()
-  local P = 0x10000
   M.sounds = {}
   local w = worm(16)
   for _, o in ipairs(worms) do o.turn = false end
@@ -2861,12 +2839,12 @@ do
   M.digit = nil
   check("firing it goes on to WA's no-op utility", M.message(w, wa.msg.FIRE_WEAPON) == nil)
   check("wind 7 x 0.0317 towards where the worm faces, a strong wind (6 and up)",
-    M.wind == -math.floor(7 * 0.0317 * P) and M.sounds[#M.sounds] == "sounds/wind_changer/strong_wind.wav",
+    M.wind == -(7 * 0.0317) and M.sounds[#M.sounds] == "sounds/wind_changer/strong_wind.wav",
     tostring(M.wind) .. " " .. tostring(M.sounds[#M.sounds]))
   -- Gravity Control: nothing chosen, no shot.
   w.weapon = "low_gravity"
   check("nothing chosen: not fired, an error sound", M.message(w, wa.msg.FIRE_WEAPON) == "eat"
-    and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav" and M.gravity == 0x3AE)
+    and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav" and M.gravity == 0.014373779296875)
   M.digit = 9
   M.message(w, wa.msg.FRAME_FINISH)
   M.digit = 5
@@ -2874,13 +2852,13 @@ do
   M.digit = nil
   M.message(w, wa.msg.FRAME_FINISH)
   check("5: very high gravity chosen (9 means nothing)", M.message(w, wa.msg.FIRE_WEAPON) == nil
-    and M.gravity == math.floor(0x3AE * 2.4), tostring(M.gravity))
+    and M.gravity == (0.014373779296875 * 2.4), tostring(M.gravity))
   M.turn_start({ worm = w, active = w })
-  check("turn start leaves Gravity Control active", M.gravity == math.floor(0x3AE * 2.4))
+  check("turn start leaves Gravity Control active", M.gravity == (0.014373779296875 * 2.4))
   M.turn_end({ worm = w, active = w })
-  check("turn end restores the match's gravity", M.gravity == 0x3AE)
+  check("turn end restores the match's gravity", M.gravity == 0.014373779296875)
   -- PX's rule: the turn clock standing still for 10 s puts the gravity back.
-  local high = math.floor(0x3AE * 2.4)
+  local high = (0.014373779296875 * 2.4)
   M.digit = 5
   M.message(w, wa.msg.FRAME_FINISH)
   M.digit = nil
@@ -2900,16 +2878,15 @@ do
   end
   check("the clock still for 499 frames keeps it", M.gravity == high)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("10 s with the clock still puts the gravity back", M.gravity == 0x3AE, tostring(M.gravity))
+  check("10 s with the clock still puts the gravity back", M.gravity == 0.014373779296875, tostring(M.gravity))
   M.turn_end({ worm = w, active = w })
-  check("turn end after that leaves the match's gravity", M.gravity == 0x3AE)
+  check("turn end after that leaves the match's gravity", M.gravity == 0.014373779296875)
 end
 
 print("jump: the worm leaves with the shot")
 do
   new_match()
   frame()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do
     if r.weapon == "ninja_rope" then spec = r end
@@ -2918,14 +2895,14 @@ do
     and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
   local w = worm(33)
   w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
-  w.x, w.y, w.vx, w.vy, w.state = 100 * P, 50 * P, 0, 0, "standing"
+  w.x, w.y, w.vx, w.vy, w.state = 100, 50, 0, 0, "standing"
   function w:set_state() error("the Jump releases the worm; it sets no state") end
   M.spawned, M.sounds = {}, {}
   M.message(w, wa.msg.FIRE_WEAPON)
   M.message(w, wa.msg.FRAME_FINISH)
   check("charging: the worm keeps its aim posture", #M.spawned == 0 and w.body_visible)
-  spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3 * P, vy = -5 * P })
-  check("fired: the shot's speed, airborne", w.vx == 3 * P and w.vy == -5 * P and w.state == "sliding")
+  spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3, vy = -5 })
+  check("fired: the shot's speed, airborne", w.vx == 3 and w.vy == -5 and w.state == "sliding")
   check("the team's Jump line: team 2's bank", M.sounds[#M.sounds] == 150 + 54, tostring(M.sounds[#M.sounds]))
 end
 
@@ -2933,18 +2910,17 @@ print("laser gun: PX's 5 s beam in place of the uzi's bullet")
 do
   new_match()
   frame()
-  local P = 0x10000
   local spec
   for _, r in ipairs(replaced) do if r.weapon == "uzi" then spec = r end end
   local shooter, target = worm(16), worm(32)
   for _, o in ipairs(worms) do o.turn = false end
   shooter.turn, shooter.weapon, shooter.aim, shooter.facing = true, "uzi", 0.5, 1
-  shooter.x, shooter.y = 100 * P, 100 * P
-  target.x, target.y = 160 * P, 100 * P
-  local drum = { kind = "oil", id = 1, x = 200 * P, y = 100 * P, taken = 0 }
+  shooter.x, shooter.y = 100, 100
+  target.x, target.y = 160, 100
+  local drum = { kind = "oil", id = 1, x = 200, y = 100, taken = 0 }
   function drum:hit(damage) self.taken = self.taken + damage end
   M.oil = { drum }
-  M.trace_hit = { x = 300 * P, y = 100 * P }
+  M.trace_hit = { x = 300, y = 100 }
   M.spawned, M.sounds, M.digs = {}, {}, {}
   spec.on_fire({ worm = shooter, x = shooter.x, y = shooter.y, vx = 0, vy = 0 })
   spec.on_fire({ worm = shooter, x = shooter.x, y = shooter.y, vx = 0, vy = 0 })
@@ -2955,7 +2931,7 @@ do
   tick(1)
   check("the worm is held firing: 0 of 1 shots", shooter.shots_fired == 0 and shooter.shots_to_fire == 1)
   check("the first trace: 2 to the worm, 4 to the drum, a 4 px cut where it hits land",
-    target.hp == 98 and drum.taken == 4 and M.digs[1] and M.digs[1].x == 300 * P and M.digs[1].radius == 4,
+    target.hp == 98 and drum.taken == 4 and M.digs[1] and M.digs[1].x == 300 and M.digs[1].radius == 4,
     tostring(target.hp) .. " " .. tostring(drum.taken))
   tick(39)
   check("every fourth frame: 2 until 10 taken, then 1", target.hp == 85, tostring(target.hp))
@@ -2964,7 +2940,7 @@ do
   local strip = M.ribbons[1]
   check("a red strip from 24 px out to where it hits, PX's width", strip
     and strip.sprite == "sprites/laser_gun/laser_beam.png" and (strip.points[1].color & 0xFFFFFF) == 0xFF0000
-    and strip.points[2].x == 300 * P and strip.points[1].width <= 16 and strip.points[1].width >= 8)
+    and strip.points[2].x == 300 and strip.points[1].width <= 16 and strip.points[1].width >= 8)
   tick(210)
   check("no more than 45 from one beam", target.hp == 55, tostring(target.hp))
   check("after 250 frames it stops and lets WA end the shot", shooter.shots_fired == shooter.shots_to_fire
@@ -2980,8 +2956,7 @@ print("px missile sprites: WeapSprite at run time")
 do
   new_match()
   frame()
-  local PX = 0x10000
-  local m = { id = 77, phase = "post", weapon = "longbow", x = 10 * PX, y = 20 * PX, vx = 3 * PX, vy = 0 }
+  local m = { id = 77, phase = "post", weapon = "longbow", x = 10, y = 20, vx = 3, vy = 0 }
   M.missile(m)
   check("no current worm: nothing drawn (PX's WeapSprite needs one)", not M.spawned)
   local shooter = worm(16)
@@ -2994,7 +2969,7 @@ do
   check("flying right, turned to its flight", bolt.facing == 1 and math.abs(bolt.angle - 90) < 1e-6,
     tostring(bolt.angle))
   local before = #M.spawned
-  m.vx = -3 * PX
+  m.vx = -3
   M.missile(m)
   check("one bolt per missile, mirrored flying left", #M.spawned == before and bolt.facing == -1)
   local shown = {}
@@ -3010,7 +2985,7 @@ do
   check("nothing for another weapon's missile", #M.spawned == before)
 
   -- The Igniter's bullet, climbing up and to the left: turned, not upright.
-  m.weapon, m.id, m.vx, m.vy = "homing_missile", 79, -3 * PX, -3 * PX
+  m.weapon, m.id, m.vx, m.vy = "homing_missile", 79, -3, -3
   M.missile(m)
   local bullet = M.spawned[#M.spawned]
   check("a bullet on the Igniter's missile", #M.spawned == before + 1
@@ -3027,13 +3002,12 @@ end
 
 print("Super Tele: frozen click, 50-frame delay, three cuts and cavern ceiling")
 do
-  local P = 0x10000
   new_match()
   local spec
   for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
   local w = worm(16)
-  w.x, w.y, w.hp = 40 * P, 70 * P, 100
-  local target_x, target_y = 190 * P + 1234, 100 * P + 2345
+  w.x, w.y, w.hp = 40, 70, 100
+  local target_x, target_y = 190 + 1234, 100 + 2345
   spec.on_click({ worm = w, x = target_x, y = target_y })
   local marker = M.spawned[#M.spawned]
   check("target marker stays at the frozen click position",
@@ -3045,14 +3019,14 @@ do
     w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 3)
   for _ = 1, 49 do M.message(w, wa.msg.FRAME_FINISH) end
   check("worm and marker remain in place for 49 frames after starting",
-    w.x == 40 * P and w.y == 70 * P and not M.digs and not marker.dead)
+    w.x == 40 and w.y == 70 and not M.digs and not marker.dead)
   M.message(w, wa.msg.FRAME_FINISH)
   check("frame 50 arrives at the saved target and removes its marker",
     w.x == target_x and w.y == target_y and marker.dead)
   local cuts = M.digs or {}
   check("arrival cuts three overlapping holes at and above the destination",
     #cuts == 3 and cuts[1].x == target_x and cuts[1].y == target_y
-      and cuts[2].y == target_y - 10 * P and cuts[3].y == target_y - 22 * P
+      and cuts[2].y == target_y - 10 and cuts[3].y == target_y - 22
       and cuts[1].radius == 12 and cuts[2].radius == 12 and cuts[3].radius == 12)
   for _ = 1, 5 do M.message(w, wa.msg.FRAME_FINISH) end
   check("arrival runs once", #M.digs == 3)
@@ -3061,28 +3035,28 @@ do
   spec = nil
   for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
   w = worm(16)
-  spec.on_click({ worm = w, x = 50 * P, y = 2 * P })
+  spec.on_click({ worm = w, x = 50, y = 2 })
   for _ = 1, 51 do M.message(w, wa.msg.FRAME_FINISH) end
-  check("cavern clicks stay at least 19 pixels below the ceiling", w.y == 19 * P)
+  check("cavern clicks stay at least 19 pixels below the ceiling", w.y == 19)
 
   new_match()
   spec = nil
   for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
   w = worm(16)
-  w.x, w.y = 40 * P, 70 * P
-  spec.on_click({ worm = w, x = 200 * P, y = 150 * P })
+  w.x, w.y = 40, 70
+  spec.on_click({ worm = w, x = 200, y = 150 })
   marker = M.spawned[#M.spawned]
   w.hp = 0
   for _ = 1, 50 do M.message(w, wa.msg.FRAME_FINISH) end
   check("a dead worm is never moved or carved in and its marker is removed",
-    w.x == 40 * P and w.y == 70 * P and not M.digs and marker.dead)
+    w.x == 40 and w.y == 70 and not M.digs and marker.dead)
 
   new_match()
   spec = nil
   for _, r in ipairs(replaced) do if r.weapon == "teleport" then spec = r end end
   w = worm(16)
-  w.x, w.y, w.hp = 960 * P, -10000 * P, 100
-  local place_x, place_y = 220 * P, 130 * P
+  w.x, w.y, w.hp = 960, -10000, 100
+  local place_x, place_y = 220, 130
   spec.on_click({ worm = w, x = place_x, y = place_y })
   check("manual placement moves the unplaced worm before it can fall",
     w.x == place_x and w.y == place_y and w.state == "teleporting")
@@ -3103,28 +3077,27 @@ do
   -- a turn.
   new_match()
   w = worm(16)
-  w.x, w.y, w.weapon = 960 * P, -10000 * P, "teleport"
+  w.x, w.y, w.weapon = 960, -10000, "teleport"
   M.message(w, wa.msg.FIRE_WEAPON)
   check("firing Super Tele from an unplaced worm skips the wind-up", w.windup == 0)
   local placed = worm(17)
-  placed.x, placed.y, placed.weapon = 40 * P, 70 * P, "teleport"
+  placed.x, placed.y, placed.weapon = 40, 70, "teleport"
   M.message(placed, wa.msg.FIRE_WEAPON)
   placed.state = "prefiring"
   M.message(placed, wa.msg.FRAME_FINISH)
   check("in a turn Super Tele keeps its wind-up", placed.windup == nil)
   local late = worm(32)
-  late.x, late.y, late.weapon, late.state = 960 * P, -10000 * P, "teleport", "prefiring"
+  late.x, late.y, late.weapon, late.state = 960, -10000, "teleport", "prefiring"
   M.message(late, wa.msg.FRAME_FINISH)
   check("an unplaced worm already winding up has it skipped at the frame's end", late.windup == 0)
   local other = worm(33)
-  other.x, other.y, other.weapon = 960 * P, -10000 * P, "bazooka"
+  other.x, other.y, other.weapon = 960, -10000, "bazooka"
   M.message(other, wa.msg.FIRE_WEAPON)
   check("other weapons keep their wind-up in placement", other.windup == nil)
 end
 
 print("lightning strike: warning, hit, grave identity and copied hand")
 do
-  local P = 0x10000
   new_match()
   local click
   for _, spec in ipairs(replaced) do
@@ -3134,7 +3107,7 @@ do
   jumper.turn, jumper.weapon = true, "napalm_strike"
   jumper.state = "prefiring"
   function jumper:set_state() error("the engine ends a click-only fire's prefire, not the pack") end
-  click({ worm=jumper, x=100*P, y=100*P })
+  click({ worm=jumper, x=100, y=100 })
   check("click leaves ending WA's prefiring pose to the engine", jumper.state == "prefiring")
 
   -- The strike comes from where WA's arrow points (the sign of ev.vx), not
@@ -3144,34 +3117,34 @@ do
   new_match()
   local facing_right = worm(16)
   facing_right.facing = 1
-  click({ worm = facing_right, x = 100 * P, y = 100 * P, vx = -P })
+  click({ worm = facing_right, x = 100, y = 100, vx = -1 })
   local from_right = M.spawned[#M.spawned]
   facing_right.facing = -1
-  click({ worm = facing_right, x = 100 * P, y = 100 * P, vx = P })
+  click({ worm = facing_right, x = 100, y = 100, vx = 1 })
   local from_left = M.spawned[#M.spawned]
   check("the arrow, not the worm's facing, sets the side it strikes from",
-    from_right.x > 100 * P and from_left.x < 100 * P, (from_right.x / P) .. "," .. (from_left.x / P))
+    from_right.x > 100 and from_left.x < 100, (from_right.x) .. "," .. (from_left.x))
 
   new_match()
   local by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
   local owner, target = worm(16), worm(17)
-  owner.x, owner.y = 100 * P, 100 * P
-  target.x, target.y = 100 * P, 100 * P
+  owner.x, owner.y = 100, 100
+  target.x, target.y = 100, 100
   for _, w in ipairs(worms) do
-    if w ~= owner and w ~= target then w.x, w.y = 1000 * P, 1000 * P end
+    if w ~= owner and w ~= target then w.x, w.y = 1000, 1000 end
   end
   local shared = require("lib/shared")
   local zap_balls, zapped_at = shared.zap_bowling_balls, nil
   shared.zap_bowling_balls = function(x, y) zapped_at = { x, y } end
-  by_slot.napalm_strike.on_click({ worm=owner, x=100*P, y=100*P })
+  by_slot.napalm_strike.on_click({ worm=owner, x=100, y=100 })
   local effect = M.spawned[#M.spawned]
   for _ = 1, 149 do effect.on(effect) end
   check("150 frame warning leaves health alone", target.hp == 100)
   effect.on(effect)
   M.draw()
   check("active strike emits a terrain-occluded GPU ribbon",
-    #M.ribbons > 0 and M.ribbons[1].depth == 0x00190000)
+    #M.ribbons > 0 and M.ribbons[1].depth == wa.depth.BEHIND_TERRAIN)
   for _ = 1, 15 do effect.on(effect) end
   check("beam stays active for 16 frames", target.hp == 100)
   effect.on(effect)
@@ -3198,27 +3171,27 @@ do
   by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
   owner, target = worm(16), worm(17)
-  owner.x, owner.y = 100 * P, 100 * P
-  target.x, target.y = 140 * P, 100 * P
+  owner.x, owner.y = 100, 100
+  target.x, target.y = 140, 100
   for _, w in ipairs(worms) do
-    if w ~= owner and w ~= target then w.x, w.y = 1000 * P, 1000 * P end
+    if w ~= owner and w ~= target then w.x, w.y = 1000, 1000 end
   end
   turn(16)
   frame()
   local original = hand(17)
   kill(17)
   remove(17)
-  local grave = { id=701, kind="grave", worm_id=17, x=140*P, y=100*P }
+  local grave = { id=701, kind="grave", worm_id=17, x=140, y=100 }
   function grave:revive(id, hp)
     assert(id == 17 and hp == 10)
     local revived = setmetatable({ id=id, kind="worm", team=1, alliance=0, ammo_group=0,
-      hp=hp, x=self.x, y=self.y-5*P, facing=1 }, Worm)
+      hp=hp, x=self.x, y=self.y-5, facing=1 }, Worm)
     worms[#worms+1] = revived
     M.graves = {}
     return revived
   end
   M.graves = { grave }
-  by_slot.napalm_strike.on_click({ worm=owner, x=140*P, y=100*P })
+  by_slot.napalm_strike.on_click({ worm=owner, x=140, y=100 })
   effect = M.spawned[#M.spawned]
   for _ = 1, 166 do effect.on(effect) end
   local revived = worm(17)
@@ -3236,13 +3209,13 @@ do
   by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
   owner = worm(16)
-  owner.x, owner.y = 100 * P, 100 * P
-  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000 * P, 1000 * P end end
-  local full = { id=703, kind="grave", worm_id=17, x=140*P, y=100*P }
+  owner.x, owner.y = 100, 100
+  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000, 1000 end end
+  local full = { id=703, kind="grave", worm_id=17, x=140, y=100 }
   function full:revive() return nil end
   M.graves = { full }
   M.sounds, M.sound_targets = {}, {}
-  by_slot.napalm_strike.on_click({ worm=owner, x=140*P, y=100*P })
+  by_slot.napalm_strike.on_click({ worm=owner, x=140, y=100 })
   effect = M.spawned[#M.spawned]
   for _ = 1, 166 do effect.on(effect) end
   check("a refused revive plays the error sound at the grave",
@@ -3252,19 +3225,19 @@ do
   by_slot = {}
   for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
   owner = worm(16)
-  owner.x, owner.y = 100*P, 100*P
-  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000*P, 1000*P end end
-  local mine = { id=702, kind="mine", x=100*P, y=100*P, fuse=2500 }
+  owner.x, owner.y = 100, 100
+  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000, 1000 end end
+  local mine = { id=702, kind="mine", x=100, y=100, fuse=2500 }
   function mine:arm(fuse) self.armed = fuse end
   M.mines = {mine}
   local before_rng = rng
-  by_slot.napalm_strike.on_click({ worm=owner, x=100*P, y=100*P })
+  by_slot.napalm_strike.on_click({ worm=owner, x=100, y=100 })
   effect = M.spawned[#M.spawned]
   for _ = 1, 166 do effect.on(effect) end
   check("a fixed-fuse mine keeps its timer without an RNG draw",
     mine.armed == 2500 and rng == before_rng)
   mine.fuse, mine.armed = -1, nil
-  by_slot.napalm_strike.on_click({ worm=owner, x=100*P, y=100*P })
+  by_slot.napalm_strike.on_click({ worm=owner, x=100, y=100 })
   effect = M.spawned[#M.spawned]
   for _ = 1, 166 do effect.on(effect) end
   check("a random-fuse mine draws one 1–5 s fuse in simulation",
@@ -3273,13 +3246,12 @@ end
 
 print("electric grenade: seek, delayed zap, and target kinds")
 do
-  local P = 0x10000
   local function setup()
     new_match()
     local spec
     for _, r in ipairs(replaced) do if r.weapon == "earthquake" then spec = r end end
     local owner = worm(16)
-    for _, w in ipairs(worms) do w.x, w.y = 1000*P, 1000*P end
+    for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
     owner.x, owner.y = 0, 0
     return spec, owner
   end
@@ -3291,7 +3263,7 @@ do
   -- making garbage for every glow, so Lua's GC does not run inside it.
   do
     local spec, owner = setup()
-    for i = 1, 40 do spec.on_explode({ worm = owner, x = i * 40 * P, y = 0 }) end
+    for i = 1, 40 do spec.on_explode({ worm = owner, x = i * 40, y = 0 }) end
     for _ = 1, 12 do
       for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
     end
@@ -3317,7 +3289,7 @@ do
   -- In flight: the stock grenade hidden, PX's grenade drawn in its place.
   M.spawned = {}
   owner.turn = true
-  local m = { id = 501, phase = "pre", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 50 }
+  local m = { id = 501, phase = "pre", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 50 }
   M.missile(m)
   m.phase = "post"
   M.missile(m)
@@ -3338,7 +3310,7 @@ do
       return alive
     end
     M.spawned = {}
-    local late = { id = 502, phase = "post", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 0 }
+    local late = { id = 502, phase = "post", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 0 }
     late.phase = "pre"
     late.sprite = 50
     M.missile(late)
@@ -3349,7 +3321,7 @@ do
       and M.spawned[1].owner ~= nil and late.sprite == 0)
     wa.worms.all = listed
     M.spawned = {}
-    local later = { id = 503, phase = "post", weapon = "earthquake", x = 10*P, y = 20*P, vx = P, vy = 0, sprite = 0 }
+    local later = { id = 503, phase = "post", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 0 }
     M.missile(later)
     check("while that worm lives, it owns the sprite", M.spawned[1] and M.spawned[1].owner == owner)
     owner.turn = true
@@ -3357,7 +3329,7 @@ do
   end
   -- It spins as a grenade (its record's WAT_Rotation), not faces its flight:
   -- flying right at 4 px a frame, 0.5 * 4 * 0.15 = 0.3 rad a frame.
-  m.vx, m.vy = 4*P, 0
+  m.vx, m.vy = 4, 0
   local before = M.spawned[1].angle
   M.missile(m)
   local turned = (M.spawned[1].angle - before) % 360
@@ -3365,7 +3337,7 @@ do
     tostring(turned))
   owner.turn = false
   local target = worm(17)
-  target.x, target.y = 5*P, 0
+  target.x, target.y = 5, 0
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(1)
   function target:set_state() error("a tazed worm is taken, not set to a state") end
@@ -3391,8 +3363,8 @@ do
   check("released, it may fire again", M.message(target, wa.msg.FIRE_WEAPON) ~= "eat")
   spec, owner = setup()
   local first, second = worm(17), worm(32)
-  first.x, first.y = 5*P, 0
-  second.x, second.y = 14*P, 0
+  first.x, first.y = 5, 0
+  second.x, second.y = 14, 0
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(50)
   check("arc chains to a second unvisited worm", first.hp == 76 and second.hp == 76)
@@ -3401,17 +3373,17 @@ do
   -- electrified one Zap(1), thrown at 0.8. No damage. The chain goes on.
   spec, owner = setup()
   local shared = require("lib/shared")
-  local _, ball = shared.spawn_bowling_ball(owner, 5 * P, 0, 0, 0)
+  local _, ball = shared.spawn_bowling_ball(owner, 5, 0, 0, 0)
   local after = worm(17)
-  after.x, after.y = 14 * P, 4 * P
+  after.x, after.y = 14, 4
   spec.on_explode({ worm = owner, x = 0, y = 0 })
   tick(1)
   M.quads = {}
   M.draw()
   local on_ball = false
   for _, q in ipairs(M.quads) do
-    if q.sprite == "sprites/lightning/glow.png" and q.points[1][1] < 5 * P and q.points[3][1] > 5 * P
-      and q.points[3][1] - q.points[1][1] > 40 * P then on_ball = true end
+    if q.sprite == "sprites/lightning/glow.png" and q.points[1][1] < 5 and q.points[3][1] > 5
+      and q.points[3][1] - q.points[1][1] > 40 then on_ball = true end
   end
   check("the arc links to a Bowling Ball, PX's glow on it", ball and on_ball and not ball.zapped)
   tick(23)
@@ -3432,7 +3404,7 @@ do
   owner.weapon = "earthquake"
   M.message(owner, wa.msg.FIRE_WEAPON)
   first = worm(17)
-  first.x, first.y = 5*P, 0
+  first.x, first.y = 5, 0
   spec.on_explode({ worm=worm(32), x=0, y=0 })
   tick(50)
   check("the arc spares the worm that threw the grenade", owner.hp == 100 and first.hp == 76,
@@ -3440,7 +3412,7 @@ do
   -- The trail: every point stays from the grenade on, links included.
   spec, owner = setup()
   first = worm(17)
-  first.x, first.y = 60*P, 0
+  first.x, first.y = 60, 0
   spec.on_explode({ worm=owner, x=0, y=0 })
   local function drawn_points()
     M.quads, M.ribbons = {}, {}
@@ -3457,14 +3429,14 @@ do
   check("linking to a worm keeps the trail it came along", after and before >= 3 and after == before + 1,
     tostring(before) .. " -> " .. tostring(after))
   spec, owner = setup()
-  local mine = { id=800, kind="mine", x=5*P, y=0 }
+  local mine = { id=800, kind="mine", x=5, y=0 }
   function mine:arm(fuse) self.fuse = fuse end
   M.mines = {mine}
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(25)
   check("chained mine arms on a 400 ms fuse", mine.fuse == 400)
   spec, owner = setup()
-  local crate = { id=801, kind="crate", x=5*P, y=0 }
+  local crate = { id=801, kind="crate", x=5, y=0 }
   function crate:hit(damage) self.damage = damage end
   M.crates = {crate}
   spec.on_explode({ worm=owner, x=0, y=0 })
@@ -3476,7 +3448,7 @@ do
   -- the hold froze never ends.
   spec, owner = setup()
   local held = worm(17)
-  held.x, held.y, held.hp = 5*P, 0, 20
+  held.x, held.y, held.hp = 5, 0, 20
   local listed = wa.worms.all
   wa.worms.all = function()
     local alive = {}
@@ -3493,7 +3465,7 @@ do
   check("a worm killed while two arcs hold it is still released", held.hp == 0 and held.taken == nil
     and held.body_visible == true)
   spec, owner = setup()
-  M.trace_hit = { x=0, y=-5*P, nx=1, ny=0, tx=0, ty=1, starts_solid=false }
+  M.trace_hit = { x=0, y=-5, nx=1, ny=0, tx=0, ty=1, starts_solid=false }
   spec.on_explode({ worm=owner, x=0, y=0 })
   tick(1)
   check("terrain trace can redirect the arc", #M.spawned > 0 and not M.spawned[#M.spawned].dead)
@@ -3514,9 +3486,8 @@ do
   for _, r in ipairs(replaced) do if r.weapon == "prod" then spec = r end end
   check("prod uses Javelin's record and GPU art", spec.wep == "weps/prod.wep"
     and spec.params.gpu_prefix == "sprites/javelin/" and type(spec.on_explode) == "function")
-  local P = 0x10000
   local owner = worms[1]
-  owner.x, owner.y, owner.turn = 1000 * P, 1000 * P, true
+  owner.x, owner.y, owner.turn = 1000, 1000, true
   local nearby = {}
   wa.world.electrical_nearby = function(x, y, r, graves)
     assert(r == 29 and not graves)
@@ -3527,46 +3498,46 @@ do
     id = id + 1
     M.missile({ weapon = "prod", id = id, phase = "pre", vx = vx, vy = vy })
     -- WA's explosion reports the missile's owner, which is not a worm.
-    spec.on_explode({ x = 100 * P, y = 100 * P, missile = id, worm = { owner_object = true } })
+    spec.on_explode({ x = 100, y = 100, missile = id, worm = { owner_object = true } })
   end
   local a, b = worms[2], worms[3]
-  a.x, a.y, b.x, b.y = 119 * P, 119 * P, 100 * P, 100 * P
+  a.x, a.y, b.x, b.y = 119, 119, 100, 100
   nearby = { a, b }
-  impact(8 * P, -4 * P)
+  impact(8, -4)
   check("first target wins, including square corners outside a 20px circle", a.hp == 80 and b.hp == 100)
-  check("worm thrust uses quarter incoming velocity", a.vx == 2 * P and a.vy == -P)
+  check("worm thrust uses quarter incoming velocity", a.vx == 2 and a.vy == -1)
   check("hitting an object never stamps", M.stamps == nil)
-  a.x, a.y = 120 * P, 100 * P
+  a.x, a.y = 120, 100
   nearby = { a }
-  impact(P, 0)
+  impact(1, 0)
   check("20px boundary is excluded", a.hp == 80 and #M.stamps == 1)
   nearby = {}
-  owner.x, owner.y = 124 * P, 124 * P
+  owner.x, owner.y = 124, 124
   impact(-7, 7)
-  check("active worm has PX's 25px fallback and truncates towards zero", owner.hp == 80
-    and owner.vx == -1 and owner.vy == 1 and #M.stamps == 1)
-  owner.x, owner.y = 125 * P, 100 * P
+  check("active worm has PX's 25px fallback and retains fractional thrust", owner.hp == 80
+    and owner.vx == -1.75 and owner.vy == 1.75 and #M.stamps == 1)
+  owner.x, owner.y = 125, 100
   impact(0, 0)
   check("25px fallback boundary is excluded; zero speed points up", owner.hp == 80 and M.stamps[2].frame == 0)
-  owner.x, owner.y = 1000 * P, 1000 * P
+  owner.x, owner.y = 1000, 1000
   for _, kind in ipairs({"mine", "crate", "oil"}) do
-    local o = { kind = kind, x = 100 * P, y = 100 * P }
+    local o = { kind = kind, x = 100, y = 100 }
     function o:hit(damage, vx, vy, mode) self.hit_args = { damage, vx, vy, mode } end
     nearby = { o }
-    impact(-8 * P, 4 * P)
+    impact(-8, 4)
     check(kind .. " receives 20 projectile damage and thrust", o.hit_args[1] == 20
-      and o.hit_args[2] == -4 * P and o.hit_args[3] == 2 * P and o.hit_args[4] == "projectile"
-      and o.vx == -2 * P and o.vy == P and #M.stamps == 2)
+      and o.hit_args[2] == -4 and o.hit_args[3] == 2 and o.hit_args[4] == "projectile"
+      and o.vx == -2 and o.vy == 1 and #M.stamps == 2)
   end
   nearby = {}
   local cases = { {0,-1,0}, {1,0,8}, {0,1,16}, {-1,0,24}, {1,-1,3}, {1,1,11},
     {-1,1,19}, {-1,-1,27}, {100,-1,7}, {1,100,15}, {-100,1,23}, {-1,-100,31} }
   local good = true
   for _, c in ipairs(cases) do
-    impact(c[1] * P, c[2] * P)
+    impact(c[1], c[2])
     local stamp = M.stamps[#M.stamps]
     good = good and stamp.frame == c[3] and stamp.sprite == "sprites/javelin/stamp"
-      and stamp.x == 100 * P and stamp.y == 100 * P
+      and stamp.x == 100 and stamp.y == 100
   end
   check("cardinals, ratio bins and clamps choose PX's centered 60px stamp", good)
   local last = M.stamps[#M.stamps]

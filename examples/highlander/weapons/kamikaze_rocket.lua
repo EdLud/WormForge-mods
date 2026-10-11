@@ -8,8 +8,6 @@
 -- blast 100) and the worm goes into the water. Fired only with Ctrl held
 -- (Ctrl + Space); without, nothing is used.
 local shared = require("lib/shared")
-local P = 0x10000
-
 local SPEED = 8             -- px a frame (kRocketSpeed)
 local TURN = 0.05           -- PX angle units (times pi) a frame
 local LIFE = 4000           -- ms, less 20 a frame: 200 frames
@@ -19,7 +17,7 @@ local HINT_FRAMES = 150
 local STALE = 200           -- other worms' frames without one of its own
 local FLY = "sprites/kamikaze_rocket/fly"
 local FLY_FRAMES, FLY_HALF_W, FLY_HALF_H = 5, 30, 40
-local DEPTH = 0x10000
+local DEPTH = wa.depth.FRONT
 
 local rockets = {} -- worm id -> its rocket
 local armed = {}   -- worm id -> fired with Ctrl, its flight not yet begun
@@ -46,8 +44,8 @@ local function fly(worm, r)
   if keys.left then r.angle = r.angle + TURN end
   if keys.right then r.angle = r.angle - TURN end
   local a = r.angle * math.pi
-  r.x = r.x + math.floor(SPEED * wa.math.sin(a) * P)
-  r.y = r.y + math.floor(SPEED * wa.math.cos(a) * P)
+  r.x = r.x + (SPEED * wa.math.sin(a))
+  r.y = r.y + (SPEED * wa.math.cos(a))
   worm.x, worm.y = r.x, r.y
   r.age = r.age + 1
   r.life = r.life - 20
@@ -60,7 +58,7 @@ local function fly(worm, r)
     })
     boom:explode(BOOM)
     boom:despawn()
-    worm.x, worm.y = -2500 * P, wa.world.water() + 1000 * P
+    worm.x, worm.y = -2500, wa.world.water() + 1000
     r.done = true
     return
   end
@@ -131,13 +129,13 @@ if wa.on.draw and wa.draw.quad then
       local r = rockets[id]
       if not r.done then
         local t = -r.angle * math.pi
-        local c, s = math.cos(t), math.sin(t)
+        local c, s = wa.math.cos(t), wa.math.sin(t)
         local flip = r.facing > 0 and -1 or 1
         QUAD.frame = (r.age // 10) % FLY_FRAMES
         for i, k in ipairs(CORNERS) do
-          local dx, dy = k[1] * flip * FLY_HALF_W * P, k[2] * FLY_HALF_H * P
-          QUAD.points[i][1] = r.x + math.floor(dx * c - dy * s)
-          QUAD.points[i][2] = r.y + math.floor(dx * s + dy * c)
+          local dx, dy = k[1] * flip * FLY_HALF_W, k[2] * FLY_HALF_H
+          QUAD.points[i][1] = r.x + (dx * c - dy * s)
+          QUAD.points[i][2] = r.y + (dx * s + dy * c)
         end
         wa.draw.quad(QUAD)
       end

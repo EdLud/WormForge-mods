@@ -3,7 +3,7 @@ local shared = require("lib/shared")
 
 -- PX's missile sprite animations share these two helpers. Holds are drawn
 -- by the engine from each replace claim's hold table above.
-local HOLD_DEPTH = 0x10000
+local HOLD_DEPTH = wa.depth.FRONT
 local function next_phase(phase, anim_speed)
   if phase > 0.99 then return 0 end
   return phase + anim_speed * 30 / 1000
