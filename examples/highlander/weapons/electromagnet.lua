@@ -256,7 +256,7 @@ end)
 -- the claim), so the two stay in step.
 wa.on.worm_message(function(worm)
   local id = worm.id
-  local pressed = worm.turn and worm.weapon == "baseball_bat" and wa.world.keys().plus_key or false
+  local pressed = worm.turn and worm.weapon == shared.slot("baseball_bat") and wa.world.keys().plus_key or false
   if pressed and not plus_held[id] then polarity[id] = -(polarity[id] or 1) end
   plus_held[id] = pressed
 end, { msgs = { wa.msg.FRAME_FINISH } })
@@ -264,7 +264,7 @@ end, { msgs = { wa.msg.FRAME_FINISH } })
 if wa.on.hud then
   wa.on.hud(function()
     local worm = shared.current_worm()
-    if worm and worm.weapon == "baseball_bat" then
+    if worm and worm.weapon == shared.slot("baseball_bat") then
       wa.hud.line((polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
         or "Electromagnet: REPEL mode (+ to attract)")
     end

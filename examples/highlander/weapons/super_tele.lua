@@ -33,7 +33,7 @@ local function unplaced(worm) return worm.y == -10000 end
 -- worm the wind-up is skipped, so the click places it at once. On the fire
 -- message, before WA starts the wind-up; at the frame's end as a fallback.
 local function skip_placement_windup(worm)
-  if worm.weapon == "teleport" and unplaced(worm) and worm.windup == nil then
+  if worm.weapon == shared.slot("teleport") and unplaced(worm) and worm.windup == nil then
     worm.windup = 0
   end
 end

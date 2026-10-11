@@ -84,6 +84,24 @@ local CAVE_SECOND = 16
 -- whatever ammo the scheme gives them, except the Hot Air Balloon, the Wind
 -- Changer and the Weapon Crate, which start_turn sets to 3, 1 and 1.
 
+-- The pools above name each weapon by its home slot. Dealt is where each
+-- sits this match (shared.slot), and a weapon the scheme doesn't place is not
+-- dealt; the cavern cut-offs count the placed weapons among PX's first ones.
+local function placed(pool, first)
+  local out, kept = {}, 0
+  for i, home in ipairs(pool) do
+    local slot = shared.slot(home)
+    if slot then
+      out[#out + 1] = slot
+      if first and i <= first then kept = kept + 1 end
+    end
+  end
+  return out, kept
+end
+OFFENSIVE, CAVE_OFFENSIVE = placed(OFFENSIVE, CAVE_OFFENSIVE)
+SECOND, CAVE_SECOND = placed(SECOND, CAVE_SECOND)
+MOVEMENT = placed(MOVEMENT)
+
 -- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
 -- must not depend on pairs() order: Lua's string hashing is seeded per
 -- process, and a different order on each peer is a different sequence of

@@ -4,7 +4,8 @@
 local shared = require("lib/shared")
 local Portals = require("lib/portals")
 local Effects = require("lib/portal_effects")
-local SLOT, ART = "scales_of_justice", "sprites/portal_gun/"
+-- The slot the Portal Gun sits on this match (its home: Scales of Justice).
+local SLOT, ART = shared.slot("scales_of_justice"), "sprites/portal_gun/"
 local SPEED = 35
 local chosen, held, half_used = {}, {}, {}
 local bolts, effects = {}, Effects.new()

@@ -263,12 +263,12 @@ wa.on.worm_message(function(worm, msg)
     end
   elseif msg == wa.msg.FIRE_WEAPON then
     local s = swimmers[worm.id]
-    if s and s.plopped and worm.weapon ~= "fast_walk" then
+    if s and s.plopped and worm.weapon ~= shared.slot("fast_walk") then
       return "eat" -- no weapons while it swims
     end
-    if worm.weapon == "fast_walk" then
+    if worm.weapon == shared.slot("fast_walk") then
       swim_speed = swim_speed ~= 6 and 6 or 2
-    elseif worm.weapon == "laser_sight" then
+    elseif worm.weapon == shared.slot("laser_sight") then
       -- FireFinal(Swim Suit), in place of WA's laser sight.
       local s = swimmer_of(worm)
       if not s.suit then
@@ -279,7 +279,7 @@ wa.on.worm_message(function(worm, msg)
       elseif worm.y < wa.world.water() then
         suit_off(worm, s, false)
       end
-      worm:ammo("laser_sight", -1)
+      worm:ammo(shared.slot("laser_sight"), -1)
       return "eat"
     end
   end

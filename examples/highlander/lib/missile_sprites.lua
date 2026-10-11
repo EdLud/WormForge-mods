@@ -110,7 +110,8 @@ local function sprite_owner()
 end
 
 wa.on.missile_frame(function(m)
-  local p = shared.owns(m.weapon) and PX_WEAP_SPRITES[m.weapon]
+  local home = shared.home(m.weapon)
+  local p = shared.owns(home) and PX_WEAP_SPRITES[home]
   -- WA's sprite is hidden only where PX's is drawn in its place: with no
   -- owner for ours, WA's stays.
   if p and p.hide and m.phase == "pre" and (flying[m.id] or sprite_owner()) then

@@ -173,7 +173,7 @@ do
           end
           return
         end
-        if r.life <= 0 or w.hp <= 0 or not w.turn or w.weapon ~= "uzi" or LASER_STOPS[w.state or ""] then
+        if r.life <= 0 or w.hp <= 0 or not w.turn or w.weapon ~= shared.slot("uzi") or LASER_STOPS[w.state or ""] then
           laser_stop(r, w.hp > 0 and w or nil)
           return
         end

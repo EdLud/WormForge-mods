@@ -67,7 +67,7 @@ end
 
 wa.on.worm_message(function(worm, msg)
   if msg == wa.msg.FIRE_WEAPON then
-    if worm.weapon ~= "suicide_bomber" then return end
+    if worm.weapon ~= shared.slot("suicide_bomber") then return end
     if not wa.world.keys().ctrl then
       hint = HINT_FRAMES
       return "eat"

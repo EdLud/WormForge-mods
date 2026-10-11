@@ -39,13 +39,19 @@ local function deal(worm)
   ))
 end
 
+-- By home slot: the Hot Air Balloon, the Wind Changer, the Weapon Crate.
+local TURN_GIVES = { { "bungee", 3 }, { "surrender", 1 }, { "freeze", 1 } }
+
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
   -- GiveWeapons: three Hot Air Balloons, a Wind Changer and a Weapon Crate
   -- for the turn, whatever is left.
-  worm:ammo("bungee", { set = 3 })
-  worm:ammo("surrender", { set = 1 })
-  worm:ammo("freeze", { set = 1 })
+  for _, give in ipairs(TURN_GIVES) do
+    local slot = shared.slot(give[1])
+    if slot then
+      worm:ammo(slot, { set = give[2] })
+    end
+  end
 end
 
 local function on_death(event)

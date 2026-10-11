@@ -27,16 +27,17 @@ local PATCH_FIXES = {
   mortar = { c_homing_sprite = 250 },
 }
 
--- The slots Highlander claimed this match. Code that acts on a slot by its
--- stock name (a missile's sprite, a held weapon's sight) asks first: as a
--- component bundle only the placed weapons claim, and another scheme may put
--- WA's own weapon on the rest.
+-- The weapons Highlander claimed this match, by home slot. Code that acts on
+-- a weapon it looks up by slot (a missile's sprite, a held weapon's sight)
+-- asks first: as a component bundle only the placed weapons claim, and
+-- another scheme may put WA's own weapon, or another bundle's, on the rest.
 local owned = {}
-shared.owns = function(slot)
-  return owned[slot] == true
+shared.owns = function(home)
+  return home ~= nil and owned[home] == true
 end
 
--- One weapon's claim of its slot.
+-- One weapon's claim of the slot it sits on (`w.weapon` is its home slot,
+-- whose stock record it builds on).
 local function claim(w)
   owned[w.weapon] = true
   -- copy_from + name + named patch (stock base); was weps/<slot>.wep
@@ -56,6 +57,7 @@ local function claim(w)
   for key, value in pairs(w) do
     spec[key] = value
   end
+  spec.weapon = shared.slot(w.weapon)
   spec.hold = PX_HOLDS[w.weapon]
   wa.weapons.replace(spec)
 end
@@ -69,11 +71,12 @@ shared.claim_all = function()
   end
 end
 
--- A weapon component claims only the slot it was placed on.
-shared.claim = function(slot)
+-- A weapon component claims only the slot it was placed on: the weapon with
+-- home slot `home`, wherever shared.place put it.
+shared.claim = function(home)
   for _, list in ipairs({ PORTED, PX_ART }) do
     for _, w in ipairs(list) do
-      if w.weapon == slot then
+      if w.weapon == home then
         claim(w)
         return true
       end
@@ -126,7 +129,7 @@ do
   fires.old_woman = function(fire)
     local w = fire.worm
     local x, y = launch_point(fire.x, fire.y, w)
-    wa.weapons.launch({ weapon = "old_woman", owner = w,
+    wa.weapons.launch({ weapon = shared.slot("old_woman"), owner = w,
       x = x, y = y, vx = fire.vx, vy = fire.vy, fuse = 5000 })
   end
 end

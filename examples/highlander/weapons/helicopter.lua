@@ -100,7 +100,7 @@ local function heli_frame(worm)
   -- also where it is armed: once it fires, WA may already have cleared the
   -- worm's selection (its last shot of the Helicopter), and PX decides at
   -- FireFinal, from the weapon actually fired.
-  if worm.weapon == "jet_pack" and state == "prefiring" and not (h and h.flying) then
+  if worm.weapon == shared.slot("jet_pack") and state == "prefiring" and not (h and h.flying) then
     h = heli_of(worm)
     h.jumpin, h.armed = true, true
     h.jump_phase = h.jump_phase + 0.047

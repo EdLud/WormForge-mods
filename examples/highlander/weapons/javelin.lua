@@ -11,7 +11,7 @@ do
   -- Pre keeps the incoming speed even when this frame's stock collision
   -- destroys the missile. Post keeps acceleration for the following frame.
   wa.on.missile_frame(function(m)
-    if m.weapon == "prod" then speed[m.id] = { m.vx, m.vy } end
+    if m.weapon == shared.slot("prod") then speed[m.id] = { m.vx, m.vy } end
   end)
 
   -- How the part of the stamp inside the land fades: over 3 pixels from the

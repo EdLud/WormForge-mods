@@ -36,7 +36,7 @@ shared.chilli_bomb_explode = function(ev)
 end
 
 wa.on.worm_message(function(worm, msg)
-  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "super_banana" then
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == shared.slot("super_banana") then
     chilli_shooter = worm
   elseif msg == wa.msg.FRAME_FINISH and #chilli_pending > 0 then
     -- After the blast, as the Double Bazooka's second shell.
@@ -47,7 +47,7 @@ wa.on.worm_message(function(worm, msg)
         local vx = wa.random(-196608, 196608) / 65536
         local vy = wa.random(-655360, -458752) / 65536
         local id = wa.weapons.launch({
-          weapon = "super_banana", owner = owner, x = p.x, y = p.y, vx = vx, vy = vy,
+          weapon = shared.slot("super_banana"), owner = owner, x = p.x, y = p.y, vx = vx, vy = vy,
           damage = CHILLI_CHILD.damage, fuse = CHILLI_CHILD.fuse, countdown = 0,
           explode_on_space = true, explode_into = "fire",
           sprite = 0, -- PX leaves them WA's sprite 0; the chilli is drawn instead

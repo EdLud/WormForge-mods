@@ -108,7 +108,7 @@ do
     -- an unrelated parachute opening must not become a Hot Air Balloon.
     local equipped = b.equipped_weapon
     if not b.active and state == "parachuting" and not b.was_parachuting
-        and equipped == "bungee" then
+        and equipped == shared.slot("bungee") then
       b.active, b.ticks = true, 0
       b.x, b.y, b.vx, b.vy = worm.x, worm.y, worm.vx, worm.vy
       worm:take{ turn = "run" }

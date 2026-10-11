@@ -27,10 +27,14 @@ The scheme places all 67 of its weapons and deals them by the rules below
 (it says so in green in the Profile tab: it changes gameplay rules).
 
 Each weapon is also a component of its own (`hl.double_bazooka`,
-`hl.sniper_rifle`, ...), on the stock slot its code is written for. Another
-scheme can place some of them next to WA's own weapons, without Highlander's
-rules: they then keep the ammo, delay and crate odds that scheme gives them.
-Search for them in the Profile tab.
+`hl.sniper_rifle`, ...), and like any weapon it may go at any panel position.
+Its home slot (PX's layout: the Double Bazooka on the Bazooka's) is where it
+goes by default and how the code names it; `shared.slot(home)` is where it
+sits this match. Under the Highlander scheme, moved weapons are dealt where
+they are, and one taken out is not dealt. Another scheme can place some of
+them next to WA's own weapons, without Highlander's rules: they then keep the
+ammo, delay and crate odds that scheme gives them. Search for them in the
+Profile tab.
 
 ## Rules
 
@@ -537,8 +541,10 @@ module, in the order they run; the tests load it. In a match the bundle runs
 as components (`components/`): the scheme `hl.highlander` loads `scheme/`,
 and each placed weapon component runs `components/weapon.lua`, which loads
 the modules the placed weapons need (`components/loader.lua`, in
-`rules.lua`'s order) and claims its own slot. Code that acts on a slot by its
-stock name asks `shared.owns(slot)` first, so WA's own weapon on a slot
+`rules.lua`'s order) and claims the slot it was placed on. Every slot a
+module names is a weapon's home slot, looked up with `shared.slot` (and back
+with `shared.home`); code that acts on a weapon it finds by slot asks
+`shared.owns(home)` first, so WA's own weapon, or another bundle's, on a slot
 Highlander didn't claim is left alone.
 
 | Folder | Holds |

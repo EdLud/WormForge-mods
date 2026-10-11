@@ -273,7 +273,7 @@ local thrower
 wa.on.worm_message(function(worm, msg)
   if msg ~= wa.msg.FIRE_WEAPON then return end
   if tazed[target_key(worm)] then return "eat" end
-  if worm.weapon == "earthquake" then thrower = worm end
+  if worm.weapon == shared.slot("earthquake") then thrower = worm end
 end, { msgs = { wa.msg.FIRE_WEAPON } })
 
 local function zap_target(arc, pending)
