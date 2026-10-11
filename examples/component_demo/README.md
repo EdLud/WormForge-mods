@@ -36,6 +36,7 @@ worm whose turn starts heals 10 HP. A scheme with rules declares
 rules" in green when it is picked.
 
 **Big Mortar** (Mortar with damage 70, 3 at round start) is outside the preset.
-Type "mortar" in the Profile tab's search and tick it: it goes to F1 3. Both
-weapons were checked at F1 1 and F1 3, so moving one onto the other's position
-offers to swap them (or to replace the one there).
+Type "mortar" in the Profile tab's search and tick it: it goes to its default
+position, F1 3. Any weapon may go at any position (the stock slot there takes
+it), so moving one onto another's place offers to swap them or replace the one
+there.

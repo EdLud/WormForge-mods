@@ -818,7 +818,7 @@ do
     end
     for _, block in ipairs(blocks) do
       local id = block:match('id = "(hl%.[%w_]+)"')
-      local row, column = block:match('compatible_positions = %[{ row = "(%w+)", column = (%d+) }%]')
+      local row, column = block:match('default_position = { row = "(%w+)", column = (%d+) }')
       if id and row then component[slot_at(row, tonumber(column))] = id end
     end
     local presets = manifest:match("%[presets%.highlander%.weapons%](.*)$") or ""

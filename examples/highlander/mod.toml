@@ -30,7 +30,7 @@ type = "weapon"
 name = "Double Bazooka"
 description = "Highlander's Double Bazooka, on the bazooka slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F1", column = 1 }]
+default_position = { row = "F1", column = 1 }
 
 [[components]]
 id = "hl.igniter"
@@ -38,7 +38,7 @@ type = "weapon"
 name = "Igniter"
 description = "Highlander's Igniter, on the homing_missile slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F1", column = 2 }]
+default_position = { row = "F1", column = 2 }
 
 [[components]]
 id = "hl.s_m_a_r_t_bomb"
@@ -46,7 +46,7 @@ type = "weapon"
 name = "S.M.A.R.T Bomb"
 description = "Highlander's S.M.A.R.T Bomb, on the mortar slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F1", column = 3 }]
+default_position = { row = "F1", column = 3 }
 
 [[components]]
 id = "hl.blaster_worm"
@@ -54,7 +54,7 @@ type = "weapon"
 name = "Blaster Worm"
 description = "Highlander's Blaster Worm, on the homing_pigeon slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F1", column = 4 }]
+default_position = { row = "F1", column = 4 }
 
 [[components]]
 id = "hl.burning_sheep_launcher"
@@ -62,7 +62,7 @@ type = "weapon"
 name = "Burning Sheep Launcher"
 description = "Highlander's Burning Sheep Launcher, on the sheep_launcher slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F1", column = 5 }]
+default_position = { row = "F1", column = 5 }
 
 [[components]]
 id = "hl.sticky_bomb"
@@ -70,7 +70,7 @@ type = "weapon"
 name = "Sticky Bomb"
 description = "Highlander's Sticky Bomb, on the grenade slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F2", column = 1 }]
+default_position = { row = "F2", column = 1 }
 
 [[components]]
 id = "hl.windy_cluster"
@@ -78,7 +78,7 @@ type = "weapon"
 name = "Windy Cluster"
 description = "Highlander's Windy Cluster, on the cluster_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F2", column = 2 }]
+default_position = { row = "F2", column = 2 }
 
 [[components]]
 id = "hl.super_gravedigger"
@@ -86,7 +86,7 @@ type = "weapon"
 name = "Super Gravedigger"
 description = "Highlander's Super Gravedigger, on the banana_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F2", column = 3 }]
+default_position = { row = "F2", column = 3 }
 
 [[components]]
 id = "hl.thumper_nade"
@@ -94,7 +94,7 @@ type = "weapon"
 name = "Thumper Nade"
 description = "Highlander's Thumper Nade, on the battle_axe slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F2", column = 4 }]
+default_position = { row = "F2", column = 4 }
 
 [[components]]
 id = "hl.electric_grenade"
@@ -102,7 +102,7 @@ type = "weapon"
 name = "Electric Grenade"
 description = "Highlander's Electric Grenade, on the earthquake slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F2", column = 5 }]
+default_position = { row = "F2", column = 5 }
 
 [[components]]
 id = "hl.real_shotgun"
@@ -110,7 +110,7 @@ type = "weapon"
 name = "Real Shotgun"
 description = "Highlander's Real Shotgun, on the shotgun slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F3", column = 1 }]
+default_position = { row = "F3", column = 1 }
 
 [[components]]
 id = "hl.sniper_rifle"
@@ -118,7 +118,7 @@ type = "weapon"
 name = "Sniper Rifle"
 description = "Highlander's Sniper Rifle, on the handgun slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F3", column = 2 }]
+default_position = { row = "F3", column = 2 }
 
 [[components]]
 id = "hl.laser_gun"
@@ -126,7 +126,7 @@ type = "weapon"
 name = "Laser Gun"
 description = "Highlander's Laser Gun, on the uzi slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F3", column = 3 }]
+default_position = { row = "F3", column = 3 }
 
 [[components]]
 id = "hl.burst_rifle"
@@ -134,7 +134,7 @@ type = "weapon"
 name = "Burst Rifle"
 description = "Highlander's Burst Rifle, on the minigun slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F3", column = 4 }]
+default_position = { row = "F3", column = 4 }
 
 [[components]]
 id = "hl.shadow_bolt"
@@ -142,7 +142,7 @@ type = "weapon"
 name = "Shadow-Bolt"
 description = "Highlander's Shadow-Bolt, on the longbow slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F3", column = 5 }]
+default_position = { row = "F3", column = 5 }
 
 [[components]]
 id = "hl.fire_jump"
@@ -150,7 +150,7 @@ type = "weapon"
 name = "Fire Jump"
 description = "Highlander's Fire Jump, on the fire_punch slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F4", column = 1 }]
+default_position = { row = "F4", column = 1 }
 
 [[components]]
 id = "hl.sentry_laser"
@@ -158,7 +158,7 @@ type = "weapon"
 name = "Sentry Laser"
 description = "Highlander's Sentry Laser, on the dragon_ball slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F4", column = 2 }]
+default_position = { row = "F4", column = 2 }
 
 [[components]]
 id = "hl.sentry_gun"
@@ -166,7 +166,7 @@ type = "weapon"
 name = "Sentry Gun"
 description = "Highlander's Sentry Gun, on the kamikaze slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F4", column = 3 }]
+default_position = { row = "F4", column = 3 }
 
 [[components]]
 id = "hl.kamikaze_rocket"
@@ -174,7 +174,7 @@ type = "weapon"
 name = "Kamikaze Rocket"
 description = "Highlander's Kamikaze Rocket, on the suicide_bomber slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F4", column = 4 }]
+default_position = { row = "F4", column = 4 }
 
 [[components]]
 id = "hl.javelin"
@@ -182,7 +182,7 @@ type = "weapon"
 name = "Javelin"
 description = "Highlander's Javelin, on the prod slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F4", column = 5 }]
+default_position = { row = "F4", column = 5 }
 
 [[components]]
 id = "hl.dynamite"
@@ -190,7 +190,7 @@ type = "weapon"
 name = "Dynamite"
 description = "Highlander's Dynamite, on the dynamite slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F5", column = 1 }]
+default_position = { row = "F5", column = 1 }
 
 [[components]]
 id = "hl.nuke_rocket"
@@ -198,7 +198,7 @@ type = "weapon"
 name = "Nuke Rocket"
 description = "Highlander's Nuke Rocket, on the mine slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F5", column = 2 }]
+default_position = { row = "F5", column = 2 }
 
 [[components]]
 id = "hl.pogo_sheep"
@@ -206,7 +206,7 @@ type = "weapon"
 name = "Pogo Sheep"
 description = "Highlander's Pogo Sheep, on the sheep slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F5", column = 3 }]
+default_position = { row = "F5", column = 3 }
 
 [[components]]
 id = "hl.ghost_sheep"
@@ -214,7 +214,7 @@ type = "weapon"
 name = "Ghost Sheep"
 description = "Highlander's Ghost Sheep, on the aqua_sheep slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F5", column = 5 }]
+default_position = { row = "F5", column = 5 }
 
 [[components]]
 id = "hl.gravler"
@@ -222,7 +222,7 @@ type = "weapon"
 name = "Gravler"
 description = "Highlander's Gravler, on the mole_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F5", column = 6 }]
+default_position = { row = "F5", column = 6 }
 
 [[components]]
 id = "hl.mortar_strike"
@@ -230,7 +230,7 @@ type = "weapon"
 name = "Mortar Strike"
 description = "Highlander's Mortar Strike, on the air_strike slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F6", column = 1 }]
+default_position = { row = "F6", column = 1 }
 
 [[components]]
 id = "hl.lightning_strike"
@@ -238,7 +238,7 @@ type = "weapon"
 name = "Lightning Strike"
 description = "Highlander's Lightning Strike, on the napalm_strike slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F6", column = 2 }]
+default_position = { row = "F6", column = 2 }
 
 [[components]]
 id = "hl.pigeon_strike"
@@ -246,7 +246,7 @@ type = "weapon"
 name = "Pigeon Strike"
 description = "Highlander's Pigeon Strike, on the mail_strike slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F6", column = 3 }]
+default_position = { row = "F6", column = 3 }
 
 [[components]]
 id = "hl.gravler_strike"
@@ -254,7 +254,7 @@ type = "weapon"
 name = "Gravler Strike"
 description = "Highlander's Gravler Strike, on the mole_squadron slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F6", column = 5 }]
+default_position = { row = "F6", column = 5 }
 
 [[components]]
 id = "hl.blowtorch"
@@ -262,7 +262,7 @@ type = "weapon"
 name = "BlowTorch"
 description = "Highlander's BlowTorch, on the blow_torch slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F7", column = 1 }]
+default_position = { row = "F7", column = 1 }
 
 [[components]]
 id = "hl.super_drill"
@@ -270,7 +270,7 @@ type = "weapon"
 name = "Super Drill"
 description = "Highlander's Super Drill, on the pneumatic_drill slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F7", column = 2 }]
+default_position = { row = "F7", column = 2 }
 
 [[components]]
 id = "hl.baseball_bat"
@@ -278,7 +278,7 @@ type = "weapon"
 name = "Baseball Bat"
 description = "Highlander's Baseball Bat, on the girder slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F7", column = 3 }]
+default_position = { row = "F7", column = 3 }
 
 [[components]]
 id = "hl.electromagnet"
@@ -286,7 +286,7 @@ type = "weapon"
 name = "Electromagnet"
 description = "Highlander's Electromagnet, on the baseball_bat slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F7", column = 4 }]
+default_position = { row = "F7", column = 4 }
 
 [[components]]
 id = "hl.3_girder_pack"
@@ -294,7 +294,7 @@ type = "weapon"
 name = "3 Girder Pack"
 description = "Highlander's 3 Girder Pack, on the girder_pack slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F7", column = 5 }]
+default_position = { row = "F7", column = 5 }
 
 [[components]]
 id = "hl.jump"
@@ -302,7 +302,7 @@ type = "weapon"
 name = "Jump"
 description = "Highlander's Jump, on the ninja_rope slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F8", column = 1 }]
+default_position = { row = "F8", column = 1 }
 
 [[components]]
 id = "hl.hot_air_balloon"
@@ -310,7 +310,7 @@ type = "weapon"
 name = "Hot Air Balloon"
 description = "Highlander's Hot Air Balloon, on the bungee slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F8", column = 2 }]
+default_position = { row = "F8", column = 2 }
 
 [[components]]
 id = "hl.hang_glider"
@@ -318,7 +318,7 @@ type = "weapon"
 name = "Hang-Glider"
 description = "Highlander's Hang-Glider, on the parachute slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F8", column = 3 }]
+default_position = { row = "F8", column = 3 }
 
 [[components]]
 id = "hl.super_tele"
@@ -326,7 +326,7 @@ type = "weapon"
 name = "Super Tele"
 description = "Highlander's Super Tele, on the teleport slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F8", column = 4 }]
+default_position = { row = "F8", column = 4 }
 
 [[components]]
 id = "hl.portal_gun"
@@ -334,7 +334,7 @@ type = "weapon"
 name = "Portal Gun"
 description = "Highlander's Portal Gun, on the scales_of_justice slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F8", column = 5 }]
+default_position = { row = "F8", column = 5 }
 
 [[components]]
 id = "hl.chilli_bomb"
@@ -342,7 +342,7 @@ type = "weapon"
 name = "Chilli Bomb"
 description = "Highlander's Chilli Bomb, on the super_banana slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F9", column = 1 }]
+default_position = { row = "F9", column = 1 }
 
 [[components]]
 id = "hl.hellish_hand_grenade"
@@ -350,7 +350,7 @@ type = "weapon"
 name = "Hellish Hand-Grenade"
 description = "Highlander's Hellish Hand-Grenade, on the holy_grenade slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F9", column = 2 }]
+default_position = { row = "F9", column = 2 }
 
 [[components]]
 id = "hl.flame_thrower"
@@ -358,7 +358,7 @@ type = "weapon"
 name = "Flame Thrower"
 description = "Highlander's Flame Thrower, on the flame_thrower slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F9", column = 3 }]
+default_position = { row = "F9", column = 3 }
 
 [[components]]
 id = "hl.ferret"
@@ -366,7 +366,7 @@ type = "weapon"
 name = "Ferret"
 description = "Highlander's Ferret, on the salvation_army slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F9", column = 4 }]
+default_position = { row = "F9", column = 4 }
 
 [[components]]
 id = "hl.banana_express"
@@ -374,7 +374,7 @@ type = "weapon"
 name = "Banana Express"
 description = "Highlander's Banana Express, on the mb_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F9", column = 5 }]
+default_position = { row = "F9", column = 5 }
 
 [[components]]
 id = "hl.valyrian_fire"
@@ -382,7 +382,7 @@ type = "weapon"
 name = "Valyrian Fire"
 description = "Highlander's Valyrian Fire, on the petrol_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F10", column = 1 }]
+default_position = { row = "F10", column = 1 }
 
 [[components]]
 id = "hl.remote_roller"
@@ -390,7 +390,7 @@ type = "weapon"
 name = "Remote Roller"
 description = "Highlander's Remote Roller, on the skunk slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F10", column = 2 }]
+default_position = { row = "F10", column = 2 }
 
 [[components]]
 id = "hl.priceless_ming_vase"
@@ -398,7 +398,7 @@ type = "weapon"
 name = "Priceless Ming Vase"
 description = "Highlander's Priceless Ming Vase, on the ming_vase slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F10", column = 3 }]
+default_position = { row = "F10", column = 3 }
 
 [[components]]
 id = "hl.bowling_ball_strike"
@@ -406,7 +406,7 @@ type = "weapon"
 name = "Bowling Ball Strike"
 description = "Highlander's Bowling Ball Strike, on the sheep_strike slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F10", column = 4 }]
+default_position = { row = "F10", column = 4 }
 
 [[components]]
 id = "hl.thumper_nade_strike"
@@ -414,7 +414,7 @@ type = "weapon"
 name = "Thumper Nade Strike"
 description = "Highlander's Thumper Nade Strike, on the carpet_bomb slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F10", column = 5 }]
+default_position = { row = "F10", column = 5 }
 
 [[components]]
 id = "hl.cow_launcher"
@@ -422,7 +422,7 @@ type = "weapon"
 name = "Cow Launcher"
 description = "Highlander's Cow Launcher, on the mad_cow slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F11", column = 1 }]
+default_position = { row = "F11", column = 1 }
 
 [[components]]
 id = "hl.old_woman_launcher"
@@ -430,7 +430,7 @@ type = "weapon"
 name = "Old Woman Launcher"
 description = "Highlander's Old Woman Launcher, on the old_woman slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F11", column = 2 }]
+default_position = { row = "F11", column = 2 }
 
 [[components]]
 id = "hl.crate_strike"
@@ -438,7 +438,7 @@ type = "weapon"
 name = "Crate Strike"
 description = "Highlander's Crate Strike, on the donkey slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F11", column = 3 }]
+default_position = { row = "F11", column = 3 }
 
 [[components]]
 id = "hl.reinforcement"
@@ -446,7 +446,7 @@ type = "weapon"
 name = "Reinforcement"
 description = "Highlander's Reinforcement, on the nuclear_test slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F11", column = 4 }]
+default_position = { row = "F11", column = 4 }
 
 [[components]]
 id = "hl.ice_arrow"
@@ -454,7 +454,7 @@ type = "weapon"
 name = "Ice Arrow"
 description = "Highlander's Ice Arrow, on the armageddon slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F11", column = 5 }]
+default_position = { row = "F11", column = 5 }
 
 [[components]]
 id = "hl.skip_go_surrender"
@@ -462,7 +462,7 @@ type = "weapon"
 name = "Skip Go/Surrender"
 description = "Highlander's Skip Go/Surrender, on the skip_go slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F12", column = 1 }]
+default_position = { row = "F12", column = 1 }
 
 [[components]]
 id = "hl.wind_changer"
@@ -470,7 +470,7 @@ type = "weapon"
 name = "Wind Changer"
 description = "Highlander's Wind Changer, on the surrender slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F12", column = 2 }]
+default_position = { row = "F12", column = 2 }
 
 [[components]]
 id = "hl.weapon_crate"
@@ -478,7 +478,7 @@ type = "weapon"
 name = "Weapon Crate"
 description = "Highlander's Weapon Crate, on the freeze slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F12", column = 4 }]
+default_position = { row = "F12", column = 4 }
 
 [[components]]
 id = "hl.cluster_bomb"
@@ -486,7 +486,7 @@ type = "weapon"
 name = "Cluster Bomb"
 description = "Highlander's Cluster Bomb, on the magic_bullet slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "F12", column = 5 }]
+default_position = { row = "F12", column = 5 }
 
 [[components]]
 id = "hl.helicopter"
@@ -494,7 +494,7 @@ type = "weapon"
 name = "Helicopter"
 description = "Highlander's Helicopter, on the jet_pack slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 1 }]
+default_position = { row = "utility", column = 1 }
 
 [[components]]
 id = "hl.gravity_control"
@@ -502,7 +502,7 @@ type = "weapon"
 name = "Gravity Control"
 description = "Highlander's Gravity Control, on the low_gravity slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 2 }]
+default_position = { row = "utility", column = 2 }
 
 [[components]]
 id = "hl.fast_walk"
@@ -510,7 +510,7 @@ type = "weapon"
 name = "Fast Walk"
 description = "Highlander's Fast Walk, on the fast_walk slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 3 }]
+default_position = { row = "utility", column = 3 }
 
 [[components]]
 id = "hl.swim_suit"
@@ -518,7 +518,7 @@ type = "weapon"
 name = "Swim Suit"
 description = "Highlander's Swim Suit, on the laser_sight slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 4 }]
+default_position = { row = "utility", column = 4 }
 
 [[components]]
 id = "hl.teleport"
@@ -526,7 +526,7 @@ type = "weapon"
 name = "Teleport"
 description = "Highlander's Teleport, on the invisibility slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 5 }]
+default_position = { row = "utility", column = 5 }
 
 [[components]]
 id = "hl.skunk"
@@ -534,7 +534,7 @@ type = "weapon"
 name = "Skunk"
 description = "Highlander's Skunk, on the damage_x2 slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 6 }]
+default_position = { row = "utility", column = 6 }
 
 [[components]]
 id = "hl.crate_spy"
@@ -542,7 +542,7 @@ type = "weapon"
 name = "Crate Spy"
 description = "Highlander's Crate Spy, on the crate_spy slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 7 }]
+default_position = { row = "utility", column = 7 }
 
 [[components]]
 id = "hl.mole_bomb"
@@ -550,7 +550,7 @@ type = "weapon"
 name = "Mole Bomb"
 description = "Highlander's Mole Bomb, on the double_turn_time slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 8 }]
+default_position = { row = "utility", column = 8 }
 
 [[components]]
 id = "hl.crate_shower"
@@ -558,7 +558,7 @@ type = "weapon"
 name = "Crate Shower"
 description = "Highlander's Crate Shower, on the crate_shower slot."
 entry = "components/weapon.lua"
-compatible_positions = [{ row = "utility", column = 9 }]
+default_position = { row = "utility", column = 9 }
 
 # Every slot: Highlander's weapons, and WA's own on the three it leaves alone.
 [presets.highlander.weapons]
