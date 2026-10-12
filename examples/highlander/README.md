@@ -115,14 +115,14 @@ Super Tele places it immediately and plays its start sound at the destination.
 |---|---|---|
 | dynamite | Dynamite | |
 | blow_torch | BlowTorch | |
-| flame_thrower | Flame Thrower | |
+| flame_thrower | Flame Thrower | the scheme places WA's own (`stock.flame_thrower`) |
 | girder | Baseball Bat | stock bat icon |
 | girder_pack | 3 Girder Pack | three girders, not five |
-| fast_walk | Fast Walk | |
-| crate_spy | Crate Spy | |
-| crate_shower | Crate Shower | |
+| fast_walk | Fast Walk | WA's own (`stock.fast_walk`) |
+| crate_spy | Crate Spy | WA's own (`stock.crate_spy`) |
+| crate_shower | Crate Shower | WA's own (`stock.crate_shower`) |
 | magic_bullet | Cluster Bomb | stock cluster icon |
-| invisibility | Teleport | stock teleport icon |
+| invisibility | Teleport | WA's own (`stock.teleport`) on Invisibility's place |
 | damage_x2 | Skunk | stock skunk icon |
 | double_turn_time | Mole Bomb | stock mole icon |
 | ming_vase | Priceless Ming Vase | the stock vase under PX's name |

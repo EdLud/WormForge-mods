@@ -1,8 +1,9 @@
 # Highlander, on Project X's weapon layout, as a component bundle: each of
 # its weapons is a component a scheme can place (the Profile tab lists them),
 # and Highlander itself is the scheme hl.highlander, which places them all
-# and deals them with Project X's rules (scheme/). Each weapon sits on the
-# stock slot its code is written for, so it goes only there.
+# and deals them with Project X's rules (scheme/). A weapon goes on any
+# panel place. Where PX uses WA's own weapon unchanged (Teleport, Fast Walk,
+# Crate Spy, Crate Shower, Flame Thrower) the preset places the stock one.
 #
 # rules.lua is the same pack in one piece, as the Lua tests load it.
 id = "example.highlander"
@@ -36,7 +37,7 @@ preset = "highlander"
 id = "hl.double_bazooka"
 type = "weapon"
 name = "Double Bazooka"
-description = "Highlander's Double Bazooka, on the bazooka slot."
+description = "Highlander's Double Bazooka."
 entry = "components/weapon.lua"
 icon = "sprites/double_bazooka/double_bazooka_ico.png"
 default_position = { row = "F1", column = 1 }
@@ -45,7 +46,7 @@ default_position = { row = "F1", column = 1 }
 id = "hl.igniter"
 type = "weapon"
 name = "Igniter"
-description = "Highlander's Igniter, on the homing_missile slot."
+description = "Highlander's Igniter."
 entry = "components/weapon.lua"
 icon = "sprites/igniter/igniter_ico.png"
 default_position = { row = "F1", column = 2 }
@@ -54,7 +55,7 @@ default_position = { row = "F1", column = 2 }
 id = "hl.s_m_a_r_t_bomb"
 type = "weapon"
 name = "S.M.A.R.T Bomb"
-description = "Highlander's S.M.A.R.T Bomb, on the mortar slot."
+description = "Highlander's S.M.A.R.T Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/smart_bomb/smart_ico.png"
 default_position = { row = "F1", column = 3 }
@@ -63,7 +64,7 @@ default_position = { row = "F1", column = 3 }
 id = "hl.blaster_worm"
 type = "weapon"
 name = "Blaster Worm"
-description = "Highlander's Blaster Worm, on the homing_pigeon slot."
+description = "Highlander's Blaster Worm."
 entry = "components/weapon.lua"
 icon = "sprites/blaster_worm/bworm_ico.png"
 default_position = { row = "F1", column = 4 }
@@ -72,7 +73,7 @@ default_position = { row = "F1", column = 4 }
 id = "hl.burning_sheep_launcher"
 type = "weapon"
 name = "Burning Sheep Launcher"
-description = "Highlander's Burning Sheep Launcher, on the sheep_launcher slot."
+description = "Highlander's Burning Sheep Launcher."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/burning_sheep_launcher_ico.png"
 default_position = { row = "F1", column = 5 }
@@ -81,7 +82,7 @@ default_position = { row = "F1", column = 5 }
 id = "hl.sticky_bomb"
 type = "weapon"
 name = "Sticky Bomb"
-description = "Highlander's Sticky Bomb, on the grenade slot."
+description = "Highlander's Sticky Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/sticky_bomb/sbico.png"
 default_position = { row = "F2", column = 1 }
@@ -90,7 +91,7 @@ default_position = { row = "F2", column = 1 }
 id = "hl.windy_cluster"
 type = "weapon"
 name = "Windy Cluster"
-description = "Highlander's Windy Cluster, on the cluster_bomb slot."
+description = "Highlander's Windy Cluster."
 entry = "components/weapon.lua"
 icon = "sprites/windy_cluster/ico_windyc.png"
 default_position = { row = "F2", column = 2 }
@@ -99,7 +100,7 @@ default_position = { row = "F2", column = 2 }
 id = "hl.super_gravedigger"
 type = "weapon"
 name = "Super Gravedigger"
-description = "Highlander's Super Gravedigger, on the banana_bomb slot."
+description = "Highlander's Super Gravedigger."
 entry = "components/weapon.lua"
 icon = "sprites/super_gravedigger/sgrave_ico.png"
 default_position = { row = "F2", column = 3 }
@@ -108,7 +109,7 @@ default_position = { row = "F2", column = 3 }
 id = "hl.thumper_nade"
 type = "weapon"
 name = "Thumper Nade"
-description = "Highlander's Thumper Nade, on the battle_axe slot."
+description = "Highlander's Thumper Nade."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpern_ico.png"
 default_position = { row = "F2", column = 4 }
@@ -117,7 +118,7 @@ default_position = { row = "F2", column = 4 }
 id = "hl.electric_grenade"
 type = "weapon"
 name = "Electric Grenade"
-description = "Highlander's Electric Grenade, on the earthquake slot."
+description = "Highlander's Electric Grenade."
 entry = "components/weapon.lua"
 icon = "sprites/electric_grenade/icon.png"
 default_position = { row = "F2", column = 5 }
@@ -126,7 +127,7 @@ default_position = { row = "F2", column = 5 }
 id = "hl.real_shotgun"
 type = "weapon"
 name = "Real Shotgun"
-description = "Highlander's Real Shotgun, on the shotgun slot."
+description = "Highlander's Real Shotgun."
 entry = "components/weapon.lua"
 icon = "sprites/real_shotgun/real_shotgun_ico.png"
 default_position = { row = "F3", column = 1 }
@@ -135,7 +136,7 @@ default_position = { row = "F3", column = 1 }
 id = "hl.sniper_rifle"
 type = "weapon"
 name = "Sniper Rifle"
-description = "Highlander's Sniper Rifle, on the handgun slot."
+description = "Highlander's Sniper Rifle."
 entry = "components/weapon.lua"
 icon = "sprites/sniper_rifle/srico.png"
 default_position = { row = "F3", column = 2 }
@@ -144,7 +145,7 @@ default_position = { row = "F3", column = 2 }
 id = "hl.laser_gun"
 type = "weapon"
 name = "Laser Gun"
-description = "Highlander's Laser Gun, on the uzi slot."
+description = "Highlander's Laser Gun."
 entry = "components/weapon.lua"
 icon = "sprites/laser_gun/ico_lasergun.png"
 default_position = { row = "F3", column = 3 }
@@ -153,7 +154,7 @@ default_position = { row = "F3", column = 3 }
 id = "hl.burst_rifle"
 type = "weapon"
 name = "Burst Rifle"
-description = "Highlander's Burst Rifle, on the minigun slot."
+description = "Highlander's Burst Rifle."
 entry = "components/weapon.lua"
 icon = "sprites/burst_rifle/ico_burstr.png"
 default_position = { row = "F3", column = 4 }
@@ -162,7 +163,7 @@ default_position = { row = "F3", column = 4 }
 id = "hl.shadow_bolt"
 type = "weapon"
 name = "Shadow-Bolt"
-description = "Highlander's Shadow-Bolt, on the longbow slot."
+description = "Highlander's Shadow-Bolt."
 entry = "components/weapon.lua"
 icon = "sprites/shadow_bolt/ico_shadowb.png"
 default_position = { row = "F3", column = 5 }
@@ -171,7 +172,7 @@ default_position = { row = "F3", column = 5 }
 id = "hl.fire_jump"
 type = "weapon"
 name = "Fire Jump"
-description = "Highlander's Fire Jump, on the fire_punch slot."
+description = "Highlander's Fire Jump."
 entry = "components/weapon.lua"
 icon = "sprites/fire_jump/fire_jump_ico.png"
 default_position = { row = "F4", column = 1 }
@@ -180,7 +181,7 @@ default_position = { row = "F4", column = 1 }
 id = "hl.sentry_laser"
 type = "weapon"
 name = "Sentry Laser"
-description = "Highlander's Sentry Laser, on the dragon_ball slot."
+description = "Highlander's Sentry Laser."
 entry = "components/weapon.lua"
 icon = "sprites/sentry_laser/icon.png"
 default_position = { row = "F4", column = 2 }
@@ -189,7 +190,7 @@ default_position = { row = "F4", column = 2 }
 id = "hl.sentry_gun"
 type = "weapon"
 name = "Sentry Gun"
-description = "Highlander's Sentry Gun, on the kamikaze slot."
+description = "Highlander's Sentry Gun."
 entry = "components/weapon.lua"
 icon = "sprites/sentry_gun/icon.png"
 default_position = { row = "F4", column = 3 }
@@ -198,7 +199,7 @@ default_position = { row = "F4", column = 3 }
 id = "hl.kamikaze_rocket"
 type = "weapon"
 name = "Kamikaze Rocket"
-description = "Highlander's Kamikaze Rocket, on the suicide_bomber slot."
+description = "Highlander's Kamikaze Rocket."
 entry = "components/weapon.lua"
 icon = "sprites/kamikaze_rocket/icon.png"
 default_position = { row = "F4", column = 4 }
@@ -207,7 +208,7 @@ default_position = { row = "F4", column = 4 }
 id = "hl.javelin"
 type = "weapon"
 name = "Javelin"
-description = "Highlander's Javelin, on the prod slot."
+description = "Highlander's Javelin."
 entry = "components/weapon.lua"
 icon = "sprites/javelin/icon.png"
 default_position = { row = "F4", column = 5 }
@@ -216,7 +217,7 @@ default_position = { row = "F4", column = 5 }
 id = "hl.dynamite"
 type = "weapon"
 name = "Dynamite"
-description = "Highlander's Dynamite, on the dynamite slot."
+description = "Highlander's Dynamite."
 entry = "components/weapon.lua"
 icon = "dynamite"
 default_position = { row = "F5", column = 1 }
@@ -225,7 +226,7 @@ default_position = { row = "F5", column = 1 }
 id = "hl.nuke_rocket"
 type = "weapon"
 name = "Nuke Rocket"
-description = "Highlander's Nuke Rocket, on the mine slot."
+description = "Highlander's Nuke Rocket."
 entry = "components/weapon.lua"
 icon = "sprites/nuke_rocket/nuke_rocket_ico.png"
 default_position = { row = "F5", column = 2 }
@@ -234,7 +235,7 @@ default_position = { row = "F5", column = 2 }
 id = "hl.pogo_sheep"
 type = "weapon"
 name = "Pogo Sheep"
-description = "Highlander's Pogo Sheep, on the sheep slot."
+description = "Highlander's Pogo Sheep."
 entry = "components/weapon.lua"
 icon = "sprites/pogo_sheep/psheep_ico.png"
 default_position = { row = "F5", column = 3 }
@@ -243,7 +244,7 @@ default_position = { row = "F5", column = 3 }
 id = "hl.ghost_sheep"
 type = "weapon"
 name = "Ghost Sheep"
-description = "Highlander's Ghost Sheep, on the aqua_sheep slot."
+description = "Highlander's Ghost Sheep."
 entry = "components/weapon.lua"
 icon = "sprites/ghost_sheep/ghost_sheep_ico.png"
 default_position = { row = "F5", column = 5 }
@@ -252,7 +253,7 @@ default_position = { row = "F5", column = 5 }
 id = "hl.gravler"
 type = "weapon"
 name = "Gravler"
-description = "Highlander's Gravler, on the mole_bomb slot."
+description = "Highlander's Gravler."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravler_ico.png"
 default_position = { row = "F5", column = 6 }
@@ -261,7 +262,7 @@ default_position = { row = "F5", column = 6 }
 id = "hl.mortar_strike"
 type = "weapon"
 name = "Mortar Strike"
-description = "Highlander's Mortar Strike, on the air_strike slot."
+description = "Highlander's Mortar Strike."
 entry = "components/weapon.lua"
 icon = "sprites/mortar_strike/ico_mortarst.png"
 default_position = { row = "F6", column = 1 }
@@ -270,7 +271,7 @@ default_position = { row = "F6", column = 1 }
 id = "hl.lightning_strike"
 type = "weapon"
 name = "Lightning Strike"
-description = "Highlander's Lightning Strike, on the napalm_strike slot."
+description = "Highlander's Lightning Strike."
 entry = "components/weapon.lua"
 icon = "sprites/lightning/icon.png"
 default_position = { row = "F6", column = 2 }
@@ -279,7 +280,7 @@ default_position = { row = "F6", column = 2 }
 id = "hl.pigeon_strike"
 type = "weapon"
 name = "Pigeon Strike"
-description = "Highlander's Pigeon Strike, on the mail_strike slot."
+description = "Highlander's Pigeon Strike."
 entry = "components/weapon.lua"
 icon = "sprites/pigeon_strike/ico_pigeonst.png"
 default_position = { row = "F6", column = 3 }
@@ -288,7 +289,7 @@ default_position = { row = "F6", column = 3 }
 id = "hl.gravler_strike"
 type = "weapon"
 name = "Gravler Strike"
-description = "Highlander's Gravler Strike, on the mole_squadron slot."
+description = "Highlander's Gravler Strike."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravlerst_ico.png"
 default_position = { row = "F6", column = 5 }
@@ -297,7 +298,7 @@ default_position = { row = "F6", column = 5 }
 id = "hl.blowtorch"
 type = "weapon"
 name = "BlowTorch"
-description = "Highlander's BlowTorch, on the blow_torch slot."
+description = "Highlander's BlowTorch."
 entry = "components/weapon.lua"
 icon = "blow_torch"
 default_position = { row = "F7", column = 1 }
@@ -306,7 +307,7 @@ default_position = { row = "F7", column = 1 }
 id = "hl.super_drill"
 type = "weapon"
 name = "Super Drill"
-description = "Highlander's Super Drill, on the pneumatic_drill slot."
+description = "Highlander's Super Drill."
 entry = "components/weapon.lua"
 icon = "sprites/super_drill/ico_superdrill.png"
 default_position = { row = "F7", column = 2 }
@@ -315,7 +316,7 @@ default_position = { row = "F7", column = 2 }
 id = "hl.baseball_bat"
 type = "weapon"
 name = "Baseball Bat"
-description = "Highlander's Baseball Bat, on the girder slot."
+description = "Highlander's Baseball Bat."
 entry = "components/weapon.lua"
 icon = "baseball_bat"
 default_position = { row = "F7", column = 3 }
@@ -324,7 +325,7 @@ default_position = { row = "F7", column = 3 }
 id = "hl.electromagnet"
 type = "weapon"
 name = "Electromagnet"
-description = "Highlander's Electromagnet, on the baseball_bat slot."
+description = "Highlander's Electromagnet."
 entry = "components/weapon.lua"
 icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
@@ -333,7 +334,7 @@ default_position = { row = "F7", column = 4 }
 id = "hl.3_girder_pack"
 type = "weapon"
 name = "3 Girder Pack"
-description = "Highlander's 3 Girder Pack, on the girder_pack slot."
+description = "Highlander's 3 Girder Pack."
 entry = "components/weapon.lua"
 icon = "girder_pack"
 default_position = { row = "F7", column = 5 }
@@ -342,7 +343,7 @@ default_position = { row = "F7", column = 5 }
 id = "hl.jump"
 type = "weapon"
 name = "Jump"
-description = "Highlander's Jump, on the ninja_rope slot."
+description = "Highlander's Jump."
 entry = "components/weapon.lua"
 icon = "sprites/jump/jumpic.png"
 default_position = { row = "F8", column = 1 }
@@ -351,7 +352,7 @@ default_position = { row = "F8", column = 1 }
 id = "hl.hot_air_balloon"
 type = "weapon"
 name = "Hot Air Balloon"
-description = "Highlander's Hot Air Balloon, on the bungee slot."
+description = "Highlander's Hot Air Balloon."
 entry = "components/weapon.lua"
 icon = "sprites/balloon/balloon_icon.png"
 default_position = { row = "F8", column = 2 }
@@ -360,7 +361,7 @@ default_position = { row = "F8", column = 2 }
 id = "hl.hang_glider"
 type = "weapon"
 name = "Hang-Glider"
-description = "Highlander's Hang-Glider, on the parachute slot."
+description = "Highlander's Hang-Glider."
 entry = "components/weapon.lua"
 icon = "sprites/hang_glider/ico_glider.png"
 default_position = { row = "F8", column = 3 }
@@ -369,7 +370,7 @@ default_position = { row = "F8", column = 3 }
 id = "hl.super_tele"
 type = "weapon"
 name = "Super Tele"
-description = "Highlander's Super Tele, on the teleport slot."
+description = "Highlander's Super Tele."
 entry = "components/weapon.lua"
 icon = "sprites/super_tele/icon.png"
 default_position = { row = "F8", column = 4 }
@@ -378,7 +379,7 @@ default_position = { row = "F8", column = 4 }
 id = "hl.portal_gun"
 type = "weapon"
 name = "Portal Gun"
-description = "Highlander's Portal Gun, on the scales_of_justice slot."
+description = "Highlander's Portal Gun."
 entry = "components/weapon.lua"
 icon = "sprites/portal_gun/icon.png"
 default_position = { row = "F8", column = 5 }
@@ -387,7 +388,7 @@ default_position = { row = "F8", column = 5 }
 id = "hl.chilli_bomb"
 type = "weapon"
 name = "Chilli Bomb"
-description = "Highlander's Chilli Bomb, on the super_banana slot."
+description = "Highlander's Chilli Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/chilli_bomb/chilli_ico.png"
 default_position = { row = "F9", column = 1 }
@@ -396,25 +397,16 @@ default_position = { row = "F9", column = 1 }
 id = "hl.hellish_hand_grenade"
 type = "weapon"
 name = "Hellish Hand-Grenade"
-description = "Highlander's Hellish Hand-Grenade, on the holy_grenade slot."
+description = "Highlander's Hellish Hand-Grenade."
 entry = "components/weapon.lua"
 icon = "sprites/hellish/hhh_ico.png"
 default_position = { row = "F9", column = 2 }
 
 [[components]]
-id = "hl.flame_thrower"
-type = "weapon"
-name = "Flame Thrower"
-description = "Highlander's Flame Thrower, on the flame_thrower slot."
-entry = "components/weapon.lua"
-icon = "flame_thrower"
-default_position = { row = "F9", column = 3 }
-
-[[components]]
 id = "hl.ferret"
 type = "weapon"
 name = "Ferret"
-description = "Highlander's Ferret, on the salvation_army slot."
+description = "Highlander's Ferret."
 entry = "components/weapon.lua"
 icon = "sprites/ferret/icon.png"
 default_position = { row = "F9", column = 4 }
@@ -423,7 +415,7 @@ default_position = { row = "F9", column = 4 }
 id = "hl.banana_express"
 type = "weapon"
 name = "Banana Express"
-description = "Highlander's Banana Express, on the mb_bomb slot."
+description = "Highlander's Banana Express."
 entry = "components/weapon.lua"
 icon = "sprites/banana_express/banana_express_ico.png"
 default_position = { row = "F9", column = 5 }
@@ -432,7 +424,7 @@ default_position = { row = "F9", column = 5 }
 id = "hl.valyrian_fire"
 type = "weapon"
 name = "Valyrian Fire"
-description = "Highlander's Valyrian Fire, on the petrol_bomb slot."
+description = "Highlander's Valyrian Fire."
 entry = "components/weapon.lua"
 icon = "sprites/valyrian_fire/icon.png"
 default_position = { row = "F10", column = 1 }
@@ -441,7 +433,7 @@ default_position = { row = "F10", column = 1 }
 id = "hl.remote_roller"
 type = "weapon"
 name = "Remote Roller"
-description = "Highlander's Remote Roller, on the skunk slot."
+description = "Highlander's Remote Roller."
 entry = "components/weapon.lua"
 icon = "sprites/remote_roller/rroller_ico.png"
 default_position = { row = "F10", column = 2 }
@@ -450,7 +442,7 @@ default_position = { row = "F10", column = 2 }
 id = "hl.priceless_ming_vase"
 type = "weapon"
 name = "Priceless Ming Vase"
-description = "Highlander's Priceless Ming Vase, on the ming_vase slot."
+description = "Highlander's Priceless Ming Vase."
 entry = "components/weapon.lua"
 icon = "ming_vase"
 default_position = { row = "F10", column = 3 }
@@ -459,7 +451,7 @@ default_position = { row = "F10", column = 3 }
 id = "hl.bowling_ball_strike"
 type = "weapon"
 name = "Bowling Ball Strike"
-description = "Highlander's Bowling Ball Strike, on the sheep_strike slot."
+description = "Highlander's Bowling Ball Strike."
 entry = "components/weapon.lua"
 icon = "sprites/bowling_ball/strike_icon.png"
 default_position = { row = "F10", column = 4 }
@@ -468,7 +460,7 @@ default_position = { row = "F10", column = 4 }
 id = "hl.thumper_nade_strike"
 type = "weapon"
 name = "Thumper Nade Strike"
-description = "Highlander's Thumper Nade Strike, on the carpet_bomb slot."
+description = "Highlander's Thumper Nade Strike."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpernst_ico.png"
 default_position = { row = "F10", column = 5 }
@@ -477,7 +469,7 @@ default_position = { row = "F10", column = 5 }
 id = "hl.cow_launcher"
 type = "weapon"
 name = "Cow Launcher"
-description = "Highlander's Cow Launcher, on the mad_cow slot."
+description = "Highlander's Cow Launcher."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/cow_launcher_ico.png"
 default_position = { row = "F11", column = 1 }
@@ -486,7 +478,7 @@ default_position = { row = "F11", column = 1 }
 id = "hl.old_woman_launcher"
 type = "weapon"
 name = "Old Woman Launcher"
-description = "Highlander's Old Woman Launcher, on the old_woman slot."
+description = "Highlander's Old Woman Launcher."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/old_woman_launcher_ico.png"
 default_position = { row = "F11", column = 2 }
@@ -495,7 +487,7 @@ default_position = { row = "F11", column = 2 }
 id = "hl.crate_strike"
 type = "weapon"
 name = "Crate Strike"
-description = "Highlander's Crate Strike, on the donkey slot."
+description = "Highlander's Crate Strike."
 entry = "components/weapon.lua"
 icon = "sprites/crate_strike/icon.png"
 default_position = { row = "F11", column = 3 }
@@ -504,7 +496,7 @@ default_position = { row = "F11", column = 3 }
 id = "hl.reinforcement"
 type = "weapon"
 name = "Reinforcement"
-description = "Highlander's Reinforcement, on the nuclear_test slot."
+description = "Highlander's Reinforcement."
 entry = "components/weapon.lua"
 icon = "sprites/reinforcement/icon.png"
 default_position = { row = "F11", column = 4 }
@@ -513,7 +505,7 @@ default_position = { row = "F11", column = 4 }
 id = "hl.ice_arrow"
 type = "weapon"
 name = "Ice Arrow"
-description = "Highlander's Ice Arrow, on the armageddon slot."
+description = "Highlander's Ice Arrow."
 entry = "components/weapon.lua"
 icon = "sprites/ice_arrow/icon.png"
 default_position = { row = "F11", column = 5 }
@@ -522,7 +514,7 @@ default_position = { row = "F11", column = 5 }
 id = "hl.skip_go_surrender"
 type = "weapon"
 name = "Skip Go/Surrender"
-description = "Highlander's Skip Go/Surrender, on the skip_go slot."
+description = "Highlander's Skip Go/Surrender."
 entry = "components/weapon.lua"
 icon = "sprites/skip_go/icon.png"
 default_position = { row = "F12", column = 1 }
@@ -531,7 +523,7 @@ default_position = { row = "F12", column = 1 }
 id = "hl.wind_changer"
 type = "weapon"
 name = "Wind Changer"
-description = "Highlander's Wind Changer, on the surrender slot."
+description = "Highlander's Wind Changer."
 entry = "components/weapon.lua"
 icon = "sprites/wind_changer/ico_windchanger.png"
 default_position = { row = "F12", column = 2 }
@@ -540,7 +532,7 @@ default_position = { row = "F12", column = 2 }
 id = "hl.weapon_crate"
 type = "weapon"
 name = "Weapon Crate"
-description = "Highlander's Weapon Crate, on the freeze slot."
+description = "Highlander's Weapon Crate."
 entry = "components/weapon.lua"
 icon = "sprites/weapon_crate/icon.png"
 default_position = { row = "F12", column = 4 }
@@ -549,7 +541,7 @@ default_position = { row = "F12", column = 4 }
 id = "hl.cluster_bomb"
 type = "weapon"
 name = "Cluster Bomb"
-description = "Highlander's Cluster Bomb, on the magic_bullet slot."
+description = "Highlander's Cluster Bomb."
 entry = "components/weapon.lua"
 icon = "cluster_bomb"
 default_position = { row = "F12", column = 5 }
@@ -558,7 +550,7 @@ default_position = { row = "F12", column = 5 }
 id = "hl.helicopter"
 type = "weapon"
 name = "Helicopter"
-description = "Highlander's Helicopter, on the jet_pack slot."
+description = "Highlander's Helicopter."
 entry = "components/weapon.lua"
 icon = "sprites/helicopter/heli_ico.png"
 default_position = { row = "utility", column = 1 }
@@ -567,73 +559,37 @@ default_position = { row = "utility", column = 1 }
 id = "hl.gravity_control"
 type = "weapon"
 name = "Gravity Control"
-description = "Highlander's Gravity Control, on the low_gravity slot."
+description = "Highlander's Gravity Control."
 entry = "components/weapon.lua"
 icon = "sprites/gravity_control/gravity_control_ico.png"
 default_position = { row = "utility", column = 2 }
 
 [[components]]
-id = "hl.fast_walk"
-type = "weapon"
-name = "Fast Walk"
-description = "Highlander's Fast Walk, on the fast_walk slot."
-entry = "components/weapon.lua"
-icon = "fast_walk"
-default_position = { row = "utility", column = 3 }
-
-[[components]]
 id = "hl.swim_suit"
 type = "weapon"
 name = "Swim Suit"
-description = "Highlander's Swim Suit, on the laser_sight slot."
+description = "Highlander's Swim Suit."
 entry = "components/weapon.lua"
 icon = "sprites/swim_suit/ico_swimsuit.png"
 default_position = { row = "utility", column = 4 }
 
 [[components]]
-id = "hl.teleport"
-type = "weapon"
-name = "Teleport"
-description = "Highlander's Teleport, on the invisibility slot."
-entry = "components/weapon.lua"
-icon = "teleport"
-default_position = { row = "utility", column = 5 }
-
-[[components]]
 id = "hl.skunk"
 type = "weapon"
 name = "Skunk"
-description = "Highlander's Skunk, on the damage_x2 slot."
+description = "Highlander's Skunk."
 entry = "components/weapon.lua"
 icon = "skunk"
 default_position = { row = "utility", column = 6 }
 
 [[components]]
-id = "hl.crate_spy"
-type = "weapon"
-name = "Crate Spy"
-description = "Highlander's Crate Spy, on the crate_spy slot."
-entry = "components/weapon.lua"
-icon = "crate_spy"
-default_position = { row = "utility", column = 7 }
-
-[[components]]
 id = "hl.mole_bomb"
 type = "weapon"
 name = "Mole Bomb"
-description = "Highlander's Mole Bomb, on the double_turn_time slot."
+description = "Highlander's Mole Bomb."
 entry = "components/weapon.lua"
 icon = "mole_bomb"
 default_position = { row = "utility", column = 8 }
-
-[[components]]
-id = "hl.crate_shower"
-type = "weapon"
-name = "Crate Shower"
-description = "Highlander's Crate Shower, on the crate_shower slot."
-entry = "components/weapon.lua"
-icon = "crate_shower"
-default_position = { row = "utility", column = 9 }
 
 # Every slot: Highlander's weapons, and WA's own on the three it leaves alone.
 [presets.highlander.weapons]
@@ -680,7 +636,7 @@ default_position = { row = "utility", column = 9 }
 "hl.portal_gun" = { row = "F8", column = 5 }
 "hl.chilli_bomb" = { row = "F9", column = 1 }
 "hl.hellish_hand_grenade" = { row = "F9", column = 2 }
-"hl.flame_thrower" = { row = "F9", column = 3 }
+"stock.flame_thrower" = { row = "F9", column = 3 }
 "hl.ferret" = { row = "F9", column = 4 }
 "hl.banana_express" = { row = "F9", column = 5 }
 "hl.valyrian_fire" = { row = "F10", column = 1 }
@@ -700,10 +656,10 @@ default_position = { row = "utility", column = 9 }
 "hl.cluster_bomb" = { row = "F12", column = 5 }
 "hl.helicopter" = { row = "utility", column = 1 }
 "hl.gravity_control" = { row = "utility", column = 2 }
-"hl.fast_walk" = { row = "utility", column = 3 }
+"stock.fast_walk" = { row = "utility", column = 3 }
 "hl.swim_suit" = { row = "utility", column = 4 }
-"hl.teleport" = { row = "utility", column = 5 }
+"stock.teleport" = { row = "utility", column = 5 }
 "hl.skunk" = { row = "utility", column = 6 }
-"hl.crate_spy" = { row = "utility", column = 7 }
+"stock.crate_spy" = { row = "utility", column = 7 }
 "hl.mole_bomb" = { row = "utility", column = 8 }
-"hl.crate_shower" = { row = "utility", column = 9 }
+"stock.crate_shower" = { row = "utility", column = 9 }

@@ -825,13 +825,23 @@ do
     for id, row, column in presets:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
       preset[slot_at(row, tonumber(column))] = id
     end
+    -- Where PX uses WA's weapon unchanged, the scheme places the stock one.
+    local AS_STOCK = {
+      flame_thrower = "stock.flame_thrower", fast_walk = "stock.fast_walk",
+      crate_spy = "stock.crate_spy", crate_shower = "stock.crate_shower",
+      invisibility = "stock.teleport",
+    }
     local missing = {}
     for _, r in ipairs(replaced) do
-      if not component[r.weapon] or preset[r.weapon] ~= component[r.weapon] then
+      if AS_STOCK[r.weapon] then
+        if component[r.weapon] or preset[r.weapon] ~= AS_STOCK[r.weapon] then
+          missing[#missing + 1] = r.weapon
+        end
+      elseif not component[r.weapon] or preset[r.weapon] ~= component[r.weapon] then
         missing[#missing + 1] = r.weapon
       end
     end
-    check("every replaced slot is a weapon component the Highlander scheme places", #missing == 0,
+    check("every replaced slot is a Highlander weapon the scheme places, or WA's own", #missing == 0,
       table.concat(missing, ","))
   end
   local own_file = true
@@ -3767,6 +3777,27 @@ do
     check("matches baseline.txt (rewrite with --baseline when intended)", was == now,
       was == nil and "no baseline.txt" or differs)
   end
+end
+
+print("components: a scheme's stock weapons stand in for Highlander's of their name")
+do
+  new_match()
+  local loader = require("components/loader")
+  local shared = require("lib/shared")
+  local homes = loader.place({ weapons = {
+    ["hl.swim_suit"] = { stock_slot = "laser_sight" },
+    ["hl.super_tele"] = { stock_slot = "teleport" },
+    ["stock.fast_walk"] = { stock_slot = "girder" },
+    ["stock.flame_thrower"] = { stock_slot = "flame_thrower" },
+    ["stock.teleport"] = { stock_slot = "invisibility" },
+  } })
+  check("Swim Suit finds the stock Fast Walk where it sits", shared.slot("fast_walk") == "girder",
+    shared.slot("fast_walk"))
+  check("the pools deal the stock Flame Thrower", shared.slot("flame_thrower") == "flame_thrower")
+  check("Super Tele keeps its name; the stock Teleport doesn't take it",
+    shared.slot("teleport") == "teleport" and shared.home("invisibility") == nil)
+  check("only Highlander's weapons load code", same(homes, { "laser_sight", "teleport" }),
+    table.concat(homes, ","))
 end
 
 print("")

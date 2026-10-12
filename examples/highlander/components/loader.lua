@@ -120,7 +120,6 @@ local HOME = {
   ["hl.portal_gun"] = "scales_of_justice",
   ["hl.chilli_bomb"] = "super_banana",
   ["hl.hellish_hand_grenade"] = "holy_grenade",
-  ["hl.flame_thrower"] = "flame_thrower",
   ["hl.ferret"] = "salvation_army",
   ["hl.banana_express"] = "mb_bomb",
   ["hl.valyrian_fire"] = "petrol_bomb",
@@ -139,13 +138,9 @@ local HOME = {
   ["hl.cluster_bomb"] = "magic_bullet",
   ["hl.helicopter"] = "jet_pack",
   ["hl.gravity_control"] = "low_gravity",
-  ["hl.fast_walk"] = "fast_walk",
   ["hl.swim_suit"] = "laser_sight",
-  ["hl.teleport"] = "invisibility",
   ["hl.skunk"] = "damage_x2",
-  ["hl.crate_spy"] = "crate_spy",
   ["hl.mole_bomb"] = "double_turn_time",
-  ["hl.crate_shower"] = "crate_shower",
 }
 
 local loader = {}
@@ -164,6 +159,19 @@ function loader.place(ctx)
     if home then
       map[home] = w.stock_slot
       homes[#homes + 1] = home
+    end
+  end
+  -- WA's own weapon stands for the Highlander weapon of its name when the
+  -- scheme places the stock one (PX's Flame Thrower is WA's): the pools
+  -- deal it and the code finds it there. It loads no module.
+  local highlander = {}
+  for _, home in pairs(HOME) do
+    highlander[home] = true
+  end
+  for id, w in pairs(ctx.weapons) do
+    local name = id:match("^stock%.(.+)$")
+    if name and not highlander[name] then
+      map[name] = w.stock_slot
     end
   end
   -- pairs() order differs between machines; the set it builds does not.
