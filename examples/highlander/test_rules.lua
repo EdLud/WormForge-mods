@@ -1386,15 +1386,16 @@ do
   check("...while open maps do deal them", seen)
 end
 
-print("turn: three Hot Air Balloons, as PX's GiveWeapons")
+print("turn: the rules leave the scheme's gifts to its weapon data")
 do
   new_match()
   frame()
-  ammo[0].bungee = 1 -- one left over from the last turn
+  ammo[0].bungee, ammo[0].surrender, ammo[0].freeze = 1, 0, 0
   turn(16)
-  check("the active team has 3 again", ammo[0].bungee == 3, tostring(ammo[0].bungee))
-  check("and a Wind Changer", ammo[0].surrender == 1, tostring(ammo[0].surrender))
-  check("and a Weapon Crate", ammo[0].freeze == 1, tostring(ammo[0].freeze))
+  -- The engine gives them from components/highlander.lua's data (lua-host's
+  -- Highlander tests); the rules don't touch them.
+  check("the Hot Air Balloons are left alone", ammo[0].bungee == 1, tostring(ammo[0].bungee))
+  check("and the Wind Changer and Weapon Crate", ammo[0].surrender == 0 and ammo[0].freeze == 0)
 end
 
 print("Weapon Crate: placed, a weapon crate teleported in front of the worm")

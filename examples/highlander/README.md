@@ -60,9 +60,11 @@ Profile tab.
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
 | Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
-Highlander never touches the **not pooled** slots, except three: every turn
-it gives the worm's team 3 Hot Air Balloons and a Wind Changer, as PX does,
-and a Weapon Crate. The others keep
+Highlander's rules never touch the **not pooled** weapons. Three come from
+the Highlander scheme's weapon data (`components/highlander.lua`), which the
+mod loader shows and a player may change: the team's Hot Air Balloons are
+refilled to 3 and its Wind Changer to 1 each turn, as PX's GiveWeapons does,
+and each team gets one Weapon Crate a round, as in PX. The others keep
 whatever ammo the scheme gives, so the scheme decides whether Teleport or Skip
 Go is always available.
 
@@ -224,7 +226,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | salvation_army | Ferret | icon, the ferret (held and walking), its sound | thrown, it falls until the land is 3 pixels under it, then walks the terrain's outline (PX's square tracing, 3-pixel steps, against the land with WA's missile shape, the Skunk's: `shape = "missile"`, `a:fits`) and never falls off it; it explodes on a worm (the turn's worm is spared for 60 frames), an oil drum, the water or a dead end, or by itself 15 s after it was placed (not PX's), flicks mines and Bowling Balls up, and at most 10 walk at once. Its frames animate as it walks (PX's barely do) |
 | baseball_bat | Electromagnet | icon, the magnet (both poles, damaged), its rings and sparks, the worm's deploy | dropped at the worm, it falls and settles as a mine does (a circle traced against the land, bouncing a little) and stays: for four of its owner's turns its field (170 pixels) pushes (repel) or pulls (attract) WA's own mines and missiles (`object:impulse`) and the Bowling Balls at a quarter, and triggers the mines it catches, an attracting one setting their fuses close together. + (synchronized, `wa.world.keys().plus_key`) switches the turn's worm between repel and attract; the HUD names the mode. Blasts, guns and fires hit it; at 0 of its 80 health it explodes. The Hellish Hand-Grenade slows down in a field. Not PX's: 300 frames after the turn ends, the field lets go of missiles instead of exploding them. The worm takes it out and puts it away with PX's magnet in place of the Dynamite: blue repelling, red attracting (`worm_sprites_toggle`), the take-out playing again in the new colour when + switches |
 | donkey | Crate Strike | icon | three crates on parachutes from 50 pixels above the map, at the click and 50 to either side (`wa.crates.spawn`); each a weapon, utility or health crate at random, WA picking what is inside; a health crate gives 20-40, 40-60 or 60-80 by its place |
-| freeze | Weapon Crate | icon, the worm's take-out and hold | PX's record: placed as WA places a mine (its take-out, placing and ammo), and the turn goes on; what it places is one of WA's weapon crates, its contents WA's pick, teleported in 40 pixels in front of the worm (`wa.crates.spawn`), for the worm to collect. Every worm gets one each turn. |
+| freeze | Weapon Crate | icon, the worm's take-out and hold | PX's record: placed as WA places a mine (its take-out, placing and ammo), and the turn goes on; what it places is one of WA's weapon crates, its contents WA's pick, teleported in 40 pixels in front of the worm (`wa.crates.spawn`), for the worm to collect. Each team gets one a round. |
 | kamikaze | Sentry Gun | icon, the turret (base, head, flare), casings, impact, the worm's take-out and placing, its sounds | placed as WA places a mine, it falls and plants in front of the worm; its head sweeps, takes the nearest moving enemy in sight within 360 pixels, turns to it and fires 20 rounds a turn (PX's spread, casings), holds fire on its owner's colour's turns, reloads each turn; a blast disables it for the turn, and at 0 of its 50 health it explodes. Its head is drawn in its owner's colour, and so is the housing the worm carries (`worm_sprites_team_tint`). The shared turret (`lib/turret.lua`) is for the Sentry Laser too |
 | dragon_ball | Sentry Laser | icon, the turret (base, body, barrel), the worm's take-out and placing, its sounds | placed as the Sentry Gun; it shoots the nearest moving missile, mine or Bowling Ball of another colour within 300 pixels that it can see (`object.team`), 20 frames after it finds it, turning 5 degrees a frame; each of its 4 shots a turn is a short beam in its owner's colour that disintegrates the target without a blast (`object:remove()`), burns worms (10) and crates and oil drums (20) in between, arms a mine it crosses, and cuts a 4-pixel hole where it stops; it fires on every colour's turn, and at 0 of its 35 health it explodes. Its body is drawn in its owner's colour, the barrel grey, and so is the body the worm carries. Not PX's: WA's arrows are not listed to Lua, so it ignores them. |
 | suicide_bomber | Kamikaze Rocket | icon, the take-out, the launch, the rocket in flight | PX's scheme record, WA's Kamikaze's: WA flies the worm, digs its way and hits the worms it passes. Fired only with Ctrl held (Ctrl + Space; without, nothing is used and the HUD says so). The worm becomes a rocket from where it stood, along its aim at 8 pixels a frame, turned 9 degrees a frame by left and right, digging an 8-pixel hole each frame, for 4 seconds (counted down on the HUD); then it blows up (damage 30, blast 100) and the worm goes into the water. As PX's, it ends sooner if WA's Kamikaze does: in the water, or out of the map. |
@@ -503,7 +505,8 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 
 These are deliberate, and each one is explained in the pack's code:
 
-- PX grants 3 Hot Air Balloons and 1 Wind Changer every turn; so does the pack.
+- PX grants 3 Hot Air Balloons and 1 Wind Changer every turn; so does the
+  Highlander scheme, as weapon data the loader shows.
 - There's no removal at turn end. The next turn start does the same job.
 - Every pooled slot is zeroed at each turn start, not only the previous
   worm's. PX left that to its own scheme; here any scheme works.

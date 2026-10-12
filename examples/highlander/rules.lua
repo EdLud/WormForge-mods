@@ -33,7 +33,8 @@
 --     zero. Here the scheme can say anything, so the pack enforces it itself.
 --
 --   * PX's GiveWeapons also sets the Hot Air Balloon to 3 and the Wind
---     Changer to 1 each turn; so does start_turn.
+--     Changer to 1 each turn. The Highlander scheme gives them as weapon data
+--     (components/highlander.lua), so this file alone doesn't.
 --
 -- Lockstep: dealing, turn_start and death are all dispatched from WA's own
 -- simulation messages, and every random choice is wa.random(). Two peers, or

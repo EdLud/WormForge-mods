@@ -81,8 +81,9 @@ local CAVE_SECOND = 16
 -- The slots Highlander never pools -- Kamikaze Rocket, Gravler, Hot Air
 -- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
 -- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
--- whatever ammo the scheme gives them, except the Hot Air Balloon, the Wind
--- Changer and the Weapon Crate, which start_turn sets to 3, 1 and 1.
+-- whatever ammo the scheme gives them. The Highlander scheme's own data gives
+-- the Hot Air Balloon, the Wind Changer and the Weapon Crate
+-- (components/highlander.lua).
 
 -- The pools above name each weapon by its home slot. Dealt is where each
 -- sits this match (shared.slot), and a weapon the scheme doesn't place is not

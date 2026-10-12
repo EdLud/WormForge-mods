@@ -39,19 +39,11 @@ local function deal(worm)
   ))
 end
 
--- By home slot: the Hot Air Balloon, the Wind Changer, the Weapon Crate.
-local TURN_GIVES = { { "bungee", 3 }, { "surrender", 1 }, { "freeze", 1 } }
-
+-- The hand, one use of each, for the turn. PX's GiveWeapons (the Hot Air
+-- Balloons and the Wind Changer) is the scheme's weapon data
+-- (components/highlander.lua): the engine gives it.
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
-  -- GiveWeapons: three Hot Air Balloons, a Wind Changer and a Weapon Crate
-  -- for the turn, whatever is left.
-  for _, give in ipairs(TURN_GIVES) do
-    local slot = shared.slot(give[1])
-    if slot then
-      worm:ammo(slot, { set = give[2] })
-    end
-  end
 end
 
 local function on_death(event)
