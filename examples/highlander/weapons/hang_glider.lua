@@ -177,14 +177,20 @@ do
     g.deployed = false
     -- A gentle landing can spend several frames falling under WA's control
     -- before WA stands the worm up. Keep the wing over its body until the
-    -- pack-away takes its place, so it never flashes empty-handed.
-    if landing then
-      g.art = g.art or glider_art(worm, worm.x, worm.y, "sprites/hang_glider/glider")
-      worm.body_visible = false
-    else
-      glider_drop_art(worm, g)
+    -- pack-away takes its place, so it never flashes empty-handed. Only
+    -- looks: if it fails, the worm still goes back to WA below.
+    local looks, err = pcall(function()
+      if landing then
+        g.art = g.art or glider_art(worm, worm.x, worm.y, "sprites/hang_glider/glider")
+        worm.body_visible = false
+      else
+        glider_drop_art(worm, g)
+      end
+      wa.sound.play(worm, "sounds/hang_glider/hangclose.wav")
+    end)
+    if not looks then
+      wa.log("hang glider: closing without its art: " .. tostring(err))
     end
-    wa.sound.play(worm, "sounds/hang_glider/hangclose.wav")
     g.landing = landing and GLIDER_PACK_WAIT or nil
     g.unstand = not (landing or hard_landing) and GLIDER_UNSTAND or nil
     if worm.taken then
