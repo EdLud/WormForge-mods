@@ -1,7 +1,7 @@
--- Drives mods/examples/highlander/rules.lua against a mocked WA.
+-- Drives mods/px/rules.lua against a mocked WA.
 --
---   lua mods/examples/highlander/test_rules.lua              (from the repo root)
---   lua mods/examples/highlander/test_rules.lua --baseline   (rewrites baseline.txt)
+--   lua mods/px/test_rules.lua              (from the repo root)
+--   lua mods/px/test_rules.lua --baseline   (rewrites baseline.txt)
 --
 -- baseline.txt is the pack's observable shape: every slot it claims and what
 -- with, the hooks it registers, the globals it defines, and what each hand can
@@ -671,14 +671,14 @@ local function new_match(opts)
   function require(name)
     if modules[name] ~= nil then return modules[name] end
     local env = setmetatable({}, { __index = _G })
-    local root = HIGHLANDER_ROOT or "mods/examples/highlander/"
+    local root = HIGHLANDER_ROOT or "mods/px/"
     local chunk = assert(loadfile(root .. name .. ".lua", "t", env))
     local result = chunk()
     if result == nil then result = true end
     modules[name] = result
     return result
   end
-  dofile("mods/examples/highlander/rules.lua")
+  dofile("mods/px/rules.lua")
 end
 
 local function worm(id)
@@ -782,7 +782,7 @@ do
   -- weapon component at that slot's panel position, and the Highlander
   -- scheme's preset places each. (Checked where the suite can read the
   -- pack's files: run from the repo, not inside the engine's loader test.)
-  local toml = io and io.open("mods/examples/highlander/mod.toml")
+  local toml = io and io.open("mods/px/mod.toml")
   if toml then
     local manifest = toml:read("a")
     toml:close()
@@ -817,7 +817,7 @@ do
       at = j
     end
     for _, block in ipairs(blocks) do
-      local id = block:match('id = "(hl%.[%w_]+)"')
+      local id = block:match('id = "(px%.[%w_]+)"')
       local row, column = block:match('default_position = { row = "(%w+)", column = (%d+) }')
       if id and row then component[slot_at(row, tonumber(column))] = id end
     end
@@ -3608,7 +3608,7 @@ do
   table.sort(missing)
   check("every pack sound the rules played is registered", #missing == 0, table.concat(missing, ", "))
   -- And every WAV in the pack, where the suite can list its folder.
-  local ls = io and io.popen and io.popen("find mods/examples/highlander/sounds -name '*.wav' 2>/dev/null")
+  local ls = io and io.popen and io.popen("find mods/px/sounds -name '*.wav' 2>/dev/null")
   if ls then
     new_match()
     local registered, unlisted = {}, {}
@@ -3617,7 +3617,7 @@ do
     end
     local found = 0
     for line in ls:lines() do
-      local rel = line:match("mods/examples/highlander/(.*)")
+      local rel = line:match("mods/px/(.*)")
       found = found + 1
       if rel and not registered[rel] then unlisted[#unlisted + 1] = rel end
     end
@@ -3731,7 +3731,7 @@ local function baseline()
   return table.concat(out, "\n") .. "\n"
 end
 
-local BASELINE = "mods/examples/highlander/baseline.txt"
+local BASELINE = "mods/px/baseline.txt"
 print("worm_message: every handler names its messages")
 do
   new_match()
@@ -3786,8 +3786,8 @@ do
   local loader = require("components/loader")
   local shared = require("lib/shared")
   local homes = loader.place({ weapons = {
-    ["hl.swim_suit"] = { stock_slot = "laser_sight" },
-    ["hl.super_tele"] = { stock_slot = "teleport" },
+    ["px.swim_suit"] = { stock_slot = "laser_sight" },
+    ["px.super_tele"] = { stock_slot = "teleport" },
     ["stock.fast_walk"] = { stock_slot = "girder" },
     ["stock.flame_thrower"] = { stock_slot = "flame_thrower" },
     ["stock.teleport"] = { stock_slot = "invisibility" },

@@ -1,6 +1,14 @@
-# Highlander (inventory verbs)
+# Project X weapons
 
-This is the concise implementation built on `wa.inventory`,
+Project X's weapons, ported to WormForge as the component bundle
+`px.weapons`. Each weapon is a component any scheme can place, credited in
+the mod loader to its Project X authors as its scripts name them (`authors`
+and `credits` in `mod.toml`); where nobody is named yet, it shows only as a
+Project X weapon.
+
+## Highlander
+
+Highlander is one PX scheme over these weapons, built on `wa.inventory`,
 `wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
 is preserved in `highlander_pure_lua` for comparison. Enable only one edition.
 
@@ -29,8 +37,8 @@ The scheme places all 67 of its weapons and deals them by the rules below
 weapons without the rules, for trying them out: the ammo is the WA lobby
 scheme's.
 
-Each weapon is also a component of its own (`hl.double_bazooka`,
-`hl.sniper_rifle`, ...), and like any weapon it may go at any panel position.
+Each weapon is also a component of its own (`px.double_bazooka`,
+`px.sniper_rifle`, ...), and like any weapon it may go at any panel position.
 Its home slot (PX's layout: the Double Bazooka on the Bazooka's) is where it
 goes by default and how the code names it; `shared.slot(home)` is where it
 sits this match. Under the Highlander scheme, moved weapons are dealt where
@@ -568,7 +576,7 @@ throughout. `tools/split_highlander.py` made this layout from the single
 ## Tests
 
 ```sh
-lua mods/examples/highlander/test_rules.lua     # from the repo root
+lua mods/px/test_rules.lua     # from the repo root
 ```
 
 These run the pack (`rules.lua` and the modules it requires) against a mocked WA. Ammo is stored per alliance, and
@@ -681,7 +689,7 @@ Added engine surface:
   reuse; the old `object.id` stays compatible. `wa.arrows.all()` enumerates
   live stock arrows. `ctrl`, `minus_key`, `alt`, `pause_key` join synchronized keys.
 
-Tests: `lua mods/examples/highlander/test_portals.lua`, plus the existing
+Tests: `lua mods/px/test_portals.lua`, plus the existing
 scheme mock and native Windows engine/Lua tests. The port was playtested in
 WA, including endpoint visibility and effects. Replay/network playback is
 still unverified.

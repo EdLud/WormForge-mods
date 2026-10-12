@@ -1,6 +1,6 @@
 -- Focused Portal Gun simulation tests, from the repo root:
--- lua mods/examples/highlander/test_portals.lua
-local root = HIGHLANDER_ROOT or "mods/examples/highlander/"
+-- lua mods/px/test_portals.lua
+local root = HIGHLANDER_ROOT or "mods/px/"
 package.path = root .. "?.lua;" .. package.path
 local hooks, actors, keys, sounds, worms, draws = {}, {}, {}, {}, {}, {}
 local cut, obstruction, solid_exit = 0, false, false

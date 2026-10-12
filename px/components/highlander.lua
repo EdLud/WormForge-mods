@@ -8,9 +8,9 @@
 -- round.
 return {
   weapons = {
-    ["hl.hot_air_balloon"] = { ammo = { round_start = 3, turn_start = { amount = 3, mode = "replace" } } },
-    ["hl.wind_changer"] = { ammo = { round_start = 1, turn_start = { amount = 1, mode = "replace" } } },
-    ["hl.weapon_crate"] = { ammo = { round_start = 1 } },
+    ["px.hot_air_balloon"] = { ammo = { round_start = 3, turn_start = { amount = 3, mode = "replace" } } },
+    ["px.wind_changer"] = { ammo = { round_start = 1, turn_start = { amount = 1, mode = "replace" } } },
+    ["px.weapon_crate"] = { ammo = { round_start = 1 } },
   },
   install = function(ctx)
     require("components/loader").place(ctx)
