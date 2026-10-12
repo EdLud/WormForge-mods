@@ -1,15 +1,20 @@
--- The utilities feature: match settings the lobby scheme doesn't have. Every
--- setting is an option of this one component, read once at install.
+-- The utilities feature: match settings the lobby scheme doesn't have, and
+-- some players' favourite packs as switches. Every setting is an option of
+-- this one component, read once at install.
+
+-- The packs, by option: each module installs its hooks when loaded, so only
+-- a switched-on one is loaded.
+local PACKS = {
+  { "ex_turn_side", "features/ex_turn_side" },
+  { "agility", "features/agility" },
+  { "live_hp", "features/live_hp" },
+  { "collect_viewer", "features/collect_viewer" },
+}
+
 return function(ctx)
   local gravity_pct = ctx.option("gravity_pct")
   local wind = ctx.option("wind")
   local heal = ctx.option("heal_per_turn")
-  local infinite = {}
-  for _, weapon in ipairs({ "jet_pack", "parachute", "ninja_rope" }) do
-    if ctx.option("infinite_" .. weapon) then
-      infinite[#infinite + 1] = weapon
-    end
-  end
 
   -- The scheme's gravity, read at the first turn: scaling it again each turn
   -- would compound.
@@ -27,9 +32,6 @@ return function(ctx)
     if heal > 0 then
       ev.worm:heal(heal)
     end
-    for _, weapon in ipairs(infinite) do
-      ev.worm:ammo(weapon, { set = -1 })
-    end
     wind_due = wind ~= "scheme"
   end)
 
@@ -42,6 +44,14 @@ return function(ctx)
     end, { msgs = { wa.msg.FRAME_FINISH } })
   end
 
-  wa.log(("gravity %d%%, wind %s, heal %d, infinite %s"):format(
-    gravity_pct, wind, heal, #infinite > 0 and table.concat(infinite, " ") or "none"))
+  local on = {}
+  for _, pack in ipairs(PACKS) do
+    if ctx.option(pack[1]) then
+      require(pack[2])
+      on[#on + 1] = pack[1]
+    end
+  end
+
+  wa.log(("gravity %d%%, wind %s, heal %d, packs %s"):format(
+    gravity_pct, wind, heal, #on > 0 and table.concat(on, " ") or "none"))
 end

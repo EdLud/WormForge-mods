@@ -1,9 +1,10 @@
-# utilities
+# Core utilities
 
-A features bundle (`format_version = 2`): one feature, **Utilities**, with
-settings of all three option types. It changes nothing until a profile selects
-it: tick "Utilities" in the mod loader's Profile tab and set it up below the
-lists, or write the table by hand in `Mods/wormforge.toml`:
+A features bundle (`core.utilities`, `format_version = 2`): one feature,
+**Utilities**, with the match settings the lobby scheme doesn't have and some
+players' favourite packs as switches. It changes nothing until a profile
+selects it: tick "Utilities" on the mod loader's Scheme tab and set it up
+below the list, or write the table by hand in `Mods/wormforge.toml`:
 
 ```toml
 [profile]
@@ -13,7 +14,7 @@ features = ["core.utilities"]
 gravity_pct = 60
 wind = "none"
 heal_per_turn = 10
-infinite_ninja_rope = true
+live_hp = true
 ```
 
 | Setting | Type | What it does |
@@ -21,7 +22,14 @@ infinite_ninja_rope = true
 | Gravity % | number, 25–200 | Scales the lobby scheme's gravity from the first turn on. Low Gravity still halves it. |
 | Wind | choice | `scheme` leaves WA's wind alone; `calm` halves each turn's wind; `none` stills it. |
 | Heal at turn start | number, 0–50 | Health the worm whose turn starts gets. |
-| Infinite Jet Pack / Parachute / Ninja Rope | checkboxes | The team whose turn starts has unlimited ammo of it, with no delay. |
+| ExTurnSide | switch | Left and right turn the worm during rope swings and other actions. By red. |
+| Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by red. |
+| Live HP | switch | Health bars follow damage as it happens, not at the turn's end. By reddaz. |
+| Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
+
+A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
+a utility. The switches are those packs' own code, in `features/`, loaded only
+when switched on; don't also enable the standalone packs.
 
 Everything runs in simulation callbacks (`wa.on.turn_start`, and
 `wa.on.worm_message` for the wind), so the settings are the same on every peer
