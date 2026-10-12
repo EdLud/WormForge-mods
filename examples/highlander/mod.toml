@@ -25,6 +25,14 @@ changes_rules = true
 tags = ["highlander"]
 
 [[components]]
+id = "hl.weapons_only"
+type = "scheme"
+name = "Highlander weapons (no rules)"
+description = "Every Highlander weapon where PX's layout puts it, without Highlander's rules: no dealing, no one shot each per turn. The ammo is the WA lobby scheme's."
+entry = "components/weapons_only.lua"
+preset = "highlander"
+
+[[components]]
 id = "hl.double_bazooka"
 type = "weapon"
 name = "Double Bazooka"

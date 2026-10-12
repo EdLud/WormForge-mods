@@ -24,7 +24,10 @@ scheme = "hl.highlander"
 ```
 
 The scheme places all 67 of its weapons and deals them by the rules below
-(it says so in green in the Profile tab: it changes gameplay rules).
+(it says so in green in the loader: it changes gameplay rules). The scheme
+**Highlander weapons (no rules)** (`hl.weapons_only`) places the same
+weapons without the rules, for trying them out: the ammo is the WA lobby
+scheme's.
 
 Each weapon is also a component of its own (`hl.double_bazooka`,
 `hl.sniper_rifle`, ...), and like any weapon it may go at any panel position.
