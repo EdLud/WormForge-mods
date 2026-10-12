@@ -43,10 +43,11 @@
 -- Electric Grenade (its claim on the Earthquake slot), launched as real WA
 -- missiles at random open-air points across the map, with short staggered
 -- fuses. Highlander's own hooks treat them as its grenades: its art draws
--- them and its chaining arc runs where each one blows. Enable `highlander` or
--- `highlander_test` with this pack (for batches 3 and 4); without one the
--- Earthquake slot is WA's own, which is no projectile, so leave
--- ELECTRIC_GRENADES at 0 then. A launch WA refuses (its object pool full) is
+-- them and its chaining arc runs where each one blows. Pick one of the
+-- Highlander schemes (Highlander, or Highlander weapons (no rules)) with this
+-- pack, its weapons at their home positions (for the magnets and batches 3
+-- and 4); without one the Earthquake slot is WA's own, which is no
+-- projectile, so leave ELECTRIC_GRENADES at 0 then. A launch WA refuses (its object pool full) is
 -- counted and logged, not fatal.
 --
 -- Batches 1 and 2 start from the same positions and speeds, so the two halves
@@ -70,11 +71,11 @@ local DAMAGE = 15       -- each explosion's damage
 local BLAST = 40        -- each custom explosion's size (CreateExplosion's id)
 local PROFILE = true
 local SEED = 12345
-local MAGNETS = 6            -- first; needs highlander or highlander_test
+local MAGNETS = 6            -- first; needs a Highlander scheme
 local MAGNET_SLOT = "baseball_bat"
-local BOWLING_STRIKES = 7    -- batch 3; needs highlander or highlander_test
+local BOWLING_STRIKES = 7    -- batch 3; needs a Highlander scheme
 local BOWLING_SLOT = "sheep_strike"
-local ELECTRIC_GRENADES = 50 -- batch 4; needs highlander or highlander_test
+local ELECTRIC_GRENADES = 50 -- batch 4; needs a Highlander scheme
 local ELECTRIC_SLOT = "earthquake"
 local ELECTRIC_FUSE = 3000   -- ms, plus up to ELECTRIC_SPREAD
 local ELECTRIC_SPREAD = 1500
