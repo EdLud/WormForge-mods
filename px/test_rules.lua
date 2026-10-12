@@ -1059,6 +1059,38 @@ do
   M.water, M.gravity, M.solid = nil, nil, nil
 end
 
+print("Electromagnet: placed under a ceiling, it drops into the tunnel, never up through the rock")
+do
+  new_match()
+  local w = worm(16)
+  w.x, w.y, w.facing = 100, 150, 1
+  local shot = assert((function()
+    for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
+  end)())
+  -- A tunnel: rock above y 146 (the magnet's circle, 8 pixels round the
+  -- worm's centre, overlaps it) and a floor at 200.
+  M.gravity, M.solid = 0.25, function(_, y) return y < 146 or y >= 200 end
+  shot({ worm = w })
+  local magnet = M.spawned[#M.spawned]
+  local highest = magnet.y
+  for _ = 1, 200 do
+    magnet.on(magnet)
+    highest = math.min(highest, magnet.y)
+  end
+  check("it never rises into the rock above", highest >= 150, highest)
+  check("it comes to rest on the tunnel's floor", magnet.y > 185 and magnet.y < 200, magnet.y)
+  -- Buried, with nothing free within reach: it stays where it is.
+  new_match()
+  w = worm(16)
+  w.x, w.y = 100, 150
+  M.solid = function() return true end
+  shot({ worm = w })
+  magnet = M.spawned[#M.spawned]
+  for _ = 1, 50 do magnet.on(magnet) end
+  check("buried, it stays put rather than tunnel", magnet.y == 150 and magnet.x == 100, magnet.y)
+  M.gravity, M.solid = nil, nil
+end
+
 print("Sentry Gun: placed, it plants, picks a moving enemy, fires, reloads")
 do
   new_match()

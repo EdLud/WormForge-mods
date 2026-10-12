@@ -119,6 +119,30 @@ local function discharge(m)
   m.turns = 0
 end
 
+-- Where a body inside the land may go, nearest first: in rings a pixel
+-- apart, out to UNSTICK_REACH, below and to the sides before above, as
+-- gravity would take it. Placed under a ceiling, the magnet's circle
+-- overlaps the rock above the worm: it belongs in the tunnel below, not on
+-- top of the rock.
+local UNSTICK_REACH = 24
+local UNSTICK = {}
+for d = 1, UNSTICK_REACH do
+  for _, v in ipairs({ { 0, 1 }, { -1, 1 }, { 1, 1 }, { -1, 0 }, { 1, 0 }, { -1, -1 }, { 1, -1 }, { 0, -1 } }) do
+    UNSTICK[#UNSTICK + 1] = { v[1] * d, v[2] * d }
+  end
+end
+
+-- The nearest place out of the land, or nil: then it stays put, as PX's
+-- magnet (a mine) does, rather than tunnel through the land.
+local function unstick(m)
+  for _, o in ipairs(UNSTICK) do
+    local x, y = m.x + o[1], m.y + o[2]
+    if not wa.world.collides({ x = x, y = y, radius = RADIUS, with = { "terrain" } }) then
+      return x, y
+    end
+  end
+end
+
 -- One frame of the body: gravity, then the move traced against the land.
 local function move(m)
   local vx, vy = m.vx, m.vy + wa.world.gravity()
@@ -127,13 +151,16 @@ local function move(m)
   end
   local res = trace()
   if res and res.starts_solid then
-    -- Inside the land (dropped in a tunnel, or the land moved): out where
-    -- the path comes free, else a pixel up a frame until it does.
-    if not res.left_x then
-      m.y, m.vx, m.vy = m.y - 1, 0, 0
+    -- Inside the land (placed under a ceiling, or the land moved): out
+    -- where the path comes free, else at the nearest free place.
+    if res.left_x then
+      m.x, m.y = res.left_x, res.left_y
+    else
+      local x, y = unstick(m)
+      m.vx, m.vy = 0, 0
+      if x then m.x, m.y = x, y end
       return
     end
-    m.x, m.y = res.left_x, res.left_y
     res = trace()
   end
   if res and res.hit then
