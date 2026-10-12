@@ -60,6 +60,7 @@ default_position = { row = "F1", column = 2 }
 id = "px.s_m_a_r_t_bomb"
 type = "weapon"
 name = "S.M.A.R.T Bomb"
+authors = ["Curtis"]
 description = "Highlander's S.M.A.R.T Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/smart_bomb/smart_ico.png"
@@ -69,6 +70,7 @@ default_position = { row = "F1", column = 3 }
 id = "px.blaster_worm"
 type = "weapon"
 name = "Blaster Worm"
+authors = ["Curtis"]
 description = "Highlander's Blaster Worm."
 entry = "components/weapon.lua"
 icon = "sprites/blaster_worm/bworm_ico.png"
@@ -78,6 +80,7 @@ default_position = { row = "F1", column = 4 }
 id = "px.burning_sheep_launcher"
 type = "weapon"
 name = "Burning Sheep Launcher"
+authors = ["StepS"]
 description = "Highlander's Burning Sheep Launcher."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/burning_sheep_launcher_ico.png"
@@ -87,6 +90,7 @@ default_position = { row = "F1", column = 5 }
 id = "px.sticky_bomb"
 type = "weapon"
 name = "Sticky Bomb"
+authors = ["Twicken"]
 description = "Highlander's Sticky Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/sticky_bomb/sbico.png"
@@ -96,6 +100,7 @@ default_position = { row = "F2", column = 1 }
 id = "px.windy_cluster"
 type = "weapon"
 name = "Windy Cluster"
+authors = ["Curtis"]
 description = "Highlander's Windy Cluster."
 entry = "components/weapon.lua"
 icon = "sprites/windy_cluster/ico_windyc.png"
@@ -105,6 +110,7 @@ default_position = { row = "F2", column = 2 }
 id = "px.super_gravedigger"
 type = "weapon"
 name = "Super Gravedigger"
+authors = ["Curtis"]
 description = "Highlander's Super Gravedigger."
 entry = "components/weapon.lua"
 icon = "sprites/super_gravedigger/sgrave_ico.png"
@@ -114,6 +120,7 @@ default_position = { row = "F2", column = 3 }
 id = "px.thumper_nade"
 type = "weapon"
 name = "Thumper Nade"
+authors = ["Curtis"]
 description = "Highlander's Thumper Nade."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpern_ico.png"
@@ -142,6 +149,7 @@ default_position = { row = "F3", column = 1 }
 id = "px.sniper_rifle"
 type = "weapon"
 name = "Sniper Rifle"
+authors = ["Twicken"]
 credits = "laser sight by ZED"
 description = "Highlander's Sniper Rifle."
 entry = "components/weapon.lua"
@@ -162,6 +170,7 @@ default_position = { row = "F3", column = 3 }
 id = "px.burst_rifle"
 type = "weapon"
 name = "Burst Rifle"
+authors = ["Curtis"]
 description = "Highlander's Burst Rifle."
 entry = "components/weapon.lua"
 icon = "sprites/burst_rifle/ico_burstr.png"
@@ -171,6 +180,7 @@ default_position = { row = "F3", column = 4 }
 id = "px.shadow_bolt"
 type = "weapon"
 name = "Shadow-Bolt"
+authors = ["Curtis"]
 description = "Highlander's Shadow-Bolt."
 entry = "components/weapon.lua"
 icon = "sprites/shadow_bolt/ico_shadowb.png"
@@ -251,6 +261,7 @@ default_position = { row = "F5", column = 2 }
 id = "px.pogo_sheep"
 type = "weapon"
 name = "Pogo Sheep"
+authors = ["Curtis"]
 description = "Highlander's Pogo Sheep."
 entry = "components/weapon.lua"
 icon = "sprites/pogo_sheep/psheep_ico.png"
@@ -260,6 +271,7 @@ default_position = { row = "F5", column = 3 }
 id = "px.ghost_sheep"
 type = "weapon"
 name = "Ghost Sheep"
+authors = ["StepS"]
 description = "Highlander's Ghost Sheep."
 entry = "components/weapon.lua"
 icon = "sprites/ghost_sheep/ghost_sheep_ico.png"
@@ -269,6 +281,7 @@ default_position = { row = "F5", column = 5 }
 id = "px.gravler"
 type = "weapon"
 name = "Gravler"
+authors = ["Curtis"]
 description = "Highlander's Gravler."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravler_ico.png"
@@ -278,6 +291,7 @@ default_position = { row = "F5", column = 6 }
 id = "px.mortar_strike"
 type = "weapon"
 name = "Mortar Strike"
+authors = ["Curtis"]
 description = "Highlander's Mortar Strike."
 entry = "components/weapon.lua"
 icon = "sprites/mortar_strike/ico_mortarst.png"
@@ -296,6 +310,7 @@ default_position = { row = "F6", column = 2 }
 id = "px.pigeon_strike"
 type = "weapon"
 name = "Pigeon Strike"
+authors = ["Curtis"]
 description = "Highlander's Pigeon Strike."
 entry = "components/weapon.lua"
 icon = "sprites/pigeon_strike/ico_pigeonst.png"
@@ -305,6 +320,7 @@ default_position = { row = "F6", column = 3 }
 id = "px.gravler_strike"
 type = "weapon"
 name = "Gravler Strike"
+authors = ["Curtis"]
 description = "Highlander's Gravler Strike."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravlerst_ico.png"
@@ -323,6 +339,7 @@ default_position = { row = "F7", column = 1 }
 id = "px.super_drill"
 type = "weapon"
 name = "Super Drill"
+authors = ["StepS"]
 description = "Highlander's Super Drill."
 entry = "components/weapon.lua"
 icon = "sprites/super_drill/ico_superdrill.png"
@@ -388,6 +405,7 @@ default_position = { row = "F8", column = 3 }
 id = "px.super_tele"
 type = "weapon"
 name = "Super Tele"
+authors = ["StepS"]
 description = "Highlander's Super Tele."
 entry = "components/weapon.lua"
 icon = "sprites/super_tele/icon.png"
@@ -417,6 +435,7 @@ default_position = { row = "F9", column = 1 }
 id = "px.hellish_hand_grenade"
 type = "weapon"
 name = "Hellish Hand-Grenade"
+authors = ["Twicken"]
 description = "Highlander's Hellish Hand-Grenade."
 entry = "components/weapon.lua"
 icon = "sprites/hellish/hhh_ico.png"
@@ -455,6 +474,7 @@ default_position = { row = "F10", column = 1 }
 id = "px.remote_roller"
 type = "weapon"
 name = "Remote Roller"
+authors = ["Curtis"]
 description = "Highlander's Remote Roller."
 entry = "components/weapon.lua"
 icon = "sprites/remote_roller/rroller_ico.png"
@@ -473,6 +493,7 @@ default_position = { row = "F10", column = 3 }
 id = "px.bowling_ball_strike"
 type = "weapon"
 name = "Bowling Ball Strike"
+authors = ["Entuser"]
 description = "Highlander's Bowling Ball Strike."
 entry = "components/weapon.lua"
 icon = "sprites/bowling_ball/strike_icon.png"
@@ -482,6 +503,7 @@ default_position = { row = "F10", column = 4 }
 id = "px.thumper_nade_strike"
 type = "weapon"
 name = "Thumper Nade Strike"
+authors = ["Curtis"]
 description = "Highlander's Thumper Nade Strike."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpernst_ico.png"
@@ -509,8 +531,8 @@ default_position = { row = "F11", column = 2 }
 id = "px.crate_strike"
 type = "weapon"
 name = "Crate Strike"
-authors = ["StepS", "rafa''2"]
-credits = "with 0rang3"
+authors = ["StepS"]
+credits = "with rafa''2 and 0rang3"
 description = "Highlander's Crate Strike."
 entry = "components/weapon.lua"
 icon = "sprites/crate_strike/icon.png"
@@ -520,6 +542,7 @@ default_position = { row = "F11", column = 3 }
 id = "px.reinforcement"
 type = "weapon"
 name = "Reinforcement"
+authors = ["StepS"]
 description = "Highlander's Reinforcement."
 entry = "components/weapon.lua"
 icon = "sprites/reinforcement/icon.png"
@@ -529,6 +552,7 @@ default_position = { row = "F11", column = 4 }
 id = "px.ice_arrow"
 type = "weapon"
 name = "Ice Arrow"
+authors = ["StepS"]
 description = "Highlander's Ice Arrow."
 entry = "components/weapon.lua"
 icon = "sprites/ice_arrow/icon.png"
@@ -578,6 +602,8 @@ default_position = { row = "F12", column = 5 }
 id = "px.helicopter"
 type = "weapon"
 name = "Helicopter"
+authors = ["StepS"]
+credits = "sprites by raffie"
 description = "Highlander's Helicopter."
 entry = "components/weapon.lua"
 icon = "sprites/helicopter/heli_ico.png"
