@@ -35,10 +35,3 @@ key = "show"
 type = "bool"
 default = true
 label = "Show a HUD line"
-
-[[components]]
-id = "demo.medic"
-type = "feature"
-name = "Medic"
-description = "The worm whose turn starts heals 10 HP."
-entry = "features/medic.lua"

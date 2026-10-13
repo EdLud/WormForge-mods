@@ -1,10 +1,9 @@
 # component_demo
 
-A component bundle (`format_version = 2`): two weapons and two add-ons
-(features). Installing it runs nothing; a profile selects what runs. The two
-profiles in `profiles/`, **Demo** and **Demo medic**, are copied into
-`Mods/Profiles` when the mod loader installs the bundle; pick one in the
-loader's Profile tab. A profile is a plain TOML file, so it can be written by
+A component bundle (`format_version = 2`): two weapons and an add-on
+(feature). Installing it runs nothing; a profile selects what runs. The
+profile in `profiles/`, **Demo**, is copied into `Mods/Profiles` when the mod
+loader installs the bundle; pick it in the loader's Profile tab. A profile is a plain TOML file, so it can be written by
 hand too:
 
 ```toml
@@ -37,9 +36,8 @@ other slot is empty and never comes in a crate. Each turn a weapon crate
 drops with a 40% chance, a health crate 10% and a utility crate 20% (the
 profile's `crates`), whatever the lobby's crate settings.
 
-**Demo medic** is the same, with the **Medic** add-on (`demo.medic`): the
-worm whose turn starts heals 10 HP. Rules are add-ons, so any profile can
-use them.
+Rules are add-ons too, so any profile can tick them: Utilities
+(`core.utilities`) heals the worm whose turn starts, for one.
 
 **Big Mortar** (Mortar with damage 70, 3 at round start) is in no profile.
 Type "mortar" in the Weapons tab's search and double-click it: it goes to its
