@@ -11,7 +11,7 @@
 #
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.weapons"
-name = "Project X weapons"
+name = "Project X ports"
 version = "0.10.0"
 author = "Project X authors"
 api_version = 2

@@ -1,4 +1,4 @@
-# Project X weapons
+# Project X ports
 
 Project X's weapons, ported to WormForge as the component bundle
 `px.weapons`. Each weapon is a component any profile can place, credited in
