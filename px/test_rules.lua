@@ -427,7 +427,15 @@ local function new_match(opts)
         if M.team_full then error("worms.spawn: team " .. spec.team .. " already has 8 worms") end
         M.worm_spawns = M.worm_spawns or {}
         M.worm_spawns[#M.worm_spawns + 1] = spec
-        return { kind = "worm", team = spec.team, x = spec.x, y = spec.y, hp = spec.health }
+        -- A test can have it come in a given (dead) worm's place.
+        if M.spawn_into then
+          local w = M.spawn_into
+          w.hp, w.x, w.y = spec.health, spec.x, spec.y
+          return w
+        end
+        -- As the engine's: a worm, with the place it took (here its team's
+        -- eighth) for an id.
+        return { kind = "worm", id = spec.team * 16 + 8, team = spec.team, x = spec.x, y = spec.y, hp = spec.health }
       end,
       all = function()
         local live = {}
@@ -1089,6 +1097,37 @@ do
   for _ = 1, 50 do magnet.on(magnet) end
   check("buried, it stays put rather than tunnel", magnet.y == 150 and magnet.x == 100, magnet.y)
   M.gravity, M.solid = nil, nil
+end
+
+print("Reinforcement: in a dead worm's place, it is dealt a fresh hand")
+do
+  new_match()
+  frame()
+  local click
+  for _, spec in ipairs(replaced) do if spec.weapon == "nuclear_test" then click = spec.on_click end end
+  local deals = function(id)
+    local n = 0
+    for _, line in ipairs(logs) do
+      if line:match("^highlander: worm " .. id .. " dealt ") then n = n + 1 end
+    end
+    return n
+  end
+  check("every worm is dealt once at the start", deals(17) == 1)
+  -- Worm 17 dies on worm 16's turn: its hand goes to 16.
+  turn(16)
+  kill(17)
+  M.solid = function(_, y) return y >= 300 end
+  M.spawn_into = worm(17)
+  click({ worm = worm(16), x = 250, y = 40 })
+  frame()
+  check("the reinforcement, in 17's place, is dealt a fresh hand", deals(17) == 2, deals(17))
+  local fresh = {}
+  for _, line in ipairs(logs) do
+    local list = line:match("^highlander: worm 17 dealt (.-) %(")
+    if list then fresh = {} for name in list:gmatch("[^, ]+") do fresh[#fresh + 1] = name end end
+  end
+  check("one from each pool, as any worm's", #fresh == 3, table.concat(fresh, ","))
+  M.spawn_into, M.solid = nil, nil
 end
 
 print("Sentry Gun: placed, it plants, picks a moving enemy, fires, reloads")

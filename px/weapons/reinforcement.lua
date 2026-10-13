@@ -29,9 +29,12 @@ shared.fires.reinforcement = function(ev)
   local x = ev.x // 1
   local y = ground(x)
   local at = y and (y - STAND) or wa.world.water() - STAND
-  local ok, err = pcall(wa.worms.spawn, { team = worm.team, x = x, y = at, name = NAME, health = HEALTH })
+  local ok, spawned = pcall(wa.worms.spawn, { team = worm.team, x = x, y = at, name = NAME, health = HEALTH })
   if not ok then
-    wa.log("Reinforcement: " .. tostring(err))
+    wa.log("Reinforcement: " .. tostring(spawned))
     wa.sound.play(worm, "sounds/gravity_control/error.wav")
+  elseif shared.fresh_hand then
+    -- Highlander's rules: dealt a fresh hand, as a new worm.
+    shared.fresh_hand(spawned)
   end
 end

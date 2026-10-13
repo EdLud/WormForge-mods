@@ -83,6 +83,16 @@ wa.on.worm_message(function(worm, msg)
   end
 end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.START_TURN } })
 
+-- A worm that comes in a dead worm's place (the Reinforcement) is a new
+-- worm: a fresh hand, dealt at its first message as every worm's is, not
+-- what the dead one held or left behind.
+shared.fresh_hand = function(worm)
+  arsenal:clear(worm)
+  dealt[worm.id] = nil
+  dead_hands[worm.id] = nil
+  revived_by_lightning[worm.id] = nil
+end
+
 wa.on.turn_start(function(event)
   start_turn(event.worm)
 end)
