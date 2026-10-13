@@ -73,3 +73,8 @@ description = "Every Highlander weapon where PX's layout puts it, without Highla
 "stock.crate_spy" = { row = "utility", column = 7 }
 "px.mole_bomb" = { row = "utility", column = 8 }
 "stock.crate_shower" = { row = "utility", column = 9 }
+
+# PX had the Teleport on a utility slot, so it came in utility crates; WA's
+# own Teleport comes in weapon crates wherever it is placed.
+[weapon_settings."stock.teleport"]
+crate_type = "utility"

@@ -245,3 +245,8 @@ ends_turn = false
 
 [weapon_settings."stock.dynamite"]
 ends_turn = false
+
+# PX had the Teleport on a utility slot, so it came in utility crates; WA's
+# own Teleport comes in weapon crates wherever it is placed.
+[weapon_settings."stock.teleport"]
+crate_type = "utility"
