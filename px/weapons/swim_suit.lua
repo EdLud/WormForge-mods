@@ -96,6 +96,9 @@ local function swim_push(v, dir, cap)
   return -cap
 end
 
+-- WA's states for a worm knocked flying: tumbling, hit, blasted.
+local KNOCKED = { [0x7F] = true, [0x80] = true, [0x81] = true }
+
 local function swim_frame(worm)
   local s = swimmers[worm.id]
   if not s or not s.suit then
@@ -103,6 +106,13 @@ local function swim_frame(worm)
   end
   local water = wa.world.water()
   local cap = SWIM_CAP * swim_speed
+  if worm.y >= water and s.plopready and KNOCKED[worm.state_id] then
+    -- Knocked flying into the water: no swim, the suit gives out, and with
+    -- the water's bit back WA's water takes it. Held in WA's hit state
+    -- without the bit, it never settled and the next turn never came.
+    suit_off(worm, s, false)
+    return
+  end
   if worm.y >= water and s.plopready and worm.state ~= "teleporting" then
     wa.sound.play(worm, SWIM_SPLASH)
     s.plopready, s.plopped = false, true

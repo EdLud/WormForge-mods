@@ -2948,6 +2948,33 @@ do
   M.turn_start({ worm = w, active = w })
 end
 
+print("swim suit: knocked flying into the water, it gives out")
+do
+  new_match()
+  frame()
+  M.water = 500
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:set_state(s) self.state = s end
+  function w:clear_keys() self.keys = {} end
+  function w:ammo() end
+  M.spawned, M.sounds, M.quads = {}, {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  check("the suit on: without the water's bit", w.collision_mask & 0x400000 == 0)
+  -- Hit, it flies into the water in WA's hit state (0x80).
+  w.state, w.state_id, w.y, w.vx, w.vy = nil, 0x80, 510, 3, 4
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("not taken to swim: the suit gives out, the water's bit back for WA to drown it",
+    not w.taken and w.collision_mask & 0x400000 ~= 0 and w.body_visible == true)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and it stays WA's", not w.taken)
+  M.turn_start({ worm = w, active = w })
+end
+
 print("wind changer and gravity control: 0-9 and 1-5, then fire")
 do
   new_match()
