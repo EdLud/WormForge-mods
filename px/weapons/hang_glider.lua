@@ -318,7 +318,8 @@ do
     g.deployed, g.ang, g.target, g.cycle, g.landing, g.unstand = true, 0, 0, 0, nil, nil
     g.x, g.y = worm.x, worm.y
     if g.pack then g.pack:despawn(); g.pack = nil end
-    worm:take{ turn = "run" }
+    -- On the glider the worm fires what WA lets it fire mid-air.
+    worm:take{ turn = "run", fire = true }
     wa.sound.play(worm, "sounds/hang_glider/hangopen.wav")
     return glider_frame(worm)
   end

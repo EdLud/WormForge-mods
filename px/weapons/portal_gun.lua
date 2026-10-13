@@ -150,11 +150,12 @@ wa.on.worm_message(function(worm)
       sound(pair.active and "portal_active" or "portal_inactive", worm)
     end
   end
+  -- Jumping and falling it fires through on_fire (the claim's airborne =
+  -- true, the profile's "Fires jumping, falling" setting).
   if worm.weapon == SLOT then
-    worm:air_fire()
     if keys.minus_key and not old.minus_key then chosen[team] = 1 end
     if keys.plus_key and not old.plus_key then chosen[team] = 2 end
-  elseif old.portal then worm:air_fire(false) end
+  end
   held[id] = { portal = worm.weapon == SLOT, plus_key = keys.plus_key, minus_key = keys.minus_key, pause_key = keys.pause_key }
 end, { msgs = { wa.msg.FRAME_FINISH } })
 wa.on.turn_start(function() network:turn_start(); held = {} end)

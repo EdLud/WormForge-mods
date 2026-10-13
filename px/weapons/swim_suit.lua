@@ -108,7 +108,9 @@ local function swim_frame(worm)
     s.plopready, s.plopped = false, true
     s.x, s.y = worm.x, worm.y
     s.vx, s.vy = math.min(worm.vx, cap), math.min(worm.vy, cap)
-    worm:take{ turn = "run" }
+    -- Swimming, it fires nothing but Fast Walk (its swim speed); the suit's
+    -- own use is this pack's hook.
+    worm:take{ turn = "run", fire = { shared.slot("fast_walk") } }
     s.plophase = 0
   end
   if s.plopped and not worm.taken then

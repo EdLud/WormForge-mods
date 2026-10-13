@@ -130,7 +130,7 @@ for _, entry in ipairs({{{up=true,left=true},.75},{{down=true,right=true},.175},
   shared.fires.portal_gun({worm=worm,airborne=true})
   assert(worm.vx==4 and worm.vy==-6 and worm.stock==3)
 end
-keys={plus_key=true}; hooks.worm_message(worm); assert(worm.air_enabled)
+keys={plus_key=true}; hooks.worm_message(worm); assert(not worm.air_enabled, "airborne fire is the claim's, not a per-frame call")
 shared.fires.portal_gun({worm=worm,airborne=true})
 local a=actors[#actors]
 -- Replace the trace with a supported terrain hit. The first successful

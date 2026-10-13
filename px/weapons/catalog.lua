@@ -55,8 +55,10 @@ local PX_ART = {
     panel_icon = "sprites/portal_gun/icon.png",
     -- The native shot remains usable while Lua accounts for pairs. PX's
     -- CanFire/state hacks are replaced by keeping the turn (claims.lua's
-    -- KEEPS_TURN) and worm:air_fire.
+    -- KEEPS_TURN) and firing jumping or falling (airborne, on_fire's
+    -- fire.airborne).
     patch = { hold_pose = 3 },
+    airborne = true,
     worm_sprites = {
       weaponlnk = "sprites/portal_gun/portal_gun_normal",
       weaponlnku = "sprites/portal_gun/portal_gun_up",

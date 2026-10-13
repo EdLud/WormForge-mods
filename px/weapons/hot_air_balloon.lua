@@ -111,7 +111,8 @@ do
         and equipped == shared.slot("bungee") then
       b.active, b.ticks = true, 0
       b.x, b.y, b.vx, b.vy = worm.x, worm.y, worm.vx, worm.vy
-      worm:take{ turn = "run" }
+      -- Under the balloon the worm fires what WA lets it fire mid-air.
+      worm:take{ turn = "run", fire = true }
       balloon_sound(worm, "inflate", 3)
     end
     b.was_parachuting = state == "parachuting"
