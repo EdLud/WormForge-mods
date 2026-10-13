@@ -1,10 +1,6 @@
--- Highlander: the scheme's rules. Split from rules.lua by tools/split_highlander.py.
+-- Highlander: the rules. Split from rules.lua by tools/split_highlander.py.
 local shared = require("lib/shared")
-local CAVE_OFFENSIVE = shared.CAVE_OFFENSIVE
-local CAVE_SECOND = shared.CAVE_SECOND
-local MOVEMENT = shared.MOVEMENT
-local OFFENSIVE = shared.OFFENSIVE
-local SECOND = shared.SECOND
+local POOLS = shared.POOLS
 local arsenal = shared.arsenal
 local dead_hands = shared.dead_hands
 local dealt = shared.dealt
@@ -12,14 +8,6 @@ local describe = shared.describe
 local revived_by_lightning = shared.revived_by_lightning
 
 -- ----------------------------------------------------------------- rules
-
-local function first(pool, n)
-  local out = {}
-  for i = 1, n do
-    out[i] = pool[i]
-  end
-  return out
-end
 
 -- One from each pool, dealt to a worm on the first message it receives -- as
 -- PX does on each worm's first M_FRAME. Dealing everyone at once on the very
@@ -29,9 +17,13 @@ end
 -- sequence everywhere.
 local function deal(worm)
   local cave = wa.world.cavern()
-  arsenal:deal(worm, cave and first(OFFENSIVE, CAVE_OFFENSIVE) or OFFENSIVE, 1)
-  arsenal:deal(worm, cave and first(SECOND, CAVE_SECOND) or SECOND, 1)
-  arsenal:deal(worm, MOVEMENT, 1)
+  for _, name in ipairs({ "offensive", "second", "movement" }) do
+    local pool = POOLS[cave and "cave_" .. name or name]
+    -- A profile may leave a pool empty: nothing to deal from it.
+    if #pool > 0 then
+      arsenal:deal(worm, pool, 1)
+    end
+  end
   dealt[worm.id] = true
   wa.log(string.format(
     "highlander: worm %d dealt %s (%s map)",
@@ -40,8 +32,8 @@ local function deal(worm)
 end
 
 -- The hand, one use of each, for the turn. PX's GiveWeapons (the Hot Air
--- Balloons and the Wind Changer) is the scheme's weapon data
--- (components/highlander.lua): the engine gives it.
+-- Balloons and the Wind Changer) is weapon data in the Highlander profile:
+-- the engine gives it.
 local function start_turn(worm)
   arsenal:apply(worm, { clear = true, each = 1 })
 end
@@ -99,4 +91,3 @@ end)
 
 wa.on.death(on_death)
 
-shared.first = first

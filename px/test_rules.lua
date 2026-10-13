@@ -792,7 +792,7 @@ do
   -- A weapon component may claim only the slot it is placed on, and the
   -- engine skips any other claim, silently: every replaced slot needs a
   -- weapon component at that slot's panel position, and the Highlander
-  -- scheme's preset places each. (Checked where the suite can read the
+  -- profile places each. (Checked where the suite can read the
   -- pack's files: run from the repo, not inside the engine's loader test.)
   local toml = io and io.open("mods/px/mod.toml")
   if toml then
@@ -833,11 +833,14 @@ do
       local row, column = block:match('default_position = { row = "(%w+)", column = (%d+) }')
       if id and row then component[slot_at(row, tonumber(column))] = id end
     end
-    local presets = manifest:match("%[presets%.highlander%.weapons%](.*)$") or ""
-    for id, row, column in presets:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
+    -- The Highlander profile's weapon set: its [weapons] table.
+    local file = assert(io.open("mods/px/profiles/Highlander.toml"))
+    local weapons = file:read("a"):match("%[weapons%](.-)\n%[") or ""
+    file:close()
+    for id, row, column in weapons:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
       preset[slot_at(row, tonumber(column))] = id
     end
-    -- Where PX uses WA's weapon unchanged, the scheme places the stock one.
+    -- Where PX uses WA's weapon unchanged, the profile places the stock one.
     local AS_STOCK = {
       flame_thrower = "stock.flame_thrower", fast_walk = "stock.fast_walk",
       crate_spy = "stock.crate_spy", crate_shower = "stock.crate_shower",
@@ -853,7 +856,7 @@ do
         missing[#missing + 1] = r.weapon
       end
     end
-    check("every replaced slot is a Highlander weapon the scheme places, or WA's own", #missing == 0,
+    check("every replaced slot is a Highlander weapon the profile places, or WA's own", #missing == 0,
       table.concat(missing, ","))
   end
   local own_file = true

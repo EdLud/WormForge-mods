@@ -1,7 +1,7 @@
 # Core utilities (format_version 2): one feature with the match settings the
 # lobby scheme doesn't have, and some players' favourite packs as switches.
-# Nothing runs until the mod loader's Scheme tab (or [profile] in
-# Mods/wormforge.toml) selects it. See README.md.
+# Nothing runs until a profile selects it (the mod loader's Profile tab).
+# See README.md.
 id = "core.utilities"
 name = "Core utilities"
 version = "0.2.0"

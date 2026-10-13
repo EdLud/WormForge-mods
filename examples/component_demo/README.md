@@ -1,42 +1,48 @@
 # component_demo
 
-A component bundle (`format_version = 2`): two weapons, one scheme and one
-feature. Installing it runs nothing; a profile selects what runs. Pick
-"Demo scheme" in the mod loader's Profile tab and tick "Turn note", or put this
-in `Mods/wormforge.toml` (the Profile tab writes the same table):
+A component bundle (`format_version = 2`): two weapons and two add-ons
+(features). Installing it runs nothing; a profile selects what runs. The two
+profiles in `profiles/`, **Demo** and **Demo medic**, are copied into
+`Mods/Profiles` when the mod loader installs the bundle; pick one in the
+loader's Profile tab. A profile is a plain TOML file, so it can be written by
+hand too:
 
 ```toml
-[profile]
-scheme = "demo.scheme"
 features = ["demo.turn_note"]
+crates = { weapon = 40, health = 10, utility = 20 }
 
-[profile.options."demo.turn_note"]
+[weapons]
+"demo.big_bazooka" = { row = "F1", column = 1 }
+"stock.ninja_rope" = { row = "F8", column = 1 }
+
+[weapon_settings."demo.big_bazooka"]
+delay = 1
+
+[options."demo.turn_note"]
 show = true
 ```
 
-The scheme's preset places **Big Bazooka** (Bazooka with damage 80) on F1,
-and its override sets the weapon's delay to 1; `wkLua.log` shows the merged
-data (`round_start -1, delay 1`) and the resolved profile (`profile ...`
-lines). The preset also places six stock weapons (`stock.grenade`,
-`stock.ninja_rope` and so on): WA's own weapons at their own places, with
-the ammo the scheme gives them. The feature adds a HUD line while `show` is
-on.
+**Demo** places **Big Bazooka** (Bazooka with damage 80) on F1 and sets its
+delay to 1; `wkLua.log` shows the merged data (`round_start -1, delay 1`) and
+the resolved profile (`profile ...` lines). It also places six stock weapons
+(`stock.grenade`, `stock.ninja_rope` and so on): WA's own weapons, with the
+ammo the profile gives them. The Turn note add-on adds a HUD line while
+`show` is on.
 
 The weapon data is written into WA's scheme for the round, whatever scheme
-the lobby picked, and the scheme owns the whole panel: every team starts
-with infinite Big Bazookas (usable from the second round of turns, a delay
-of 1), grenades, shotguns, five ropes and two teleports, and every other
-slot is empty and never comes in a crate. Each turn a weapon crate drops
-with a 40% chance, a health crate 10% and a utility crate 20% (the
-scheme's `crates`), whatever the lobby's crate settings.
+the lobby picked, and a profile with weapons owns the whole panel: every team
+starts with infinite Big Bazookas (usable from the second round of turns, a
+delay of 1), grenades, shotguns, five ropes and two teleports, and every
+other slot is empty and never comes in a crate. Each turn a weapon crate
+drops with a 40% chance, a health crate 10% and a utility crate 20% (the
+profile's `crates`), whatever the lobby's crate settings.
 
-**Medic rules** (`demo.medic`) is the same loadout with a rule of its own: the
-worm whose turn starts heals 10 HP. A scheme with rules declares
-`changes_rules = true`, and the Profile tab says "This scheme changes gameplay
-rules" in green when it is picked.
+**Demo medic** is the same, with the **Medic** add-on (`demo.medic`): the
+worm whose turn starts heals 10 HP. Rules are add-ons, so any profile can
+use them.
 
-**Big Mortar** (Mortar with damage 70, 3 at round start) is outside the preset.
-Type "mortar" in the Profile tab's search and tick it: it goes to its default
-position, F1 3. Any weapon may go at any position (the stock slot there takes
-it), so moving one onto another's place offers to swap them or replace the one
-there.
+**Big Mortar** (Mortar with damage 70, 3 at round start) is in no profile.
+Type "mortar" in the Weapons tab's search and double-click it: it goes to its
+default position, F1 3. Any weapon may go at any position (the stock slot
+there takes it), so moving one onto another's place offers to swap them or
+replace the one there.

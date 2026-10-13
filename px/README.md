@@ -1,21 +1,21 @@
 # Project X weapons
 
 Project X's weapons, ported to WormForge as the component bundle
-`px.weapons`. Each weapon is a component any scheme can place, credited in
+`px.weapons`. Each weapon is a component any profile can place, credited in
 the mod loader to its Project X authors as its scripts name them (`authors`
 and `credits` in `mod.toml`); where nobody is named yet, it shows only as a
 Project X weapon.
 
 ## Highlander
 
-Highlander is one PX scheme over these weapons, built on `wa.inventory`,
-`wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
+Highlander's rules are the add-on **Highlander rules** (`hl.rules`), built on
+`wa.inventory`, `wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
 is preserved in `highlander_pure_lua` for comparison. Enable only one edition.
 
 Project X's *Highlander 0rang3 1.1*: its rules, on its weapon layout. The
-scheme puts each of its weapons on one of WA's stock slots, e.g. the Baseball
-Bat on the girder's. The pools are PX's own lists, each weapon written as the
-slot it takes.
+Highlander profile puts each of its weapons on one of WA's stock slots, e.g.
+the Baseball Bat on the girder's. Each weapon's pool is one of its settings
+for the add-on; every PX weapon suggests its PX pool.
 
 Weapons are ported in batches. **A weapon not ported yet leaves WA's stock
 weapon on its slot, and that stands in for it.**
@@ -23,36 +23,34 @@ weapon on its slot, and that stands in for it.**
 ## Playing it
 
 Highlander is a component bundle (`format_version = 2`): installing it runs
-nothing until a profile selects it. Pick the **Highlander** scheme in the mod
-loader's Profile tab, or put this in `Mods/wormforge.toml`:
+nothing until a profile selects it. Its two profiles (`profiles/`) are copied
+into `Mods/Profiles` when the mod loader installs the bundle; load
+**Highlander** in the loader's Profile tab. It places every PX weapon where
+PX's layout puts it and ticks Highlander rules, which deal them by the rules
+below. **Highlander weapons** places the same weapons without the rules, for
+trying them out: the ammo is the WA lobby scheme's.
 
-```toml
-[profile]
-scheme = "hl.highlander"
-```
-
-The scheme places all 67 of its weapons and deals them by the rules below
-(it says so in green in the loader: it changes gameplay rules). The scheme
-**Highlander weapons (no rules)** (`hl.weapons_only`) places the same
-weapons without the rules, for trying them out: the ammo is the WA lobby
-scheme's.
+Any profile can tick Highlander rules over its own weapon set. Each placed
+weapon then has two more settings in the Weapons tab: its **Highlander pool**
+(offensive, second, movement, or not dealt) and whether it is **dealt on
+cavern maps**. A PX weapon suggests PX's choice; WA's own weapons are not
+dealt until a profile says so.
 
 Each weapon is also a component of its own (`px.double_bazooka`,
 `px.sniper_rifle`, ...), and like any weapon it may go at any panel position.
 Its home slot (PX's layout: the Double Bazooka on the Bazooka's) is where it
 goes by default and how the code names it; `shared.slot(home)` is where it
-sits this match. Under the Highlander scheme, moved weapons are dealt where
-they are, and one taken out is not dealt. Another scheme can place some of
-them next to WA's own weapons, without Highlander's rules: they then keep the
-ammo, delay and crate odds that scheme gives them. Search for them in the
-Profile tab.
+sits this match. Under Highlander rules, moved weapons are dealt where they
+are, and one taken out is not dealt. A profile without the rules can place
+some of them next to WA's own weapons: they then keep the ammo, delay and
+crate odds that profile gives them. Search for them in the Weapons tab.
 
 ## Rules
 
 - At the start of the match, every worm is dealt **one weapon from each
   pool**.
 - On a worm's turn it can use **exactly its own weapons, one shot of each**.
-  Nobody else holds any pooled weapon, whatever the scheme says.
+  Nobody else holds any pooled weapon, whatever the profile says.
 - Next turn it gets them back. Firing doesn't use a weapon up for good.
 - **When a worm dies, the worm whose turn it is takes everything the dead
   worm carried**, and can use it that same turn. That includes friendly and
@@ -68,13 +66,13 @@ Profile tab.
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
 | Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
-Highlander's rules never touch the **not pooled** weapons. Three come from
-the Highlander scheme's weapon data (`components/highlander.lua`), which the
-mod loader shows and a player may change: the team's Hot Air Balloons are
-refilled to 3 and its Wind Changer to 1 each turn, as PX's GiveWeapons does,
-and each team gets one Weapon Crate a round, as in PX. The others keep
-whatever ammo the scheme gives, so the scheme decides whether Teleport or Skip
-Go is always available.
+Highlander's rules never touch the **not pooled** weapons. Three get weapon
+settings in the Highlander profile, which the mod loader shows and a player
+may change: the team's Hot Air Balloons are refilled to 3 and its Wind
+Changer to 1 each turn, as PX's GiveWeapons does, and each team gets one
+Weapon Crate a round, as in PX. The others keep whatever ammo the profile
+gives, so the profile decides whether Teleport or Skip Go is always
+available.
 
 On cavern maps PX draws from the first 21 offensive and the first 16 second
 weapons only. That leaves out the Ferret and the strikes, and Reinforcement,
@@ -504,8 +502,8 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 1. Enable only this pack in the mod loader. Packs that replace a stock slot,
    such as `sentry_gun`, `pooz` or `worm_toss`, would put their weapon into the
    pool in place of the one there.
-2. Any scheme works. The pooled slots are overwritten every turn, including
-   ones the scheme has at infinite.
+2. Any lobby scheme works. The pooled slots are overwritten every turn,
+   including ones the lobby scheme has at infinite.
 3. `wkLua.log` records every hand dealt, by slot, and every weapon taken:
    `highlander: worm 16 took ... from worm 32`.
 
@@ -514,10 +512,13 @@ frames) are drawn by the GPU renderer, in true colour, and take none.
 These are deliberate, and each one is explained in the pack's code:
 
 - PX grants 3 Hot Air Balloons and 1 Wind Changer every turn; so does the
-  Highlander scheme, as weapon data the loader shows.
+  Highlander profile, as weapon settings the loader shows.
 - There's no removal at turn end. The next turn start does the same job.
 - Every pooled slot is zeroed at each turn start, not only the previous
-  worm's. PX left that to its own scheme; here any scheme works.
+  worm's. PX left that to its own scheme; here any lobby scheme works.
+- The pools are each weapon's settings, so a draw picks among the placed
+  weapons in slot order rather than in PX's list order; and a weapon is kept
+  off cavern maps by its own setting, not by its place in PX's list.
 
 ## Lockstep
 
@@ -552,7 +553,8 @@ hands. Nothing reads local input or the clock.
 
 `rules.lua` is the pack in one piece: its description and one `require` per
 module, in the order they run; the tests load it. In a match the bundle runs
-as components (`components/`): the scheme `hl.highlander` loads `scheme/`,
+as components (`components/`): the add-on `hl.rules` (Highlander rules)
+builds the pools from each placed weapon's settings and loads `scheme/`,
 and each placed weapon component runs `components/weapon.lua`, which loads
 the modules the placed weapons need (`components/loader.lua`, in
 `rules.lua`'s order) and claims the slot it was placed on. Every slot a
@@ -565,8 +567,9 @@ Highlander didn't claim is left alone.
 |---|---|
 | `lib/` | What several weapons share: the engine-drawn holds, sprite animation helpers, PX's missile sprites, and `shared.lua`, the table modules pass values through. |
 | `weapons/` | One module per weapon or weapon family, plus the claim tables (`catalog.lua`, `claims.lua`) and the generated record data (`wep_data.lua`, written by `tools/embed_weps.py`). |
-| `scheme/` | The Highlander scheme itself: its pools, its state and its rules. |
-| `components/` | The bundle's entries: the scheme, the weapon component, and the loader that maps placed weapons to modules. |
+| `scheme/` | Highlander's rules: its pools, its state and the rules themselves. |
+| `components/` | The bundle's entries: the rules add-on, the weapon component, and the loader that maps placed weapons to modules. |
+| `profiles/` | Highlander and Highlander weapons, copied into `Mods/Profiles` when the loader installs the bundle. |
 
 A module reads another's value as `local name = shared.name`; one that is
 set later (an explode handler the claims call) is used as `shared.name`
@@ -689,7 +692,8 @@ Added engine surface:
   reuse; the old `object.id` stays compatible. `wa.arrows.all()` enumerates
   live stock arrows. `ctrl`, `minus_key`, `alt`, `pause_key` join synchronized keys.
 
-Tests: `lua mods/px/test_portals.lua`, plus the existing
+Tests: `lua mods/px/test_portals.lua`, `lua mods/px/test_pools.lua` (the
+pools from each weapon's settings), plus the existing
 scheme mock and native Windows engine/Lua tests. The port was playtested in
 WA, including endpoint visibility and effects. Replay/network playback is
 still unverified.

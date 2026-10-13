@@ -1,4 +1,10 @@
--- Highlander: the scheme's weapon pools. Split from rules.lua by tools/split_highlander.py.
+-- Highlander: the weapon pools. Each worm is dealt one weapon from each.
+--
+-- Under the hl.rules add-on the pools are each placed weapon's settings
+-- ("Highlander pool", "Dealt on cavern maps"), which components/highlander.lua
+-- reads into shared.pools before this loads; a PX weapon suggests its PX pool
+-- (mod.toml). Without them -- rules.lua, the pack in one piece -- the pools
+-- are PX's own lists below.
 local shared = require("lib/shared")
 
 -- ----------------------------------------------------------------- pools
@@ -81,42 +87,43 @@ local CAVE_SECOND = 16
 -- The slots Highlander never pools -- Kamikaze Rocket, Gravler, Hot Air
 -- Balloon, Skip Go/Surrender, Wind Changer, Muahaha 3, Weapon Crate, Cluster
 -- Bomb, Fast Walk, Teleport, Skunk, Crate Spy, Mole Bomb, Crate Shower -- keep
--- whatever ammo the scheme gives them. The Highlander scheme's own data gives
--- the Hot Air Balloon, the Wind Changer and the Weapon Crate
--- (components/highlander.lua).
+-- whatever ammo the profile gives them.
 
--- The pools above name each weapon by its home slot. Dealt is where each
--- sits this match (shared.slot), and a weapon the scheme doesn't place is not
+-- PX's lists name each weapon by its home slot. Dealt is where each sits
+-- this match (shared.slot), and a weapon the profile doesn't place is not
 -- dealt; the cavern cut-offs count the placed weapons among PX's first ones.
 local function placed(pool, first)
-  local out, kept = {}, 0
+  local all, cave = {}, {}
   for i, home in ipairs(pool) do
     local slot = shared.slot(home)
     if slot then
-      out[#out + 1] = slot
-      if first and i <= first then kept = kept + 1 end
+      all[#all + 1] = slot
+      if not first or i <= first then cave[#cave + 1] = slot end
     end
   end
-  return out, kept
+  return all, cave
 end
-OFFENSIVE, CAVE_OFFENSIVE = placed(OFFENSIVE, CAVE_OFFENSIVE)
-SECOND, CAVE_SECOND = placed(SECOND, CAVE_SECOND)
-MOVEMENT = placed(MOVEMENT)
 
--- Every slot this pack owns, in a fixed order. Zeroing walks this list, so it
--- must not depend on pairs() order: Lua's string hashing is seeded per
--- process, and a different order on each peer is a different sequence of
--- writes.
-local POOLED = {}
-for _, pool in ipairs({ OFFENSIVE, SECOND, MOVEMENT }) do
-  for _, name in ipairs(pool) do
-    POOLED[#POOLED + 1] = name
+local pools = shared.pools
+if not pools then
+  pools = {}
+  pools.offensive, pools.cave_offensive = placed(OFFENSIVE, CAVE_OFFENSIVE)
+  pools.second, pools.cave_second = placed(SECOND, CAVE_SECOND)
+  pools.movement, pools.cave_movement = placed(MOVEMENT)
+end
+
+-- Every pooled slot, in a fixed order. Zeroing walks this list, so it must
+-- not depend on pairs() order: Lua's string hashing is seeded per process,
+-- and a different order on each peer is a different sequence of writes.
+local POOLED, seen = {}, {}
+for _, name in ipairs({ "offensive", "second", "movement" }) do
+  for _, slot in ipairs(pools[name]) do
+    if not seen[slot] then
+      seen[slot] = true
+      POOLED[#POOLED + 1] = slot
+    end
   end
 end
 
-shared.CAVE_OFFENSIVE = CAVE_OFFENSIVE
-shared.CAVE_SECOND = CAVE_SECOND
-shared.MOVEMENT = MOVEMENT
-shared.OFFENSIVE = OFFENSIVE
+shared.POOLS = pools
 shared.POOLED = POOLED
-shared.SECOND = SECOND

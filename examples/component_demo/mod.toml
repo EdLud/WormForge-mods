@@ -1,5 +1,5 @@
-# A component bundle (format_version 2): nothing runs until a profile in
-# Mods/wormforge.toml selects its components. See README.md.
+# A component bundle (format_version 2): nothing runs until a profile selects
+# its components. profiles/ holds two to load in the mod loader. See README.md.
 id = "example.components"
 version = "0.1.0"
 author = "wkLua"
@@ -25,35 +25,6 @@ icon = "mortar"
 default_position = { row = "F1", column = 3 }
 
 [[components]]
-id = "demo.scheme"
-type = "scheme"
-name = "Demo scheme"
-description = "Big Bazooka plus a few stock weapons; nothing else on the panel."
-entry = "scheme.lua"
-preset = "demo"
-
-[[components]]
-id = "demo.medic"
-type = "scheme"
-name = "Medic rules"
-description = "The demo scheme's weapons, and a rule: the worm whose turn starts heals 10 HP."
-entry = "schemes/medic.lua"
-preset = "demo"
-changes_rules = true
-tags = ["demo"]
-
-# The scheme owns the whole panel: a slot left out here has no ammo and
-# never comes in a crate. stock.<slot> is WA's own weapon at its own place.
-[presets.demo.weapons]
-"demo.big_bazooka" = { row = "F1", column = 1 }
-"stock.grenade" = { row = "F2", column = 1 }
-"stock.shotgun" = { row = "F3", column = 1 }
-"stock.ninja_rope" = { row = "F8", column = 1 }
-"stock.teleport" = { row = "F8", column = 4 }
-"stock.skip_go" = { row = "F12", column = 1 }
-"stock.surrender" = { row = "F12", column = 2 }
-
-[[components]]
 id = "demo.turn_note"
 type = "feature"
 name = "Turn note"
@@ -64,3 +35,10 @@ key = "show"
 type = "bool"
 default = true
 label = "Show a HUD line"
+
+[[components]]
+id = "demo.medic"
+type = "feature"
+name = "Medic"
+description = "The worm whose turn starts heals 10 HP."
+entry = "features/medic.lua"

@@ -5,7 +5,6 @@ local function sq(v) return v * v end
 
 local shared = require("lib/shared")
 local current_worm = shared.current_worm
-local first = shared.first
 local held = shared.held
 -- Highlander's rules (scheme/state.lua) and the Lightning Strike share it; the
 -- strike also works without the rules, as a weapon of another scheme.

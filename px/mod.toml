@@ -1,12 +1,13 @@
 # Project X's weapons, ported to WormForge, as a component bundle: each
-# weapon is a component any scheme can place (the loader's Weapons tab lists
+# weapon is a component any profile can place (the loader's Weapons tab lists
 # them), credited to its Project X authors. A weapon goes on any panel place.
 #
-# Highlander is one PX scheme over them: hl.highlander places them all and
-# deals them with Project X's rules (scheme/); hl.weapons_only places them
-# without the rules. Where PX uses WA's own weapon unchanged (Teleport, Fast
-# Walk, Crate Spy, Crate Shower, Flame Thrower) the preset places the stock
-# one.
+# Highlander's rules are the hl.rules add-on (scheme/). Each PX weapon
+# suggests its PX pool for them; a profile may set any weapon's. The profiles
+# in profiles/ (Highlander, and the same weapons without the rules) are
+# copied into Mods/Profiles when the loader installs this bundle. Where PX
+# uses WA's own weapon unchanged (Teleport, Fast Walk, Crate Spy, Crate
+# Shower, Flame Thrower) they place the stock one.
 #
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.weapons"
@@ -20,22 +21,27 @@ format_version = 2
 debug_worm_state = true
 
 [[components]]
-id = "hl.highlander"
-type = "scheme"
-name = "Highlander"
-description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
+id = "hl.rules"
+type = "feature"
+name = "Highlander rules"
+description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried. Each placed weapon's pool is one of its settings."
 entry = "components/highlander.lua"
-preset = "highlander"
-changes_rules = true
-tags = ["highlander"]
+before_weapons = true
 
-[[components]]
-id = "hl.weapons_only"
-type = "scheme"
-name = "Highlander weapons (no rules)"
-description = "Every Highlander weapon where PX's layout puts it, without Highlander's rules: no dealing, no one shot each per turn. The ammo is the WA lobby scheme's."
-entry = "components/weapons_only.lua"
-preset = "highlander"
+[[components.weapon_options]]
+key = "pool"
+type = "choice"
+choices = ["offensive", "second", "movement", "not dealt"]
+default = "not dealt"
+label = "Highlander pool"
+description = "Each worm is dealt one weapon from each pool."
+
+[[components.weapon_options]]
+key = "cavern"
+type = "bool"
+default = true
+label = "Dealt on cavern maps"
+description = "Off for weapons that come from the sky."
 
 [[components]]
 id = "px.double_bazooka"
@@ -47,6 +53,9 @@ entry = "components/weapon.lua"
 icon = "sprites/double_bazooka/double_bazooka_ico.png"
 default_position = { row = "F1", column = 1 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.igniter"
 type = "weapon"
@@ -55,6 +64,9 @@ description = "Highlander's Igniter."
 entry = "components/weapon.lua"
 icon = "sprites/igniter/igniter_ico.png"
 default_position = { row = "F1", column = 2 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.s_m_a_r_t_bomb"
@@ -66,6 +78,9 @@ entry = "components/weapon.lua"
 icon = "sprites/smart_bomb/smart_ico.png"
 default_position = { row = "F1", column = 3 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.blaster_worm"
 type = "weapon"
@@ -75,6 +90,9 @@ description = "Highlander's Blaster Worm."
 entry = "components/weapon.lua"
 icon = "sprites/blaster_worm/bworm_ico.png"
 default_position = { row = "F1", column = 4 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.burning_sheep_launcher"
@@ -86,6 +104,9 @@ entry = "components/weapon.lua"
 icon = "sprites/launchers/burning_sheep_launcher_ico.png"
 default_position = { row = "F1", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.sticky_bomb"
 type = "weapon"
@@ -95,6 +116,9 @@ description = "Highlander's Sticky Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/sticky_bomb/sbico.png"
 default_position = { row = "F2", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.windy_cluster"
@@ -106,6 +130,9 @@ entry = "components/weapon.lua"
 icon = "sprites/windy_cluster/ico_windyc.png"
 default_position = { row = "F2", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.super_gravedigger"
 type = "weapon"
@@ -115,6 +142,9 @@ description = "Highlander's Super Gravedigger."
 entry = "components/weapon.lua"
 icon = "sprites/super_gravedigger/sgrave_ico.png"
 default_position = { row = "F2", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.thumper_nade"
@@ -126,6 +156,9 @@ entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpern_ico.png"
 default_position = { row = "F2", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.electric_grenade"
 type = "weapon"
@@ -136,6 +169,9 @@ entry = "components/weapon.lua"
 icon = "sprites/electric_grenade/icon.png"
 default_position = { row = "F2", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.real_shotgun"
 type = "weapon"
@@ -144,6 +180,9 @@ description = "Highlander's Real Shotgun."
 entry = "components/weapon.lua"
 icon = "sprites/real_shotgun/real_shotgun_ico.png"
 default_position = { row = "F3", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.sniper_rifle"
@@ -156,6 +195,9 @@ entry = "components/weapon.lua"
 icon = "sprites/sniper_rifle/srico.png"
 default_position = { row = "F3", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.laser_gun"
 type = "weapon"
@@ -165,6 +207,9 @@ description = "Highlander's Laser Gun."
 entry = "components/weapon.lua"
 icon = "sprites/laser_gun/ico_lasergun.png"
 default_position = { row = "F3", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.burst_rifle"
@@ -176,6 +221,9 @@ entry = "components/weapon.lua"
 icon = "sprites/burst_rifle/ico_burstr.png"
 default_position = { row = "F3", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.shadow_bolt"
 type = "weapon"
@@ -186,6 +234,9 @@ entry = "components/weapon.lua"
 icon = "sprites/shadow_bolt/ico_shadowb.png"
 default_position = { row = "F3", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.fire_jump"
 type = "weapon"
@@ -195,6 +246,9 @@ description = "Highlander's Fire Jump."
 entry = "components/weapon.lua"
 icon = "sprites/fire_jump/fire_jump_ico.png"
 default_position = { row = "F4", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.sentry_laser"
@@ -207,6 +261,9 @@ entry = "components/weapon.lua"
 icon = "sprites/sentry_laser/icon.png"
 default_position = { row = "F4", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.sentry_gun"
 type = "weapon"
@@ -216,6 +273,9 @@ description = "Highlander's Sentry Gun."
 entry = "components/weapon.lua"
 icon = "sprites/sentry_gun/icon.png"
 default_position = { row = "F4", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.kamikaze_rocket"
@@ -238,6 +298,9 @@ entry = "components/weapon.lua"
 icon = "sprites/javelin/icon.png"
 default_position = { row = "F4", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.dynamite"
 type = "weapon"
@@ -246,6 +309,9 @@ description = "Highlander's Dynamite."
 entry = "components/weapon.lua"
 icon = "dynamite"
 default_position = { row = "F5", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.nuke_rocket"
@@ -257,6 +323,9 @@ entry = "components/weapon.lua"
 icon = "sprites/nuke_rocket/nuke_rocket_ico.png"
 default_position = { row = "F5", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.pogo_sheep"
 type = "weapon"
@@ -267,6 +336,9 @@ entry = "components/weapon.lua"
 icon = "sprites/pogo_sheep/psheep_ico.png"
 default_position = { row = "F5", column = 3 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.ghost_sheep"
 type = "weapon"
@@ -276,6 +348,9 @@ description = "Highlander's Ghost Sheep."
 entry = "components/weapon.lua"
 icon = "sprites/ghost_sheep/ghost_sheep_ico.png"
 default_position = { row = "F5", column = 5 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.gravler"
@@ -297,6 +372,10 @@ entry = "components/weapon.lua"
 icon = "sprites/mortar_strike/ico_mortarst.png"
 default_position = { row = "F6", column = 1 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.lightning_strike"
 type = "weapon"
@@ -305,6 +384,10 @@ description = "Highlander's Lightning Strike."
 entry = "components/weapon.lua"
 icon = "sprites/lightning/icon.png"
 default_position = { row = "F6", column = 2 }
+
+[components.suggests."hl.rules"]
+pool = "second"
+cavern = false
 
 [[components]]
 id = "px.pigeon_strike"
@@ -316,6 +399,10 @@ entry = "components/weapon.lua"
 icon = "sprites/pigeon_strike/ico_pigeonst.png"
 default_position = { row = "F6", column = 3 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.gravler_strike"
 type = "weapon"
@@ -326,6 +413,10 @@ entry = "components/weapon.lua"
 icon = "sprites/gravler/gravlerst_ico.png"
 default_position = { row = "F6", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.blowtorch"
 type = "weapon"
@@ -334,6 +425,9 @@ description = "Highlander's BlowTorch."
 entry = "components/weapon.lua"
 icon = "blow_torch"
 default_position = { row = "F7", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.super_drill"
@@ -345,6 +439,9 @@ entry = "components/weapon.lua"
 icon = "sprites/super_drill/ico_superdrill.png"
 default_position = { row = "F7", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.baseball_bat"
 type = "weapon"
@@ -353,6 +450,9 @@ description = "Highlander's Baseball Bat."
 entry = "components/weapon.lua"
 icon = "baseball_bat"
 default_position = { row = "F7", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.electromagnet"
@@ -363,6 +463,9 @@ entry = "components/weapon.lua"
 icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.3_girder_pack"
 type = "weapon"
@@ -372,6 +475,9 @@ entry = "components/weapon.lua"
 icon = "girder_pack"
 default_position = { row = "F7", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "movement"
+
 [[components]]
 id = "px.jump"
 type = "weapon"
@@ -380,6 +486,9 @@ description = "Highlander's Jump."
 entry = "components/weapon.lua"
 icon = "sprites/jump/jumpic.png"
 default_position = { row = "F8", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "movement"
 
 [[components]]
 id = "px.hot_air_balloon"
@@ -401,6 +510,9 @@ entry = "components/weapon.lua"
 icon = "sprites/hang_glider/ico_glider.png"
 default_position = { row = "F8", column = 3 }
 
+[components.suggests."hl.rules"]
+pool = "movement"
+
 [[components]]
 id = "px.super_tele"
 type = "weapon"
@@ -410,6 +522,9 @@ description = "Highlander's Super Tele."
 entry = "components/weapon.lua"
 icon = "sprites/super_tele/icon.png"
 default_position = { row = "F8", column = 4 }
+
+[components.suggests."hl.rules"]
+pool = "movement"
 
 [[components]]
 id = "px.portal_gun"
@@ -421,6 +536,9 @@ entry = "components/weapon.lua"
 icon = "sprites/portal_gun/icon.png"
 default_position = { row = "F8", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+
 [[components]]
 id = "px.chilli_bomb"
 type = "weapon"
@@ -430,6 +548,9 @@ description = "Highlander's Chilli Bomb."
 entry = "components/weapon.lua"
 icon = "sprites/chilli_bomb/chilli_ico.png"
 default_position = { row = "F9", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.hellish_hand_grenade"
@@ -441,6 +562,9 @@ entry = "components/weapon.lua"
 icon = "sprites/hellish/hhh_ico.png"
 default_position = { row = "F9", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.ferret"
 type = "weapon"
@@ -451,6 +575,10 @@ entry = "components/weapon.lua"
 icon = "sprites/ferret/icon.png"
 default_position = { row = "F9", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.banana_express"
 type = "weapon"
@@ -459,6 +587,10 @@ description = "Highlander's Banana Express."
 entry = "components/weapon.lua"
 icon = "sprites/banana_express/banana_express_ico.png"
 default_position = { row = "F9", column = 5 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
 
 [[components]]
 id = "px.valyrian_fire"
@@ -470,6 +602,9 @@ entry = "components/weapon.lua"
 icon = "sprites/valyrian_fire/icon.png"
 default_position = { row = "F10", column = 1 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.remote_roller"
 type = "weapon"
@@ -480,6 +615,9 @@ entry = "components/weapon.lua"
 icon = "sprites/remote_roller/rroller_ico.png"
 default_position = { row = "F10", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.priceless_ming_vase"
 type = "weapon"
@@ -488,6 +626,9 @@ description = "Highlander's Priceless Ming Vase."
 entry = "components/weapon.lua"
 icon = "ming_vase"
 default_position = { row = "F10", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.bowling_ball_strike"
@@ -499,6 +640,10 @@ entry = "components/weapon.lua"
 icon = "sprites/bowling_ball/strike_icon.png"
 default_position = { row = "F10", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.thumper_nade_strike"
 type = "weapon"
@@ -509,6 +654,10 @@ entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpernst_ico.png"
 default_position = { row = "F10", column = 5 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
 [[components]]
 id = "px.cow_launcher"
 type = "weapon"
@@ -518,6 +667,9 @@ entry = "components/weapon.lua"
 icon = "sprites/launchers/cow_launcher_ico.png"
 default_position = { row = "F11", column = 1 }
 
+[components.suggests."hl.rules"]
+pool = "offensive"
+
 [[components]]
 id = "px.old_woman_launcher"
 type = "weapon"
@@ -526,6 +678,9 @@ description = "Highlander's Old Woman Launcher."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/old_woman_launcher_ico.png"
 default_position = { row = "F11", column = 2 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.crate_strike"
@@ -538,6 +693,10 @@ entry = "components/weapon.lua"
 icon = "sprites/crate_strike/icon.png"
 default_position = { row = "F11", column = 3 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+cavern = false
+
 [[components]]
 id = "px.reinforcement"
 type = "weapon"
@@ -548,6 +707,10 @@ entry = "components/weapon.lua"
 icon = "sprites/reinforcement/icon.png"
 default_position = { row = "F11", column = 4 }
 
+[components.suggests."hl.rules"]
+pool = "second"
+cavern = false
+
 [[components]]
 id = "px.ice_arrow"
 type = "weapon"
@@ -557,6 +720,9 @@ description = "Highlander's Ice Arrow."
 entry = "components/weapon.lua"
 icon = "sprites/ice_arrow/icon.png"
 default_position = { row = "F11", column = 5 }
+
+[components.suggests."hl.rules"]
+pool = "second"
 
 [[components]]
 id = "px.skip_go_surrender"
@@ -609,6 +775,9 @@ entry = "components/weapon.lua"
 icon = "sprites/helicopter/heli_ico.png"
 default_position = { row = "utility", column = 1 }
 
+[components.suggests."hl.rules"]
+pool = "movement"
+
 [[components]]
 id = "px.gravity_control"
 type = "weapon"
@@ -620,6 +789,9 @@ entry = "components/weapon.lua"
 icon = "sprites/gravity_control/gravity_control_ico.png"
 default_position = { row = "utility", column = 2 }
 
+[components.suggests."hl.rules"]
+pool = "movement"
+
 [[components]]
 id = "px.swim_suit"
 type = "weapon"
@@ -630,6 +802,9 @@ description = "Highlander's Swim Suit."
 entry = "components/weapon.lua"
 icon = "sprites/swim_suit/ico_swimsuit.png"
 default_position = { row = "utility", column = 4 }
+
+[components.suggests."hl.rules"]
+pool = "movement"
 
 [[components]]
 id = "px.skunk"
@@ -648,76 +823,3 @@ description = "Highlander's Mole Bomb."
 entry = "components/weapon.lua"
 icon = "mole_bomb"
 default_position = { row = "utility", column = 8 }
-
-# Every slot: Highlander's weapons, and WA's own on the three it leaves alone.
-[presets.highlander.weapons]
-"px.double_bazooka" = { row = "F1", column = 1 }
-"px.igniter" = { row = "F1", column = 2 }
-"px.s_m_a_r_t_bomb" = { row = "F1", column = 3 }
-"px.blaster_worm" = { row = "F1", column = 4 }
-"px.burning_sheep_launcher" = { row = "F1", column = 5 }
-"px.sticky_bomb" = { row = "F2", column = 1 }
-"px.windy_cluster" = { row = "F2", column = 2 }
-"px.super_gravedigger" = { row = "F2", column = 3 }
-"px.thumper_nade" = { row = "F2", column = 4 }
-"px.electric_grenade" = { row = "F2", column = 5 }
-"px.real_shotgun" = { row = "F3", column = 1 }
-"px.sniper_rifle" = { row = "F3", column = 2 }
-"px.laser_gun" = { row = "F3", column = 3 }
-"px.burst_rifle" = { row = "F3", column = 4 }
-"px.shadow_bolt" = { row = "F3", column = 5 }
-"px.fire_jump" = { row = "F4", column = 1 }
-"px.sentry_laser" = { row = "F4", column = 2 }
-"px.sentry_gun" = { row = "F4", column = 3 }
-"px.kamikaze_rocket" = { row = "F4", column = 4 }
-"px.javelin" = { row = "F4", column = 5 }
-"px.dynamite" = { row = "F5", column = 1 }
-"px.nuke_rocket" = { row = "F5", column = 2 }
-"px.pogo_sheep" = { row = "F5", column = 3 }
-"stock.super_sheep" = { row = "F5", column = 4 }
-"px.ghost_sheep" = { row = "F5", column = 5 }
-"px.gravler" = { row = "F5", column = 6 }
-"px.mortar_strike" = { row = "F6", column = 1 }
-"px.lightning_strike" = { row = "F6", column = 2 }
-"px.pigeon_strike" = { row = "F6", column = 3 }
-"stock.mine_strike" = { row = "F6", column = 4 }
-"px.gravler_strike" = { row = "F6", column = 5 }
-"px.blowtorch" = { row = "F7", column = 1 }
-"px.super_drill" = { row = "F7", column = 2 }
-"px.baseball_bat" = { row = "F7", column = 3 }
-"px.electromagnet" = { row = "F7", column = 4 }
-"px.3_girder_pack" = { row = "F7", column = 5 }
-"px.jump" = { row = "F8", column = 1 }
-"px.hot_air_balloon" = { row = "F8", column = 2 }
-"px.hang_glider" = { row = "F8", column = 3 }
-"px.super_tele" = { row = "F8", column = 4 }
-"px.portal_gun" = { row = "F8", column = 5 }
-"px.chilli_bomb" = { row = "F9", column = 1 }
-"px.hellish_hand_grenade" = { row = "F9", column = 2 }
-"stock.flame_thrower" = { row = "F9", column = 3 }
-"px.ferret" = { row = "F9", column = 4 }
-"px.banana_express" = { row = "F9", column = 5 }
-"px.valyrian_fire" = { row = "F10", column = 1 }
-"px.remote_roller" = { row = "F10", column = 2 }
-"px.priceless_ming_vase" = { row = "F10", column = 3 }
-"px.bowling_ball_strike" = { row = "F10", column = 4 }
-"px.thumper_nade_strike" = { row = "F10", column = 5 }
-"px.cow_launcher" = { row = "F11", column = 1 }
-"px.old_woman_launcher" = { row = "F11", column = 2 }
-"px.crate_strike" = { row = "F11", column = 3 }
-"px.reinforcement" = { row = "F11", column = 4 }
-"px.ice_arrow" = { row = "F11", column = 5 }
-"px.skip_go_surrender" = { row = "F12", column = 1 }
-"px.wind_changer" = { row = "F12", column = 2 }
-"stock.select_worm" = { row = "F12", column = 3 }
-"px.weapon_crate" = { row = "F12", column = 4 }
-"px.cluster_bomb" = { row = "F12", column = 5 }
-"px.helicopter" = { row = "utility", column = 1 }
-"px.gravity_control" = { row = "utility", column = 2 }
-"stock.fast_walk" = { row = "utility", column = 3 }
-"px.swim_suit" = { row = "utility", column = 4 }
-"stock.teleport" = { row = "utility", column = 5 }
-"px.skunk" = { row = "utility", column = 6 }
-"stock.crate_spy" = { row = "utility", column = 7 }
-"px.mole_bomb" = { row = "utility", column = 8 }
-"stock.crate_shower" = { row = "utility", column = 9 }
