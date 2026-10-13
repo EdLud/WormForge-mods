@@ -10,7 +10,7 @@
 # Shower, Flame Thrower) they place the stock one.
 #
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
-id = "px.weapons"
+id = "px.ports"
 name = "Project X ports"
 version = "0.10.0"
 author = "Project X authors"

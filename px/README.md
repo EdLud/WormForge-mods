@@ -1,7 +1,7 @@
 # Project X ports
 
 Project X's weapons, ported to WormForge as the component bundle
-`px.weapons`. Each weapon is a component any profile can place, credited in
+`px.ports`. Each weapon is a component any profile can place, credited in
 the mod loader to its Project X authors as its scripts name them (`authors`
 and `credits` in `mod.toml`); where nobody is named yet, it shows only as a
 Project X weapon.
