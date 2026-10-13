@@ -323,7 +323,7 @@ A few things differ from PX on purpose, for weapons drawn at run time:
 **Double Bazooka.** PX's `double_bazooka_script`:
 
 - **The first shell** explodes as WA's own. PX then cuts a 50-pixel hole
-  there (`MakeHole`, as `wa.land.dig`) and fires a second shell from it at
+  there (`MakeHole`, as `wa.land.cut`'s circle) and fires a second shell from it at
   the first one's speed.
 - **The second shell** is a real WA missile of the same slot, launched with
   `wa.weapons.launch`, as PX's script creates a `CMissile` from the weapon's

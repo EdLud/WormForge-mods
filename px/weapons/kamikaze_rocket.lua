@@ -62,7 +62,7 @@ local function fly(worm, r)
     r.done = true
     return
   end
-  wa.land.dig({ x = r.x, y = r.y, radius = HOLE })
+  wa.land.cut({ x = r.x, y = r.y, shape = "circle", radius = HOLE })
 end
 
 wa.on.worm_message(function(worm, msg)

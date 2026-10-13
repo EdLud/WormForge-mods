@@ -140,7 +140,7 @@ function Network:move(body)
     if not tx then return false end
   elseif not body:fits(tx, ty, "terrain") then
     -- PX's emergency clearance. Do not transport into a still blocked exit.
-    wa.land.dig({x = tx, y = ty, radius = 15})
+    wa.land.cut({x = tx, y = ty, shape = "circle", radius = 15})
     if not body:fits(tx, ty, "terrain") then return false end
   end
   local nvx, nvy, facing = self.velocity(kind, entry.dir, exit.dir, vx, vy, body.facing)

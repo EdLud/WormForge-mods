@@ -14,7 +14,7 @@ fires.teleports = {} -- worm id -> frozen target and elapsed frames
 local function super_tele_arrive(worm, x, y)
   worm.x, worm.y = x, y
   for _, rise in ipairs({ 0, 10, 22 }) do
-    wa.land.dig({ x = x, y = y - rise, radius = 12 })
+    wa.land.cut({ x = x, y = y - rise, shape = "circle", radius = 12 })
   end
 end
 

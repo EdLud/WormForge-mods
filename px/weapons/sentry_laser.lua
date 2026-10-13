@@ -161,7 +161,7 @@ local function fire(t, a, s, target)
   rays[#rays + 1] = r
   a:sound("sounds/laser_gun/laser_start.wav")
 
-  wa.land.dig({ x = hx, y = hy, radius = HOLE })
+  wa.land.cut({ x = hx, y = hy, shape = "circle", radius = HOLE })
   for _, obj in ipairs(touched(x0, y0, dx, dy, length, target.obj and target.obj.id)) do
     if obj.kind == "worm" then
       if obj.hp > 0 then obj:hurt(WORM_DAMAGE) end

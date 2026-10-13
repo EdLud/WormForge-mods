@@ -90,10 +90,10 @@ do
         -- The aim held: a clean cut from the last hit to this one.
         local steps = math.max(1, math.floor(math.sqrt(sq(hx - r.hx) + sq(hy - r.hy)) / 2))
         for i = 0, steps do
-          wa.land.dig({ x = r.hx + (hx - r.hx) * i / steps, y = r.hy + (hy - r.hy) * i / steps, radius = 4 })
+          wa.land.cut({ x = r.hx + (hx - r.hx) * i / steps, y = r.hy + (hy - r.hy) * i / steps, shape = "circle", radius = 4 })
         end
       else
-        wa.land.dig({ x = hx, y = hy, radius = 4 })
+        wa.land.cut({ x = hx, y = hy, shape = "circle", radius = 4 })
       end
       local s = laser_between(r, 0.6, 0.9)
       laser_particle(r, { x = hx, y = hy, life = 60, drag = 0.2, grav = -0.4, jitter = 0.6,

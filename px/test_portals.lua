@@ -13,7 +13,7 @@ wa = {
     size = function() return {w=2000,h=1000} end, gravity = function() return (1 / 8) end,
     trace = function() return next_hit end },
   land = { trace = function() return obstruction and {hit=true} or nil end,
-    dig = function(s) assert(s.radius==15); cut=cut+1 end },
+    cut = function(s) assert(s.shape=="circle" and s.radius==15); cut=cut+1 end },
   worms = { all = function() return worms end },
   sound = { play = function(target, name)
     assert(target==nil or type(target)=="table")

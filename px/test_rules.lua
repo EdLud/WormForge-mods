@@ -462,13 +462,17 @@ local function new_match(opts)
     inventory = inventory_api(),
     land = {
       stamp = function(spec) M.stamps = M.stamps or {}; M.stamps[#M.stamps + 1] = spec end,
+      -- Round holes go in M.digs, WA's drill and torch shapes in M.cuts.
       cut = function(spec)
-        M.cuts = M.cuts or {}
-        M.cuts[#M.cuts + 1] = spec
-      end,
-      dig = function(spec)
-        M.digs = M.digs or {}
-        M.digs[#M.digs + 1] = spec
+        assert(({ circle = true, drill = true, torch = true })[spec.shape], "land.cut: unknown shape " .. tostring(spec.shape))
+        if spec.shape == "circle" then
+          assert(spec.radius and spec.radius >= 1 and spec.radius <= 200, "land.cut: a circle's radius must be 1..200 pixels")
+          M.digs = M.digs or {}
+          M.digs[#M.digs + 1] = spec
+        else
+          M.cuts = M.cuts or {}
+          M.cuts[#M.cuts + 1] = spec
+        end
       end,
       trace = function(...)
         if type(M.trace_hit) == "function" then return M.trace_hit(...) end

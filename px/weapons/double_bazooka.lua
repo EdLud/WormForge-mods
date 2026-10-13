@@ -7,7 +7,7 @@ do
 -- PX's double_bazooka_script. A Double Bazooka shell does not end at the
 -- first thing it hits: WA's explosion goes off, a 50-pixel hole is cut
 -- (GG->land->MakeHole(50), WA's landscape "apply explosion", as
--- wa.land.dig), and a second shell carries on from there at the first one's
+-- wa.land.cut), and a second shell carries on from there at the first one's
 -- speed, a real WA missile of the same slot (new CMissile with the weapon's
 -- launch data), so WA flies it with wind and its smoke trail. PX changes
 -- three things for it: damage 40, sprite 54 and a 5 s fuse. The port takes
@@ -46,7 +46,7 @@ shared.double_bazooka_explode = function(ev)
   if not speed then
     return
   end
-  wa.land.dig({ x = ev.x, y = ev.y, radius = DB_HOLE })
+  wa.land.cut({ x = ev.x, y = ev.y, shape = "circle", radius = DB_HOLE })
   -- Launched after the blast, as PX's comes after super: WA's explosion
   -- would otherwise push it.
   db_pending[#db_pending + 1] = { x = ev.x, y = ev.y, vx = speed[1], vy = speed[2] }
