@@ -78,7 +78,10 @@ local PX_ART = {
   },
   { -- Electromagnet: PX's placed, persistent field on the Baseball Bat slot.
     weapon = "baseball_bat", wep = "weps/baseball_bat.wep",
+    -- PX's red icon is attract mode; ours, recoloured to the blue magnet's
+    -- colours, repel (the HUD hook in electromagnet.lua shows the mode).
     panel_icon = "sprites/electromagnet/ico_magnet.png",
+    panel_icons = { "sprites/electromagnet/ico_magnet_blue.png" },
     -- WA takes it out and puts it away with the Dynamite's draw (334-336);
     -- PX swaps in the magnet's (CSpriteAnim::SetAnimEx): blue repelling,
     -- red once + switched the worm to attracting (the engine reads + as the

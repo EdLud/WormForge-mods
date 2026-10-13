@@ -288,9 +288,25 @@ wa.on.worm_message(function(worm)
   plus_held[id] = pressed
 end, { msgs = { wa.msg.FRAME_FINISH } })
 
+-- The panel's icon shows the turn worm's mode, as the magnet it drops will
+-- be: red attracting (icon 0, PX's), blue repelling (icon 1). Only the
+-- panel changes, so this runs in the HUD hook, every frame; showing the
+-- icon already shown does nothing.
+local icon_shown = true
+local function show_mode_icon(worm)
+  if not (icon_shown and wa.weapons.panel_icon and shared.owns("baseball_bat")) then return end
+  local attract = worm and (polarity[worm.id] or 1) < 0
+  local ok, err = pcall(wa.weapons.panel_icon, shared.slot("baseball_bat"), attract and 0 or 1)
+  if not ok then
+    icon_shown = false -- no icons of ours on the slot: say so once, then leave it
+    wa.log("electromagnet: mode icon: " .. tostring(err))
+  end
+end
+
 if wa.on.hud then
   wa.on.hud(function()
     local worm = shared.current_worm()
+    show_mode_icon(worm)
     if worm and worm.weapon == shared.slot("baseball_bat") then
       wa.hud.line((polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
         or "Electromagnet: REPEL mode (+ to attract)")
