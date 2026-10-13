@@ -1,0 +1,11 @@
+# A test bench for wa.land.cut: the Bazooka cuts a hole of the chosen shape
+# where it lands. See README.md.
+id = "example.cut_lab"
+version = "0.1.0"
+author = "WormForge"
+api_version = 2
+entry = "cut_lab.lua"
+
+[weapons]
+register = []
+replace = ["bazooka"]
