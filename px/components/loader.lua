@@ -99,7 +99,6 @@ local HOME = {
   ["px.sentry_gun"] = "kamikaze",
   ["px.kamikaze_rocket"] = "suicide_bomber",
   ["px.javelin"] = "prod",
-  ["px.dynamite"] = "dynamite",
   ["px.nuke_rocket"] = "mine",
   ["px.pogo_sheep"] = "sheep",
   ["px.ghost_sheep"] = "aqua_sheep",

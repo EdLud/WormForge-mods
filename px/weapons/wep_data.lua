@@ -59,7 +59,6 @@ local WEP_NAME = {
 }
 local WEP_PATCH = {
   air_strike = {
-    uses_turn = 0,
     plane_sprite = 86,
     k_count = 4,
     k_spacing = 30,
@@ -101,7 +100,6 @@ local WEP_PATCH = {
   },
   aqua_sheep = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 5000,
     m_blast = 90,
     wind_pct = 50,
@@ -112,7 +110,6 @@ local WEP_PATCH = {
   },
   banana_bomb = {
     requires_aiming = 0,
-    uses_turn = 0,
     pellets = 3,
     collision_radius = 4339766,
     bias = 75,
@@ -155,7 +152,6 @@ local WEP_PATCH = {
   },
   battle_axe = {
     requires_aiming = 0,
-    uses_turn = 0,
     fire_type = 1,
     subtype_param = 2,
     fire_method = 3,
@@ -205,13 +201,11 @@ local WEP_PATCH = {
   },
   bazooka = {
     requires_aiming = 0,
-    uses_turn = 0,
     blast = 20,
     trail = 20,
     burn_sprite = 0,
   },
   blow_torch = {
-    uses_turn = 0,
   },
   bungee = {
     retreat = -1,
@@ -219,7 +213,6 @@ local WEP_PATCH = {
     fire_method = 100,
   },
   carpet_bomb = {
-    uses_turn = 0,
     retreat = 3000,
     plane_sprite = 87,
     k_count = 3,
@@ -261,7 +254,6 @@ local WEP_PATCH = {
   },
   cluster_bomb = {
     requires_aiming = 0,
-    uses_turn = 0,
     grenade_style = 0,
     bounce_extra = 48,
     cluster_count = 8,
@@ -275,7 +267,6 @@ local WEP_PATCH = {
   damage_x2 = {
     requires_aiming = 1,
     shots = 0,
-    uses_turn = 1,
     creates_projectile = 1,
     fire_type = 2,
     subtype_param = 0,
@@ -330,7 +321,6 @@ local WEP_PATCH = {
   double_turn_time = {
     requires_aiming = 1,
     shots = 0,
-    uses_turn = 1,
     creates_projectile = 1,
     fire_type = 2,
     subtype_param = 0,
@@ -386,12 +376,10 @@ local WEP_PATCH = {
   },
   dynamite = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 0,
   },
   fire_punch = {
     requires_aiming = 0,
-    uses_turn = 0,
     fire_method = 45,
     spread = 80,
     [0x1C0] = 7536640,
@@ -399,7 +387,6 @@ local WEP_PATCH = {
     power_pct = 2090598400,
   },
   girder = {
-    uses_turn = 0,
     creates_projectile = 1,
     subtype_param = 2,
     fire_method = 30,
@@ -407,11 +394,9 @@ local WEP_PATCH = {
   },
   girder_pack = {
     shots = 3,
-    uses_turn = 0,
   },
   grenade = {
     requires_aiming = 0,
-    uses_turn = 0,
     collision_radius = 4394622,
     bias = 0,
     damage = 0,
@@ -452,7 +437,6 @@ local WEP_PATCH = {
   handgun = {
     requires_aiming = 0,
     shots = 3,
-    uses_turn = 0,
     h_shots = 1,
     h_spread = 1000,
     h_delay = 0,
@@ -465,7 +449,6 @@ local WEP_PATCH = {
   },
   holy_grenade = {
     requires_aiming = 0,
-    uses_turn = 0,
     damage = 70,
     blast = 80,
     flight_flags = 8,
@@ -479,7 +462,6 @@ local WEP_PATCH = {
     cluster_angle = 1,
   },
   homing_missile = {
-    uses_turn = 0,
     subtype_param = 3,
     bias = 0,
     impact = 2,
@@ -503,7 +485,6 @@ local WEP_PATCH = {
     cluster_angle = 1,
   },
   homing_pigeon = {
-    uses_turn = 0,
     subtype_param = 3,
     spread = 0,
     bias = 0,
@@ -549,7 +530,6 @@ local WEP_PATCH = {
   },
   invisibility = {
     requires_aiming = 0,
-    uses_turn = 1,
     subtype_param = 10,
     pellets = 0,
   },
@@ -563,7 +543,6 @@ local WEP_PATCH = {
   },
   longbow = {
     requires_aiming = 0,
-    uses_turn = 0,
     subtype_param = 2,
     fire_method = 3,
     pellets = 3,
@@ -593,7 +572,6 @@ local WEP_PATCH = {
   },
   mad_cow = {
     requires_aiming = 0,
-    uses_turn = 0,
     fire_type = 1,
     subtype_param = 3,
     fire_method = 3,
@@ -650,7 +628,6 @@ local WEP_PATCH = {
     weight2 = 70,
   },
   mail_strike = {
-    uses_turn = 0,
     retreat = 3000,
     subtype_param = 0,
     plane_sprite = 86,
@@ -704,7 +681,6 @@ local WEP_PATCH = {
   },
   mb_bomb = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 3000,
     subtype_param = 0,
     k_spacing = 30,
@@ -756,7 +732,6 @@ local WEP_PATCH = {
   },
   mine = {
     requires_aiming = 0,
-    uses_turn = 0,
     fire_method = 2,
     m_proximity = 2,
     m_fuse = 5,
@@ -800,11 +775,9 @@ local WEP_PATCH = {
   },
   ming_vase = {
     requires_aiming = 0,
-    uses_turn = 0,
   },
   minigun = {
     requires_aiming = 0,
-    uses_turn = 0,
     h_shots = 10,
     h_spread = 63,
     h_delay = 6,
@@ -815,7 +788,6 @@ local WEP_PATCH = {
   },
   mole_bomb = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 3000,
     fire_type = 1,
     subtype_param = 3,
@@ -844,7 +816,6 @@ local WEP_PATCH = {
     weight2 = 100,
   },
   mole_squadron = {
-    uses_turn = 0,
     k_count = 4,
     k_spacing = 15,
     h_delay = 110,
@@ -866,7 +837,6 @@ local WEP_PATCH = {
   },
   mortar = {
     requires_aiming = 0,
-    uses_turn = 0,
     subtype_param = 3,
     spread = 0,
     collision_radius = 170110,
@@ -924,7 +894,6 @@ local WEP_PATCH = {
   },
   old_woman = {
     requires_aiming = 0,
-    uses_turn = 0,
     fire_type = 1,
     subtype_param = 3,
     fire_method = 3,
@@ -939,12 +908,10 @@ local WEP_PATCH = {
   },
   pneumatic_drill = {
     requires_aiming = 0,
-    uses_turn = 0,
     grenade_style = 2000,
   },
   sheep = {
     requires_aiming = 0,
-    uses_turn = 0,
     m_fuse = 6,
     m_blast = 65,
     impact = 2,
@@ -979,7 +946,6 @@ local WEP_PATCH = {
   },
   sheep_launcher = {
     requires_aiming = 0,
-    uses_turn = 0,
     subtype_param = 3,
     spread = 0,
     collision_radius = 0,
@@ -1006,7 +972,6 @@ local WEP_PATCH = {
   },
   shotgun = {
     requires_aiming = 0,
-    uses_turn = 0,
     h_delay = 10,
     bias = 10,
     h_range = 4365438,
@@ -1015,7 +980,6 @@ local WEP_PATCH = {
   },
   skunk = {
     requires_aiming = 0,
-    uses_turn = 0,
     m_fuse = 15,
     m_mask = 1,
     bias = 10,
@@ -1072,7 +1036,6 @@ local WEP_PATCH = {
   },
   super_banana = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 3000,
     grenade_style = 1,
     damage = 75,
@@ -1101,7 +1064,6 @@ local WEP_PATCH = {
   },
   surrender = {
     requires_aiming = 0,
-    uses_turn = 0,
     retreat = 0,
     subtype_param = 19,
     pellets = 8,

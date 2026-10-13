@@ -842,7 +842,7 @@ do
     end
     -- Where PX uses WA's weapon unchanged, the profile places the stock one.
     local AS_STOCK = {
-      flame_thrower = "stock.flame_thrower", fast_walk = "stock.fast_walk",
+      dynamite = "stock.dynamite", flame_thrower = "stock.flame_thrower", fast_walk = "stock.fast_walk",
       crate_spy = "stock.crate_spy", crate_shower = "stock.crate_shower",
       invisibility = "stock.teleport",
     }

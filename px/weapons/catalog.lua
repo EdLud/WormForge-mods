@@ -54,8 +54,9 @@ local PX_ART = {
     weapon = "scales_of_justice", wep = "weps/scales_of_justice.wep",
     panel_icon = "sprites/portal_gun/icon.png",
     -- The native shot remains usable while Lua accounts for pairs. PX's
-    -- CanFire/state hacks are replaced by uses_turn=0 and worm:air_fire.
-    patch = { uses_turn = 0, hold_pose = 3 },
+    -- CanFire/state hacks are replaced by keeping the turn (claims.lua's
+    -- KEEPS_TURN) and worm:air_fire.
+    patch = { hold_pose = 3 },
     worm_sprites = {
       weaponlnk = "sprites/portal_gun/portal_gun_normal",
       weaponlnku = "sprites/portal_gun/portal_gun_up",

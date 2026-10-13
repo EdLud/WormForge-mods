@@ -302,18 +302,6 @@ default_position = { row = "F4", column = 5 }
 pool = "second"
 
 [[components]]
-id = "px.dynamite"
-type = "weapon"
-name = "Dynamite"
-description = "Highlander's Dynamite."
-entry = "components/weapon.lua"
-icon = "dynamite"
-default_position = { row = "F5", column = 1 }
-
-[components.suggests."hl.rules"]
-pool = "offensive"
-
-[[components]]
 id = "px.nuke_rocket"
 type = "weapon"
 name = "Nuke Rocket"

@@ -1,7 +1,7 @@
 # Project X's Highlander (Highlander 0rang3 1.1): every PX weapon where PX's
 # layout puts it, dealt by the Highlander rules. Each PX weapon's pool is its
-# own suggestion (px/mod.toml); WA's Flame Thrower and Mine Strike stand in
-# for PX's.
+# own suggestion (px/mod.toml); WA's Dynamite, Flame Thrower and Mine Strike
+# stand in for PX's.
 description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
 features = ["hl.rules"]
 
@@ -26,7 +26,7 @@ features = ["hl.rules"]
 "px.sentry_gun" = { row = "F4", column = 3 }
 "px.kamikaze_rocket" = { row = "F4", column = 4 }
 "px.javelin" = { row = "F4", column = 5 }
-"px.dynamite" = { row = "F5", column = 1 }
+"stock.dynamite" = { row = "F5", column = 1 }
 "px.nuke_rocket" = { row = "F5", column = 2 }
 "px.pogo_sheep" = { row = "F5", column = 3 }
 "stock.super_sheep" = { row = "F5", column = 4 }
@@ -84,6 +84,9 @@ cavern = false
 [weapon_options."hl.rules"."stock.flame_thrower"]
 pool = "second"
 
+[weapon_options."hl.rules"."stock.dynamite"]
+pool = "offensive"
+
 # PX's GiveWeapons: the Hot Air Balloons refilled to 3 and the Wind Changer
 # to 1 each turn; each team gets one Weapon Crate a round.
 [weapon_settings."px.hot_air_balloon"]
@@ -93,6 +96,152 @@ each_turn = { amount = 3, mode = "replace" }
 [weapon_settings."px.wind_changer"]
 ammo = 1
 each_turn = { amount = 1, mode = "replace" }
+ends_turn = false
 
 [weapon_settings."px.weapon_crate"]
 ammo = 1
+ends_turn = false
+
+# Highlander lets a worm fire its whole hand in one turn: these weapons
+# don't end it, as in PX.
+
+[weapon_settings."px.3_girder_pack"]
+ends_turn = false
+
+[weapon_settings."px.banana_express"]
+ends_turn = false
+
+[weapon_settings."px.baseball_bat"]
+ends_turn = false
+
+[weapon_settings."px.blaster_worm"]
+ends_turn = false
+
+[weapon_settings."px.blowtorch"]
+ends_turn = false
+
+[weapon_settings."px.bowling_ball_strike"]
+ends_turn = false
+
+[weapon_settings."px.burning_sheep_launcher"]
+ends_turn = false
+
+[weapon_settings."px.burst_rifle"]
+ends_turn = false
+
+[weapon_settings."px.chilli_bomb"]
+ends_turn = false
+
+[weapon_settings."px.cow_launcher"]
+ends_turn = false
+
+[weapon_settings."px.crate_strike"]
+ends_turn = false
+
+[weapon_settings."px.double_bazooka"]
+ends_turn = false
+
+[weapon_settings."px.electric_grenade"]
+ends_turn = false
+
+[weapon_settings."px.electromagnet"]
+ends_turn = false
+
+[weapon_settings."px.ferret"]
+ends_turn = false
+
+[weapon_settings."px.fire_jump"]
+ends_turn = false
+
+[weapon_settings."px.ghost_sheep"]
+ends_turn = false
+
+[weapon_settings."px.gravler"]
+ends_turn = false
+
+[weapon_settings."px.gravler_strike"]
+ends_turn = false
+
+[weapon_settings."px.hellish_hand_grenade"]
+ends_turn = false
+
+[weapon_settings."px.ice_arrow"]
+ends_turn = false
+
+[weapon_settings."px.igniter"]
+ends_turn = false
+
+[weapon_settings."px.javelin"]
+ends_turn = false
+
+[weapon_settings."px.kamikaze_rocket"]
+ends_turn = false
+
+[weapon_settings."px.laser_gun"]
+ends_turn = false
+
+[weapon_settings."px.lightning_strike"]
+ends_turn = false
+
+[weapon_settings."px.mortar_strike"]
+ends_turn = false
+
+[weapon_settings."px.nuke_rocket"]
+ends_turn = false
+
+[weapon_settings."px.old_woman_launcher"]
+ends_turn = false
+
+[weapon_settings."px.pigeon_strike"]
+ends_turn = false
+
+[weapon_settings."px.pogo_sheep"]
+ends_turn = false
+
+[weapon_settings."px.priceless_ming_vase"]
+ends_turn = false
+
+[weapon_settings."px.real_shotgun"]
+ends_turn = false
+
+[weapon_settings."px.reinforcement"]
+ends_turn = false
+
+[weapon_settings."px.remote_roller"]
+ends_turn = false
+
+[weapon_settings."px.s_m_a_r_t_bomb"]
+ends_turn = false
+
+[weapon_settings."px.shadow_bolt"]
+ends_turn = false
+
+[weapon_settings."px.sniper_rifle"]
+ends_turn = false
+
+[weapon_settings."px.sticky_bomb"]
+ends_turn = false
+
+[weapon_settings."px.super_drill"]
+ends_turn = false
+
+[weapon_settings."px.super_gravedigger"]
+ends_turn = false
+
+[weapon_settings."px.super_tele"]
+ends_turn = false
+
+[weapon_settings."px.thumper_nade"]
+ends_turn = false
+
+[weapon_settings."px.thumper_nade_strike"]
+ends_turn = false
+
+[weapon_settings."px.valyrian_fire"]
+ends_turn = false
+
+[weapon_settings."px.windy_cluster"]
+ends_turn = false
+
+[weapon_settings."stock.dynamite"]
+ends_turn = false

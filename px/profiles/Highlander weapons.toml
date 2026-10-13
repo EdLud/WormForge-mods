@@ -23,7 +23,7 @@ description = "Every Highlander weapon where PX's layout puts it, without Highla
 "px.sentry_gun" = { row = "F4", column = 3 }
 "px.kamikaze_rocket" = { row = "F4", column = 4 }
 "px.javelin" = { row = "F4", column = 5 }
-"px.dynamite" = { row = "F5", column = 1 }
+"stock.dynamite" = { row = "F5", column = 1 }
 "px.nuke_rocket" = { row = "F5", column = 2 }
 "px.pogo_sheep" = { row = "F5", column = 3 }
 "stock.super_sheep" = { row = "F5", column = 4 }

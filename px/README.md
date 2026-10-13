@@ -121,9 +121,9 @@ Super Tele places it immediately and plays its start sound at the destination.
 
 | Slot | Weapon | Notes |
 |---|---|---|
-| dynamite | Dynamite | |
+| dynamite | Dynamite | WA's own (`stock.dynamite`) |
 | blow_torch | BlowTorch | |
-| flame_thrower | Flame Thrower | the scheme places WA's own (`stock.flame_thrower`) |
+| flame_thrower | Flame Thrower | WA's own (`stock.flame_thrower`) |
 | girder | Baseball Bat | stock bat icon |
 | girder_pack | 3 Girder Pack | three girders, not five |
 | fast_walk | Fast Walk | WA's own (`stock.fast_walk`) |
@@ -139,15 +139,22 @@ These are WA's own weapons. Moving one to another slot works only as far as
 WA reads the weapon from its record rather than its slot number. Played in
 game: the Baseball Bat on the girder slot aims and swings as the bat; the
 Cluster Bomb, Skunk and Mole Bomb fire as their records say; 3 Girder Pack
-places three; Dynamite still gives its retreat time. Open points:
+places three. Open points:
 
 - **Teleport on the invisibility slot:** WA disables Invisibility's slot in
   offline games, so the Teleport is unavailable offline. Not yet checked
   online.
 - **The scheme's header fields** (the dwords before the fire type) do not
-  match WA's stock values. For example, Dynamite's retreat time is 0, not 5 s,
-  and the bat's first flag is 0 where WA's is 1. The whole record is imported,
-  as PX writes it; neither weapon plays differently for it.
+  match WA's stock values. For example, the bat's first flag is 0 where WA's
+  is 1. The whole record is imported, as PX writes it, except whether the
+  weapon ends the turn (below); the bat plays no differently for it.
+- **Ends the turn** is a profile setting, not part of the weapon. PX's
+  records leave it off on almost every weapon, which is how Highlander lets a
+  worm fire its whole hand in one turn. Each claim puts back the weapon's own
+  (`KEEPS_TURN` in `weapons/claims.lua`: on, as WA's are, except for the rope,
+  bungee, parachute, jet pack and other tools, and the Portal Gun), and the
+  Highlander profile turns it off where PX does. PX's Dynamite was nothing
+  more than that, so the profile places WA's own.
 
 ### PX weapons that need only PX's art
 

@@ -12,7 +12,6 @@ local fires = shared.fires
 -- shot to Lua so she can be launched from a clear point the worm can see,
 -- keeping WA's own Old Woman movement and five-second fuse.
 local OLD_WOMAN_LAUNCHER_PATCH = {
-  uses_turn = 0,
   subtype_param = 3, -- bazooka aim sheet, not the Sheep Launcher hold
   fire_type = 1,
   fire_method = 3, -- CreateWeaponProjectile, intercepted by on_fire
@@ -25,6 +24,18 @@ local PATCH_FIXES = {
   -- drawn as sprites/smart_bomb/trail), not WA's green gas cloud (608) the
   -- record named.
   mortar = { c_homing_sprite = 250 },
+}
+
+-- Whether a weapon ends the turn is a profile's setting ("Ends the turn":
+-- the Highlander profile turns it off, so a worm can fire its whole hand).
+-- PX's records have it off on almost every weapon; each claim puts back the
+-- weapon's own instead: it ends the turn, as WA's do, except these, which
+-- never do (WA's rope, bungee, parachute, jet pack and the like, and the
+-- Portal Gun, so both portals go down in one turn).
+local KEEPS_TURN = {
+  ninja_rope = true, bungee = true, parachute = true, select_worm = true, jet_pack = true,
+  low_gravity = true, fast_walk = true, laser_sight = true, crate_spy = true, crate_shower = true,
+  scales_of_justice = true,
 }
 
 -- The weapons Highlander claimed this match, by home slot. Code that acts on
@@ -57,6 +68,10 @@ local function claim(w)
   for key, value in pairs(w) do
     spec[key] = value
   end
+  local patch = {}
+  for k, v in pairs(spec.patch or {}) do patch[k] = v end
+  patch.uses_turn = KEEPS_TURN[w.weapon] and 0 or 1
+  spec.patch = patch
   spec.weapon = shared.slot(w.weapon)
   spec.hold = PX_HOLDS[w.weapon]
   wa.weapons.replace(spec)
