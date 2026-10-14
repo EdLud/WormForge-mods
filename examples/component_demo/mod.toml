@@ -3,7 +3,7 @@
 id = "example.components"
 version = "0.1.0"
 author = "wkLua"
-api_version = 2
+api_version = 3
 format_version = 2
 
 [[components]]
