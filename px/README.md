@@ -9,8 +9,7 @@ Project X weapon.
 ## Highlander
 
 Highlander's rules are the add-on **Highlander rules** (`hl.rules`), built on
-`wa.inventory`, `wa.on.turn_start`, and `wa.on.death`. The original hand-written bookkeeping
-is preserved in `highlander_pure_lua` for comparison. Enable only one edition.
+`wa.inventory`, `wa.on.turn_start`, and `wa.on.death`.
 
 Project X's *Highlander 0rang3 1.1*: its rules, on its weapon layout. The
 Highlander profile puts each of its weapons on one of WA's stock slots, e.g.
