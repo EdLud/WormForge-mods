@@ -1,13 +1,13 @@
 id = "example.stress"
 version = "0.1.0"
 author = "wkLua"
-api_version = 1
+api_version = 2
 kind = "gameplay"
 entry = "stress.lua"
 
 # Fires four batches of projectiles in the first turn: stock, custom, then
 # 7 of Highlander's Bowling Ball Strikes across the map and 50 of its Electric
-# Grenades at random points (enable highlander with it, or set
+# Grenades at random points (pick a Highlander scheme with it, or set
 # BOWLING_STRIKES and ELECTRIC_GRENADES to 0), and turns on the FPS counter
 # and profiler. Mine Strike is claimed only to carry
 # the pack's sheets into the GPU atlas; the weapon stays WA's.

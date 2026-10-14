@@ -1,24 +1,22 @@
 -- Shotgun is only the panel slot. Selecting it turns the owner into the POOZ
 -- runner (Lua actor). A/D move, W jumps (again in air for the flip), Shift sprints.
 -- Switch weapon to drop out.
-
-local PX = 0x10000
-local HW = 6 * PX
-local BOX_H = 16 * PX
-local RUN = 103219
-local SPRINT = 149094
-local AIR = 3932
-local FRICTION = 1638
-local SKID = 7209
-local ACCEL = 5898
-local GRAV = 0x3D70
-local MAX_FALL = 406323
-local JUMP = -363725
-local JUMP2 = -419430
+local HW = 6
+local BOX_H = 16
+local RUN = 1.5749969482421875
+local SPRINT = 2.274993896484375
+local AIR = 0.05999755859375
+local FRICTION = 0.024993896484375
+local SKID = 0.1100006103515625
+local ACCEL = 0.089996337890625
+local GRAV = 0.239990234375
+local MAX_FALL = 6.1999969482421875
+local JUMP = -5.5500030517578125
+local JUMP2 = -6.399993896484375
 local COYOTE = 6
 local JUMP_BUF = 7
 local SLOPE = 12
-local LAND_VY = 91750
+local LAND_VY = 1.399993896484375
 
 local live = {}
 
@@ -63,7 +61,7 @@ end
 
 local function blocked(x, y)
   local l = x - HW
-  local r = x + HW - PX
+  local r = x + HW - 1
   local mid = y - BOX_H // 2
   local top = y - BOX_H
   return wa.land.solid(l, y)
@@ -77,11 +75,11 @@ local function blocked(x, y)
 end
 
 local function on_floor(x, y)
-  local l = x - 2 * PX
-  local r = x + 2 * PX
-  return wa.land.solid(x, y + PX)
-    or wa.land.solid(l, y + PX)
-    or wa.land.solid(r, y + PX)
+  local l = x - 2
+  local r = x + 2
+  return wa.land.solid(x, y + 1)
+    or wa.land.solid(l, y + 1)
+    or wa.land.solid(r, y + 1)
 end
 
 local function unstick(x, y)
@@ -89,8 +87,8 @@ local function unstick(x, y)
     return x, y
   end
   for up = 1, SLOPE do
-    if not blocked(x, y - up * PX) then
-      return x, y - up * PX
+    if not blocked(x, y - up) then
+      return x, y - up
     end
   end
   return x, y
@@ -102,9 +100,9 @@ local function snap_floor(x, y)
     return x, y, false
   end
   for d = 0, SLOPE do
-    local ny = y + d * PX
+    local ny = y + d
     if d > 0 and blocked(x, ny) then
-      return x, ny - PX, true
+      return x, ny - 1, true
     end
     if on_floor(x, ny) then
       return x, ny, true
@@ -220,12 +218,12 @@ local function brain(worm)
       local dir = right and 1 or -1
       a.facing = dir
       if st.grounded then
-        local cap = k.sprint and SPRINT or RUN
+        local cap = k.shift and SPRINT or RUN
         if vx == 0 or sign(vx) == dir then
           if abs(vx) < cap then
             vx = approach(vx, dir * cap, ACCEL)
           else
-            vx = friction(vx, 1966)
+            vx = friction(vx, 0.029998779296875)
           end
         else
           vx = friction(vx, SKID)
@@ -267,11 +265,11 @@ local function brain(worm)
 
     st.grounded = false
     local dist = abs(vx)
-    local steps = dist // PX
+    local steps = dist // 1
     if steps < 1 then
       steps = 1
     end
-    local sx = vx // steps
+    local sx = vx / steps
     for _ = 1, steps do
       local nx = x + sx
       if not blocked(nx, y) then
@@ -279,9 +277,9 @@ local function brain(worm)
       else
         local stepped = false
         for up = 1, SLOPE do
-          if not blocked(nx, y - up * PX) then
+          if not blocked(nx, y - up) then
             x = nx
-            y = y - up * PX
+            y = y - up
             stepped = true
             break
           end
@@ -304,11 +302,11 @@ local function brain(worm)
 
     if not st.grounded then
       dist = abs(vy)
-      steps = dist // PX
+      steps = dist // 1
       if steps < 1 then
         steps = 1
       end
-      local sy = vy // steps
+      local sy = vy / steps
       for _ = 1, steps do
         local ny = y + sy
         if not blocked(x, ny) then
@@ -347,7 +345,7 @@ local function brain(worm)
     a.vy = vy
     worm:carry(x, y)
 
-    local moving = abs(vx) > 22938
+    local moving = abs(vx) > 0.350006103515625
     if not st.grounded then
       st.gait = 0
       if st.flipping or st.anim == "FrontFlip" then
@@ -357,9 +355,9 @@ local function brain(worm)
           st.flipping = false
           set_clip(a, st, "JumpFall")
         end
-      elseif vy < -52429 then
+      elseif vy < -0.8000030517578125 then
         set_clip(a, st, "JumpRise")
-      elseif vy > 52429 then
+      elseif vy > 0.8000030517578125 then
         set_clip(a, st, "JumpFall")
       else
         set_clip(a, st, "JumpMid")
@@ -369,9 +367,9 @@ local function brain(worm)
       set_clip(a, st, "Land")
     elseif moving then
       local spd = abs(vx)
-      if k.sprint then
+      if k.shift then
         st.gait = 32
-        if spd > SPRINT - 22938 then
+        if spd > SPRINT - 0.350006103515625 then
           set_clip(a, st, "Sprint")
         else
           set_clip(a, st, "Run")

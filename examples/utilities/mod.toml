@@ -1,18 +1,21 @@
-# A features bundle (format_version 2): one feature with several settings.
-# Nothing runs until the mod loader's Profile tab (or [profile] in
-# Mods/wormforge.toml) selects it. See README.md.
-id = "example.utilities"
-version = "0.1.0"
-author = "wkLua"
-api_version = 1
+# Core utilities (format_version 2): one feature with the match settings the
+# lobby scheme doesn't have, and some players' favourite packs as switches.
+# Nothing runs until a profile selects it (the mod loader's Profile tab).
+# See README.md.
+id = "core.utilities"
+name = "Core utilities"
+version = "0.2.0"
+author = "WormForge"
+api_version = 2
 format_version = 2
 
 [[components]]
 id = "core.utilities"
 type = "feature"
 name = "Utilities"
-description = "Match settings the lobby scheme doesn't have."
+description = "Match settings the lobby scheme doesn't have, and some players' favourite packs as switches."
 entry = "features/utilities.lua"
+credits = "ExTurnSide by red, Live HP by reddaz, Agility by Zed and 0rang3 (port by red)"
 
 [[components.options]]
 key = "gravity_pct"
@@ -41,19 +44,29 @@ label = "Heal at turn start (HP)"
 description = "Health the worm whose turn starts gets."
 
 [[components.options]]
-key = "infinite_jet_pack"
+key = "ex_turn_side"
 type = "bool"
 default = false
-label = "Infinite Jet Pack"
+label = "ExTurnSide"
+description = "Left and right turn the worm during rope swings and other actions. By red."
 
 [[components.options]]
-key = "infinite_parachute"
+key = "agility"
 type = "bool"
 default = false
-label = "Infinite Parachute"
+label = "Agility"
+description = "The arrow keys steer the worm a little in the air. By Zed and 0rang3, port by red."
 
 [[components.options]]
-key = "infinite_ninja_rope"
+key = "live_hp"
 type = "bool"
 default = false
-label = "Infinite Ninja Rope"
+label = "Live HP"
+description = "Health bars follow damage as it happens, not at the turn's end. By reddaz."
+
+[[components.options]]
+key = "collect_viewer"
+type = "bool"
+default = false
+label = "Collect viewer"
+description = "What a crate gave pops up over it, for the team that took it."

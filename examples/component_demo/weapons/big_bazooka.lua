@@ -6,7 +6,7 @@ return {
     delay = 0,
   },
   install = function(ctx)
-    -- ctx.data is these defaults with the scheme's overrides laid over them.
+    -- ctx.data is these defaults with the profile's settings laid over them.
     wa.log(("Big Bazooka on %s at %s %d: round_start %d, delay %d"):format(
       ctx.stock_slot, ctx.position.row, ctx.position.column, ctx.data.ammo.round_start, ctx.data.delay))
     wa.weapons.replace({ weapon = ctx.stock_slot, copy_from = "bazooka", name = "Big Bazooka", params = { damage = 80 } })

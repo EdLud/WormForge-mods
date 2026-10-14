@@ -1,11 +1,9 @@
 -- Cluster Bomb slot. Aiming keeps the stock cluster sprite / worm.
 -- Shot: fullscreen cut-in, courier flies, then WormCraft is spelled letter by letter.
-
-local PX = 0x10000
 local WORD = { "W", "o", "r", "m", "C", "r", "a", "f", "t" }
-local STEP = 58 * PX
-local LETTER_W, LETTER_H = 50 * PX, 70 * PX
-local GAP = 50 * PX
+local STEP = 58
+local LETTER_W, LETTER_H = 50, 70
+local GAP = 50
 local LETTER_WAIT = 22
 local SEQ_FPS = 15
 local FRAMES = {
@@ -72,12 +70,12 @@ local function letter_brain(delay, last, origin, left, y, n, dest_x, dest_y, i)
   local boom = false
   local word_done = 10 + (n - 1) * LETTER_WAIT + 20
   local fall_at = word_done + 4 + (i - 1) * 11 + ((i - 1) % 3) * 5
-  local drop = 0x1400 + i * 0x0A00
+  local drop = 0.078125 + i * 0.0390625
   return function(a)
     t = t + 1
     if t < delay then
       a.x = dest_x
-      a.y = -0x8000000
+      a.y = -2048
       a.vx = 0
       a.vy = 0
       return
@@ -97,7 +95,7 @@ local function letter_brain(delay, last, origin, left, y, n, dest_x, dest_y, i)
     if not falling then
       a.vx = 0
       if age < 16 then
-        a.vy = -0x3000
+        a.vy = -0.1875
       else
         a.vy = 0
       end
@@ -126,15 +124,15 @@ end
 
 local function write_word(origin)
   local n = #WORD
-  local left = origin.x - (n - 1) * STEP // 2
-  local y = origin.y - 36 * PX
+  local left = origin.x - (n - 1) * STEP / 2
+  local y = origin.y - 36
   local feet_y = y + LETTER_H // 2
   for i, ch in ipairs(WORD) do
     local dest_x = left + (i - 1) * STEP
     wa.actors.spawn({
       sprite = "sprites/" .. ch .. ".png",
       x = dest_x,
-      y = -0x8000000,
+      y = -2048,
       vx = 0,
       vy = 0,
       gravity = false,

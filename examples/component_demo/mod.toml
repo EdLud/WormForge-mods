@@ -1,9 +1,9 @@
-# A component bundle (format_version 2): nothing runs until a profile in
-# Mods/wormforge.toml selects its components. See README.md.
+# A component bundle (format_version 2): nothing runs until a profile selects
+# its components. profiles/ holds two to load in the mod loader. See README.md.
 id = "example.components"
 version = "0.1.0"
 author = "wkLua"
-api_version = 1
+api_version = 2
 format_version = 2
 
 [[components]]
@@ -11,26 +11,18 @@ id = "demo.big_bazooka"
 type = "weapon"
 name = "Big Bazooka"
 entry = "weapons/big_bazooka.lua"
-compatible_positions = [{ row = "F1", column = 1 }, { row = "F1", column = 3 }]
+icon = "bazooka"
+default_position = { row = "F1", column = 1 }
 
-# Not in the preset: add it from the Profile tab's search. Both weapons may
-# sit at F1 1 or F1 3, so they can swap.
+# Not in the preset: add it from the Profile tab's search. Any weapon may go
+# at any position; this is where it goes when added without one.
 [[components]]
 id = "demo.big_mortar"
 type = "weapon"
 name = "Big Mortar"
 entry = "weapons/big_mortar.lua"
-compatible_positions = [{ row = "F1", column = 3 }, { row = "F1", column = 1 }]
-
-[[components]]
-id = "demo.scheme"
-type = "scheme"
-name = "Demo scheme"
-entry = "scheme.lua"
-preset = "demo"
-
-[presets.demo.weapons]
-"demo.big_bazooka" = { row = "F1", column = 1 }
+icon = "mortar"
+default_position = { row = "F1", column = 3 }
 
 [[components]]
 id = "demo.turn_note"

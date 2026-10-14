@@ -43,10 +43,11 @@
 -- Electric Grenade (its claim on the Earthquake slot), launched as real WA
 -- missiles at random open-air points across the map, with short staggered
 -- fuses. Highlander's own hooks treat them as its grenades: its art draws
--- them and its chaining arc runs where each one blows. Enable `highlander` with
--- this pack (for batches 3 and 4); without it the Earthquake
--- slot is WA's own, which is no projectile, so leave
--- ELECTRIC_GRENADES at 0 then. A launch WA refuses (its object pool full) is
+-- them and its chaining arc runs where each one blows. Pick one of the
+-- Highlander schemes (Highlander, or Highlander weapons (no rules)) with this
+-- pack, its weapons at their home positions (for the magnets and batches 3
+-- and 4); without one the Earthquake slot is WA's own, which is no
+-- projectile, so leave ELECTRIC_GRENADES at 0 then. A launch WA refuses (its object pool full) is
 -- counted and logged, not fatal.
 --
 -- Batches 1 and 2 start from the same positions and speeds, so the two halves
@@ -70,23 +71,21 @@ local DAMAGE = 15       -- each explosion's damage
 local BLAST = 40        -- each custom explosion's size (CreateExplosion's id)
 local PROFILE = true
 local SEED = 12345
-local MAGNETS = 6            -- first; needs highlander
+local MAGNETS = 6            -- first; needs a Highlander scheme
 local MAGNET_SLOT = "baseball_bat"
-local BOWLING_STRIKES = 7    -- batch 3; needs highlander
+local BOWLING_STRIKES = 7    -- batch 3; needs a Highlander scheme
 local BOWLING_SLOT = "sheep_strike"
-local ELECTRIC_GRENADES = 50 -- batch 4; needs highlander
+local ELECTRIC_GRENADES = 50 -- batch 4; needs a Highlander scheme
 local ELECTRIC_SLOT = "earthquake"
 local ELECTRIC_FUSE = 3000   -- ms, plus up to ELECTRIC_SPREAD
 local ELECTRIC_SPREAD = 1500
-
-local FX = 0x10000
 local ORB, GLOW = "sprites/orb", "sprites/glow"
 local TINTS = { 0xFF4040, 0xFFA030, 0xF0F040, 0x50E060, 0x40C0FF, 0xA070FF }
 local STYLES = {
   { name = "alpha", blend = "normal" },
   { name = "add", blend = "add", scale = 1.6 },
   { name = "pulse", blend = "normal", pulse = true },
-  { name = "behind", blend = "normal", depth = 0x190000 }, -- terrain is 0x180000
+  { name = "behind", blend = "normal", depth = wa.depth.BEHIND_TERRAIN }, -- terrain is 0x180000
 }
 local TRAIL = 8         -- glows behind each orb
 local TRAIL_EVERY = 4   -- frames between them, so the trail lingers
@@ -104,10 +103,13 @@ end
 
 -- A linear congruential generator: the same numbers on every machine, and
 -- without touching WA's RNG, so WA's own random draws are left as they were.
+-- 0 to n - 1 from the seed's high bits: its low bits repeat in short cycles
+-- (the lowest just alternates), so `seed % n` gave every magnet the same
+-- polarity, two draws a magnet apart.
 local seed = SEED
 local function rand(n)
   seed = (seed * 1103515245 + 12345) % 0x80000000
-  return seed % n
+  return seed * n // 0x80000000
 end
 
 -- Where each projectile starts, and how fast: spread across the map, from
@@ -118,14 +120,14 @@ local function plan()
   for i = 1, COUNT do
     local x = size.w * i // (COUNT + 1) + rand(41) - 20
     local y = 20
-    while y < size.h and wa.land.solid(x * FX, y * FX) do
+    while y < size.h and wa.land.solid(x, y) do
       y = y + 8
     end
     shots[i] = {
-      x = x * FX,
-      y = (y + 10 + rand(40)) * FX,
-      vx = (rand(9) - 4) * FX // 2,
-      vy = rand(3) * FX,
+      x = x,
+      y = (y + 10 + rand(40)),
+      vx = (rand(9) - 4) * (1 / 2),
+      vy = rand(3),
     }
   end
   return shots
@@ -135,15 +137,15 @@ end
 -- each, so a point inside land is drawn again.
 local function electric_points()
   local size = wa.world.size()
-  local water = wa.world.water() // FX
+  local water = wa.world.water() // 1
   if water <= 0 then water = size.h end -- not known: the whole height
   local points = {}
   for i = 1, ELECTRIC_GRENADES do
     for _ = 1, 20 do
       local x = 20 + rand(math.max(1, size.w - 40))
       local y = 20 + rand(math.max(1, math.min(size.h, water) - 40))
-      if not wa.land.solid(x * FX, y * FX) then
-        points[#points + 1] = { x = x * FX, y = y * FX }
+      if not wa.land.solid(x, y) then
+        points[#points + 1] = { x = x, y = y }
         break
       end
     end
@@ -156,7 +158,7 @@ local function electric_batch(owner)
   for _, p in ipairs(electric_points()) do
     local ok, err = pcall(wa.weapons.launch, {
       weapon = ELECTRIC_SLOT, owner = owner,
-      x = p.x, y = p.y, vx = (rand(5) - 2) * FX // 2, vy = 0,
+      x = p.x, y = p.y, vx = (rand(5) - 2) * (1 / 2), vy = 0,
       fuse = ELECTRIC_FUSE + rand(ELECTRIC_SPREAD),
     })
     if ok then
@@ -174,8 +176,8 @@ end
 local function ground(x)
   local size = wa.world.size()
   local y = 20
-  while y < size.h and wa.land.solid(x * FX, y * FX) do y = y + 4 end
-  while y < size.h and not wa.land.solid(x * FX, y * FX) do y = y + 4 end
+  while y < size.h and wa.land.solid(x, y) do y = y + 4 end
+  while y < size.h and not wa.land.solid(x, y) do y = y + 4 end
   return y
 end
 
@@ -185,8 +187,8 @@ local function bowling_batch(owner)
   for i = 1, BOWLING_STRIKES do
     local x = size.w * i // (BOWLING_STRIKES + 1)
     local ok, err = pcall(wa.weapons.click, {
-      weapon = BOWLING_SLOT, worm = owner, x = x * FX, y = ground(x) * FX,
-      vx = (i % 2 == 1) and FX or -FX, -- the strike's direction: odd ones from the left
+      weapon = BOWLING_SLOT, worm = owner, x = x, y = ground(x),
+      vx = (i % 2 == 1) and 1 or -1, -- the strike's direction: odd ones from the left
     })
     if ok then fired = fired + 1 else reason = reason or tostring(err) end
   end
@@ -203,7 +205,7 @@ local function magnet_batch(owner)
     local x = size.w * i // (MAGNETS + 1) + rand(41) - 20
     local polarity = rand(2) == 0 and 1 or -1
     local ok, err = pcall(wa.weapons.fire, {
-      weapon = MAGNET_SLOT, worm = owner, x = x * FX, y = (ground(x) - 30) * FX, polarity = polarity,
+      weapon = MAGNET_SLOT, worm = owner, x = x, y = (ground(x) - 30), polarity = polarity,
     })
     if ok then
       fired = fired + 1
@@ -254,7 +256,7 @@ local function orb_brain(o)
     spin = (spin + 12) % 360
     local scale = o.style.scale or 1.0
     if o.style.pulse then
-      scale = 1.0 + 0.6 * math.sin(now / 6)
+      scale = 1.0 + 0.6 * wa.math.sin(now / 6)
     end
     a:gfx({ angle = spin, tint = o.tint, blend = o.style.blend, scale = scale, depth = o.style.depth })
     a:advance()
@@ -377,18 +379,18 @@ wa.on.draw(function()
     -- The halo: a colour per corner, the orb's own at the top left, and a
     -- white-hot core over it.
     local c = TINTS[(o.a.id % #TINTS) + 1]
-    glow(x, y, 48 * FX, { argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t) })
-    glow(x, y, 16 * FX, { argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF) })
+    glow(x, y, 48, { argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t) })
+    glow(x, y, 16, { argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF) })
     for i, p in ipairs(o.trail) do
       local a = argb(0xFF - (i - 1) * 0x1C, t)
-      glow(p.x, p.y, (30 - i * 2) * FX, { a, a, a, a })
+      glow(p.x, p.y, (30 - i * 2), { a, a, a, a })
     end
   end
   for _, f in ipairs(flashes) do
     local age = now - f.born
     local alpha = 0xFF * (FLASH - age) // FLASH
     local a, white = argb(alpha, f.tint), argb(alpha, 0xFFFFFF)
-    glow(f.x, f.y, (30 + age * 26 // 10) * FX, { a, a, a, a })
-    glow(f.x, f.y, (16 + age) * FX, { white, white, white, white })
+    glow(f.x, f.y, (30 + age * 26 // 10), { a, a, a, a })
+    glow(f.x, f.y, (16 + age), { white, white, white, white })
   end
 end)
