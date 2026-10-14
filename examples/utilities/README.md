@@ -2,7 +2,7 @@
 
 A features bundle (`core.utilities`, `format_version = 2`): one feature,
 **Utilities**, with the match settings the lobby scheme doesn't have and some
-players' favourite packs as switches. It changes nothing until a profile
+players' favourite mods as switches. It changes nothing until a profile
 selects it: tick "Utilities" on the mod loader's Profile tab and set it up
 below the list, or write it by hand in a profile file in `Mods/Profiles`:
 
@@ -27,12 +27,12 @@ live_hp = true
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
 
 A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
-a utility. The switches are those packs' own code, in `features/`, loaded only
-when switched on; don't also enable the standalone packs.
+a utility. The switches are those mods' own code, in `features/`, loaded only
+when switched on.
 
 Everything runs in simulation callbacks (`wa.on.turn_start`, and
 `wa.on.worm_message` for the wind), so the settings are the same on every peer
-and in replays: the selection, options included, is frozen with the packs.
+and in replays: the selection, options included, is frozen with the bundles.
 
 WA rolls a turn's wind after it starts the turn, so the wind is set at the
 first frame after `turn_start` rather than in it.

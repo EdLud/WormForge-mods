@@ -38,9 +38,9 @@ dealt until a profile says so.
 Each weapon is also a component of its own (`px.double_bazooka`,
 `px.sniper_rifle`, ...), and like any weapon it may go at any panel position.
 Its home slot (PX's layout: the Double Bazooka on the Bazooka's) is where it
-goes by default and how the code names it; `shared.slot(home)` is where it
-sits this match. Under Highlander rules, moved weapons are dealt where they
-are, and one taken out is not dealt. A profile without the rules can place
+goes by default and how the pack's own tables key it (`lib/homes.lua`); the
+code names it to the engine by its id, wherever it sits. Under Highlander
+rules, moved weapons are dealt where they are, and one taken out is not dealt. A profile without the rules can place
 some of them next to WA's own weapons: they then keep the ammo, delay and
 crate odds that profile gives them. Search for them in the Weapons tab.
 
@@ -86,7 +86,7 @@ WA's ArrowEntity for flight and bow impact. Its PX panel icon is included.
 When that arrow hits a worm, the pack enters WA's frozen state on the worm's
 next frame, after the bow hit has applied its momentum.
 
-Most start from the stock WA table entry (`copy_from = "<slot>"`) with a
+Most start from WA's own weapon of their home slot (`copy_from = "stock.<home>"`) with a
 named `patch` for the fields PX's scheme changed. Lightning Strike and
 Electric Grenade use the scheme's full `.wep` records, extracted with
 `tools/px_scheme_weps.py` from `HL - 0rang3 - 1.1.pxs`.
@@ -557,17 +557,18 @@ hands. Nothing reads local input or the clock.
 
 ## Layout
 
-`rules.lua` is the pack in one piece: its description and one `require` per
-module, in the order they run; the tests load it. In a match the bundle runs
-as components (`components/`): the add-on `hl.rules` (Highlander rules)
-builds the pools from each placed weapon's settings and loads `scheme/`,
-and each placed weapon component runs `components/weapon.lua`, which loads
-the modules the placed weapons need (`components/loader.lua`, in
-`rules.lua`'s order) and claims the slot it was placed on. Every slot a
-module names is a weapon's home slot, looked up with `shared.slot` (and back
-with `shared.home`); code that acts on a weapon it finds by slot asks
-`shared.owns(home)` first, so WA's own weapon, or another bundle's, on a slot
-Highlander didn't claim is left alone.
+The bundle runs as components (`components/`): the add-on `hl.rules`
+(Highlander rules) builds the pools, by weapon id, from each placed weapon's
+settings and loads `scheme/`, and each placed weapon component runs
+`components/weapon.lua`, which loads the modules the placed weapons need
+(`components/loader.lua`) and claims the slot it was placed on. The code
+names weapons to the engine by id (`px.javelin`, `stock.fast_walk`), never by
+slot; the pack's own tables (the catalog, the claims, the art) key each
+weapon by its home slot (`lib/homes.lua`), and `shared.home(id)` maps back.
+Code that acts on a weapon it finds by id asks `shared.owns(home)` first, so
+a weapon Highlander didn't claim is left alone. `rules.lua` is the test
+suites' harness: the Highlander profile's match, every weapon on its home
+slot, installed as the engine installs components.
 
 | Folder | Holds |
 |---|---|
@@ -580,7 +581,7 @@ Highlander didn't claim is left alone.
 A module reads another's value as `local name = shared.name`; one that is
 set later (an explode handler the claims call) is used as `shared.name`
 throughout. `tools/split_highlander.py` made this layout from the single
-`rules.lua` the pack used to be, and can make it again from a newer one.
+`rules.lua` the pack once was.
 
 ## Tests
 
@@ -588,10 +589,10 @@ throughout. `tools/split_highlander.py` made this layout from the single
 lua mods/px/test_rules.lua     # from the repo root
 ```
 
-These run the pack (`rules.lua` and the modules it requires) against a mocked WA. Ammo is stored per alliance, and
+These run the Highlander profile's match (`rules.lua`, the components and the modules they load) against a mocked WA, which translates between WA's slots and the engine's weapon ids as the engine does. Ammo is stored per alliance, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
-- all 54 slot claims, including the Lightning Strike, Electric Grenade,
+- every Highlander weapon's claim, including the Lightning Strike, Electric Grenade,
   Laser Gun and Super Tele scheme records
 - Super Tele's exact click, 50-frame wait, three terrain cuts, cavern ceiling,
   cancellation when its worm dies, and immediate manual placement
