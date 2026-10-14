@@ -15,13 +15,17 @@ do
 -- the record's clustlets. For 53 frames it climbs, randomly and jittering
 -- sideways, and carries worms and missiles within 17 pixels along; then
 -- it brakes. Its explosion adds PX's two 40/40 blasts and sounds 85, 70.
+-- It bounces off what it hits much less than a grenade: PX's build of
+-- 28.09.2026 gives it reddaz's bounce physics with restitution 0.11 (0.65
+-- for a grenade), here as WA's own bounce at 17% of a grenade's. The
+-- fusing rocket keeps the record's bounce.
 --
 -- Not ported: PX's particle trails, and carrying mines, crates, oil drums
 -- and bowling balls (their speed is not writable from Lua).
 local NR_HISS = 66    -- the fusing rocket's hiss, every 10 frames
 local NR_CLIMB = 53   -- frames the nuke climbs (PX: "1.1-1.2 second")
 local NR_CARRY = 17   -- pixels: what the climbing nuke carries along
-local NUKE = { fuse = 1600, sound = 0, explode_into = "clustlets" }
+local NUKE = { fuse = 1600, sound = 0, explode_into = "clustlets", bounce_pct = 17 }
 local NUKE_BLAST = { damage = 40, id = 40 } -- PX's DoExplosion(x, y, 40, 40), twice
 
 local nr_first = {}    -- missile id -> frames: a first rocket, fusing
@@ -131,6 +135,7 @@ wa.on.worm_message(function(worm, msg)
       local id = wa.weapons.launch({
         weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
         fuse = NUKE.fuse, sound = NUKE.sound, explode_into = NUKE.explode_into,
+        bounce_pct = NUKE.bounce_pct,
       })
       nr_nuke[id] = 0
     end

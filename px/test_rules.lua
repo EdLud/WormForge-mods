@@ -2994,6 +2994,7 @@ do
     and l.owner == w and l.x == 100 and l.y == 50 and l.vx == 0 and l.vy == 0)
   check("silent, a 1.6 s fuse, bursting into clustlets", l.fuse == 1600 and l.sound == 0
     and l.explode_into == "clustlets")
+  check("bouncing at 17% of a grenade's bounce, as reddaz's tuning", l.bounce_pct == 17)
   local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 }
   local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110, y = 45, vx = 1, vy = 0 }
   local climb_ok, jitter = true, 0
