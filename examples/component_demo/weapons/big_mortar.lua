@@ -5,7 +5,8 @@ return {
     ammo = { round_start = 3 },
   },
   install = function(ctx)
-    wa.log(("Big Mortar on %s at %s %d"):format(ctx.stock_slot, ctx.position.row, ctx.position.column))
-    wa.weapons.replace({ weapon = ctx.stock_slot, copy_from = "mortar", name = "Big Mortar", params = { damage = 70 } })
+    wa.log(("Big Mortar at %s %d"):format(ctx.position.row, ctx.position.column))
+    -- No slot: it claims the one it was placed on, built on WA's own Mortar.
+    wa.weapons.replace({ copy_from = "stock.mortar", name = "Big Mortar", params = { damage = 70 } })
   end,
 }
