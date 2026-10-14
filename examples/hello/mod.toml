@@ -1,9 +1,0 @@
-id = "example.hello"
-version = "0.1.0"
-author = "wkLua"
-api_version = 2
-entry = "init.lua"
-
-[weapons]
-register = []
-replace = []

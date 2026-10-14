@@ -1,9 +1,15 @@
+# A Lua sentry turret, placed as WA places a mine. See README.md.
 id = "example.turret"
-version = "0.1.0"
+version = "0.2.0"
 author = "wkLua"
 api_version = 2
-entry = "weapons.lua"
+format_version = 2
 
-[weapons]
-register = ["example.turret"]
-replace = ["dynamite"]
+[[components]]
+id = "turret.sentry"
+type = "weapon"
+name = "Sentry Gun (Lua turret)"
+description = "Space plants a turret that tracks moving enemies in sight and fires rounds that hurt and shove: a persistent Lua actor."
+entry = "weapons.lua"
+icon = "dynamite"
+default_position = { row = "F5", column = 1 }

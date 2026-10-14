@@ -1,12 +1,25 @@
+# One weapon written twice: as data flags (flags.lua) and as Lua (lua.lua).
+# profiles/Growth Hormones.toml places both, side by side.
 id = "example.gif_donkey"
-version = "0.1.0"
+version = "0.2.0"
 author = "wkLua"
 api_version = 2
-entry = "weapons.lua"
+format_version = 2
 
-[weapons]
-register = ["example.gif_donkey"]
-replace = ["grenade"]
+[[components]]
+id = "gif.flags"
+type = "weapon"
+name = "Growth Hormones"
+description = "A donkey GIF falls from the sky where you click and explodes on landing: written as data flags the engine runs."
+entry = "flags.lua"
+icon = "grenade"
+default_position = { row = "F2", column = 1 }
 
-[actors]
-register = ["example.gif_donkey.drop"]
+[[components]]
+id = "gif.lua"
+type = "weapon"
+name = "Growth Hormones (Lua)"
+description = "The same weapon written in Lua: its own click and per-frame brain."
+entry = "lua.lua"
+icon = "grenade"
+default_position = { row = "F2", column = 2 }

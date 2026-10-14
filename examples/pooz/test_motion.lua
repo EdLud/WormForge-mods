@@ -13,8 +13,8 @@ wa = {
   land = { solid = function(_, y) return y > 100 end },
 }
 local source = debug.getinfo(1, 'S').source:sub(2):match('^(.*[/\\])') or ''
-dofile(source .. 'weapons.lua')
-local worm = { id = 1, weapon = 'shotgun', x = 50.25, y = 100, keys = {},
+dofile(source .. 'weapons.lua').install()
+local worm = { id = 1, weapon = 'pooz.runner', x = 50.25, y = 100, keys = {},
   carry = function(self, x, y) self.x, self.y = x, y end, drop = function() end }
 claim.on_select({ worm = worm })
 keys = { right = true }

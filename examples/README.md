@@ -1,21 +1,61 @@
-Example packs. Copy a folder to `Mods/` next to `WA.exe`.
+Example bundles. Copy a folder to `Mods/` next to `WA.exe`, then pick one of
+its profiles in the loader's Profile tab, or add its weapons and add-ons to
+your own profile. Nothing in a bundle runs until a profile selects it, and a
+weapon goes wherever the profile places it: its code never names a slot, it
+names weapons by id (`labs.cut_lab`, `stock.bazooka`).
 
-- `worm_state_logger` — no weapon slot. Shows one updating HUD line for the active worm and logs transitions to `wkLua.log`. The line includes the state field address, raw hex value, and a provisional WA 3.8.1 name (or `?`). The pack's name table can be checked in game without changing the engine's state semantics. Requires a DLL with `worm.state_id` and `worm.state_address`.
-- Project X's weapons, and Highlander's rules as an add-on, are no longer an example: they are the `px.ports` bundle in `mods/px/`.
-- `mask_lab` — overlays **prod**. **Experimental** actor masks: click places an animated GIF whose walk/hit solid tracks each frame (`mask = true` + worm/land/weapon/actor checkboxes). Also ships `sprites/fox.png` for a static silhouette. Needs no other prod overlay.
-- `hurt_lab` — overlays **fire punch** as **Ten**. Space is lockstep `FIRE_WEAPON`: eat the punch, `worm:hurt(10)` every enemy. Needs no other fire_punch overlay.
-- `turret` — overlays **dynamite**. Space plants a persist sentry (mine placement). Line of sight is `wa.land.trace`; rounds are `worm:hurt`, not explosions. Needs no other dynamite overlay.
-- `circle_bazooka` — overlays bazooka with `sprites/ball.png` (8-frame spin), gravity 25, wind 200, extra Lua bounce. Do not enable together with `ice_bazooka`.
-- `gif_donkey` — grenade slot Growth Hormones via **statuses** (checkboxes: gravity, collide, persist, drown, explode). GUI path.
-- `gif_donkey_lua` — same weapon via **Lua verbs**. `on_click` is a function that calls `wa.actors.spawn`; the brain ticks gravity/move/explode. `wa.land` / `wa.worms` / `wa.crates` are available. Disable `gif_donkey` if both are in `Mods/` (same slot).
-- `wormcraft` — overlays **cluster bomb**. Aiming keeps the stock cluster sprite. Shot plays an anime cut-in (speed lines + portrait) with `cutout.mp3`, then writes `WormCraft` letter by letter and the meme sting. Needs no other cluster_bomb overlay.
-- `worm_toss` — overlays **battle axe**. Strike cursor, click-hold a worm to drag (stock airborne physics / wiggle), release to throw or drop.
-- `super_drill` — overlays **pneumatic drill**. WA performs its normal randomized drill; an invisible watcher stamps a second stock drill mask at the worm each frame while drilling, as PX's Super Drill does. Use matching DLLs and packs for network testing; do not enable another pneumatic drill overlay.
-- `gravler_strike` — overlays **concrete donkey** with WA's Mole Squadron strike and digging behavior, plus PX's four Gravler sprite overrides. PX weapon-data tuning is pending comparison; do not enable another donkey overlay.
-- `pooz` — overlays **shotgun** as a panel slot only. Selecting it possesses the owner as the humanoid runner (run/sprint, coyote mode in edges, double jump). A/D, W to jump, Shift. Switch weapon to drop out. Needs no other shotgun overlay.
-- `q_bazooka` — use bazooka even when its not on panel or in scheme. On your turn, **Q** stock-selects bazooka. **Space** hold charges the power bar; release shoots. Same as a real bazooka.
-- `mine_emit` — overlays **mine**. First proximity puffs dirt, boom sprays five bananas with exhaust trails. Needs no other mine overlay. Console: `echo proximity` / `echo explode`.
-- `perf` — no weapons. Turns on the FPS counter (top right: live fps, the 2 s average, and the longest frame of the last 5 s in ms) and the profiler, which writes a `perf:` line to `wkLua.log` every 10 s with each part of a rendered frame (`sim`, `scene`, `draw`, `present`, `hud`, `lua`, `other`). Presentation only, so safe online.
-- `component_demo` — a component bundle (`format_version = 2`): a weapon, a scheme that places it on F1 and overrides its data, and a feature with an option. Nothing runs until `[profile]` in `Mods/wormforge.toml` selects it; its README has the profile to use.
-- `utilities` — Core utilities (`core.utilities`): one feature, Utilities, with match settings (gravity %, wind, heal at turn start) and switches for ExTurnSide, Agility, Live HP and the collect viewer. Tick it on the loader's Scheme tab and set it up there.
-- `stress` — a stress test for WA's projectiles against ours, meant to be recorded and replayed. In the first turn, 40 stock WA missiles (mortar shells bursting into clustlets, cluster bombs), then 8 s later 40 Lua actors from the same deterministic positions: a truecolor orb drawn on the GPU in four styles (alpha, additive at 1.6x, pulsing scale, behind the terrain), with a large additive halo (a colour per corner, a white-hot core), an eight-glow trail and an explosion flash drawn by `wa.on.draw`. Turns on the FPS counter and profiler, and logs a `stress:` line per batch between the `perf:` lines. Claims **Mine Strike** only to carry its sheets into the GPU atlas; the weapon stays WA's. Its magnets, Bowling Ball Strikes and Electric Grenades need a Highlander scheme.
+Project X's weapons, and Highlander's rules as an add-on, are not examples:
+they are the `px.ports` bundle in `mods/px/`.
+
+- `component_demo` (`example.components`) — the smallest bundle: two weapons
+  built on WA's Bazooka and Mortar, and an add-on with a setting. Its README
+  walks through the format; `profiles/Demo.toml` places them.
+- `utilities` (`core.utilities`) — one add-on, Utilities, with match settings
+  (gravity %, wind, heal at turn start) and switches for ExTurnSide, Agility,
+  Live HP and the collect viewer.
+- `labs` (`example.labs`) — one small weapon per part of the API, each in its
+  own folder or file; `profiles/Labs.toml` places them all.
+  - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it
+    lands (+ cycles the shape, 1-9 and 0 the size): `wa.land.cut`.
+  - `labs.hurt_lab` (Ten) — Space eats WA's punch and `worm:hurt(10)`s every
+    enemy.
+  - `labs.echo_mine` — WA's mine: the first proximity puffs dirt, the boom
+    sprays five bananas with exhaust trails. `on_proximity` and `on_explode`
+    as data.
+  - `labs.panel_icon` — a pack PNG as the panel icon.
+  - `labs.worm_toss` — the land cursor: click-hold a worm to drag it, release
+    to throw.
+  - `labs.q_bazooka` (add-on) — Q selects WA's Bazooka, wherever it is placed;
+    Space charges and fires it as usual.
+- `gif_donkey` (`example.gif_donkey`) — Growth Hormones, written twice: as
+  data flags the engine runs (`gif.flags`) and as Lua (`gif.lua`). Both can be
+  placed side by side; `profiles/Growth Hormones.toml` does that.
+- `gravler_strike` (`example.gravler_strike`) — WA's Mole Squadron with PX's
+  four Gravler sprites swapped in (`mole_dig_rotation`). PX weapon-data tuning
+  is pending comparison.
+- `pooz` (`example.pooz`) — selecting the weapon possesses the worm as a
+  humanoid runner (run/sprint, coyote time at edges, double jump). A/D, W to
+  jump, Shift. Switch weapon to drop out.
+- `turret` (`example.turret`) — Space plants a persistent Lua turret, placed
+  as WA places a mine. Line of sight is `wa.land.trace`; rounds are
+  `worm:hurt` and a shove, not explosions.
+- `wormcraft` (`example.wormcraft`) — aimed as WA's Cluster Bomb; the shot
+  plays an anime cut-in (speed lines and portrait) with `cutout.mp3`, then
+  writes `WormCraft` letter by letter.
+- `KillTheKing` (`example.kill_the_king`) — Project X's Kill the King game
+  mode, as an add-on.
+- `tools` (`example.tools`) — add-ons for diagnostics and testing:
+  - `tools.hello` — logs the turn phases and every hurt.
+  - `tools.perf` — the FPS counter (top right: live fps, the 2 s average, and
+    the longest frame of the last 5 s in ms) and the profiler, which writes a
+    `perf:` line to `wkLua.log` every 10 s with each part of a rendered frame.
+    Presentation only, so safe online.
+  - `tools.worm_state_logger` — one HUD line with the active worm's raw state
+    and every change logged to `wkLua.log`, for naming WA's worm states.
+  - `tools.stress` — WA's projectiles against ours, to record and replay: 40
+    stock missiles, then 40 Lua actors from the same positions, drawn on the
+    GPU in four styles, then Highlander's magnets, Bowling Ball Strikes and
+    Electric Grenades. Its sprites load as assets (`wa.assets.load`).
+  - `profiles/Diagnostics.toml` ticks the counters over the lobby's weapons;
+    `profiles/Stress.toml` places the three Highlander weapons the stress test
+    fires (it needs `mods/px` too).

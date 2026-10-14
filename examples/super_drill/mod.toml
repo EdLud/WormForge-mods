@@ -1,9 +1,0 @@
-id = "example.super_drill"
-version = "0.1.0"
-author = "wkLua"
-api_version = 2
-entry = "weapons.lua"
-
-[weapons]
-register = ["example.super_drill"]
-replace = ["pneumatic_drill"]
