@@ -16,7 +16,7 @@ local PORTED = {
   { -- PX's Skip Go/Surrender: stock Skip Go, or stock Surrender with Ctrl.
     weapon = "skip_go", name = "Skip Go/Surrender",
     panel_icon = "sprites/skip_go/icon.png",
-    stock_fire_choice = { held = "ctrl", alternate = "surrender" },
+    stock_fire_choice = { held = "ctrl", alternate = "stock.surrender" },
   },
   { weapon = "dynamite" },
   { weapon = "blow_torch" },                                   -- BlowTorch
@@ -110,7 +110,7 @@ local PX_ART = {
   { -- Sentry Gun: PX's turret (weapons/sentry_gun.lua, lib/turret.lua) on
     -- the Kamikaze slot, placed as WA places a mine: its timing, ammo and
     -- retreat, with the turret as a Lua body instead of a mine.
-    weapon = "kamikaze", copy_from = "mine", name = "Sentry Gun",
+    weapon = "kamikaze", copy_from = "stock.mine", name = "Sentry Gun",
     panel_icon = "sprites/sentry_gun/icon.png",
     is_weapon = true,
     -- PX's take-out and placing, grey; the housing in them coloured per team
@@ -154,7 +154,7 @@ local PX_ART = {
   },
   { -- Sentry Laser: PX's projectile-defence turret (weapons/sentry_laser.lua,
     -- lib/turret.lua) on the Dragon Ball slot, placed as the Sentry Gun.
-    weapon = "dragon_ball", copy_from = "mine", name = "Sentry Laser",
+    weapon = "dragon_ball", copy_from = "stock.mine", name = "Sentry Laser",
     panel_icon = "sprites/sentry_laser/icon.png",
     is_weapon = true,
     worm_sprites = {

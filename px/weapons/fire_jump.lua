@@ -37,17 +37,17 @@ end
 
 wa.on.worm_message(function(worm, msg)
   if msg == wa.msg.FIRE_WEAPON then
-    if worm.weapon == shared.slot("pneumatic_drill") and not drills[worm.id]
-        and worm:ammo(shared.slot("pneumatic_drill")) ~= 0 then
+    if worm.weapon == "px.super_drill" and not drills[worm.id]
+        and worm:ammo("px.super_drill") ~= 0 then
       local id = worm.id
       drills[id] = wa.actors.spawn({
         sprite = false, x = worm.x, y = worm.y,
         gravity = false, collide = false, owner = worm,
         on = follow_drill(worm, id),
       })
-    elseif worm.weapon == shared.slot("fire_punch") and worm:ammo(shared.slot("fire_punch")) ~= 0 then
+    elseif worm.weapon == "px.fire_jump" and worm:ammo("px.fire_jump") ~= 0 then
       winding[worm.id] = 0
-    elseif worm.weapon == shared.slot("handgun") and worm:ammo(shared.slot("handgun")) ~= 0 then
+    elseif worm.weapon == "px.sniper_rifle" and worm:ammo("px.sniper_rifle") ~= 0 then
       -- The Sniper Rifle's own shot, over WA's (PX's snipfiring).
       wa.sound.play(worm, "sounds/sniper_firing.wav")
     end

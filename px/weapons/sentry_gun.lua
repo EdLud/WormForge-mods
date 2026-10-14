@@ -65,7 +65,7 @@ local function fire(t, a, s)
   local mx, my = turret.muzzle(t, a, s.angle)
   casing(t, a, s, rad)
   wa.weapons.fire_bullet {
-    weapon = "uzi", owner = owner,
+    weapon = "stock.uzi", owner = owner,
     x = mx, y = my, dx = dx, dy = dy, damage = DAMAGE, ignore = { a },
   }
   s.ammo = s.ammo - 1
@@ -76,7 +76,7 @@ local function fire(t, a, s)
 end
 
 local gun = turret.new({
-  kind = "sentry", slot = "kamikaze",
+  kind = "sentry", weapon = "px.sentry_gun",
   muzzle_out = MUZZLE_OUT,
   art = { base = ART .. "turret_base", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun", flare = ART .. "turret_flare", light = ART .. "turret_light.png" },
   sounds = {

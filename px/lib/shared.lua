@@ -2,29 +2,20 @@
 -- Split from rules.lua by tools/split_highlander.py.
 local shared = {}
 
--- Where each weapon sits this match. The code names every Highlander weapon
--- by its home slot, the stock slot PX's layout gives it ("bazooka" is the
--- Double Bazooka); as a component it may be placed on any slot, or not at
--- all. shared.slot(home) is the slot it sits on (nil when it isn't placed),
--- shared.home(slot) the weapon on a slot. Until shared.place is called (the
--- pack in one piece, rules.lua) every weapon is at home.
-local placed, homes
+-- The engine names a weapon by its id (`px.javelin`, `stock.fast_walk`); the
+-- pack's own tables are keyed by each weapon's home slot (lib/homes.lua).
+-- shared.home(id) is the home of a Highlander weapon, or the stock name of
+-- one of WA's own that no Highlander weapon calls home (WA's Mine is not the
+-- Nuke Rocket); nil for anything else.
+local HOME = require("lib/homes")
+local IS_HOME = {}
+for _, home in pairs(HOME) do IS_HOME[home] = true end
 
-function shared.place(map)
-  placed, homes = map, {}
-  for home, slot in pairs(map) do
-    homes[slot] = home
-  end
-end
-
-function shared.slot(home)
-  if not placed then return home end
-  return placed[home]
-end
-
-function shared.home(slot)
-  if not placed then return slot end
-  return slot and homes[slot]
+function shared.home(id)
+  if id == nil then return nil end
+  if HOME[id] then return HOME[id] end
+  local stock = id:match("^stock%.(.+)$")
+  return stock and not IS_HOME[stock] and stock or nil
 end
 
 return shared

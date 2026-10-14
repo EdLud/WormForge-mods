@@ -42,6 +42,22 @@ for _, n in ipairs(STOCK) do
   IS_STOCK[n] = true
 end
 
+-- The engine names weapons by id; the suite, like WA, by slot. rules.lua puts
+-- every Highlander weapon on its home slot (lib/homes.lua), so this mock
+-- engine translates at its boundary as the real one does: a slot reads as
+-- the id of the weapon on it, and an id the pack passes is that slot.
+local HOME = assert(loadfile((HIGHLANDER_ROOT or "mods/px/") .. "lib/homes.lua"))()
+local ID_ON = {}
+for id, home in pairs(HOME) do ID_ON[home] = id end
+local function ID(slot)
+  if slot == nil or slot:find(".", 1, true) then return slot end
+  return ID_ON[slot] or "stock." .. slot
+end
+local function SLOT(name)
+  if name == nil then return nil end
+  return HOME[name] or name:match("^stock%.(.+)$") or name
+end
+
 -- The scheme's layout: each HL weapon as the stock slot it takes.
 local MOVEMENT = {
   girder_pack = 1, ninja_rope = 1, parachute = 1, teleport = 1,
@@ -74,8 +90,16 @@ local M, ammo, worms, cavern, rng, logs, active, death_seen, replaced
 local unregistered_sounds = {} -- pack WAVs played but never registered
 
 local Worm = {}
-Worm.__index = Worm
+-- A worm's `weapon` is kept as WA's slot and read as the weapon's id.
+Worm.__index = function(worm, key)
+  if key == "weapon" then return ID(rawget(worm, "weapon_slot")) end
+  return Worm[key]
+end
+Worm.__newindex = function(worm, key, value)
+  rawset(worm, key == "weapon" and "weapon_slot" or key, value)
+end
 function Worm:ammo(name, change)
+  name = SLOT(name)
   assert(IS_STOCK[name], "pack asked for a weapon that does not exist: " .. tostring(name))
   local store = ammo[self.ammo_group]
   if change == nil then
@@ -603,16 +627,19 @@ local function new_match(opts)
     },
     weapons = {
       fire_bullet = function(spec)
-        assert(spec.weapon == "uzi" and spec.owner ~= nil)
+        assert(SLOT(spec.weapon) == "uzi" and spec.owner ~= nil)
         M.bullets = M.bullets or {}
         M.bullets[#M.bullets + 1] = spec
       end,
+      -- A weapon component claims the slot rules.lua is installing it on.
       replace = function(spec)
+        spec.weapon = SLOT(spec.weapon) or HIGHLANDER_CLAIMING
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
         replaced[#replaced + 1] = spec
       end,
       -- As the engine: a real missile, its id.
       launch = function(spec)
+        spec.weapon = SLOT(spec.weapon)
         assert(IS_STOCK[spec.weapon], "launch from a slot that does not exist: " .. tostring(spec.weapon))
         assert(spec.owner ~= nil, "launch needs an owner")
         M.launched = M.launched or {}
@@ -668,6 +695,7 @@ local function new_match(opts)
         M.missile_handlers = M.missile_handlers or {}
         M.missile_handlers[#M.missile_handlers + 1] = f
         M.missile = function(m)
+          m.weapon = ID(m.weapon)
           for _, h in ipairs(M.missile_handlers) do h(m) end
         end
       end,
@@ -675,6 +703,7 @@ local function new_match(opts)
         M.hurt_handlers = M.hurt_handlers or {}
         M.hurt_handlers[#M.hurt_handlers + 1] = f
         M.hurt = function(hit)
+          hit.weapon, hit.source_weapon = ID(hit.weapon), ID(hit.source_weapon)
           for _, h in ipairs(M.hurt_handlers) do h(hit) end
         end
       end,
@@ -764,14 +793,14 @@ local function remove(id)
   end
 end
 
--- What the pack dealt, read back out of its own log lines.
+-- What the pack dealt, read back out of its own log lines, as slots.
 local function hand(id)
   for _, line in ipairs(logs) do
     local who, list = line:match("^highlander: worm (%d+) dealt (.-) %(")
     if tonumber(who) == id then
       local out = {}
       for name in list:gmatch("[^, ]+") do
-        out[#out + 1] = name
+        out[#out + 1] = SLOT(name)
       end
       return out
     end
@@ -821,7 +850,11 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  check("67 slots replaced, each once", #replaced == 67 and not dupes, tostring(#replaced))
+  -- One claim per Highlander weapon, each on its home slot.
+  local weapons_count = 0
+  for _ in pairs(HOME) do weapons_count = weapons_count + 1 end
+  check("each Highlander weapon claims its slot, once", #replaced == weapons_count and not dupes,
+    #replaced .. " of " .. weapons_count)
   -- A weapon component may claim only the slot it is placed on, and the
   -- engine skips any other claim, silently: every replaced slot needs a
   -- weapon component at that slot's panel position, and the Highlander
@@ -901,16 +934,16 @@ do
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif slot == "kamikaze" or slot == "dragon_ball" then
       -- The Sentry Gun and the Sentry Laser are placed as WA places a mine.
-      if spec.copy_from ~= "mine" or spec.wep then own_file = false end
-    elseif spec.copy_from ~= slot or spec.wep then own_file = false end
+      if spec.copy_from ~= "stock.mine" or spec.wep then own_file = false end
+    elseif spec.copy_from ~= "stock." .. slot or spec.wep then own_file = false end
   end
   check("scheme records use their intended bases; others copy stock", own_file)
   check("Skip Go uses stock Skip Go, with Ctrl choosing stock Surrender",
-    by_slot.skip_go and by_slot.skip_go.copy_from == "skip_go"
+    by_slot.skip_go and by_slot.skip_go.copy_from == "stock.skip_go"
       and by_slot.skip_go.name == "Skip Go/Surrender"
       and by_slot.skip_go.panel_icon == "sprites/skip_go/icon.png"
       and by_slot.skip_go.stock_fire_choice.held == "ctrl"
-      and by_slot.skip_go.stock_fire_choice.alternate == "surrender")
+      and by_slot.skip_go.stock_fire_choice.alternate == "stock.surrender")
   check("Ice Arrow uses PX's arrow record and icon",
     by_slot.armageddon and by_slot.armageddon.wep == "weps/armageddon.wep"
       and by_slot.armageddon.panel_icon == "sprites/ice_arrow/icon.png")
@@ -932,7 +965,7 @@ do
   check("Baseball Bat on the girder slot, with its own icon",
     by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
   check("a weapon on its own slot keeps its icon",
-    by_slot.dynamite and by_slot.dynamite.panel_icon == nil)
+    by_slot.girder_pack and by_slot.girder_pack.panel_icon == nil)
   check("Priceless Ming Vase: the stock vase, as the scheme tunes it",
     by_slot.ming_vase and by_slot.ming_vase.panel_icon == nil and by_slot.ming_vase.on_fire == nil)
   check("Windy Cluster brings PX's icon and bits",
@@ -1176,7 +1209,7 @@ do
     local spec
   for _, s in ipairs(replaced) do if s.weapon == "kamikaze" then spec = s end end
   check("it claims Kamikaze, placed as a mine, its housing tinted per team",
-    spec and spec.copy_from == "mine" and spec.name == "Sentry Gun" and type(spec.on_fire) == "function"
+    spec and spec.copy_from == "stock.mine" and spec.name == "Sentry Gun" and type(spec.on_fire) == "function"
       and spec.worm_sprites.weaponlnk == "sprites/sentry_gun/equip"
       and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_gun/equip_housing"
       and #spec.worm_sprites_team_tint.colours == 6)
@@ -1273,7 +1306,7 @@ do
     local spec
   for _, s in ipairs(replaced) do if s.weapon == "dragon_ball" then spec = s end end
   check("it claims Dragon Ball, placed as a mine, its body tinted per team",
-    spec and spec.copy_from == "mine" and spec.name == "Sentry Laser" and type(spec.on_fire) == "function"
+    spec and spec.copy_from == "stock.mine" and spec.name == "Sentry Laser" and type(spec.on_fire) == "function"
       and spec.worm_sprites.weaponlnk == "sprites/sentry_laser/equip"
       and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_laser/equip_housing")
   local owner, enemy = worm(16), worm(32)
@@ -1678,13 +1711,13 @@ do
       M.solid = function(x, y) return x == 100 + mask.left and y == 100 - 11 end
       check(kind .. ": terrain clearance covers side of silhouette", not mask.clear(100,100,{}))
       M.solid = function() return true end
-      local before, ammo = #M.spawned, owner:ammo(t.slot)
+      local before, ammo = #M.spawned, owner:ammo(t.weapon)
       local failed = t.place({ worm = owner })
       check(kind .. ": blocked search makes no trapping mask and refunds finite ammo", failed == nil and #M.spawned == before
-        and owner:ammo(t.slot) == ammo + 1)
-      owner:ammo(t.slot, { set = -1 })
+        and owner:ammo(t.weapon) == ammo + 1)
+      owner:ammo(t.weapon, { set = -1 })
       t.place({ worm = owner })
-      check(kind .. ": blocked search preserves infinite ammo", owner:ammo(t.slot) == -1)
+      check(kind .. ": blocked search preserves infinite ammo", owner:ammo(t.weapon) == -1)
       M.solid, M.gravity, M.trace_hit = nil, nil, nil
     end
   end
@@ -1722,10 +1755,10 @@ do
     -- The current stamped feet obstruct the ray from the planter, forcing
     -- every otherwise clear candidate to fail, as in the profiling log.
     M.trace_hit = function() traces = traces + 1; return { hit = true, starts_solid = true } end
-    local before, ammo = #M.spawned, owner:ammo(t.slot)
+    local before, ammo = #M.spawned, owner:ammo(t.weapon)
     local failed = t.place({ worm = owner })
     check(kind .. ": exhaustive second placement preserves its failure and refund",
-      first and failed == nil and #M.spawned == before and owner:ammo(t.slot) == ammo + 1 and traces > 100)
+      first and failed == nil and #M.spawned == before and owner:ammo(t.weapon) == ammo + 1 and traces > 100)
     check(kind .. ": each other worm is snapshotted once, not per mask pixel", reads == 47 * 4, reads)
     check(kind .. ": live sentry lists are sorted once per weapon type", sorts == 2, sorts)
     check(kind .. ": each terrain pixel is probed once, including empty pixels",
@@ -2348,7 +2381,7 @@ do
   check("held as a plain bazooka: subtype_param stays stock (3), not the scheme's 7",
     not (spec.patch and spec.patch.subtype_param))
   check("the Double Bazooka on the bazooka slot, with its icon and an explode step", spec
-    and spec.copy_from == "bazooka" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
+    and spec.copy_from == "stock.bazooka" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
     and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "bazooka"
@@ -2399,7 +2432,7 @@ do
     if r.weapon == "old_woman" then spec = r end
   end
   check("stock Old Woman supplies the animal and Lua handles its projectile",
-    spec and spec.copy_from == "old_woman" and type(spec.on_fire) == "function"
+    spec and spec.copy_from == "stock.old_woman" and type(spec.on_fire) == "function"
       and spec.patch.fire_type == 1 and spec.patch.fire_method == 3)
   local w = worm(17)
   w.x, w.y = 100, 100
@@ -2874,7 +2907,7 @@ do
     if r.weapon == "super_banana" then spec = r end
   end
   check("the Chilli Bomb on the super banana slot, with its icon, the banana kept, and an explode step", spec
-    and spec.copy_from == "super_banana" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
+    and spec.copy_from == "stock.super_banana" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
     and spec.sprite == "banana" and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "super_banana"
@@ -2934,7 +2967,7 @@ do
     if r.weapon == "mine" then spec = r end
   end
   check("the Nuke Rocket on the mine slot, its icon, its rocket, an explode step", spec
-    and spec.copy_from == "mine" and spec.panel_icon == "sprites/nuke_rocket/nuke_rocket_ico.png"
+    and spec.copy_from == "stock.mine" and spec.panel_icon == "sprites/nuke_rocket/nuke_rocket_ico.png"
     and spec.sprite == "sprites/nuke_rocket/nuke_rocket_bullet.png" and type(spec.on_explode) == "function")
   check("its launch sound registered, so it can play", spec.sounds and spec.sounds[1] == "sounds/nuke_rocket_launch.wav")
   for _, o in ipairs(worms) do
@@ -3433,7 +3466,7 @@ do
   function w:set_state(s) self.state = s end
   function w:clear_keys() self.keys = {} end
   local spent = 0
-  function w:ammo(slot, n) if slot == "laser_sight" then spent = spent + n end end
+  function w:ammo(slot, n) if SLOT(slot) == "laser_sight" then spent = spent + n end end
   M.spawned, M.sounds, M.quads = {}, {}, {}
   check("putting it on replaces WA's laser sight", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
   check("the suit's mask: without the bit WA's water acts on", w.collision_mask == 134342)
@@ -3623,7 +3656,7 @@ do
   for _, r in ipairs(replaced) do
     if r.weapon == "ninja_rope" then spec = r end
   end
-  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.copy_from == "ninja_rope"
+  check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.copy_from == "stock.ninja_rope"
     and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
   local w = worm(33)
   w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
@@ -4478,25 +4511,23 @@ do
   end
 end
 
-print("components: a scheme's stock weapons stand in for Highlander's of their name")
+print("components: weapons by id, Highlander's own by their home")
 do
   new_match()
-  local loader = require("components/loader")
+  -- A fresh loader: the match's own has placed rules.lua's whole layout.
+  local root = HIGHLANDER_ROOT or "mods/px/"
+  local loader = assert(loadfile(root .. "components/loader.lua", "t", setmetatable({}, { __index = _G })))()
   local shared = require("lib/shared")
   local homes = loader.place({ weapons = {
-    ["px.swim_suit"] = { stock_slot = "laser_sight" },
-    ["px.super_tele"] = { stock_slot = "teleport" },
-    ["stock.fast_walk"] = { stock_slot = "girder" },
-    ["stock.flame_thrower"] = { stock_slot = "flame_thrower" },
-    ["stock.teleport"] = { stock_slot = "invisibility" },
+    ["px.swim_suit"] = {}, ["px.super_tele"] = {}, ["px.nuke_rocket"] = {},
+    ["stock.fast_walk"] = {}, ["stock.flame_thrower"] = {}, ["stock.teleport"] = {}, ["stock.mine"] = {},
   } })
-  check("Swim Suit finds the stock Fast Walk where it sits", shared.slot("fast_walk") == "girder",
-    shared.slot("fast_walk"))
-  check("the pools deal the stock Flame Thrower", shared.slot("flame_thrower") == "flame_thrower")
-  check("Super Tele keeps its name; the stock Teleport doesn't take it",
-    shared.slot("teleport") == "teleport" and shared.home("invisibility") == nil)
-  check("only Highlander's weapons load code", same(homes, { "laser_sight", "teleport" }),
+  check("only Highlander's weapons load code", same(homes, { "laser_sight", "mine", "teleport" }),
     table.concat(homes, ","))
+  check("a Highlander weapon's home", shared.home("px.super_tele") == "teleport")
+  check("WA's own weapon is its stock name", shared.home("stock.fast_walk") == "fast_walk")
+  check("WA's own weapon never takes a Highlander weapon's home",
+    shared.home("stock.teleport") == nil and shared.home("stock.mine") == nil)
 end
 
 print("")

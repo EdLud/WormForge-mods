@@ -193,7 +193,7 @@ local function fire(t, a, s, target)
 end
 
 local sentry = turret.new({
-  kind = "sentry_laser", slot = "dragon_ball",
+  kind = "sentry_laser", weapon = "px.sentry_laser",
   muzzle_out = MUZZLE_OUT,
   sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
   rot_active = 5.0, aim_tolerance = 5.0, health = 35, hold_own_turn = false,

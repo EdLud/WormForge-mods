@@ -26,7 +26,7 @@ local BALL_SHARE = 0.25            -- a Bowling Ball gets a quarter of the force
 local RELEASE_AFTER = 300
 -- The grenades that go off only once they stop slow down in a field (PX
 -- damps its Hellish Hand-Grenade there by 0.985 a frame).
-local DAMPED = { holy_grenade = true }
+local DAMPED = { ["px.hellish_hand_grenade"] = true }
 local DAMPING = 0.985
 -- Its body: PX's magnet is a mine (CMine) and moves as one. Here it is a
 -- circle traced against the land (the art is 26 pixels across), bouncing
@@ -283,7 +283,7 @@ end)
 -- the claim), so the two stay in step.
 wa.on.worm_message(function(worm)
   local id = worm.id
-  local pressed = worm.turn and worm.weapon == shared.slot("baseball_bat") and wa.world.keys().plus_key or false
+  local pressed = worm.turn and worm.weapon == "px.electromagnet" and wa.world.keys().plus_key or false
   if pressed and not plus_held[id] then polarity[id] = -(polarity[id] or 1) end
   plus_held[id] = pressed
 end, { msgs = { wa.msg.FRAME_FINISH } })
@@ -296,7 +296,7 @@ local icon_shown = true
 local function show_mode_icon(worm)
   if not (icon_shown and wa.weapons.panel_icon and shared.owns("baseball_bat")) then return end
   local attract = worm and (polarity[worm.id] or 1) < 0
-  local ok, err = pcall(wa.weapons.panel_icon, shared.slot("baseball_bat"), attract and 0 or 1)
+  local ok, err = pcall(wa.weapons.panel_icon, "px.electromagnet", attract and 0 or 1)
   if not ok then
     icon_shown = false -- no icons of ours on the slot: say so once, then leave it
     wa.log("electromagnet: mode icon: " .. tostring(err))
@@ -307,7 +307,7 @@ if wa.on.hud then
   wa.on.hud(function()
     local worm = shared.current_worm()
     show_mode_icon(worm)
-    if worm and worm.weapon == shared.slot("baseball_bat") then
+    if worm and worm.weapon == "px.electromagnet" then
       wa.hud.line((polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
         or "Electromagnet: REPEL mode (+ to attract)")
     end

@@ -11,7 +11,6 @@
 local turret = {}
 local turrets = {}
 local feet = require("lib/sentry_mask")
-local shared = require("lib/shared")
 
 -- Scripted bodies are not in the stock electrical target list. Include
 -- their whole body circle in Lightning's existing beam selection in Lua.
@@ -669,10 +668,8 @@ function turret.new(cfg)
     local x, y = placement(worm, facing)
     if not x then
       -- The native placed shot consumes one charge; retain it on failure.
-      -- `t.slot` is its home slot; a profile may have placed it elsewhere.
-      local slot = shared.slot(t.slot) or t.slot
-      local ammo = worm:ammo(slot)
-      if ammo >= 0 then worm:ammo(slot, { set = ammo + 1 }) end
+      local ammo = worm:ammo(t.weapon)
+      if ammo >= 0 then worm:ammo(t.weapon, { set = ammo + 1 }) end
       wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
       return nil
     end

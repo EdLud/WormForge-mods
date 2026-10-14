@@ -22,9 +22,9 @@ local function pools_from(placed)
   for _, w in ipairs(placed) do
     local pool = w.options.pool
     if out[pool] then
-      table.insert(out[pool], w.stock_slot)
+      table.insert(out[pool], w.id)
       if w.options.cavern then
-        table.insert(out["cave_" .. pool], w.stock_slot)
+        table.insert(out["cave_" .. pool], w.id)
       end
     end
   end

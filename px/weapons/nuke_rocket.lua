@@ -67,7 +67,7 @@ wa.on.missile_frame(function(m)
   end
   -- The rocket is the missile WA fires after the fire key. Later ones of
   -- the slot (the nuke's cluster bits) are no rockets.
-  if nr_first[m.id] == nil and nr_expect and m.weapon == shared.slot("mine") then
+  if nr_first[m.id] == nil and nr_expect and m.weapon == "px.nuke_rocket" then
     nr_first[m.id], nr_expect = 0, false
   end
   if nr_first[m.id] ~= nil then
@@ -123,13 +123,13 @@ shared.nuke_rocket_explode = function(ev)
 end
 
 wa.on.worm_message(function(worm, msg)
-  if msg == wa.msg.FIRE_WEAPON and worm.weapon == shared.slot("mine") then
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.nuke_rocket" then
     nr_shooter, nr_expect = worm, true
   elseif msg == wa.msg.FRAME_FINISH and #nr_pending > 0 then
     local owner = nr_shooter or worm
     for _, p in ipairs(nr_pending) do
       local id = wa.weapons.launch({
-        weapon = shared.slot("mine"), owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
+        weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
         fuse = NUKE.fuse, sound = NUKE.sound, explode_into = NUKE.explode_into,
       })
       nr_nuke[id] = 0

@@ -76,10 +76,10 @@ local function world_physics_frame(worm)
   if not pressed then
     return
   end
-  if worm.weapon == shared.slot("surrender") then
+  if worm.weapon == "px.wind_changer" then
     wind_force = digit
     wa.sound.play(worm, 107)
-  elseif worm.weapon == shared.slot("low_gravity") and digit >= 1 and digit <= 5 then
+  elseif worm.weapon == "px.gravity_control" and digit >= 1 and digit <= 5 then
     gravity_choice = digit
     wa.sound.play(worm, 92)
   end
@@ -88,14 +88,14 @@ end
 wa.on.worm_message(function(worm, msg)
   if msg == wa.msg.FRAME_FINISH then
     world_physics_frame(worm)
-  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == shared.slot("surrender") then
+  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.wind_changer" then
     -- FireFinal(Wind Changer): breeze for none, a calm wind up to 5, strong
     -- above; towards where the worm faces.
     local f = wind_force
     wa.sound.play(worm, f == 0 and "sounds/wind_changer/breeze.wav"
       or f < 6 and "sounds/wind_changer/calm_wind.wav" or "sounds/wind_changer/strong_wind.wav")
     wa.world.set_wind((f * WIND_STEP) * worm.facing)
-  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == shared.slot("low_gravity") then
+  elseif msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.gravity_control" then
     if not gravity_choice then
       wa.sound.play(worm, "sounds/gravity_control/error.wav")
       return "eat"
@@ -122,9 +122,9 @@ if wa.on.hud then
     if not worm then
       return
     end
-    if worm.weapon == shared.slot("surrender") then
+    if worm.weapon == "px.wind_changer" then
       wa.hud.line(string.format("Wind Changer: force %d (keys 0-9), then Space", wind_force))
-    elseif worm.weapon == shared.slot("low_gravity") then
+    elseif worm.weapon == "px.gravity_control" then
       wa.hud.line("Gravity Control: " .. (gravity_choice and GRAVITY_NAMES[gravity_choice]
         or "choose 1-5") .. ", then Space")
     end

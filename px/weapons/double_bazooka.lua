@@ -27,7 +27,7 @@ local db_pending = {} -- second shells to launch once the blast is over
 local db_shooter      -- the worm that fired it (PX's ClWT / ClWN)
 
 wa.on.missile_frame(function(m)
-  if m.weapon == shared.slot("bazooka") and m.phase == "post" then
+  if m.weapon == "px.double_bazooka" and m.phase == "post" then
     db_speed[m.id] = { m.vx, m.vy }
   end
 end)
@@ -53,14 +53,14 @@ shared.double_bazooka_explode = function(ev)
 end
 
 wa.on.worm_message(function(worm, msg)
-  if msg == wa.msg.FIRE_WEAPON and worm.weapon == shared.slot("bazooka") then
+  if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.double_bazooka" then
     db_shooter = worm
   elseif msg == wa.msg.FRAME_FINISH and #db_pending > 0 then
     -- The first worm's frame after the blast; every worm gets one.
     local owner = db_shooter or worm
     for _, p in ipairs(db_pending) do
       local id = wa.weapons.launch({
-        weapon = shared.slot("bazooka"), owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
+        weapon = "px.double_bazooka", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
         damage = DB_SECOND.damage, fuse = DB_SECOND.fuse,
       })
       db_second[id] = true

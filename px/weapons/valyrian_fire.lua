@@ -12,8 +12,8 @@ fires.valyrian_fire = function(fire)
   local w = fire.worm
   if w.y >= wa.world.water() then
     -- Set, as the pack always writes ammo; infinite (-1) stays infinite.
-    local n = w:ammo(shared.slot("petrol_bomb"))
-    if n >= 0 then w:ammo(shared.slot("petrol_bomb"), { set = n + 1 }) end
+    local n = w:ammo("px.valyrian_fire")
+    if n >= 0 then w:ammo("px.valyrian_fire", { set = n + 1 }) end
     return
   end
   -- Along the aim, which is the throw's direction. Not PX's cos and sin of
@@ -25,7 +25,7 @@ fires.valyrian_fire = function(fire)
     x = x + (THROW_OUT * fire.vx / speed)
     y = y + (THROW_OUT * fire.vy / speed)
   end
-  wa.weapons.launch({ weapon = shared.slot("petrol_bomb"), owner = w, x = x, y = y, vx = fire.vx, vy = fire.vy })
+  wa.weapons.launch({ weapon = "px.valyrian_fire", owner = w, x = x, y = y, vx = fire.vx, vy = fire.vy })
 end
 
 -- PX's ExplodeAt: 51 fires on a 3-pixel ring at the impact, besides WA's own

@@ -1,4 +1,35 @@
 -- Highlander: the rules. Split from rules.lua by tools/split_highlander.py.
+--
+-- A port of Project X's `scheme_hl_0rang3` (Highlander 0rang3 1.1).
+-- The source (`highlander.txt`) does all of this with four calls:
+-- SetWeaponEx(team, weapon, 1) to grant and SetWeaponEx(team, weapon, 0) to
+-- take away. `worm:ammo(name, { set = n })` is the same absolute write. It has
+-- to be absolute: a stock scheme gives some of these weapons infinite ammo,
+-- and adding to infinite leaves it infinite.
+--
+-- Where this differs from the source, on purpose:
+--
+--   * No turn-end removal. PX removes a worm's weapons at M_TURNEND and again,
+--     through CurW, at the next M_TURNBEGIN. The second alone is enough, so
+--     this listens for one message instead of two.
+--
+--     START_TURN (0x34) reaches only the worm whose turn it is: WA's handler
+--     marks the receiver turn-active and calls TeamArena::SetActiveWorm on it
+--     unconditionally (OpenWA `msg_start_turn`), which would be nonsense sent
+--     to every worm. So the worm it arrives on IS the active worm.
+--
+--   * Every pooled slot is zeroed for every team at each turn start, not
+--     just the previous worm's. PX relied on its scheme having those slots at
+--     zero. Here the scheme can say anything, so the pack enforces it itself.
+--
+--   * PX's GiveWeapons also sets the Hot Air Balloon to 3 and the Wind
+--     Changer to 1 each turn. The Highlander scheme gives them as weapon data
+--     (profiles/Highlander.toml), so this file alone doesn't.
+--
+-- Lockstep: dealing, turn_start and death are all dispatched from WA's own
+-- simulation messages, and every random choice is wa.random(). Two peers, or
+-- a peer and a replay, deal the same hands and make the same grants. Nothing
+-- here reads local input or the clock.
 local shared = require("lib/shared")
 local POOLS = shared.POOLS
 local arsenal = shared.arsenal

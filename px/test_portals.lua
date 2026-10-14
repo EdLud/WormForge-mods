@@ -119,7 +119,7 @@ assert(custom:move(custom_body) and strategy_calls==1 and custom_body.x==600 and
 local shared=require("lib/shared"); shared.fires={}; shared.current_worm=function() return worms[1] end
 require("weapons/portal_gun")
 worm=body("worm",17,100,100,4,-6)
-worm.team,worm.alliance,worm.weapon,worm.turn,worm.aim=0,0,"scales_of_justice",true,.5
+worm.team,worm.alliance,worm.weapon,worm.turn,worm.aim=0,0,"px.portal_gun",true,.5
 worm.stock=3
 function worm:ammo(_,delta) if delta then self.stock=self.stock+delta end; return self.stock end
 function worm:air_fire(on) self.air_enabled=on~=false; return true end

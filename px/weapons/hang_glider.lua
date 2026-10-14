@@ -216,8 +216,8 @@ do
     -- first frame. The slot equipped before opening is authoritative.
     local g = gliders[worm.id]
     if not g then
-      if (state == "parachuting" and equipped ~= shared.slot("parachute"))
-          or (state ~= "parachuting" and worm.weapon ~= shared.slot("parachute")) then
+      if (state == "parachuting" and equipped ~= "px.hang_glider")
+          or (state ~= "parachuting" and worm.weapon ~= "px.hang_glider") then
         return
       end
       g = glider_of(worm)
@@ -258,7 +258,7 @@ do
     if state ~= "parachuting" then
       -- Which parachute the worm opens next: PX checks the weapon only while
       -- the worm is not already under one.
-      g.enabled = worm.weapon == shared.slot("parachute")
+      g.enabled = worm.weapon == "px.hang_glider"
       if g.unstand then
         if state == "standing" then
           worm:release(0, 0)
@@ -310,7 +310,7 @@ do
       g.sx, g.sy = worm.vx, worm.vy
       return
     end
-    g.enabled = equipped == shared.slot("parachute")
+    g.enabled = equipped == "px.hang_glider"
     if not g.enabled or g.deployed or state ~= "parachuting" then
       return -- a plain parachute, or the balloon
     end

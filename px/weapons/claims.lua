@@ -47,12 +47,12 @@ shared.owns = function(home)
   return home ~= nil and owned[home] == true
 end
 
--- One weapon's claim of the slot it sits on (`w.weapon` is its home slot,
--- whose stock record it builds on).
+-- One weapon's claim of the slot the profile placed it on (`w.weapon` is its
+-- home slot, the pack's key for it, whose stock record it builds on).
 local function claim(w)
   owned[w.weapon] = true
   -- copy_from + name + named patch (stock base); was weps/<slot>.wep
-  local spec = w.wep and { wep = w.wep } or { copy_from = w.weapon, name = WEP_NAME[w.weapon] }
+  local spec = w.wep and { wep = w.wep } or { copy_from = "stock." .. w.weapon, name = WEP_NAME[w.weapon] }
   if w.weapon == "old_woman" then
     spec.patch = OLD_WOMAN_LAUNCHER_PATCH
     spec.on_fire = function(fire) fires.old_woman(fire) end
@@ -72,22 +72,14 @@ local function claim(w)
   for k, v in pairs(spec.patch or {}) do patch[k] = v end
   patch.uses_turn = KEEPS_TURN[w.weapon] and 0 or 1
   spec.patch = patch
-  spec.weapon = shared.slot(w.weapon)
+  -- No slot: a weapon component claims the one it was placed on.
+  spec.weapon = nil
   spec.hold = PX_HOLDS[w.weapon]
   wa.weapons.replace(spec)
 end
 
--- The pack in one piece (rules.lua) claims every slot, in this order.
-shared.claim_all = function()
-  for _, list in ipairs({ PORTED, PX_ART }) do
-    for _, w in ipairs(list) do
-      claim(w)
-    end
-  end
-end
-
 -- A weapon component claims only the slot it was placed on: the weapon with
--- home slot `home`, wherever shared.place put it.
+-- home slot `home`.
 shared.claim = function(home)
   for _, list in ipairs({ PORTED, PX_ART }) do
     for _, w in ipairs(list) do
@@ -144,7 +136,7 @@ do
   fires.old_woman = function(fire)
     local w = fire.worm
     local x, y = launch_point(fire.x, fire.y, w)
-    wa.weapons.launch({ weapon = shared.slot("old_woman"), owner = w,
+    wa.weapons.launch({ weapon = "px.old_woman_launcher", owner = w,
       x = x, y = y, vx = fire.vx, vy = fire.vy, fuse = 5000 })
   end
 end

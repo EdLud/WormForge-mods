@@ -5,7 +5,7 @@ local shared = require("lib/shared")
 local pending = {} -- stable worm id -> freeze on that worm's next frame
 
 wa.on.hurt(function(hit)
-  if hit.phase == "post" and hit.source_weapon == shared.slot("armageddon")
+  if hit.phase == "post" and hit.source_weapon == "px.ice_arrow"
     and hit.kind == "hit" then
     pending[hit.worm.id] = true
   end

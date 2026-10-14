@@ -8,9 +8,9 @@ wa.on.worm_message(function(worm, msg)
   local h = held[worm.id]
   if msg == wa.msg.FIRE_WEAPON and h then h.firing = true end
   if msg ~= wa.msg.FRAME_FINISH then return end
-  if worm.weapon == shared.slot("handgun") and worm.aiming and shared.owns("handgun") then
+  if worm.weapon == "px.sniper_rifle" and worm.aiming and shared.owns("handgun") then
     held[worm.id] = { slot = "handgun", aim = worm.aim }
-  elseif not (h and h.firing and worm.weapon == shared.slot("handgun")
+  elseif not (h and h.firing and worm.weapon == "px.sniper_rifle"
       and (worm.state == "firing" or worm.state == "fired")) then
     held[worm.id] = nil
   end
