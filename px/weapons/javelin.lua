@@ -3,6 +3,7 @@ local shared = require("lib/shared")
 local current_worm = shared.current_worm
 local fires = shared.fires
 local trunc = shared.trunc
+local turrets = require("lib/turret")
 
 -- ---------------------------------------------------------------- Javelin
 
@@ -11,7 +12,7 @@ do
   -- Pre keeps the incoming speed even when this frame's stock collision
   -- destroys the missile. Post keeps acceleration for the following frame.
   wa.on.missile_frame(function(m)
-    if m.weapon == shared.slot("prod") then speed[m.id] = { m.vx, m.vy } end
+    if m.weapon == shared.slot("prod") then speed[m.id] = { m.vx, m.vy, uid = m.uid } end
   end)
 
   -- How the part of the stamp inside the land fades: over 3 pixels from the
@@ -41,6 +42,10 @@ do
     for _, o in ipairs(wa.world.electrical_nearby(ev.x, ev.y, 29, false)) do
       if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
         and within(o, ev.x, ev.y, 20) then target = o; break end
+    end
+    if not target then
+      local sentry = turrets.projectile_target(ev.x, ev.y)
+      if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.uid) then return end
     end
     if not target then
       local active = current_worm()
