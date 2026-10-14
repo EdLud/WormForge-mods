@@ -12,6 +12,6 @@ sprite overrides by name: `moledive` and `moledig1`–`moledig3` resolve to IDs
 WA's Mole Squadron parameters. The panel icon is WA's Mole Squadron icon for
 now; the PX Gravler Strike icon is not yet wired into the panel.
 
-Copy the directory into `Worms Armageddon/Mods/` and place the weapon in a
+Copy the directory into `Worms Armageddon/WormForge/Mods/` and place the weapon in a
 profile; online, the host's profile and bundles reach every peer. The strike
 uses WA's stock mole terrain cuts rather than calling `wa.land.cut` from Lua.

@@ -1,5 +1,5 @@
 # The demo's weapon set, crates and HUD line. Load it in the mod loader's
-# Profile tab once the loader has copied it into Mods/Profiles.
+# Profile tab once the loader has copied it into WormForge/Profiles.
 description = "Big Bazooka plus a few stock weapons; nothing else on the panel."
 features = ["demo.turn_note"]
 # Chance per turn of each crate kind, in %; the rest is no crate.

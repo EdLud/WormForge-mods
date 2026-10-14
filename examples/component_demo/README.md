@@ -2,7 +2,7 @@
 
 A component bundle (`format_version = 2`): two weapons and an add-on
 (feature). Installing it runs nothing; a profile selects what runs. The
-profile in `profiles/`, **Demo**, is copied into `Mods/Profiles` when the mod
+profile in `profiles/`, **Demo**, is copied into `WormForge/Profiles` when the mod
 loader installs the bundle; pick it in the loader's Profile tab. A profile is a plain TOML file, so it can be written by
 hand too:
 

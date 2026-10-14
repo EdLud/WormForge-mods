@@ -4,7 +4,7 @@ A features bundle (`core.utilities`, `format_version = 2`): one feature,
 **Utilities**, with the match settings the lobby scheme doesn't have and some
 players' favourite mods as switches. It changes nothing until a profile
 selects it: tick "Utilities" on the mod loader's Profile tab and set it up
-below the list, or write it by hand in a profile file in `Mods/Profiles`:
+below the list, or write it by hand in a profile file in `WormForge/Profiles`:
 
 ```toml
 features = ["core.utilities"]

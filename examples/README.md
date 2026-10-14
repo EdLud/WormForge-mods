@@ -1,4 +1,4 @@
-Example bundles. Copy a folder to `Mods/` next to `WA.exe`, then pick one of
+Example bundles. Copy a folder to `WormForge/Mods/` next to `WA.exe`, then pick one of
 its profiles in the loader's Profile tab, or add its weapons and add-ons to
 your own profile. Nothing in a bundle runs until a profile selects it, and a
 weapon goes wherever the profile places it: its code never names a slot, it
