@@ -2,7 +2,6 @@ description = "Quick offline activation check: Sheep Launcher (airborne and land
 features = ["tools.audit"]
 
 [options."tools.audit"]
-shift = 0
 scope = "sheep"
 
 [weapons]

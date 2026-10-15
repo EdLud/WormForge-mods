@@ -2,7 +2,6 @@ description = "Focused offline check: Bungee, automatic utilities, and fresh-wor
 features = ["tools.audit"]
 
 [options."tools.audit"]
-shift = 0
 scope = "followup"
 
 [weapons]

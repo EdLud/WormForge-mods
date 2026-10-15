@@ -2,7 +2,6 @@ description = "Offline stock weapon audit, copies past 70: every case fires its 
 features = ["tools.audit"]
 
 [options."tools.audit"]
-shift = 0
 copies = true
 
 [weapons]

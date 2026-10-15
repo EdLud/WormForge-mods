@@ -530,7 +530,7 @@ return function(ctx)
   initialize = function(first)
     local size = wa.world.size()
     local map_hash = 1
-    emit("session", { version = 11, seed = 20261015, shift = ctx.options.shift, copies = copies or false, tests = #cases,
+    emit("session", { version = 11, seed = 20261015, copies = copies or false, tests = #cases,
       rng = "fixture-v1", map = tostring(size.w) .. "x" .. tostring(size.h) })
     if not wa.audit then fail("requires a DLL built with --features input-audit"); return end
     if wa.world.networked() then fail("offline only"); return end

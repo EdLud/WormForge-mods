@@ -44,14 +44,6 @@ description = "Offline scripted firing and diagnostic log; requires the generate
 entry = "audit/audit.lua"
 
 [[components.options]]
-key = "shift"
-type = "int"
-min = 0
-max = 69
-default = 0
-label = "Cyclic placement shift (log metadata)"
-
-[[components.options]]
 key = "copies"
 type = "bool"
 default = false

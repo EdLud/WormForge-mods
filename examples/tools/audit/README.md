@@ -1,8 +1,9 @@
 # Offline stock weapon audit
 
 This diagnostic fires real WA weapons through `worm:input`, not their Lua
-handlers. Three profiles place all 70 stock weapons at home, shifted by one,
-or shifted by 35. Each fired weapon receives infinite ammo at case setup; instant utilities receive one stocked item without a fire input. Delays are zero, crate weights zero,
+handlers. **Audit home** places all 70 stock weapons at home; **Audit copies
+past 70** places a plain copy of each, every one past WA's 70 slots. A
+difference between the two is something WA ties to the slot id. Each fired weapon receives infinite ammo at case setup; instant utilities receive one stocked item without a fire input. Delays are zero, crate weights zero,
 and their records do not end the turn. Native special weapons may still end it.
 
 Build the diagnostic DLL explicitly:
@@ -42,18 +43,13 @@ and runs automatically. Any team may start: the audit skips ordinary turns
 until team 1's first worm receives its turn, then begins the first case.
 Keep physical keys released during the test. Save
 `wkLua.log` after the HUD says `Audit complete`; a stopped/error audit is not
-a complete comparison. Repeat from the same scheme with **Audit moved**,
-then optionally **Audit moved 35**. Save each log separately:
-
-```sh
-python3 tools/audit_compare.py home.log moved.log
-python3 tools/audit_compare.py home.log moved35.log
-```
+a complete comparison. Then run **Audit copies past 70** from the same scheme,
+with the same teams. Save each log separately.
 
 **Copies past 70.** The `tools` bundle also has a plain copy of each of WA's
 weapons (`tools.copy_<name>`, `copy_from` and nothing else). **Audit copies past
-70** places the copies alone, with `custom_slots = "past_70"`, so each sits on
-a slot past WA's 70, and the add-on's `copies` option fires each case's copy
+70** places the copies alone, each on a slot past WA's 70 as every weapon that
+isn't WA's own, and the add-on's `copies` option fires each case's copy
 in place of WA's own; WA's own Skip Go still ends the turns, and WA's own Bazooka stays
 on slot 1 with infinite ammo, as at home: after a shot WA does not re-select, it
 selects whatever is on slot 1, and both runs need the same there. Its signals keep
@@ -63,8 +59,12 @@ the stock names, so it compares with a home run:
 python3 tools/audit_compare.py home.log copies.log
 ```
 
-A difference is something WA ties to the slot id: what a weapon past 70, or
-one moved off its host's slot, does not get.
+A difference is something WA ties to the slot id: what a weapon past 70 does
+not get. Compare two home runs as well: what differs between them is the
+audit's run-to-run spread (WA draws much of its randomness from the absolute
+frame counter), not a slot tie. On 2026-10-15 only the four turn-start instant
+utilities (Damage ×2, Crate Spy, Double Turn Time, Crate Shower, used from
+slots 67..70) differed beyond that spread.
 
 The comparison selects the last audit session in each file by default;
 `--home-session 1` / `--moved-session 1` select explicit sessions. Exit 0 means
@@ -162,17 +162,15 @@ Select **Audit sheep** to run Sheep Launcher, Sheep, Super Sheep and Aqua Sheep 
 same Audit map and scheme. It retains the full home weapon table, but runs
 four cases instead of 70. This takes roughly half a minute of simulation when
 each case settles normally, longer if a missile remains active. The `scope`
-option can also be set to `sheep` on a moved profile for a targeted comparison.
+option can also be set to `sheep` on the copies profile for a targeted comparison.
 Both compared logs must use the same scope and protocol version. Version 2
 corrects the active-weapon controls; do not compare it with a version 1 log.
 
 ## Quick utilities check
 
-Select **Audit moved utilities** to run only Jet Pack, Low Gravity, Fast Walk,
-Laser Sight, Invisibility, Damage ×2, Crate Spy, Double Time and Crate Shower,
-each moved one slot on as in **Audit moved** (`scope = "utilities"`). The
-switched-on utility icons above the wind bar should show each utility's own
-icon. Set `scope = "utilities"` on Audit home for the matching home log.
+Set `scope = "utilities"` on Audit home (and on Audit copies past 70 for the
+matching log) to run only Jet Pack, Low Gravity, Fast Walk, Laser Sight,
+Invisibility, Damage ×2, Crate Spy, Double Time and Crate Shower.
 
 The live report from 2026-10-15 exposed a routing error: sending every Space
 press directly to the worm fired Bazooka after the sheep launch. Native
@@ -192,7 +190,7 @@ mistakenly did that; the completed version 2 sheep run consequently included
 crate drops unrelated to the sheep cases.
 
 Protocol 3 starts those physical cells with zero ammo in every audit profile,
-including the shifted profiles. Before each case, the add-on clears their
+Before each case, the add-on clears their
 stock on every team and gives the case's selected weapon infinite ammo. It
 clears them again after recording the result. Thus the sheep-only run never
 stocks Crate Shower. In the full audit, WA's automatic processing still runs

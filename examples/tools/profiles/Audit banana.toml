@@ -1,8 +1,7 @@
-description = "Quick offline check: the Banana Bomb alone, at home. Run it a few times beside Audit moved banana. Use the generated Audit map and saved scheme."
+description = "Quick offline check: the Banana Bomb alone, at home. Run it a few times to see its run-to-run spread. Use the generated Audit map and saved scheme."
 features = ["tools.audit"]
 
 [options."tools.audit"]
-shift = 0
 scope = "banana"
 
 [weapons]

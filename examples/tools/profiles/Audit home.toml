@@ -1,8 +1,5 @@
-description = "Offline stock weapon audit, cyclic shift 0. Use the generated Audit map and saved scheme; see tools/audit/README.md."
+description = "Offline stock weapon audit, every weapon at home. Use the generated Audit map and saved scheme; see tools/audit/README.md."
 features = ["tools.audit"]
-
-[options."tools.audit"]
-shift = 0
 
 [weapons]
 "stock.bazooka" = { row = "F1", column = 1 }
