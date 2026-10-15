@@ -54,7 +54,7 @@ label = "Cyclic placement shift (log metadata)"
 [[components.options]]
 key = "scope"
 type = "choice"
-choices = ["all", "sheep", "followup", "utilities"]
+choices = ["all", "sheep", "followup", "utilities", "banana"]
 default = "all"
 label = "Audit cases"
-description = "sheep checks sheep activations; followup checks Bungee, instant utilities and the final fresh-worm cases; utilities checks Jet Pack to Crate Shower."
+description = "sheep checks sheep activations; followup checks Bungee, instant utilities and the final fresh-worm cases; utilities checks Jet Pack to Crate Shower; banana runs the Banana Bomb alone."

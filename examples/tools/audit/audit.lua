@@ -9,6 +9,8 @@ return function(ctx)
   local cases = all_cases
   if ctx.options.scope == "sheep" then
     cases = { "stock.sheep_launcher", "stock.sheep", "stock.super_sheep", "stock.aqua_sheep" }
+  elseif ctx.options.scope == "banana" then
+    cases = { "stock.banana_bomb" }
   elseif ctx.options.scope == "utilities" then
     cases = {}
     for _, name in ipairs(all_cases) do
