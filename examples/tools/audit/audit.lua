@@ -9,6 +9,11 @@ return function(ctx)
   local cases = all_cases
   if ctx.options.scope == "sheep" then
     cases = { "stock.sheep_launcher", "stock.sheep", "stock.super_sheep", "stock.aqua_sheep" }
+  elseif ctx.options.scope == "utilities" then
+    cases = {}
+    for _, name in ipairs(all_cases) do
+      if name == "stock.jet_pack" or #cases > 0 and #cases < 9 then cases[#cases + 1] = name end
+    end
   elseif ctx.options.scope == "followup" then
     cases = {}
     for _, name in ipairs(all_cases) do

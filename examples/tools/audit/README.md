@@ -139,6 +139,14 @@ option can also be set to `sheep` on a moved profile for a targeted comparison.
 Both compared logs must use the same scope and protocol version. Version 2
 corrects the active-weapon controls; do not compare it with a version 1 log.
 
+## Quick utilities check
+
+Select **Audit moved utilities** to run only Jet Pack, Low Gravity, Fast Walk,
+Laser Sight, Invisibility, Damage ×2, Crate Spy, Double Time and Crate Shower,
+each moved one slot on as in **Audit moved** (`scope = "utilities"`). The
+switched-on utility icons above the wind bar should show each utility's own
+icon. Set `scope = "utilities"` on Audit home for the matching home log.
+
 The live report from 2026-10-15 exposed a routing error: sending every Space
 press directly to the worm fired Bazooka after the sheep launch. Native
 TeamEntity input checks its activation/steering counts and broadcasts `0x2C`

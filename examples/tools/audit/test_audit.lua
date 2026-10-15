@@ -317,14 +317,16 @@ if scenario == 'launcher_no_land' or scenario == 'launcher_early_land' then
   return
 end
 local count=0;for _ in pairs(ended) do count=count+1 end
-assert(count==(scope == "sheep" and 4 or scope == "followup" and 14 or 70),'ended '..count..' tests')
-if scope ~= "sheep" then
+assert(count==(scope == "sheep" and 4 or scope == "followup" and 14 or scope == "utilities" and 9 or 70),'ended '..count..' tests')
+if scope == "utilities" then
+  for name in pairs(utilities) do assert(utility_grants[name] == 1, name .. ': stock one utility once') end
+elseif scope ~= "sheep" then
   assert(began['stock.surrender'] and ended['stock.surrender'],'last pending test ran')
   assert(bungee_steps == 50 and bungee_warps == 1 and bungee_fires == 1, 'bungee cliff sequence')
   assert(select_tabs == 3 and select_changes == 2 and select_confirmed and not selecting, 'Tab cycles until Right confirms the choice')
   for name in pairs(utilities) do assert(utility_grants[name] == 1, name .. ': stock one utility once') end
 end
-if scope ~= "followup" then
+if scope ~= "followup" and scope ~= "utilities" then
 assert(#launcher_presses.airborne == 3 and #launcher_presses.landed == 2, 'both launcher activation paths ran without an extra launch')
 for name, expected in pairs({['stock.sheep']={40,90},['stock.super_sheep']={40,90,140},['stock.aqua_sheep']={40,90,140}}) do
   local got=assert(activations[name],name)
