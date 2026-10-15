@@ -8,7 +8,7 @@ return {
       sprite = "crshairr",
       mine = {
         proximity = 25,
-        trigger = 10,
+        fuse = 10,
       },
       on_proximity = {
         spawn = {

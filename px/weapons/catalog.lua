@@ -57,7 +57,7 @@ local PX_ART = {
     -- CanFire/state hacks are replaced by keeping the turn (claims.lua's
     -- KEEPS_TURN) and firing jumping or falling (airborne, on_fire's
     -- fire.airborne).
-    patch = { hold_pose = 3 },
+    fires = { subtype = 3 }, -- the bazooka's hold
     airborne = true,
     worm_sprites = {
       weaponlnk = "sprites/portal_gun/portal_gun_normal",

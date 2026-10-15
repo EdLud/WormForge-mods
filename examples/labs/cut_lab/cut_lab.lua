@@ -43,7 +43,7 @@ return {
     wa.weapons.replace({
       copy_from = "stock.bazooka",
       name = "Cut Lab",
-      patch = { damage = 1, blast = 1 },       -- WA's own blast barely scratches
+      missile = { explosion = { power = 1, push_pct = 1 } },  -- WA's own blast barely scratches
       sprites = { "cut_lab/sprites/star", "cut_lab/sprites/ring" },
       on_explode = function(ev)
         SHAPES[shape].cut(ev.x, ev.y, size, ev.worm)

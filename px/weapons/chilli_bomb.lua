@@ -48,9 +48,11 @@ wa.on.worm_message(function(worm, msg)
         local vy = wa.random(-655360, -458752) / 65536
         local id = wa.weapons.launch({
           weapon = "px.chilli_bomb", owner = owner, x = p.x, y = p.y, vx = vx, vy = vy,
-          damage = CHILLI_CHILD.damage, fuse = CHILLI_CHILD.fuse, countdown = 0,
-          explode_on_space = true, explode_into = "fire",
-          sprite = 0, -- PX leaves them WA's sprite 0; the chilli is drawn instead
+          missile = {
+            explosion = { power = CHILLI_CHILD.damage }, fuse = CHILLI_CHILD.fuse, countdown = 0,
+            explode_on_space = true, burst = "fire",
+            sprite = 0, -- PX leaves them WA's sprite 0; the chilli is drawn instead
+          },
         })
         chilli_child[id] = true
       end

@@ -25,7 +25,7 @@ do
 local NR_HISS = 66    -- the fusing rocket's hiss, every 10 frames
 local NR_CLIMB = 53   -- frames the nuke climbs (PX: "1.1-1.2 second")
 local NR_CARRY = 17   -- pixels: what the climbing nuke carries along
-local NUKE = { fuse = 1600, sound = 0, explode_into = "clustlets", terrain_keep_pct = 11 }
+local NUKE = { fuse = 1600, sound = 0, burst = "clusters", terrain_keep_pct = 11 }
 local NUKE_BLAST = { damage = 40, id = 40 } -- PX's DoExplosion(x, y, 40, 40), twice
 
 local nr_first = {}    -- missile id -> frames: a first rocket, fusing
@@ -134,8 +134,10 @@ wa.on.worm_message(function(worm, msg)
     for _, p in ipairs(nr_pending) do
       local id = wa.weapons.launch({
         weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
-        fuse = NUKE.fuse, sound = NUKE.sound, explode_into = NUKE.explode_into,
-        terrain_keep_pct = NUKE.terrain_keep_pct,
+        missile = {
+          fuse = NUKE.fuse, flight_sound = NUKE.sound, burst = NUKE.burst,
+          bounce = { terrain_keep_pct = NUKE.terrain_keep_pct },
+        },
       })
       nr_nuke[id] = 0
     end

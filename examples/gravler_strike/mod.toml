@@ -3,7 +3,7 @@
 id = "example.gravler_strike"
 version = "0.2.0"
 author = "wkLua"
-api_version = 3
+api_version = 4
 format_version = 2
 
 [[components]]

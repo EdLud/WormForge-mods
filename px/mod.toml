@@ -14,7 +14,7 @@ id = "px.ports"
 name = "Project X ports"
 version = "0.10.0"
 author = "Project X authors"
-api_version = 3
+api_version = 4
 format_version = 2
 # Still calls worm:set_state while its weapons move to the engine's handoff
 # verbs (worm-handoff plan); remove once none does.

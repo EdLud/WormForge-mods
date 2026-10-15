@@ -2379,8 +2379,8 @@ do
   for _, r in ipairs(replaced) do
     if r.weapon == "bazooka" then spec = r end
   end
-  check("held as a plain bazooka: subtype_param stays stock (3), not the scheme's 7",
-    not (spec.patch and spec.patch.subtype_param))
+  check("held as a plain bazooka: its fires.subtype stays stock (3), not the scheme's 7",
+    not (spec.fires and spec.fires.subtype))
   check("the Double Bazooka on the bazooka slot, with its icon and an explode step", spec
     and spec.copy_from == "stock.bazooka" and spec.panel_icon == "sprites/double_bazooka/double_bazooka_ico.png"
     and type(spec.on_explode) == "function")
@@ -2400,7 +2400,7 @@ do
     and l.weapon == "bazooka" and l.owner == w and l.x == 100 and l.y == 50
     and l.vx == 6 and l.vy == -1)
   check("with PX's damage 40 and 5 s fuse, and the record's own bazooka shell (not PX's 54, a cluster bit here)",
-    l.damage == 40 and l.fuse == 5000 and l.sprite == nil)
+    l.missile.explosion.power == 40 and l.missile.fuse == 5000 and l.missile.sprite == nil)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   check("launched once", #M.launched == 1)
   M.missile({ id = 9001, phase = "post", weapon = "bazooka", x = 140, y = 44, vx = 6, vy = 0 })
@@ -2421,8 +2421,8 @@ do
     if r.weapon == "mortar" then spec = r end
   end
   check("homing bits draw the trail's red circles, not WA's green gas, on the generated record",
-    spec and spec.patch.c_homing_sprite == 250 and spec.patch.c_homing_kind == 1
-      and spec.patch.cluster_count == 7)
+    spec and spec.clusters.bit.homing.trail.sprite == 250 and spec.clusters.bit.homing.kind == "lock"
+      and spec.clusters.count == 7)
 end
 
 print("old woman launcher: launch the Old Woman from a clear point")
@@ -2434,14 +2434,14 @@ do
   end
   check("stock Old Woman supplies the animal and Lua handles its projectile",
     spec and spec.copy_from == "stock.old_woman" and type(spec.on_fire) == "function"
-      and spec.patch.fire_type == 1 and spec.patch.fire_method == 3)
+      and spec.fires.type == 1 and spec.fires.method == 3)
   local w = worm(17)
   w.x, w.y = 100, 100
   M.solid = function(x) return x <= 91 end
   spec.on_fire({ worm = w, x = 86, y = w.y, vx = -12, vy = 0 })
   check("a wall at the muzzle moves the Old Woman into clear space",
     #M.launched == 1 and M.launched[1].weapon == "old_woman"
-      and M.launched[1].x >= 94 and M.launched[1].fuse == 5000)
+      and M.launched[1].x >= 94 and M.launched[1].missile.fuse == 5000)
   M.solid = nil
   spec.on_fire({ worm = w, x = 114, y = w.y, vx = 12, vy = 0 })
   check("a clear muzzle keeps WA's original launch point",
@@ -2926,9 +2926,9 @@ do
   check("five after it, for the thrower, up with PX's spread", ok, tostring(#l))
   local c = l[1] or {}
   check("each with damage 30, an 8 s fuse, no countdown, set off by the fire key, bursting into fire",
-    c.damage == 30 and c.fuse == 8000 and c.countdown == 0 and c.explode_on_space == true
-    and c.explode_into == "fire")
-  check("and WA's sprite 0: only the chilli is drawn", c.sprite == 0)
+    c.missile.explosion.power == 30 and c.missile.fuse == 8000 and c.missile.countdown == 0
+    and c.missile.explode_on_space == true and c.missile.burst == "fire")
+  check("and WA's sprite 0: only the chilli is drawn", c.missile.sprite == 0)
   local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
   local was_turn = w.turn
   w.turn = true -- thrown in its turn
@@ -2992,9 +2992,9 @@ do
   local l = M.launched and M.launched[1]
   check("then a nuke from there, for the shooter", l and #M.launched == 1 and l.weapon == "mine"
     and l.owner == w and l.x == 100 and l.y == 50 and l.vx == 0 and l.vy == 0)
-  check("silent, a 1.6 s fuse, bursting into clustlets", l.fuse == 1600 and l.sound == 0
-    and l.explode_into == "clustlets")
-  check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.terrain_keep_pct == 11)
+  check("silent, a 1.6 s fuse, bursting into clustlets", l.missile.fuse == 1600 and l.missile.flight_sound == 0
+    and l.missile.burst == "clusters")
+  check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.missile.bounce.terrain_keep_pct == 11)
   local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 }
   local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110, y = 45, vx = 1, vy = 0 }
   local climb_ok, jitter = true, 0

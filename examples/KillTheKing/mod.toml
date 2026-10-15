@@ -2,7 +2,7 @@
 id = "example.kill_the_king"
 version = "1.1.0"
 author = "WormForge Porting Engine"
-api_version = 3
+api_version = 4
 format_version = 2
 
 [[components]]

@@ -4,7 +4,7 @@
 -- each beside WA's own Bazooka and compare; the HUD names the field and what
 -- each reading would show, and every hurt is logged to wkLua.log.
 --
--- The fields are written raw (`patch = { [offset] = value }`, the entry's
+-- The fields are written raw (`raw = { [offset] = value }`, the entry's
 -- absolute offset), so nothing here depends on the names under test.
 
 local LABS = {
@@ -95,7 +95,7 @@ return {
     wa.weapons.replace({
       copy_from = lab.base or "stock.bazooka",
       name = ("Lab +0x%X"):format(lab.field),
-      patch = { [lab.field] = lab.value },
+      raw = { [lab.field] = lab.value },
       on_explode = function(ev)
         wa.log(("record lab: +0x%X = %d exploded at %d,%d"):format(lab.field, lab.value, ev.x // 1, ev.y // 1))
       end,

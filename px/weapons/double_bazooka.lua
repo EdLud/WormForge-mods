@@ -61,7 +61,7 @@ wa.on.worm_message(function(worm, msg)
     for _, p in ipairs(db_pending) do
       local id = wa.weapons.launch({
         weapon = "px.double_bazooka", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
-        damage = DB_SECOND.damage, fuse = DB_SECOND.fuse,
+        missile = { explosion = { power = DB_SECOND.damage }, fuse = DB_SECOND.fuse },
       })
       db_second[id] = true
     end

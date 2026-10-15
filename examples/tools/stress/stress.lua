@@ -153,7 +153,7 @@ return function()
       local ok, err = pcall(wa.weapons.launch, {
         weapon = ELECTRIC, owner = owner,
         x = p.x, y = p.y, vx = (rand(5) - 2) * (1 / 2), vy = 0,
-        fuse = ELECTRIC_FUSE + rand(ELECTRIC_SPREAD),
+        missile = { fuse = ELECTRIC_FUSE + rand(ELECTRIC_SPREAD) },
       })
       if ok then
         launched = launched + 1
@@ -219,8 +219,7 @@ return function()
         weapon = cluster and "stock.cluster_bomb" or "stock.mortar",
         owner = owner,
         x = s.x, y = s.y, vx = s.vx, vy = s.vy,
-        damage = DAMAGE,
-        fuse = cluster and 3000 or nil,
+        missile = { explosion = { power = DAMAGE }, fuse = cluster and 3000 or nil },
       })
     end
   end

@@ -4,27 +4,44 @@ local PORTED = shared.PORTED
 local PX_ART = shared.PX_ART
 local PX_HOLDS = shared.PX_HOLDS
 local WEP_NAME = shared.WEP_NAME
-local WEP_PATCH = shared.WEP_PATCH
+local WEP_FIELDS = shared.WEP_FIELDS
 local fires = shared.fires
 
 -- WA's muzzle can be inside a wall when a worm fires from beside it. A stock
 -- Old Woman constructed there explodes before her first frame. Dispatch the
 -- shot to Lua so she can be launched from a clear point the worm can see,
 -- keeping WA's own Old Woman movement and five-second fuse.
-local OLD_WOMAN_LAUNCHER_PATCH = {
-  subtype_param = 3, -- bazooka aim sheet, not the Sheep Launcher hold
-  fire_type = 1,
-  fire_method = 3, -- CreateWeaponProjectile, intercepted by on_fire
+local OLD_WOMAN_LAUNCHER = {
+  fires = {
+    subtype = 3, -- bazooka aim sheet, not the Sheep Launcher hold
+    type = 1,
+    method = 3, -- CreateWeaponProjectile, intercepted by on_fire
+  },
 }
 
--- Our own changes over the generated record patches (tools/embed_weps.py),
--- kept here so WEP_PATCH can be generated again.
-local PATCH_FIXES = {
+-- Our own changes over the generated record fields (tools/embed_weps.py),
+-- kept here so WEP_FIELDS can be generated again.
+local FIXES = {
   -- S.M.A.R.T Bomb: homing bits leave the bomb's red trail circles (stock 250,
   -- drawn as sprites/smart_bomb/trail), not WA's green gas cloud (608) the
   -- record named.
-  mortar = { c_homing_sprite = 250 },
+  mortar = { clusters = { bit = { homing = { trail = { sprite = 250 } } } } },
 }
+
+-- `t` laid over `into`, nested tables field by field: a new table, neither
+-- of the two changed (WEP_FIELDS' tables are shared by every match).
+local function merged(into, t)
+  local out = {}
+  for k, v in pairs(into or {}) do out[k] = v end
+  for k, v in pairs(t) do
+    if type(v) == "table" and type(out[k]) == "table" then
+      out[k] = merged(out[k], v)
+    else
+      out[k] = v
+    end
+  end
+  return out
+end
 
 -- Whether a weapon ends the turn is a profile's setting ("Ends the turn":
 -- the Highlander profile turns it off, so a worm can fire its whole hand).
@@ -51,27 +68,21 @@ end
 -- home slot, the pack's key for it, whose stock record it builds on).
 local function claim(w)
   owned[w.weapon] = true
-  -- copy_from + name + named patch (stock base); was weps/<slot>.wep
+  -- copy_from + name + the record's fields (stock base); was weps/<slot>.wep
   local spec = w.wep and { wep = w.wep } or { copy_from = "stock." .. w.weapon, name = WEP_NAME[w.weapon] }
   if w.weapon == "old_woman" then
-    spec.patch = OLD_WOMAN_LAUNCHER_PATCH
+    spec = merged(spec, OLD_WOMAN_LAUNCHER)
     spec.on_fire = function(fire) fires.old_woman(fire) end
-  elseif not w.wep and WEP_PATCH[w.weapon] then
-    spec.patch = WEP_PATCH[w.weapon]
+  elseif not w.wep and WEP_FIELDS[w.weapon] then
+    spec = merged(spec, WEP_FIELDS[w.weapon])
   end
-  if PATCH_FIXES[w.weapon] then
-    local patch = {}
-    for k, v in pairs(spec.patch or {}) do patch[k] = v end
-    for k, v in pairs(PATCH_FIXES[w.weapon]) do patch[k] = v end
-    spec.patch = patch
+  if FIXES[w.weapon] then
+    spec = merged(spec, FIXES[w.weapon])
   end
   for key, value in pairs(w) do
     spec[key] = value
   end
-  local patch = {}
-  for k, v in pairs(spec.patch or {}) do patch[k] = v end
-  patch.uses_turn = KEEPS_TURN[w.weapon] and 0 or 1
-  spec.patch = patch
+  spec.handling = merged(spec.handling, { ends_turn = not KEEPS_TURN[w.weapon] })
   -- No slot: a weapon component claims the one it was placed on.
   spec.weapon = nil
   spec.hold = PX_HOLDS[w.weapon]
@@ -137,6 +148,6 @@ do
     local w = fire.worm
     local x, y = launch_point(fire.x, fire.y, w)
     wa.weapons.launch({ weapon = "px.old_woman_launcher", owner = w,
-      x = x, y = y, vx = fire.vx, vy = fire.vy, fuse = 5000 })
+      x = x, y = y, vx = fire.vx, vy = fire.vy, missile = { fuse = 5000 } })
   end
 end
