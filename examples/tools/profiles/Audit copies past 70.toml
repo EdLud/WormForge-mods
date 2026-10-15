@@ -1,5 +1,4 @@
-custom_slots = "past_70"
-description = "Offline stock weapon audit, copies past 70: every case fires its plain copy on a slot past 70 (custom_slots past_70), to compare with Audit home. Use the generated Audit map and saved scheme; see tools/audit/README.md."
+description = "Offline stock weapon audit, copies past 70: every case fires its plain copy, which sits past 70 as every custom weapon does, to compare with Audit home. Use the generated Audit map and saved scheme; see tools/audit/README.md."
 features = ["tools.audit"]
 
 [options."tools.audit"]
