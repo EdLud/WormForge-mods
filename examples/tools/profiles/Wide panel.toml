@@ -1,0 +1,136 @@
+description = "Panel layout test: ten weapons in F1, three in F2, nine utilities and tools in the utility row. The panel grows to the widest row (up to 10 columns)."
+features = []
+
+[weapons]
+"stock.bazooka" = { row = "F1", column = 1 }
+"stock.homing_missile" = { row = "F1", column = 2 }
+"stock.mortar" = { row = "F1", column = 3 }
+"stock.homing_pigeon" = { row = "F1", column = 4 }
+"stock.sheep_launcher" = { row = "F1", column = 5 }
+"stock.grenade" = { row = "F1", column = 6 }
+"stock.cluster_bomb" = { row = "F1", column = 7 }
+"stock.banana_bomb" = { row = "F1", column = 8 }
+"stock.battle_axe" = { row = "F1", column = 9 }
+"stock.earthquake" = { row = "F1", column = 10 }
+"stock.shotgun" = { row = "F2", column = 1 }
+"stock.handgun" = { row = "F2", column = 2 }
+"stock.uzi" = { row = "F2", column = 3 }
+"stock.jet_pack" = { row = "utility", column = 1 }
+"stock.low_gravity" = { row = "utility", column = 2 }
+"stock.fast_walk" = { row = "utility", column = 3 }
+"stock.laser_sight" = { row = "utility", column = 4 }
+"stock.invisibility" = { row = "utility", column = 5 }
+"stock.ninja_rope" = { row = "utility", column = 6 }
+"stock.teleport" = { row = "utility", column = 7 }
+"stock.girder" = { row = "utility", column = 8 }
+"stock.parachute" = { row = "utility", column = 9 }
+
+[weapon_settings."stock.bazooka"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.homing_missile"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.mortar"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.homing_pigeon"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.sheep_launcher"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.grenade"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.cluster_bomb"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.banana_bomb"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.battle_axe"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.earthquake"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.shotgun"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.handgun"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.uzi"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.low_gravity"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.fast_walk"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.laser_sight"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.invisibility"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.teleport"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.girder"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.parachute"]
+ammo = -1
+delay = 0
+crate = 0
