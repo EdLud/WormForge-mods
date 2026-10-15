@@ -147,3 +147,12 @@ description = "Record Lab: WA's Bazooka with its record's +0x68 changed, to tell
 entry = "record_lab.lua"
 icon = "bazooka"
 default_position = { row = "F7", column = 5 }
+
+[[components]]
+id = "labs.rec_78"
+type = "weapon"
+name = "Lab +0x78"
+description = "Record Lab: WA's Grenade with its record's +0x78 at 17, to tell bounce % from PX's speed multiplier. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "grenade"
+default_position = { row = "F8", column = 1 }

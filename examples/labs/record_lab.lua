@@ -1,6 +1,6 @@
--- Record Lab: WA's Bazooka with one field of its weapon record changed, one
--- weapon per field, to settle what the field does before it gets a name in
--- the Lua API (docs/weapon-data-tables-proposal.md, "Field audit"). Fire
+-- Record Lab: WA's Bazooka (one: its Grenade) with one field of its weapon
+-- record changed, one weapon per field, to settle what the field does before
+-- it gets a name in the Lua API (docs/weapon-data-tables-proposal.md, "Field audit"). Fire
 -- each beside WA's own Bazooka and compare; the HUD names the field and what
 -- each reading would show, and every hurt is logged to wkLua.log.
 --
@@ -38,6 +38,10 @@ local LABS = {
   ["labs.rec_68"] = { field = 0x68, value = 0,
     a = "trail sprite: no smoke trail",
     b = "flight flags: something else changes" },
+  -- A Grenade: the field launch{ bounce_pct } writes.
+  ["labs.rec_78"] = { field = 0x78, value = 17, base = "stock.grenade",
+    a = "bounce: bounces far less than WA's Grenade",
+    b = "PX's speed multiplier: flies at a sixth of the speed" },
 }
 
 local shared_installed = false
@@ -71,7 +75,7 @@ return {
     local lab = LABS[ctx.id]
     install_shared()
     wa.weapons.replace({
-      copy_from = "stock.bazooka",
+      copy_from = lab.base or "stock.bazooka",
       name = ("Lab +0x%X"):format(lab.field),
       patch = { [lab.field] = lab.value },
       on_explode = function(ev)
