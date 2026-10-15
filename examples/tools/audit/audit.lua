@@ -216,6 +216,15 @@ return function(ctx)
     ["stock.magic_bullet"] = true, ["stock.girder"] = true, ["stock.girder_pack"] = true,
     ["stock.teleport"] = true }
   local sheep = { ["stock.sheep"] = 2, ["stock.super_sheep"] = 3, ["stock.aqua_sheep"] = 3 }
+  -- Girders need open air: above the worm, halfway up the 576-pixel gap
+  -- between its platform and the underside of the one above. The Starter
+  -- Pack's girders go 20 pixels apart, centred on the worm.
+  local girders = { ["stock.girder"] = 1, ["stock.girder_pack"] = 5 }
+  local GIRDER_EVERY = 30
+  local function girder_target(n)
+    local first = -(girders[current.name] - 1) * 10
+    return current.x + first + (n - 1) * 20, current.y - 288
+  end
   local animals = { ["stock.mole_bomb"] = true,
     ["stock.salvation_army"] = true, ["stock.skunk"] = true, ["stock.old_woman"] = true }
 
@@ -332,7 +341,10 @@ return function(ctx)
         end
       elseif age == 40 then
         local data = wa.weapons.data(name)
-        if cursor[name] or data.strike then
+        if girders[name] then
+          local gx, gy = girder_target(1)
+          w:input{ click = { x = gx, y = gy } }
+        elseif cursor[name] or data.strike then
           w:input{ click = { x = current.x + 160, y = current.y - 8 } }
         end
         if not current then return end
@@ -345,6 +357,23 @@ return function(ctx)
         if not current then return end
         released = true
         emit("released", { ammo = w:ammo(name), state = w.state_id })
+      elseif girders[name] and age > 40 and age < 40 + GIRDER_EVERY * girders[name] + 10 then
+        -- Each girder: click, press, release; then see whether WA put it
+        -- there (a rejected one leaves air at the click).
+        local n = (age - 40) // GIRDER_EVERY + 1
+        local step = (age - 40) % GIRDER_EVERY
+        local gx, gy = girder_target(n)
+        if step == 0 and n > 1 and n <= girders[name] then
+          w:input{ click = { x = gx, y = gy } }
+          if not current then return end
+          w = live(current.worm)
+          if not w then finish("removed"); return end
+          w:input{ fire = "press" }
+        elseif step == 15 and n > 1 and n <= girders[name] then
+          w:input{ fire = "release" }
+        elseif step == 25 and n <= girders[name] then
+          emit("girder", { n = n, placed = wa.land.solid(gx, gy) })
+        end
       elseif name == "stock.sheep_launcher" then
         if age == 90 and launcher_live() then
           local body = current.launcher_body
@@ -492,7 +521,7 @@ return function(ctx)
   initialize = function(first)
     local size = wa.world.size()
     local map_hash = 1
-    emit("session", { version = 10, seed = 20261015, shift = ctx.options.shift, tests = #cases,
+    emit("session", { version = 11, seed = 20261015, shift = ctx.options.shift, tests = #cases,
       rng = "fixture-v1", map = tostring(size.w) .. "x" .. tostring(size.h) })
     if not wa.audit then fail("requires a DLL built with --features input-audit"); return end
     if wa.world.networked() then fail("offline only"); return end

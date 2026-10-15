@@ -252,3 +252,11 @@ Protocol 10 sets the turn clock to 60 seconds at the start of every case
 short at a different case in every run, handed the turn to another team, and
 made Double Time's result depend on the time left. Compare protocol 10 logs
 together.
+
+Protocol 11 places the girders in open air. The Girder's click 8 pixels above
+the station overlapped the land and WA refused it. Both girder cases now click
+above the worm, halfway up the gap between its platform and the one above
+(288 pixels above the station). The Girder Starter Pack places five girders,
+20 pixels apart and centred on the worm, a click and a fire press every 30
+frames. After each one, a `girder` signal says whether there is land at the
+click (`placed`). Compare protocol 11 logs together.

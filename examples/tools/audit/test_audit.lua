@@ -6,6 +6,7 @@ local hooks, logs, worms, clock, selected, fixture = {}, {}, {}, nil, nil, false
 local began, ended, fresh = {}, {}, {}
 local turns = 0
 local clock_sets = 0
+local girder_clicks, girder_checks = { ["stock.girder"] = {}, ["stock.girder_pack"] = {} }, 0
 local scope = arg[1] or "all"
 local scenario = arg[3] or "valid"
 local invalid_setup = scenario == "one" or scenario == "uneven" or scenario == "health"
@@ -75,6 +76,10 @@ local function make(team, health)
   end
   function w:input(p)
     assert(not utilities[current_test], 'instant utility cannot receive input')
+    if p.click and (current_test == 'stock.girder' or current_test == 'stock.girder_pack') then
+      local clicks = girder_clicks[current_test]
+      clicks[#clicks + 1] = { x = p.click.x - self.x, y = p.click.y - self.y, frame = current_frame }
+    end
     if current_test == 'stock.sheep_launcher' and p.fire == 'press' then
       local presses = launcher_presses[launcher_phase]
       presses[#presses + 1] = current_frame
@@ -196,7 +201,8 @@ wa = {
   world={size=function() return {w=7680,h=5376} end,networked=function() return false end,
     set_wind=function() end,turn_clock=function() return 90000 end,
     set_turn_clock=function(ms) assert(ms == 60000, 'every case starts with 60 s'); clock_sets = clock_sets + 1 end},
-  land={trace=function(x,y,_,bottom)
+  land={solid=function(x,y) girder_checks = girder_checks + 1; return true end,
+    trace=function(x,y,_,bottom)
     local surface=(y//768)*768+500
     if y<=surface and bottom>=surface then return {x=x,y=surface} end
   end},
@@ -260,7 +266,7 @@ for _,w in ipairs(worms) do
   assert(not positions[w.x], 'waiting worms overlap')
   positions[w.x] = true
 end
-assert(logs[1]:find('"version":10',1,true), 'a fixed turn clock per case is a fresh protocol')
+assert(logs[1]:find('"version":11',1,true), 'girders placed in open air are a fresh protocol')
 for _=1,60000 do
   if current_test then current_frame=current_frame+1 end
   if utilities[current_test] and physical[current_test] and current_frame == 41 then
@@ -339,5 +345,16 @@ assert(not steering['stock.sheep'],'normal sheep is not flown')
 assert(steering['stock.super_sheep']==30 and steering['stock.aqua_sheep']==30,'both flying sheep are steered')
 end
 assert(clock_sets == count, 'every case set the turn clock')
+if scope == 'all' then
+  -- The worm stands 12 pixels above its station; the girders go 288 above
+  -- the station, in the open air of the gap, 20 pixels apart.
+  local g, p = girder_clicks['stock.girder'], girder_clicks['stock.girder_pack']
+  assert(#g == 1 and g[1].x == 0 and g[1].y == -276 and g[1].frame == 40, 'one girder above the worm')
+  assert(#p == 5, 'five Starter Pack girders')
+  for i, c in ipairs(p) do
+    assert(c.x == -40 + (i - 1) * 20 and c.y == -276 and c.frame == 40 + (i - 1) * 30, 'girder ' .. i)
+  end
+  assert(girder_checks == 6, 'each girder checked once, got ' .. girder_checks)
+end
 assert(not fixture,'RNG fixture released')
 print('Audit scheduler: '..count..' tests completed ('..scenario..'); opening turn, sheep controls and automatic utility stock passed')
