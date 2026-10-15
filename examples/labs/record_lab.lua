@@ -38,7 +38,7 @@ local LABS = {
   ["labs.rec_68"] = { field = 0x68, value = 0,
     a = "trail sprite: no smoke trail",
     b = "flight flags: something else changes" },
-  -- A Grenade: the field launch{ bounce_pct } writes.
+  -- A Grenade: OpenWA's bounce %, PX's speed multiplier.
   ["labs.rec_78"] = { field = 0x78, value = 17, base = "stock.grenade",
     a = "bounce: bounces far less than WA's Grenade",
     b = "PX's speed multiplier: flies at a sixth of the speed" },
