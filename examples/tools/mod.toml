@@ -1,0 +1,36 @@
+# Diagnostics and a stress test, as add-ons. profiles/ holds two: the
+# counters on their own, and the stress test with the Highlander weapons it
+# fires (that one needs the px.ports bundle too).
+id = "example.tools"
+version = "0.2.0"
+author = "wkLua"
+api_version = 4
+format_version = 2
+
+[[components]]
+id = "tools.hello"
+type = "feature"
+name = "Hello"
+description = "Logs the turn phases and every hurt, as the smallest add-on there is."
+entry = "hello.lua"
+
+[[components]]
+id = "tools.perf"
+type = "feature"
+name = "FPS counter and profiler"
+description = "WormForge's FPS counter (top right) and profiler (wkLua.log), on this machine."
+entry = "perf.lua"
+
+[[components]]
+id = "tools.worm_state_logger"
+type = "feature"
+name = "Worm state logger"
+description = "One HUD line with the active worm's raw state, and every change logged: for naming WA's worm states."
+entry = "worm_state_logger.lua"
+
+[[components]]
+id = "tools.stress"
+type = "feature"
+name = "Stress test"
+description = "Four batches of projectiles in the first turn, WA's and WormForge's, for performance and sync: record a replay and play it back."
+entry = "stress/stress.lua"

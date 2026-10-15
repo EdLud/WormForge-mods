@@ -1,0 +1,7 @@
+description = "The stress test, with the three Highlander weapons it fires (needs the Project X ports bundle)."
+features = ["tools.stress"]
+
+[weapons]
+"px.electromagnet" = true
+"px.bowling_ball_strike" = true
+"px.electric_grenade" = true

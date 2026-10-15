@@ -1,0 +1,2 @@
+description = "The FPS counter, the profiler and the worm state logger, over the lobby's own weapons."
+features = ["tools.perf", "tools.worm_state_logger"]
