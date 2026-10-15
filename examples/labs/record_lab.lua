@@ -49,7 +49,7 @@ local LABS = {
     a = "timed: bounces and waits for its fuse, as a Grenade",
     b = "no change: explodes on contact" },
   ["labs.rec_b0"] = { field = 0xB0, value = 17, base = "stock.grenade",
-    a = "bounce %: bounces far less than WA's Grenade",
+    a = "terrain friction: keeps only 17% of its speed on terrain (settled)",
     b = "no visible change" },
 }
 
