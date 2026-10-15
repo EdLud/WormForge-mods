@@ -55,6 +55,9 @@ they are the `px.ports` bundle in `mods/px/`.
     Presentation only, so safe online.
   - `tools.worm_state_logger` — one HUD line with the active worm's raw state
     and every change logged to `wkLua.log`, for naming WA's worm states.
+  - `tools.audit` — offline native firing through `worm:input`, with home and
+    cyclically moved stock profiles and a comparison tool. Requires the optional
+    `input-audit` test build; see [audit setup](tools/audit/README.md).
   - `tools.stress` — WA's projectiles against ours, to record and replay: 40
     stock missiles, then 40 Lua actors from the same positions, drawn on the
     GPU in four styles, then Highlander's magnets, Bowling Ball Strikes and

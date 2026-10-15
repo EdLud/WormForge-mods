@@ -1,0 +1,497 @@
+description = "Offline stock weapon audit, cyclic shift 35. Use the generated Audit map and saved scheme; see tools/audit/README.md."
+features = ["tools.audit"]
+
+[options."tools.audit"]
+shift = 35
+
+[weapons]
+"stock.bazooka" = { row = "F7", column = 5 }
+"stock.homing_missile" = { row = "F8", column = 1 }
+"stock.mortar" = { row = "F8", column = 2 }
+"stock.homing_pigeon" = { row = "F8", column = 3 }
+"stock.sheep_launcher" = { row = "F8", column = 4 }
+"stock.grenade" = { row = "F8", column = 5 }
+"stock.cluster_bomb" = { row = "F9", column = 1 }
+"stock.banana_bomb" = { row = "F9", column = 2 }
+"stock.battle_axe" = { row = "F9", column = 3 }
+"stock.earthquake" = { row = "F9", column = 4 }
+"stock.shotgun" = { row = "F9", column = 5 }
+"stock.handgun" = { row = "F10", column = 1 }
+"stock.uzi" = { row = "F10", column = 2 }
+"stock.minigun" = { row = "F10", column = 3 }
+"stock.longbow" = { row = "F10", column = 4 }
+"stock.fire_punch" = { row = "F10", column = 5 }
+"stock.dragon_ball" = { row = "F11", column = 1 }
+"stock.kamikaze" = { row = "F11", column = 2 }
+"stock.suicide_bomber" = { row = "F11", column = 3 }
+"stock.prod" = { row = "F11", column = 4 }
+"stock.dynamite" = { row = "F11", column = 5 }
+"stock.mine" = { row = "F12", column = 1 }
+"stock.sheep" = { row = "F12", column = 2 }
+"stock.super_sheep" = { row = "F12", column = 3 }
+"stock.aqua_sheep" = { row = "F12", column = 4 }
+"stock.mole_bomb" = { row = "F12", column = 5 }
+"stock.air_strike" = { row = "utility", column = 1 }
+"stock.napalm_strike" = { row = "utility", column = 2 }
+"stock.mail_strike" = { row = "utility", column = 3 }
+"stock.mine_strike" = { row = "utility", column = 4 }
+"stock.mole_squadron" = { row = "utility", column = 5 }
+"stock.blow_torch" = { row = "utility", column = 6 }
+"stock.pneumatic_drill" = { row = "utility", column = 7 }
+"stock.girder" = { row = "utility", column = 8 }
+"stock.baseball_bat" = { row = "utility", column = 9 }
+"stock.girder_pack" = { row = "F1", column = 1 }
+"stock.ninja_rope" = { row = "F1", column = 2 }
+"stock.bungee" = { row = "F1", column = 3 }
+"stock.parachute" = { row = "F1", column = 4 }
+"stock.teleport" = { row = "F1", column = 5 }
+"stock.scales_of_justice" = { row = "F2", column = 1 }
+"stock.super_banana" = { row = "F2", column = 2 }
+"stock.holy_grenade" = { row = "F2", column = 3 }
+"stock.flame_thrower" = { row = "F2", column = 4 }
+"stock.salvation_army" = { row = "F2", column = 5 }
+"stock.mb_bomb" = { row = "F3", column = 1 }
+"stock.petrol_bomb" = { row = "F3", column = 2 }
+"stock.skunk" = { row = "F3", column = 3 }
+"stock.ming_vase" = { row = "F3", column = 4 }
+"stock.sheep_strike" = { row = "F3", column = 5 }
+"stock.carpet_bomb" = { row = "F4", column = 1 }
+"stock.mad_cow" = { row = "F4", column = 2 }
+"stock.old_woman" = { row = "F4", column = 3 }
+"stock.donkey" = { row = "F4", column = 4 }
+"stock.nuclear_test" = { row = "F4", column = 5 }
+"stock.armageddon" = { row = "F5", column = 1 }
+"stock.skip_go" = { row = "F5", column = 2 }
+"stock.surrender" = { row = "F5", column = 3 }
+"stock.select_worm" = { row = "F5", column = 4 }
+"stock.freeze" = { row = "F5", column = 5 }
+"stock.magic_bullet" = { row = "F5", column = 6 }
+"stock.jet_pack" = { row = "F6", column = 1 }
+"stock.low_gravity" = { row = "F6", column = 2 }
+"stock.fast_walk" = { row = "F6", column = 3 }
+"stock.laser_sight" = { row = "F6", column = 4 }
+"stock.invisibility" = { row = "F6", column = 5 }
+"stock.damage_x2" = { row = "F7", column = 1 }
+"stock.crate_spy" = { row = "F7", column = 2 }
+"stock.double_turn_time" = { row = "F7", column = 3 }
+"stock.crate_shower" = { row = "F7", column = 4 }
+
+[weapon_settings."stock.bazooka"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.homing_missile"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mortar"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.homing_pigeon"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.sheep_launcher"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.grenade"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.cluster_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.banana_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.battle_axe"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.earthquake"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.shotgun"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.handgun"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.uzi"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.minigun"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.longbow"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.fire_punch"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.dragon_ball"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.kamikaze"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.suicide_bomber"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.prod"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.dynamite"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mine"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.sheep"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.super_sheep"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.aqua_sheep"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mole_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.air_strike"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.napalm_strike"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mail_strike"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mine_strike"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mole_squadron"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.blow_torch"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.pneumatic_drill"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.girder"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.baseball_bat"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.girder_pack"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.bungee"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.parachute"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.teleport"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.scales_of_justice"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.super_banana"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.holy_grenade"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.flame_thrower"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.salvation_army"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mb_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.petrol_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.skunk"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.ming_vase"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.sheep_strike"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.carpet_bomb"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.mad_cow"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.old_woman"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.donkey"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.nuclear_test"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.armageddon"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.surrender"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.select_worm"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.freeze"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.magic_bullet"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.low_gravity"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.fast_walk"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.laser_sight"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.invisibility"]
+ammo = -1
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.damage_x2"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.crate_spy"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.double_turn_time"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0
+
+[weapon_settings."stock.crate_shower"]
+ammo = 0
+delay = 0
+ends_turn = false
+crate = 0

@@ -6,6 +6,7 @@ version = "0.2.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
+debug_input = true
 
 [[components]]
 id = "tools.hello"
@@ -34,3 +35,26 @@ type = "feature"
 name = "Stress test"
 description = "Four batches of projectiles in the first turn, WA's and WormForge's, for performance and sync: record a replay and play it back."
 entry = "stress/stress.lua"
+
+[[components]]
+id = "tools.audit"
+type = "feature"
+name = "Stock weapon slot audit"
+description = "Offline scripted firing and diagnostic log; requires the generated Audit map and saved scheme."
+entry = "audit/audit.lua"
+
+[[components.options]]
+key = "shift"
+type = "int"
+min = 0
+max = 69
+default = 0
+label = "Cyclic placement shift (log metadata)"
+
+[[components.options]]
+key = "scope"
+type = "choice"
+choices = ["all", "sheep", "followup"]
+default = "all"
+label = "Audit cases"
+description = "sheep checks sheep activations; followup checks Bungee, instant utilities and the final fresh-worm cases."
