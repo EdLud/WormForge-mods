@@ -50,6 +50,22 @@ python3 tools/audit_compare.py home.log moved.log
 python3 tools/audit_compare.py home.log moved35.log
 ```
 
+**Copies past 70.** The `tools` bundle also has a plain copy of each of WA's
+weapons (`tools.copy_<name>`, `copy_from` and nothing else). **Audit copies past
+70** places the copies alone, with `custom_slots = "past_70"`, so each sits on
+a slot past WA's 70, and the add-on's `copies` option fires each case's copy
+in place of WA's own; WA's own Skip Go still ends the turns, and WA's own Bazooka stays
+on slot 1 with infinite ammo, as at home: after a shot WA does not re-select, it
+selects whatever is on slot 1, and both runs need the same there. Its signals keep
+the stock names, so it compares with a home run:
+
+```sh
+python3 tools/audit_compare.py home.log copies.log
+```
+
+A difference is something WA ties to the slot id: what a weapon past 70, or
+one moved off its host's slot, does not get.
+
 The comparison selects the last audit session in each file by default;
 `--home-session 1` / `--moved-session 1` select explicit sessions. Exit 0 means
 equal, 1 differences, 2 incomplete/incomparable. It compares structured

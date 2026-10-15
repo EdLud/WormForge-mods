@@ -52,9 +52,576 @@ default = 0
 label = "Cyclic placement shift (log metadata)"
 
 [[components.options]]
+key = "copies"
+type = "bool"
+default = false
+label = "Fire the copies past 70"
+description = "Each case fires its plain copy (tools.copy_<name>) in place of WA's own; with the profile's custom_slots = \"past_70\" they sit past 70, so a difference from a home run is something WA ties to the slot id."
+
+[[components.options]]
 key = "scope"
 type = "choice"
 choices = ["all", "sheep", "followup", "utilities", "banana"]
 default = "all"
 label = "Audit cases"
 description = "sheep checks sheep activations; followup checks Bungee, instant utilities and the final fresh-worm cases; utilities checks Jet Pack to Crate Shower; banana runs the Banana Bomb alone."
+
+[[components]]
+id = "tools.copy_bazooka"
+type = "weapon"
+name = "Copy: bazooka"
+description = "WA's bazooka, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "bazooka"
+
+[[components]]
+id = "tools.copy_homing_missile"
+type = "weapon"
+name = "Copy: homing_missile"
+description = "WA's homing_missile, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "homing_missile"
+
+[[components]]
+id = "tools.copy_mortar"
+type = "weapon"
+name = "Copy: mortar"
+description = "WA's mortar, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mortar"
+
+[[components]]
+id = "tools.copy_homing_pigeon"
+type = "weapon"
+name = "Copy: homing_pigeon"
+description = "WA's homing_pigeon, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "homing_pigeon"
+
+[[components]]
+id = "tools.copy_sheep_launcher"
+type = "weapon"
+name = "Copy: sheep_launcher"
+description = "WA's sheep_launcher, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "sheep_launcher"
+
+[[components]]
+id = "tools.copy_grenade"
+type = "weapon"
+name = "Copy: grenade"
+description = "WA's grenade, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "grenade"
+
+[[components]]
+id = "tools.copy_cluster_bomb"
+type = "weapon"
+name = "Copy: cluster_bomb"
+description = "WA's cluster_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "cluster_bomb"
+
+[[components]]
+id = "tools.copy_banana_bomb"
+type = "weapon"
+name = "Copy: banana_bomb"
+description = "WA's banana_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "banana_bomb"
+
+[[components]]
+id = "tools.copy_battle_axe"
+type = "weapon"
+name = "Copy: battle_axe"
+description = "WA's battle_axe, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "battle_axe"
+
+[[components]]
+id = "tools.copy_shotgun"
+type = "weapon"
+name = "Copy: shotgun"
+description = "WA's shotgun, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "shotgun"
+
+[[components]]
+id = "tools.copy_handgun"
+type = "weapon"
+name = "Copy: handgun"
+description = "WA's handgun, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "handgun"
+
+[[components]]
+id = "tools.copy_uzi"
+type = "weapon"
+name = "Copy: uzi"
+description = "WA's uzi, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "uzi"
+
+[[components]]
+id = "tools.copy_minigun"
+type = "weapon"
+name = "Copy: minigun"
+description = "WA's minigun, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "minigun"
+
+[[components]]
+id = "tools.copy_longbow"
+type = "weapon"
+name = "Copy: longbow"
+description = "WA's longbow, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "longbow"
+
+[[components]]
+id = "tools.copy_fire_punch"
+type = "weapon"
+name = "Copy: fire_punch"
+description = "WA's fire_punch, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "fire_punch"
+
+[[components]]
+id = "tools.copy_dragon_ball"
+type = "weapon"
+name = "Copy: dragon_ball"
+description = "WA's dragon_ball, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "dragon_ball"
+
+[[components]]
+id = "tools.copy_prod"
+type = "weapon"
+name = "Copy: prod"
+description = "WA's prod, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "prod"
+
+[[components]]
+id = "tools.copy_dynamite"
+type = "weapon"
+name = "Copy: dynamite"
+description = "WA's dynamite, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "dynamite"
+
+[[components]]
+id = "tools.copy_mine"
+type = "weapon"
+name = "Copy: mine"
+description = "WA's mine, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mine"
+
+[[components]]
+id = "tools.copy_sheep"
+type = "weapon"
+name = "Copy: sheep"
+description = "WA's sheep, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "sheep"
+
+[[components]]
+id = "tools.copy_super_sheep"
+type = "weapon"
+name = "Copy: super_sheep"
+description = "WA's super_sheep, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "super_sheep"
+
+[[components]]
+id = "tools.copy_aqua_sheep"
+type = "weapon"
+name = "Copy: aqua_sheep"
+description = "WA's aqua_sheep, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "aqua_sheep"
+
+[[components]]
+id = "tools.copy_mole_bomb"
+type = "weapon"
+name = "Copy: mole_bomb"
+description = "WA's mole_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mole_bomb"
+
+[[components]]
+id = "tools.copy_air_strike"
+type = "weapon"
+name = "Copy: air_strike"
+description = "WA's air_strike, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "air_strike"
+
+[[components]]
+id = "tools.copy_napalm_strike"
+type = "weapon"
+name = "Copy: napalm_strike"
+description = "WA's napalm_strike, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "napalm_strike"
+
+[[components]]
+id = "tools.copy_mail_strike"
+type = "weapon"
+name = "Copy: mail_strike"
+description = "WA's mail_strike, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mail_strike"
+
+[[components]]
+id = "tools.copy_mine_strike"
+type = "weapon"
+name = "Copy: mine_strike"
+description = "WA's mine_strike, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mine_strike"
+
+[[components]]
+id = "tools.copy_mole_squadron"
+type = "weapon"
+name = "Copy: mole_squadron"
+description = "WA's mole_squadron, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mole_squadron"
+
+[[components]]
+id = "tools.copy_blow_torch"
+type = "weapon"
+name = "Copy: blow_torch"
+description = "WA's blow_torch, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "blow_torch"
+
+[[components]]
+id = "tools.copy_pneumatic_drill"
+type = "weapon"
+name = "Copy: pneumatic_drill"
+description = "WA's pneumatic_drill, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "pneumatic_drill"
+
+[[components]]
+id = "tools.copy_girder"
+type = "weapon"
+name = "Copy: girder"
+description = "WA's girder, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "girder"
+
+[[components]]
+id = "tools.copy_baseball_bat"
+type = "weapon"
+name = "Copy: baseball_bat"
+description = "WA's baseball_bat, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "baseball_bat"
+
+[[components]]
+id = "tools.copy_girder_pack"
+type = "weapon"
+name = "Copy: girder_pack"
+description = "WA's girder_pack, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "girder_pack"
+
+[[components]]
+id = "tools.copy_ninja_rope"
+type = "weapon"
+name = "Copy: ninja_rope"
+description = "WA's ninja_rope, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "ninja_rope"
+
+[[components]]
+id = "tools.copy_bungee"
+type = "weapon"
+name = "Copy: bungee"
+description = "WA's bungee, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "bungee"
+
+[[components]]
+id = "tools.copy_parachute"
+type = "weapon"
+name = "Copy: parachute"
+description = "WA's parachute, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "parachute"
+
+[[components]]
+id = "tools.copy_teleport"
+type = "weapon"
+name = "Copy: teleport"
+description = "WA's teleport, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "teleport"
+
+[[components]]
+id = "tools.copy_scales_of_justice"
+type = "weapon"
+name = "Copy: scales_of_justice"
+description = "WA's scales_of_justice, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "scales_of_justice"
+
+[[components]]
+id = "tools.copy_super_banana"
+type = "weapon"
+name = "Copy: super_banana"
+description = "WA's super_banana, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "super_banana"
+
+[[components]]
+id = "tools.copy_holy_grenade"
+type = "weapon"
+name = "Copy: holy_grenade"
+description = "WA's holy_grenade, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "holy_grenade"
+
+[[components]]
+id = "tools.copy_flame_thrower"
+type = "weapon"
+name = "Copy: flame_thrower"
+description = "WA's flame_thrower, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "flame_thrower"
+
+[[components]]
+id = "tools.copy_salvation_army"
+type = "weapon"
+name = "Copy: salvation_army"
+description = "WA's salvation_army, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "salvation_army"
+
+[[components]]
+id = "tools.copy_mb_bomb"
+type = "weapon"
+name = "Copy: mb_bomb"
+description = "WA's mb_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mb_bomb"
+
+[[components]]
+id = "tools.copy_petrol_bomb"
+type = "weapon"
+name = "Copy: petrol_bomb"
+description = "WA's petrol_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "petrol_bomb"
+
+[[components]]
+id = "tools.copy_skunk"
+type = "weapon"
+name = "Copy: skunk"
+description = "WA's skunk, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "skunk"
+
+[[components]]
+id = "tools.copy_ming_vase"
+type = "weapon"
+name = "Copy: ming_vase"
+description = "WA's ming_vase, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "ming_vase"
+
+[[components]]
+id = "tools.copy_sheep_strike"
+type = "weapon"
+name = "Copy: sheep_strike"
+description = "WA's sheep_strike, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "sheep_strike"
+
+[[components]]
+id = "tools.copy_carpet_bomb"
+type = "weapon"
+name = "Copy: carpet_bomb"
+description = "WA's carpet_bomb, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "carpet_bomb"
+
+[[components]]
+id = "tools.copy_mad_cow"
+type = "weapon"
+name = "Copy: mad_cow"
+description = "WA's mad_cow, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "mad_cow"
+
+[[components]]
+id = "tools.copy_old_woman"
+type = "weapon"
+name = "Copy: old_woman"
+description = "WA's old_woman, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "old_woman"
+
+[[components]]
+id = "tools.copy_donkey"
+type = "weapon"
+name = "Copy: donkey"
+description = "WA's donkey, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "donkey"
+
+[[components]]
+id = "tools.copy_magic_bullet"
+type = "weapon"
+name = "Copy: magic_bullet"
+description = "WA's magic_bullet, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "magic_bullet"
+
+[[components]]
+id = "tools.copy_jet_pack"
+type = "weapon"
+name = "Copy: jet_pack"
+description = "WA's jet_pack, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "jet_pack"
+
+[[components]]
+id = "tools.copy_low_gravity"
+type = "weapon"
+name = "Copy: low_gravity"
+description = "WA's low_gravity, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "low_gravity"
+
+[[components]]
+id = "tools.copy_fast_walk"
+type = "weapon"
+name = "Copy: fast_walk"
+description = "WA's fast_walk, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "fast_walk"
+
+[[components]]
+id = "tools.copy_laser_sight"
+type = "weapon"
+name = "Copy: laser_sight"
+description = "WA's laser_sight, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "laser_sight"
+
+[[components]]
+id = "tools.copy_invisibility"
+type = "weapon"
+name = "Copy: invisibility"
+description = "WA's invisibility, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "invisibility"
+
+[[components]]
+id = "tools.copy_damage_x2"
+type = "weapon"
+name = "Copy: damage_x2"
+description = "WA's damage_x2, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "damage_x2"
+
+[[components]]
+id = "tools.copy_crate_spy"
+type = "weapon"
+name = "Copy: crate_spy"
+description = "WA's crate_spy, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "crate_spy"
+
+[[components]]
+id = "tools.copy_double_turn_time"
+type = "weapon"
+name = "Copy: double_turn_time"
+description = "WA's double_turn_time, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "double_turn_time"
+
+[[components]]
+id = "tools.copy_crate_shower"
+type = "weapon"
+name = "Copy: crate_shower"
+description = "WA's crate_shower, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "crate_shower"
+
+[[components]]
+id = "tools.copy_kamikaze"
+type = "weapon"
+name = "Copy: kamikaze"
+description = "WA's kamikaze, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "kamikaze"
+
+[[components]]
+id = "tools.copy_suicide_bomber"
+type = "weapon"
+name = "Copy: suicide_bomber"
+description = "WA's suicide_bomber, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "suicide_bomber"
+
+[[components]]
+id = "tools.copy_skip_go"
+type = "weapon"
+name = "Copy: skip_go"
+description = "WA's skip_go, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "skip_go"
+
+[[components]]
+id = "tools.copy_select_worm"
+type = "weapon"
+name = "Copy: select_worm"
+description = "WA's select_worm, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "select_worm"
+
+[[components]]
+id = "tools.copy_freeze"
+type = "weapon"
+name = "Copy: freeze"
+description = "WA's freeze, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "freeze"
+
+[[components]]
+id = "tools.copy_nuclear_test"
+type = "weapon"
+name = "Copy: nuclear_test"
+description = "WA's nuclear_test, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "nuclear_test"
+
+[[components]]
+id = "tools.copy_earthquake"
+type = "weapon"
+name = "Copy: earthquake"
+description = "WA's earthquake, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "earthquake"
+
+[[components]]
+id = "tools.copy_armageddon"
+type = "weapon"
+name = "Copy: armageddon"
+description = "WA's armageddon, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "armageddon"
+
+[[components]]
+id = "tools.copy_surrender"
+type = "weapon"
+name = "Copy: surrender"
+description = "WA's surrender, copied unchanged, for the audit's copies run."
+entry = "audit/copy.lua"
+icon = "surrender"

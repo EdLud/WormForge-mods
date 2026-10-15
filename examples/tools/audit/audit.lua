@@ -22,6 +22,13 @@ return function(ctx)
       if name == "stock.bungee" or instant[name] or late[name] then cases[#cases + 1] = name end
     end
   end
+  -- With `copies`, each case fires its plain copy past 70 (tools.copy_<name>,
+  -- `custom_slots = "past_70"`) in place of WA's own: a difference from a home
+  -- run is something WA ties to the slot id. Signals keep the stock name, so
+  -- the two runs compare.
+  local copies = ctx.options.copies
+  local function id_of(name) return copies and (name:gsub("^stock%.", "tools.copy_")) or name end
+  local function case_of(weapon) return weapon and (weapon:gsub("^tools%.copy_", "stock.")) end
   -- WA consumes stock in these panel cells automatically, independently
   -- of the weapon placed there. Profiles start them empty. Give the case's
   -- weapon ammo explicitly, then clear these cells between cases;
@@ -38,7 +45,7 @@ return function(ctx)
   end
   local function clear_automatic()
     for _, worm in ipairs(wa.worms.all()) do
-      for _, name in ipairs(automatic) do worm:ammo(name, { set = 0 }) end
+      for _, name in ipairs(automatic) do worm:ammo(id_of(name), { set = 0 }) end
     end
   end
 
@@ -143,7 +150,7 @@ return function(ctx)
       return
     end
     emit("end", {
-      reason = reason, ammo = w and w:ammo(current.name) or -999,
+      reason = reason, ammo = w and w:ammo(id_of(current.name)) or -999,
       turn_ended = not w or not w.turn,
       land = land_digest(current.x, current.y),
     })
@@ -159,7 +166,7 @@ return function(ctx)
     if not started or stopped or not audit_worms[hit.worm.id] or hit.phase ~= "pre" then return end
     if current then
       emit("hurt", { worm = hit.worm.id, kind = hit.kind, amount = hit.amount,
-        source_weapon = hit.source_weapon or "unknown", weapon = hit.weapon or "unknown" })
+        source_weapon = case_of(hit.source_weapon) or "unknown", weapon = case_of(hit.weapon) or "unknown" })
     end
     return "eat"
   end)
@@ -190,7 +197,7 @@ return function(ctx)
 
   wa.on.missile_frame(function(m)
     if not current then return end
-    if current.name == "stock.sheep_launcher" and m.weapon == current.name and m.phase == "post" then
+    if current.name == "stock.sheep_launcher" and case_of(m.weapon) == current.name and m.phase == "post" then
       current.launcher_initial = current.launcher_initial or m.id
       current.launcher_body = { id = m.id, x = m.x, y = m.y, vx = m.vx, vy = m.vy, frame = now }
       -- A rocket promotes to a new sheep body on landing (or on the
@@ -203,7 +210,7 @@ return function(ctx)
     if m.phase ~= "pre" then return end
     if not seen_missiles[m.id] then
       seen_missiles[m.id] = true
-      emit("missile", { weapon = m.weapon or "unknown", x = m.x, y = m.y, vx = m.vx, vy = m.vy })
+      emit("missile", { weapon = case_of(m.weapon) or "unknown", x = m.x, y = m.y, vx = m.vx, vy = m.vy })
     end
   end)
 
@@ -235,14 +242,14 @@ return function(ctx)
     local name = cases[index]
     local x, y = station(index)
     clear_automatic()
-    if not instant[name] then w:ammo(name, { set = -1 }) end
+    if not instant[name] then w:ammo(id_of(name), { set = -1 }) end
     current = { name = name, worm = w.id, team = w.team, x = x, y = y, start = now,
       selection_active = name == "stock.select_worm" }
     if name == "stock.sheep_launcher" then current.launcher_phase = "airborne" end
     released, quiet, last_motion = false, 0, nil
     seen_missiles, seen_objects, state = {}, {}, {}
     emit("begin", { worm = w.id, station = index, x = x, y = y,
-      ammo = w:ammo(name), land = land_digest(x, y) })
+      ammo = w:ammo(id_of(name)), land = land_digest(x, y) })
     wa.audit.begin(20261015)
     -- Every case gets the same, ample turn time: a turn running out part
     -- way through a case cut it short, and Double Time's result depends
@@ -253,10 +260,10 @@ return function(ctx)
     elseif name == "stock.sheep_launcher" then start_x = x - 128 end
     w:warp{ x = start_x, y = y - 12, vx = 0, vy = 0, facing = 1 }
     if w.hp < 100 then w:heal(100 - w.hp) end
-    local ammo = w:equip(instant[name] and "stock.bazooka" or name)
+    local ammo = w:equip(id_of(instant[name] and "stock.bazooka" or name))
     if ammo == 0 then fail("equip refused for " .. name); return end
     if not instant[name] then w:input{ aim = 45, fuse = 3, bounce = "min" } end
-    emit("setup", { ammo = w:ammo(name), hp = w.hp })
+    emit("setup", { ammo = w:ammo(id_of(name)), hp = w.hp })
     status = string.format("Audit %d/%d: %s", index, #cases, name)
   end
 
@@ -308,12 +315,12 @@ return function(ctx)
         -- Stocking one utility exercises WA's normal per-turn consumption
         -- after collection. Never equip or send fire for an instant utility.
         if age == 40 then
-          w:ammo(name, { set = 1 })
+          w:ammo(id_of(name), { set = 1 })
           current.clock_before = wa.world.turn_clock()
-          emit("utility_stock", { ammo = w:ammo(name) })
+          emit("utility_stock", { ammo = w:ammo(id_of(name)) })
         elseif age == 55 then
           released = true
-          emit("utility_result", { ammo = w:ammo(name), clock_delta = wa.world.turn_clock() - current.clock_before })
+          emit("utility_result", { ammo = w:ammo(id_of(name)), clock_delta = wa.world.turn_clock() - current.clock_before })
         end
       elseif name == "stock.bungee" then
         -- Bungee attaches on the walking-to-falling transition. A midair
@@ -358,7 +365,7 @@ return function(ctx)
         w:input{ fire = "release" }
         if not current then return end
         released = true
-        emit("released", { ammo = w:ammo(name), state = w.state_id })
+        emit("released", { ammo = w:ammo(id_of(name)), state = w.state_id })
       elseif girders[name] and age > 40 and age < 40 + GIRDER_EVERY * girders[name] + 10 then
         -- Each girder: click, press, release; then see whether WA put it
         -- there (a rejected one leaves air at the click).
@@ -400,7 +407,7 @@ return function(ctx)
           -- A steep second launch lands on the station instead of crossing
           -- the inter-platform gap. Its activation waits for observed land.
           w:warp{x = current.x, y = current.y - 12, vx = 0, vy = 0, facing = 1}
-          w:equip(name)
+          w:equip(id_of(name))
           w:input{aim = 85}
         end
       elseif name == "stock.select_worm" then
@@ -523,7 +530,7 @@ return function(ctx)
   initialize = function(first)
     local size = wa.world.size()
     local map_hash = 1
-    emit("session", { version = 11, seed = 20261015, shift = ctx.options.shift, tests = #cases,
+    emit("session", { version = 11, seed = 20261015, shift = ctx.options.shift, copies = copies or false, tests = #cases,
       rng = "fixture-v1", map = tostring(size.w) .. "x" .. tostring(size.h) })
     if not wa.audit then fail("requires a DLL built with --features input-audit"); return end
     if wa.world.networked() then fail("offline only"); return end
