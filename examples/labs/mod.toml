@@ -174,3 +174,21 @@ description = "Record Lab: WA's Grenade with its record's +0xB0 at 17 (100 on ev
 entry = "record_lab.lua"
 icon = "grenade"
 default_position = { row = "F8", column = 3 }
+
+[[components]]
+id = "labs.rec_ac"
+type = "weapon"
+name = "Lab +0xAC"
+description = "Record Lab: WA's Grenade with its record's +0xAC at 60 (the Banana Bomb's), to tell whether it is wkJollyWorm's bounciness. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "grenade"
+default_position = { row = "F8", column = 4 }
+
+[[components]]
+id = "labs.rec_d0"
+type = "weapon"
+name = "Lab +0xD0"
+description = "Record Lab: WA's Grenade with its record's +0xD0 at 2, to tell whether it is wkJollyWorm's number of bounces. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "grenade"
+default_position = { row = "F8", column = 5 }

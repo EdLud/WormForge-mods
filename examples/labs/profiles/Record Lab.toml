@@ -1,4 +1,4 @@
-description = "Record Lab: eleven copies of WA's Bazooka and two of its Grenade, each with one field of its weapon record changed (F6 to F8), WA's own Bazooka and Grenade (F1) to compare. Infinite ammo. Hurts go to wkLua.log."
+description = "Record Lab: eleven copies of WA's Bazooka and four of its Grenade, each with one field of its weapon record changed (F6 to F8), WA's own Bazooka and Grenade (F1) to compare. Infinite ammo. Hurts go to wkLua.log."
 
 [weapons]
 "stock.bazooka" = { row = "F1", column = 1 }
@@ -16,3 +16,5 @@ description = "Record Lab: eleven copies of WA's Bazooka and two of its Grenade,
 "labs.rec_78" = true
 "labs.rec_88" = true
 "labs.rec_b0" = true
+"labs.rec_ac" = true
+"labs.rec_d0" = true

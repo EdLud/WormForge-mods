@@ -51,6 +51,15 @@ local LABS = {
   ["labs.rec_b0"] = { field = 0xB0, value = 17, base = "stock.grenade",
     a = "terrain friction: keeps only 17% of its speed on terrain (settled)",
     b = "no visible change" },
+  -- wkJollyWorm's BounceAction names, with +0xA4 at Bounce (2, every
+  -- grenade): +0xAC "bounciness" (Grenade 0, Banana Bomb 60, Holy and
+  -- Dynamite 30), +0xD0 "number of bounces" (0 on every grenade).
+  ["labs.rec_ac"] = { field = 0xAC, value = 60, base = "stock.grenade",
+    a = "bounciness: bounces differently from WA's Grenade",
+    b = "something else: watch the spin, the fuse, the sound" },
+  ["labs.rec_d0"] = { field = 0xD0, value = 2, base = "stock.grenade",
+    a = "number of bounces: explodes on its second bounce",
+    b = "no visible change: waits for its fuse as usual" },
 }
 
 local shared_installed = false
