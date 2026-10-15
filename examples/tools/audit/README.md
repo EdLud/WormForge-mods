@@ -52,10 +52,21 @@ python3 tools/audit_compare.py home.log moved35.log
 
 The comparison selects the last audit session in each file by default;
 `--home-session 1` / `--moved-session 1` select explicit sessions. Exit 0 means
-equal, 1 differences, 2 incomplete/incomparable. It reports the first differing
-signal of each weapon and marks subsequent cases `after a difference`.
-It compares structured `audit:`/`audit-native:` signals and native `state`
-transitions, ignoring pointer addresses and absolute match frames. Every
+equal, 1 differences, 2 incomplete/incomparable. It compares structured
+`audit:`/`audit-native:` signals and native `state` transitions, ignoring
+pointer addresses and absolute match frames, and marks the cases after the
+first difference `after a difference`.
+
+WA draws most of its random numbers inline from the absolute frame counter,
+so the RNG fixture can't make two rounds' spread identical. The comparison
+therefore normalises each case first (see `tools/audit_compare.py`): each
+kind of event and each worm role (`self`, `other`) is its own sequence; the
+opening turn's leftovers before `setup` are dropped; the first missile of a
+weapon (the launch) keeps its position and speed, later fragments, explosions,
+hurts and bodies only what doesn't move with the spread; the land digest
+becomes "this case changed the land". A case that differs only in those
+spread kinds is marked `spread only`; the last line lists the others, the
+slot-tie candidates. `--strict` compares the signals exactly as logged. Every
 pre-existing weapon claim is still covered by the claims snapshot.
 
 Each firing case records its initial terrain/ammo, moves/heals/equips its worm,
