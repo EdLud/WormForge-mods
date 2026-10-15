@@ -27,6 +27,11 @@ they are the `px.ports` bundle in `mods/px/`.
     to throw.
   - `labs.q_bazooka` (add-on) — Q selects WA's Bazooka, wherever it is placed;
     Space charges and fires it as usual.
+  - `labs.shuffle_panel` (add-on, Shuffled panel) — each turn the placed
+    weapons swap places on the panel at random, the same for every player
+    (`wa.panel.layout` / `set_layout`). `profiles/Everything shuffled.toml`
+    fills the whole panel with it: all 89 custom weapons of every bundle and
+    41 of WA's own, 130 in all, with infinite ammo.
   - `labs.rec_*`, the Record Lab — copies of WA's Bazooka and Grenade, each with one field of its weapon record changed raw, to settle what the field does;
     the HUD names both readings. `profiles/Record Lab.toml` places them beside
     WA's Bazooka and Grenade, with infinite ammo.

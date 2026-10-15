@@ -192,3 +192,10 @@ description = "Record Lab: WA's Grenade with its record's +0xD0 at 2, to tell wh
 entry = "record_lab.lua"
 icon = "grenade"
 default_position = { row = "F8", column = 5 }
+
+[[components]]
+id = "labs.shuffle_panel"
+type = "feature"
+name = "Shuffled panel"
+description = "Each turn the placed weapons swap places on the panel at random, the same for every player: wa.panel.layout and wa.panel.set_layout."
+entry = "shuffle_panel.lua"
