@@ -42,6 +42,15 @@ local LABS = {
   ["labs.rec_78"] = { field = 0x78, value = 17, base = "stock.grenade",
     a = "bounce: bounces far less than WA's Grenade",
     b = "PX's speed multiplier: flies at a sixth of the speed" },
+  -- What makes a missile wait for its fuse instead of exploding on
+  -- contact, and how much it bounces: the Bazooka has 0 at +0x88 (PX's
+  -- countdownFrom) and +0xB0, every grenade 5000 and 100.
+  ["labs.rec_88"] = { field = 0x88, value = 5000,
+    a = "timed: bounces and waits for its fuse, as a Grenade",
+    b = "no change: explodes on contact" },
+  ["labs.rec_b0"] = { field = 0xB0, value = 17, base = "stock.grenade",
+    a = "bounce %: bounces far less than WA's Grenade",
+    b = "no visible change" },
 }
 
 local shared_installed = false

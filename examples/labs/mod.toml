@@ -156,3 +156,21 @@ description = "Record Lab: WA's Grenade with its record's +0x78 at 17, to tell b
 entry = "record_lab.lua"
 icon = "grenade"
 default_position = { row = "F8", column = 1 }
+
+[[components]]
+id = "labs.rec_88"
+type = "weapon"
+name = "Lab +0x88"
+description = "Record Lab: WA's Bazooka with its record's +0x88 at the Grenade's 5000, to tell whether it decides fuse or contact. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F8", column = 2 }
+
+[[components]]
+id = "labs.rec_b0"
+type = "weapon"
+name = "Lab +0xB0"
+description = "Record Lab: WA's Grenade with its record's +0xB0 at 17 (100 on every grenade), to tell whether it is the bounce %. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "grenade"
+default_position = { row = "F8", column = 3 }

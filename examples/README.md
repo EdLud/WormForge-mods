@@ -27,8 +27,7 @@ they are the `px.ports` bundle in `mods/px/`.
     to throw.
   - `labs.q_bazooka` (add-on) — Q selects WA's Bazooka, wherever it is placed;
     Space charges and fires it as usual.
-  - `labs.rec_*`, the Record Lab — ten copies of WA's Bazooka and one of its
-    Grenade, each with one field of its weapon record changed raw, to settle what the field does;
+  - `labs.rec_*`, the Record Lab — copies of WA's Bazooka and Grenade, each with one field of its weapon record changed raw, to settle what the field does;
     the HUD names both readings. `profiles/Record Lab.toml` places them beside
     WA's Bazooka and Grenade, with infinite ammo.
 - `gif_donkey` (`example.gif_donkey`) — Growth Hormones, written twice: as
