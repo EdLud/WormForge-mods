@@ -37,9 +37,10 @@ dealt until a profile says so.
 
 Each weapon is also a component of its own (`px.double_bazooka`,
 `px.sniper_rifle`, ...), and like any weapon it may go at any panel position.
-Its home slot (PX's layout: the Double Bazooka on the Bazooka's) is where it
-goes by default and how the pack's own tables key it (`lib/homes.lua`); the
-code names it to the engine by its id, wherever it sits. Under Highlander
+Its home (PX's layout: the Double Bazooka where the Bazooka is) is where it
+shows by default and how the pack's own tables key it (`lib/homes.lua`); its
+slot is one past WA's 70, as every weapon's that isn't WA's own, and the code
+names it to the engine by its id. Under Highlander
 rules, moved weapons are dealt where they are, and one taken out is not dealt. A profile without the rules can place
 some of them next to WA's own weapons: they then keep the ammo, delay and
 crate odds that profile gives them. Search for them in the Weapons tab.
