@@ -57,3 +57,93 @@ type = "feature"
 name = "Q selects the Bazooka"
 description = "Pressing Q selects WA's Bazooka, wherever the profile placed it."
 entry = "q_bazooka.lua"
+
+[[components]]
+id = "labs.rec_push"
+type = "weapon"
+name = "Lab +0x50"
+description = "Record Lab: WA's Bazooka with its record's +0x50 changed, to tell push power or damage. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F6", column = 1 }
+
+[[components]]
+id = "labs.rec_damage"
+type = "weapon"
+name = "Lab +0x54"
+description = "Record Lab: WA's Bazooka with its record's +0x54 changed, to tell damage or blast radius. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F6", column = 2 }
+
+[[components]]
+id = "labs.rec_70"
+type = "weapon"
+name = "Lab +0x70"
+description = "Record Lab: WA's Bazooka with its record's +0x70 changed, to tell gravity or trail speed. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F6", column = 3 }
+
+[[components]]
+id = "labs.rec_84"
+type = "weapon"
+name = "Lab +0x84"
+description = "Record Lab: WA's Bazooka with its record's +0x84 changed, to tell gravity or friction. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F6", column = 4 }
+
+[[components]]
+id = "labs.rec_7c"
+type = "weapon"
+name = "Lab +0x7C"
+description = "Record Lab: WA's Bazooka with its record's +0x7C changed, to tell wind on/off or explosion response. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F6", column = 5 }
+
+[[components]]
+id = "labs.rec_64"
+type = "weapon"
+name = "Lab +0x64"
+description = "Record Lab: WA's Bazooka with its record's +0x64 changed, to tell impact or animation type. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F7", column = 1 }
+
+[[components]]
+id = "labs.rec_44"
+type = "weapon"
+name = "Lab +0x44"
+description = "Record Lab: WA's Bazooka with its record's +0x44 changed, to tell grenade style or PX's runAway. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F7", column = 2 }
+
+[[components]]
+id = "labs.rec_48"
+type = "weapon"
+name = "Lab +0x48"
+description = "Record Lab: WA's Bazooka with its record's +0x48 changed, to tell collision mask or radius. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F7", column = 3 }
+
+[[components]]
+id = "labs.rec_90"
+type = "weapon"
+name = "Lab +0x90"
+description = "Record Lab: WA's Bazooka with its record's +0x90 changed, to tell flight sound or alt sprite. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F7", column = 4 }
+
+[[components]]
+id = "labs.rec_68"
+type = "weapon"
+name = "Lab +0x68"
+description = "Record Lab: WA's Bazooka with its record's +0x68 changed, to tell trail sprite or flight flags. The HUD says what each reading would show."
+entry = "record_lab.lua"
+icon = "bazooka"
+default_position = { row = "F7", column = 5 }
