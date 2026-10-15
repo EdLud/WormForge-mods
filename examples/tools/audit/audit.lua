@@ -233,6 +233,10 @@ return function(ctx)
     emit("begin", { worm = w.id, station = index, x = x, y = y,
       ammo = w:ammo(name), land = land_digest(x, y) })
     wa.audit.begin(20261015)
+    -- Every case gets the same, ample turn time: a turn running out part
+    -- way through a case cut it short, and Double Time's result depends
+    -- on the time left.
+    wa.world.set_turn_clock(60000)
     local start_x = x
     if name == "stock.bungee" then start_x = x + 244
     elseif name == "stock.sheep_launcher" then start_x = x - 128 end
@@ -488,7 +492,7 @@ return function(ctx)
   initialize = function(first)
     local size = wa.world.size()
     local map_hash = 1
-    emit("session", { version = 9, seed = 20261015, shift = ctx.options.shift, tests = #cases,
+    emit("session", { version = 10, seed = 20261015, shift = ctx.options.shift, tests = #cases,
       rng = "fixture-v1", map = tostring(size.w) .. "x" .. tostring(size.h) })
     if not wa.audit then fail("requires a DLL built with --features input-audit"); return end
     if wa.world.networked() then fail("offline only"); return end

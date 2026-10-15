@@ -246,3 +246,9 @@ Native missile/burst/explosion traces record the actual result of each input.
 The audit stops if the case times out with a surviving launcher sheep.
 **Audit sheep** includes this case now; **Audit home/moved** still have 70
 weapon cases. Compare fresh protocol 9 logs together.
+
+Protocol 10 sets the turn clock to 60 seconds at the start of every case
+(`wa.world.set_turn_clock`). A turn running out part way through a case cut it
+short at a different case in every run, handed the turn to another team, and
+made Double Time's result depend on the time left. Compare protocol 10 logs
+together.

@@ -5,6 +5,7 @@ package.path = root .. "/../?.lua;" .. package.path
 local hooks, logs, worms, clock, selected, fixture = {}, {}, {}, nil, nil, false
 local began, ended, fresh = {}, {}, {}
 local turns = 0
+local clock_sets = 0
 local scope = arg[1] or "all"
 local scenario = arg[3] or "valid"
 local invalid_setup = scenario == "one" or scenario == "uneven" or scenario == "health"
@@ -193,7 +194,8 @@ wa = {
     end
   end,
   world={size=function() return {w=7680,h=5376} end,networked=function() return false end,
-    set_wind=function() end,turn_clock=function() return 90000 end},
+    set_wind=function() end,turn_clock=function() return 90000 end,
+    set_turn_clock=function(ms) assert(ms == 60000, 'every case starts with 60 s'); clock_sets = clock_sets + 1 end},
   land={trace=function(x,y,_,bottom)
     local surface=(y//768)*768+500
     if y<=surface and bottom>=surface then return {x=x,y=surface} end
@@ -258,7 +260,7 @@ for _,w in ipairs(worms) do
   assert(not positions[w.x], 'waiting worms overlap')
   positions[w.x] = true
 end
-assert(logs[1]:find('"version":9',1,true), 'launcher variants must use a fresh protocol')
+assert(logs[1]:find('"version":10',1,true), 'a fixed turn clock per case is a fresh protocol')
 for _=1,60000 do
   if current_test then current_frame=current_frame+1 end
   if utilities[current_test] and physical[current_test] and current_frame == 41 then
@@ -336,5 +338,6 @@ end
 assert(not steering['stock.sheep'],'normal sheep is not flown')
 assert(steering['stock.super_sheep']==30 and steering['stock.aqua_sheep']==30,'both flying sheep are steered')
 end
+assert(clock_sets == count, 'every case set the turn clock')
 assert(not fixture,'RNG fixture released')
 print('Audit scheduler: '..count..' tests completed ('..scenario..'); opening turn, sheep controls and automatic utility stock passed')
