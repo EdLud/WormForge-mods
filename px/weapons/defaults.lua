@@ -13,4 +13,6 @@ return {
   -- Teleport id the turn ended at once, as WA's own Teleport's does, and
   -- the cursor showed the worm where it would land.
   ["px.super_tele"] = { after_use = "end", cursor_sprite = "wbrth1" },
+  -- The S.M.A.R.T Bomb, on WA's Mortar id, was kept short of straight up.
+  ["px.s_m_a_r_t_bomb"] = { aims_straight_up = false },
 }
