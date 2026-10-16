@@ -6,4 +6,7 @@ return {
   -- PX's Hot Air Balloon and Hang-Glider don't let the worm drill: the
   -- drill's record would, from WA's parachute.
   ["px.super_drill"] = { mid_air = false },
+  -- WA places its girders only for ids 34 and 36: the cursor shows the
+  -- girder, a click places one where WA allows.
+  ["px.3_girder_pack"] = { placement = "girder_pack" },
 }
