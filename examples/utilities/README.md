@@ -26,6 +26,24 @@ live_hp = true
 | Live HP | switch | Health bars follow damage as it happens, not at the turn's end. By reddaz. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
 
+## +10 Seconds
+
+A weapon (`utilities.plus_ten`): an instant utility of our own, in place of
+Double Time. It adds ten seconds to the turn going on, through
+`wa.world.set_turn_clock`, and comes in utility crates (`crate.type`, a
+40% weight by default). From a crate it does what its `on_collect` setting
+says: `use` (the default) adds the time at once, `keep` stocks it, and
+firing it then adds the time without ending the turn. Place it on a profile's
+panel and set it on the Weapons tab like any weapon:
+
+```toml
+[weapons]
+"utilities.plus_ten" = { row = "utility", column = 6 }
+
+[weapon_settings]
+"utilities.plus_ten" = { crate = 60, on_collect = "keep" }
+```
+
 A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
 a utility. The switches are those mods' own code, in `features/`, loaded only
 when switched on.
