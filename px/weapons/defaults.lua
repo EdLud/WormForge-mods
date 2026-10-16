@@ -10,6 +10,7 @@ return {
   -- girder, a click places one where WA allows.
   ["px.3_girder_pack"] = { placement = "girder_pack" },
   -- PX's record gives the Super Tele the scheme's retreat; on WA's
-  -- Teleport id the turn ended at once, as WA's own Teleport's does.
-  ["px.super_tele"] = { after_use = "end" },
+  -- Teleport id the turn ended at once, as WA's own Teleport's does, and
+  -- the cursor showed the worm where it would land.
+  ["px.super_tele"] = { after_use = "end", cursor_sprite = "wbrth1" },
 }
