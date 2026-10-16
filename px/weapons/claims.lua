@@ -26,6 +26,10 @@ local FIXES = {
   -- drawn as sprites/smart_bomb/trail), not WA's green gas cloud (608) the
   -- record named.
   mortar = { clusters = { bit = { homing = { trail = { sprite = 250 } } } } },
+  -- Skunk: Space lets the gas out, as WA's own Skunk; PX's record left the
+  -- flag at the Double Damage's (off), so the walker never told the team it
+  -- could be set off, and its shot never ended.
+  damage_x2 = { missile = { explode_on_space = true } },
 }
 
 -- `t` laid over `into`, nested tables field by field: a new table, neither
