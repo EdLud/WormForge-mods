@@ -50,7 +50,7 @@ fires.super_tele_click = function(ev)
   -- placement.
   if unplaced(worm) then
     super_tele_arrive(worm, ev.x, y)
-    worm:set_state("teleporting")
+    worm:teleport_pose()
     wa.sound.play(worm, SOUND_COMMUNICATOR, TELE_SOUND_PRIORITY)
     fires.teleports[worm.id] = { placed = true, frames = 0 }
     return
@@ -90,7 +90,7 @@ wa.on.worm_message(function(worm, msg)
     tele.pending = false
     -- WA's teleport setup clears its activity flag. Do this after the
     -- Lua-handled FireWeapon return restores that flag, as PX's M_FRAME does.
-    worm:set_state("teleporting")
+    worm:teleport_pose()
     wa.sound.play(worm, SOUND_TELEPORT, TELE_SOUND_PRIORITY) -- PX's teleport start
     return
   end

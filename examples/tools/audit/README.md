@@ -9,12 +9,12 @@ and their records do not end the turn. Native special weapons may still end it.
 Build the diagnostic DLL explicitly:
 
 ```sh
-cargo build --release -p wk-lua --target i686-pc-windows-msvc --features input-audit
-python3 tools/install-local.py
+bash tools/build-win32.sh --variant diagnostics
+python3 tools/install-local.py --variant diagnostics
 python3 tools/audit_map.py tmp/input-verb/Audit.png
 ```
 
-`input-audit` is disabled by default. Only that build exposes `wa.audit` and
+`diagnostics` is disabled by default. Only that build exposes `wa.audit` and
 contains the RNG fixture hook. The add-on refuses to run without it. Both
 fixtures and `worm:input` require the bundle's `debug_input = true`, run only
 inside simulation callbacks, and are refused in network rounds. The engine

@@ -532,7 +532,7 @@ return function(ctx)
     local map_hash = 1
     emit("session", { version = 11, seed = 20261015, copies = copies or false, tests = #cases,
       rng = "fixture-v1", map = tostring(size.w) .. "x" .. tostring(size.h) })
-    if not wa.audit then fail("requires a DLL built with --features input-audit"); return end
+    if not wa.audit then fail("requires a DLL built with --features diagnostics"); return end
     if wa.world.networked() then fail("offline only"); return end
     if size.w ~= 7680 or size.h ~= 5376 then fail("load the generated Audit.png (7680x5376)"); return end
     local teams = {}

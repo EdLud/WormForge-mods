@@ -121,6 +121,7 @@ function Worm:carry(x, y) self.x, self.y, self.carried = x, y, true end
 function Worm:drop() self.carried = false end
 function Worm:clear_keys() self.keys = {} end
 function Worm:set_state(state) self.state = state end
+function Worm:teleport_pose() self.state = "teleporting"; return true end
 function Worm:freeze()
   if self.hp <= 0 or self.state == "frozen" then return false end
   self.state = "frozen"
