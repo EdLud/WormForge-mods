@@ -28,8 +28,9 @@ local FIXES = {
   mortar = { clusters = { bit = { homing = { trail = { sprite = 250 } } } } },
   -- Skunk: Space lets the gas out, as WA's own Skunk; PX's record left the
   -- flag at the Double Damage's (off), so the walker never told the team it
-  -- could be set off, and its shot never ended.
-  damage_x2 = { missile = { explode_on_space = true } },
+  -- could be set off, and its shot never ended. The walker it bursts into
+  -- (its one cluster) has its own flag, off too: Space sets it off.
+  damage_x2 = { missile = { explode_on_space = true }, clusters = { bit = { explode_on_space = true } } },
 }
 
 -- `t` laid over `into`, nested tables field by field: a new table, neither
