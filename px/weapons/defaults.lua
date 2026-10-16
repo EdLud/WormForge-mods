@@ -9,4 +9,7 @@ return {
   -- WA places its girders only for ids 34 and 36: the cursor shows the
   -- girder, a click places one where WA allows.
   ["px.3_girder_pack"] = { placement = "girder_pack" },
+  -- PX's record gives the Super Tele the scheme's retreat; on WA's
+  -- Teleport id the turn ended at once, as WA's own Teleport's does.
+  ["px.super_tele"] = { after_use = "end" },
 }
