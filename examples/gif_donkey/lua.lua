@@ -37,16 +37,17 @@ return {
           reached[#reached + 1] = { worm.x, worm.y }
         end
       end
-      -- Single flames (count 0): a fire's count starts more fires of its
-      -- own, in other slots, and those burn untinted. Three of each colour,
-      -- sprayed up and out.
+      -- Fires that don't spread (count and damage 0, as Valyrian Fire's): a
+      -- fire with damage spreads into new fires in other slots, and those
+      -- burn untinted. They still burn worms. Five of each colour, sprayed
+      -- up and out.
       for i, tint in ipairs(RAINBOW) do
         local side = i - (#RAINBOW + 1) / 2
-        for k = -1, 1 do
+        for k = -2, 2 do
           wa.fire.spawn({
             owner = a, x = x + side * 8 + k * 3, y = y - 6,
-            vx = side * 0.8 + k * 0.4, vy = -3 - (k + 1) * 0.7,
-            count = 0, duration = 6000, damage = 15, tint = tint,
+            vx = side * 0.8 + k * 0.4, vy = -3 - (k + 2) * 0.5,
+            count = 0, duration = 6000, damage = 0, tint = tint,
           })
         end
       end

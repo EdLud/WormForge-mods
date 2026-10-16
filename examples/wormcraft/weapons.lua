@@ -124,7 +124,11 @@ return {
       end
     end
 
-    local function write_word(origin)
+    local function write_word(courier)
+      -- The courier despawns now, and a despawned actor's fields read as
+      -- nothing: the letters and the effects around them keep its place and
+      -- owner instead.
+      local origin = { x = courier.x, y = courier.y, owner = courier.owner }
       local n = #WORD
       local left = origin.x - (n - 1) * STEP / 2
       local y = origin.y - 36
