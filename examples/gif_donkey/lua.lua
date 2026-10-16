@@ -37,12 +37,18 @@ return {
           reached[#reached + 1] = { worm.x, worm.y }
         end
       end
+      -- Single flames (count 0): a fire's count starts more fires of its
+      -- own, in other slots, and those burn untinted. Three of each colour,
+      -- sprayed up and out.
       for i, tint in ipairs(RAINBOW) do
-        wa.fire.spawn({
-          owner = a, x = x, y = y - 6,
-          vx = (i - (#RAINBOW + 1) / 2) * 0.9, vy = -3.5,
-          count = 6, duration = 6000, damage = 15, tint = tint,
-        })
+        local side = i - (#RAINBOW + 1) / 2
+        for k = -1, 1 do
+          wa.fire.spawn({
+            owner = a, x = x + side * 8 + k * 3, y = y - 6,
+            vx = side * 0.8 + k * 0.4, vy = -3 - (k + 1) * 0.7,
+            count = 0, duration = 6000, damage = 15, tint = tint,
+          })
+        end
       end
       blasts[#blasts + 1] = { x = x, y = y, until_frame = wa.world.frame() + ARC_FRAMES, reached = reached }
       born[a.id] = nil
