@@ -21,7 +21,6 @@ local PORTED = {
   { weapon = "dynamite" },
   { weapon = "blow_torch" },                                   -- BlowTorch
   { weapon = "flame_thrower" },
-  { weapon = "girder", panel_icon = "baseball_bat" },          -- Baseball Bat
   { weapon = "girder_pack" },                                  -- 3 Girder Pack
   { weapon = "fast_walk" },
   { weapon = "crate_spy" },

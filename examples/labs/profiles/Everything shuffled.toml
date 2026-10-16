@@ -69,7 +69,6 @@ features = ["labs.shuffle_panel"]
 "labs.rec_d0" = { row = "F6", column = 10 }
 "px.blowtorch" = { row = "F7", column = 1 }
 "px.super_drill" = { row = "F7", column = 2 }
-"px.baseball_bat" = { row = "F7", column = 3 }
 "px.electromagnet" = { row = "F7", column = 4 }
 "px.3_girder_pack" = { row = "F7", column = 5 }
 "pooz.runner" = { row = "F7", column = 6 }
@@ -201,7 +200,6 @@ features = ["labs.shuffle_panel"]
 "labs.rec_d0" = { ammo = -1, delay = 0 }
 "px.blowtorch" = { ammo = -1, delay = 0 }
 "px.super_drill" = { ammo = -1, delay = 0 }
-"px.baseball_bat" = { ammo = -1, delay = 0 }
 "px.electromagnet" = { ammo = -1, delay = 0 }
 "px.3_girder_pack" = { ammo = -1, delay = 0 }
 "pooz.runner" = { ammo = -1, delay = 0 }

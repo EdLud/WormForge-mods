@@ -34,7 +34,6 @@ local HOME = {
   ["px.gravler_strike"] = "mole_squadron",
   ["px.blowtorch"] = "blow_torch",
   ["px.super_drill"] = "pneumatic_drill",
-  ["px.baseball_bat"] = "girder",
   ["px.electromagnet"] = "baseball_bat",
   ["px.3_girder_pack"] = "girder_pack",
   ["px.jump"] = "ninja_rope",

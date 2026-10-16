@@ -39,7 +39,7 @@ features = ["hl.rules"]
 "px.gravler_strike" = { row = "F6", column = 5 }
 "px.blowtorch" = { row = "F7", column = 1 }
 "px.super_drill" = { row = "F7", column = 2 }
-"px.baseball_bat" = { row = "F7", column = 3 }
+"stock.baseball_bat" = { row = "F7", column = 3 }
 "px.electromagnet" = { row = "F7", column = 4 }
 "px.3_girder_pack" = { row = "F7", column = 5 }
 "px.jump" = { row = "F8", column = 1 }
@@ -84,6 +84,9 @@ cavern = false
 [weapon_options."hl.rules"."stock.flame_thrower"]
 pool = "second"
 
+[weapon_options."hl.rules"."stock.baseball_bat"]
+pool = "second"
+
 [weapon_options."hl.rules"."stock.dynamite"]
 pool = "offensive"
 
@@ -111,7 +114,7 @@ after_use = "continue"
 [weapon_settings."px.banana_express"]
 after_use = "continue"
 
-[weapon_settings."px.baseball_bat"]
+[weapon_settings."stock.baseball_bat"]
 after_use = "continue"
 
 [weapon_settings."px.blaster_worm"]

@@ -26,6 +26,7 @@ return {
       copy_from = "stock.grenade",
       name = "Growth Hormones (Lua)",
       is_weapon = true,
+      panel_icon = "sprites/icon_lua.png",
       sprite = "sprites/200w.gif",
 
       on_select = {

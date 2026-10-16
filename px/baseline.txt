@@ -29,7 +29,6 @@ mail_strike { clusters = { bit = { action = "bounce", animation = 1, bounce = { 
 mole_squadron { copy_from = "stock.mole_squadron", handling = { ends_turn = true }, missile = { animation = 2, collides = 135228, countdown = 3000, explosion = { power = 37 }, fuse = 5000, gravity_pct = 90, random_motion = 12, sprite = 245, trail = { power = 0, speed = 0, sprite = 0 } }, name = "Gravler Strike", panel_icon = "sprites/gravler/gravlerst_ico.png", raw = { [68] = 110, [200] = 245, [204] = 246, [208] = 247, [212] = 248 }, strike = { count = 4, spacing = 15 }, weapon = "mole_squadron" }
 blow_torch { copy_from = "stock.blow_torch", handling = { ends_turn = true }, name = "BlowTorch", weapon = "blow_torch" }
 pneumatic_drill { copy_from = "stock.pneumatic_drill", fires = { aims = false }, handling = { ends_turn = true }, name = "Super Drill", panel_icon = "sprites/super_drill/ico_superdrill.png", raw = { [68] = 2000 }, weapon = "pneumatic_drill" }
-girder { copy_from = "stock.girder", fires = { creates_projectile = true, subtype = 2 }, handling = { ends_turn = true }, name = "Baseball Bat", panel_icon = "baseball_bat", raw = { [56] = 30, [60] = 125 }, weapon = "girder" }
 baseball_bat { handling = { ends_turn = true }, on_fire = <function>, panel_icon = "sprites/electromagnet/ico_magnet.png", panel_icons = { [1] = "sprites/electromagnet/ico_magnet_blue.png" }, params = { gpu_prefix = "sprites/electromagnet/" }, sprites = { [1] = "sprites/electromagnet/magnet.png", [2] = "sprites/electromagnet/magnet2.png", [3] = "sprites/electromagnet/magnet_damaged.png", [4] = "sprites/electromagnet/magnet2_damaged.png", [5] = "sprites/electromagnet/ring_in.png", [6] = "sprites/electromagnet/ring_out.png", [7] = "sprites/electromagnet/magnetsparks" }, weapon = "baseball_bat", wep = "weps/baseball_bat.wep", worm_sprites = { wdynlnk = "sprites/electromagnet/wmag2lnk", wdynlnkd = "sprites/electromagnet/wmag2lnkd", wdynlnku = "sprites/electromagnet/wmag2lnku" }, worm_sprites_toggle = { key = "plus_key", worm_sprites = { wdynlnk = "sprites/electromagnet/wmaglnk", wdynlnkd = "sprites/electromagnet/wmaglnkd", wdynlnku = "sprites/electromagnet/wmaglnku" } } }
 girder_pack { copy_from = "stock.girder_pack", handling = { ends_turn = true, shots = 3 }, name = "3 Girder Pack", weapon = "girder_pack" }
 ninja_rope { copy_from = "stock.ninja_rope", fires = { aims = false, creates_projectile = true, method = 3, subtype = 2, type = 1 }, handling = { ends_turn = false, retreat = 3000 }, missile = { action = "bounce", animation = 1, bounce = { sound = 113, terrain_keep_pct = 100 }, countdown = 5000, explosion = { bias = 10, power = 50, push_pct = 100 }, gravity_pct = 100, speed_pct = 100, sprite = 50, trail = { speed = 100, sprite = 131 } }, name = "Jump", on_fire = <function>, panel_icon = "sprites/jump/jumpic.png", raw = { [60] = 2, [68] = 1, [116] = 50, [168] = 4331614, [184] = 8, [460] = 70 }, weapon = "ninja_rope", worm_sprites = { weaponlnk = "sprites/jump/aim", weaponlnkd = "sprites/jump/aimd", weaponlnku = "sprites/jump/aimu" } }
@@ -76,14 +75,14 @@ worm_message 19
 # globals the pack defines
 
 # hands dealt at match start, open map (4 worms, fixed RNG)
-16 aqua_sheep, girder, teleport
+16 aqua_sheep, baseball_bat, teleport
 17 homing_pigeon, shotgun, ninja_rope
 32 banana_bomb, nuclear_test, ninja_rope
 33 aqua_sheep, uzi, jet_pack
 
 # what each hand position can be dealt, open map (200 worms)
 1 air_strike, aqua_sheep, banana_bomb, battle_axe, bazooka, carpet_bomb, cluster_bomb, dynamite, earthquake, grenade, holy_grenade, homing_missile, homing_pigeon, mad_cow, mail_strike, mb_bomb, mine, mine_strike, ming_vase, mole_squadron, mortar, old_woman, petrol_bomb, salvation_army, sheep, sheep_launcher, sheep_strike, skunk, super_banana
-2 armageddon, baseball_bat, blow_torch, donkey, dragon_ball, fire_punch, flame_thrower, girder, handgun, kamikaze, longbow, minigun, napalm_strike, nuclear_test, pneumatic_drill, prod, scales_of_justice, shotgun, uzi
+2 armageddon, baseball_bat, blow_torch, donkey, dragon_ball, fire_punch, flame_thrower, handgun, kamikaze, longbow, minigun, napalm_strike, nuclear_test, pneumatic_drill, prod, scales_of_justice, shotgun, uzi
 3 girder_pack, jet_pack, laser_sight, low_gravity, ninja_rope, parachute, teleport
 
 # hands dealt at match start, cavern map (4 worms, fixed RNG)
@@ -94,5 +93,5 @@ worm_message 19
 
 # what each hand position can be dealt, cavern map (200 worms)
 1 aqua_sheep, banana_bomb, battle_axe, bazooka, cluster_bomb, dynamite, earthquake, grenade, holy_grenade, homing_missile, homing_pigeon, mad_cow, mine, ming_vase, mortar, old_woman, petrol_bomb, sheep, sheep_launcher, skunk, super_banana
-2 armageddon, baseball_bat, blow_torch, dragon_ball, fire_punch, flame_thrower, girder, handgun, kamikaze, longbow, minigun, pneumatic_drill, prod, scales_of_justice, shotgun, uzi
+2 armageddon, baseball_bat, blow_torch, dragon_ball, fire_punch, flame_thrower, handgun, kamikaze, longbow, minigun, pneumatic_drill, prod, scales_of_justice, shotgun, uzi
 3 girder_pack, jet_pack, laser_sight, low_gravity, ninja_rope, parachute, teleport

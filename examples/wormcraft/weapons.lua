@@ -204,6 +204,7 @@ return {
       copy_from = "stock.cluster_bomb",
       name = "WormCraft",
       is_weapon = true,
+      panel_icon = "sprites/icon.png",
       sprites = {
         "sprites/absorb",
         "sprites/burst",

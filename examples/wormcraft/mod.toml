@@ -11,5 +11,5 @@ type = "weapon"
 name = "WormCraft"
 description = "Aimed as WA's Cluster Bomb; the shot brings a full-screen cut-in, a courier, then WormCraft spelled letter by letter."
 entry = "weapons.lua"
-icon = "cluster_bomb"
+icon = "sprites/icon.png"
 default_position = { row = "F2", column = 2 }

@@ -12,8 +12,8 @@ Highlander's rules are the add-on **Highlander rules** (`hl.rules`), built on
 `wa.inventory`, `wa.on.turn_start`, and `wa.on.death`.
 
 Project X's *Highlander 0rang3 1.1*: its rules, on its weapon layout. The
-Highlander profile puts each of its weapons on one of WA's stock slots, e.g.
-the Baseball Bat on the girder's. Each weapon's pool is one of its settings
+Highlander profile places each of its weapons on the panel, WA's own among
+them where PX used WA's (the Baseball Bat, `stock.baseball_bat`). Each weapon's pool is one of its settings
 for the add-on; every PX weapon suggests its PX pool.
 
 Weapons are ported in batches. **A weapon not ported yet leaves WA's stock
@@ -62,7 +62,7 @@ crate odds that profile gives them. Search for them in the Weapons tab.
 | Pool | Weapons (stock slot) |
 |---|---|
 | Offensive (29) | Double Bazooka (bazooka), Igniter (homing missile), S.M.A.R.T Bomb (mortar), Blaster Worm (homing pigeon), Burning Sheep Launcher (sheep launcher), Sticky Bomb (grenade), Windy Cluster (cluster bomb), Super Gravedigger (banana bomb), Thumper Nade (battle axe), Electric Grenade (earthquake), Dynamite, Nuke Rocket (mine), Pogo Sheep (sheep), Ghost Sheep (aqua sheep), Chilli Bomb (super banana), Hellish Hand-Grenade (holy grenade), Valyrian Fire (petrol bomb), Remote Roller (skunk), Priceless Ming Vase (ming vase), Cow Launcher (mad cow), Old Woman Launcher (old woman), Ferret (salvation army), Mortar Strike (air strike), Pigeon Strike (mail strike), Submarine Attack (mine strike), Gravler Strike (mole squadron), Banana Express (mb bomb), Bowling Ball Strike (sheep strike), Thumper Nade Strike (carpet bomb) |
-| Second (19) | Fire Jump (fire punch), Sentry Laser (dragon ball), Sentry Gun (kamikaze), Javelin (prod), Baseball Bat (girder), Electromagnet (baseball bat), Real Shotgun (shotgun), Sniper Rifle (handgun), Laser Gun (uzi), Burst Rifle (minigun), Shadow-Bolt (longbow), BlowTorch, Super Drill (pneumatic drill), Portal Gun (scales of justice), Ice Arrow (armageddon), Flame Thrower, Reinforcement (nuclear test), Crate Strike (donkey), Lightning Strike (napalm strike) |
+| Second (19) | Fire Jump (fire punch), Sentry Laser (dragon ball), Sentry Gun (kamikaze), Javelin (prod), Baseball Bat (WA's own), Electromagnet (baseball bat), Real Shotgun (shotgun), Sniper Rifle (handgun), Laser Gun (uzi), Burst Rifle (minigun), Shadow-Bolt (longbow), BlowTorch, Super Drill (pneumatic drill), Portal Gun (scales of justice), Ice Arrow (armageddon), Flame Thrower, Reinforcement (nuclear test), Crate Strike (donkey), Lightning Strike (napalm strike) |
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
 | Not pooled (14) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Cluster Bomb (magic bullet), Fast Walk, Teleport (invisibility), Skunk (damage x2), Crate Spy, Mole Bomb (double turn time), Crate Shower |
 
@@ -125,7 +125,7 @@ Super Tele places it immediately and plays its start sound at the destination.
 | dynamite | Dynamite | WA's own (`stock.dynamite`) |
 | blow_torch | BlowTorch | |
 | flame_thrower | Flame Thrower | WA's own (`stock.flame_thrower`) |
-| girder | Baseball Bat | stock bat icon |
+| girder | Baseball Bat | WA's own (`stock.baseball_bat`): PX moved it here for the Electromagnet |
 | girder_pack | 3 Girder Pack | three girders, not five |
 | fast_walk | Fast Walk | WA's own (`stock.fast_walk`) |
 | crate_spy | Crate Spy | WA's own (`stock.crate_spy`) |
@@ -138,8 +138,7 @@ Super Tele places it immediately and plays its start sound at the destination.
 
 These are WA's own weapons. Moving one to another slot works only as far as
 WA reads the weapon from its record rather than its slot number. Played in
-game: the Baseball Bat on the girder slot aims and swings as the bat; the
-Cluster Bomb, Skunk and Mole Bomb fire as their records say; 3 Girder Pack
+game: the Cluster Bomb, Skunk and Mole Bomb fire as their records say; 3 Girder Pack
 places three. Open points:
 
 - **Teleport on the invisibility slot:** WA disables Invisibility's slot in

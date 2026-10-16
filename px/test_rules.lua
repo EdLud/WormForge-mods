@@ -964,8 +964,7 @@ do
   check("Lightning Strike claims the stock land cursor and click dispatch",
     by_slot.napalm_strike and by_slot.napalm_strike.on_select.cursor
       and type(by_slot.napalm_strike.on_click) == "function")
-  check("Baseball Bat on the girder slot, with its own icon",
-    by_slot.girder and by_slot.girder.panel_icon == "baseball_bat")
+  check("no PX Baseball Bat on the girder slot: the Baseball Bat is WA's own", by_slot.girder == nil)
   check("a weapon on its own slot keeps its icon",
     by_slot.girder_pack and by_slot.girder_pack.panel_icon == nil)
   check("Priceless Ming Vase: the stock vase, as the scheme tunes it",
@@ -1956,7 +1955,9 @@ do
       bad[#bad + 1] = name
     end
   end
-  check("55 pooled slots", n == 55, tostring(n))
+  -- 54: the Baseball Bat is WA's own (stock.baseball_bat), pooled by the
+  -- Highlander profile, not a PX weapon on the girder's slot.
+  check("54 pooled slots", n == 54, tostring(n))
   check("all pooled names are stock", #bad == 0, table.concat(bad, ","))
   local untouched = true
   for name in pairs(SCHEME_OWNED) do

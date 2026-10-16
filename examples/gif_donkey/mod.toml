@@ -12,7 +12,7 @@ type = "weapon"
 name = "Growth Hormones"
 description = "A donkey GIF falls from the sky where you click and explodes on landing: written as data flags the engine runs."
 entry = "flags.lua"
-icon = "grenade"
+icon = "sprites/icon.png"
 default_position = { row = "F2", column = 1 }
 
 [[components]]
@@ -21,5 +21,5 @@ type = "weapon"
 name = "Growth Hormones (Lua)"
 description = "The same weapon written in Lua: its own click and per-frame brain."
 entry = "lua.lua"
-icon = "grenade"
+icon = "sprites/icon_lua.png"
 default_position = { row = "F2", column = 2 }

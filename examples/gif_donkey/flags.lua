@@ -8,6 +8,7 @@ return {
       copy_from = "stock.grenade",
       name = "Growth Hormones",
       is_weapon = true,
+      panel_icon = "sprites/icon.png",
 
       on_select = {
         cursor = true,

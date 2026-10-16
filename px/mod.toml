@@ -428,18 +428,6 @@ default_position = { row = "F7", column = 2 }
 pool = "second"
 
 [[components]]
-id = "px.baseball_bat"
-type = "weapon"
-name = "Baseball Bat"
-description = "Highlander's Baseball Bat."
-entry = "components/weapon.lua"
-icon = "baseball_bat"
-default_position = { row = "F7", column = 3 }
-
-[components.suggests."hl.rules"]
-pool = "second"
-
-[[components]]
 id = "px.electromagnet"
 type = "weapon"
 name = "Electromagnet"
