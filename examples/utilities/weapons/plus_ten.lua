@@ -7,11 +7,10 @@
 -- time, without ending the turn. It comes in utility crates by its own
 -- crate type.
 --
--- It's built on the Mine's record, as PX's Weapon Crate is: a mine goes
--- through WA's weapon fire, so on_fire runs in place of the drop, and WA
--- takes the shot's ammo as usual. A utility record would not do: WA fires a
--- utility itself, switching its bit on (Double Time's showed the 2xT icon),
--- and never reaches on_fire.
+-- It's built on Double Time's record: a utility, no aim, and the worm holds
+-- WA's utility pose (wutllnk), which WA picks by the record's subtype. Its
+-- on_fire replaces WA's utility fire, so Double Time's own bit and icon stay
+-- off; WA's effect for Double Time is tied to id 69 anyway.
 local SECONDS = 10
 local MAX_MS = 3600000 -- what wa.world.set_turn_clock accepts
 
@@ -31,7 +30,7 @@ return {
   install = function(ctx)
     local id = ctx.id
     wa.weapons.replace({
-      copy_from = "stock.mine",
+      copy_from = "stock.double_turn_time",
       name = "+10 Seconds",
       panel_icon = "sprites/plus_ten.png",
       on_fire = function(fire)
