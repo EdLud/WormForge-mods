@@ -12,6 +12,7 @@ into <site>/downloads/packs/:
                  format): id / folder / version / author / file / sha256 / size;
 
 and <site>/downloads/mods.zip, every mod at once, for installing by hand.
+Of the profiles the mods carry, only PUBLIC_PROFILES go out.
 A zip for a mod no longer published is removed.
 
     python3 tools/publish-packs.py --site ../WormForge-site
@@ -42,6 +43,9 @@ PUBLIC = [
     "mods/examples/wormcraft",
     "mods/examples/KillTheKing",
 ]
+# The saved profiles players get, from the mods' `profiles/`. Any other a
+# mod carries (Growth Hormones, Highlander weapons) stays in the repo.
+PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage"}
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}
 FIXED_TIME = (2020, 1, 1, 0, 0, 0)
@@ -76,6 +80,33 @@ def mod_zip(folder):
     return buf.getvalue()
 
 
+def stage_public(tmp):
+    """The public mods as players get them, staged under `tmp`: diagnostic
+    components dropped (`tools/prepare-public-packs.py`), and of the
+    profiles only PUBLIC_PROFILES. Returns the staged folder, one
+    subfolder per mod."""
+    gathered, staged = Path(tmp) / "source", Path(tmp) / "public"
+    gathered.mkdir()
+    for rel in PUBLIC:
+        src = REPO / rel
+        if not (src / "mod.toml").is_file():
+            raise SystemExit(f"{rel}: no mod.toml")
+        shutil.copytree(src, gathered / src.name, ignore=shutil.ignore_patterns(*SKIP))
+    prepare.stage(gathered, staged)
+    found = set()
+    for profile in staged.glob("*/profiles/*.toml"):
+        if profile.stem in PUBLIC_PROFILES:
+            found.add(profile.stem)
+        else:
+            profile.unlink()
+    for folder in staged.glob("*/profiles"):
+        if not any(folder.iterdir()):
+            folder.rmdir()
+    if found != PUBLIC_PROFILES:
+        raise SystemExit(f"public profiles not found: {sorted(PUBLIC_PROFILES - found)}")
+    return staged
+
+
 def toml_string(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
@@ -84,14 +115,7 @@ def publish(site):
     out_dir = site / "downloads" / "packs"
     out_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
-        gathered, staged = Path(tmp) / "source", Path(tmp) / "public"
-        gathered.mkdir()
-        for rel in PUBLIC:
-            src = REPO / rel
-            if not (src / "mod.toml").is_file():
-                raise SystemExit(f"{rel}: no mod.toml")
-            shutil.copytree(src, gathered / src.name, ignore=shutil.ignore_patterns(*SKIP))
-        prepare.stage(gathered, staged)
+        staged = stage_public(tmp)
         mods = []
         for folder in sorted(p for p in staged.iterdir() if p.is_dir()):
             manifest = tomllib.loads((folder / "mod.toml").read_text(encoding="utf-8"))
