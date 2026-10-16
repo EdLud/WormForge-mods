@@ -20,7 +20,8 @@ do
 --
 -- Speeds and factors use Lua floats; the engine rounds writes to WA fields.
 
-local HELI_FUEL = 100            -- FuelAmount
+-- Its fuel, PX's FuelAmount, is its record's (`jet_pack.fuel`, in
+-- claims.lua's FIXES): WA gives it the worm when the jet pack starts.
 local HELI_REALISTIC = true      -- gravity and wind act on it, at 0.2
 local HELI_EXPLODE_ON_TURN_END = true
 local HELI_DEPTH = wa.depth.FRONT       -- in front of worms and terrain
@@ -141,7 +142,6 @@ local function heli_frame(worm)
       return
     end
     if h.launch then
-      worm.fuel = HELI_FUEL
       h.jump_phase, h.jumpin, h.launch = 0, false, false
       if HELI_REALISTIC then worm.wind = 0.2 end
     end

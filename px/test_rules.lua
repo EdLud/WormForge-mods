@@ -3036,6 +3036,11 @@ end
 
 print("helicopter: PX's script on WA's jet pack")
 do
+  -- WA starts the jet pack with the fuel of the record fired (the
+  -- Helicopter's jet_pack.fuel, 100; engine/jet_fuel.rs).
+  local function jet_pack_starts(w)
+    w.state, w.fuel = "jetpacking", 100
+  end
   new_match()
   frame()
   local w = worm(16)
@@ -3049,10 +3054,10 @@ do
   local climb = M.spawned[#M.spawned]
   check("the climb-in while WA winds up, the body hidden, the labels kept", climb and climb.sprite == "sprites/helicopter/jumpin"
     and w.body_visible == false and w.visible == nil)
-  w.state = "jetpacking"
+  jet_pack_starts(w)
   w.keys.up = true
   M.message(w, wa.msg.FRAME_FINISH)
-  check("launch: PX's fuel, gravity and wind", w.fuel < 100 and w.fuel > 99 and w.gravity == (0.2)
+  check("launch: the record's fuel, PX's gravity and wind", w.fuel < 100 and w.fuel > 99 and w.gravity == (0.2)
     and w.wind == (0.2), w.fuel .. " " .. w.gravity .. " " .. w.wind)
   check("up: a kick of 0.8 from standstill", near(w.vy, -0.8), tostring(w.vy))
   check("the engine owns the keys after the script reads them", w.steered and w.keys.up)
@@ -3084,7 +3089,7 @@ do
   -- Out of fuel.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
-  w.state = "jetpacking"
+  jet_pack_starts(w)
   M.message(w, wa.msg.FRAME_FINISH)
   local n = #M.spawned
   w.fuel = (0.05)
@@ -3093,7 +3098,7 @@ do
   -- WA ends the jet pack on the ground without a scripted state change.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
-  w.state = "jetpacking"
+  jet_pack_starts(w)
   M.message(w, wa.msg.FRAME_FINISH)
   w.fuel, w.vy, w.vx = 50, 0, 0
   w.state = "standing"
@@ -3105,7 +3110,7 @@ do
   -- Helicopter must release its steering/art without replacing the knock.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
-  w.state = "jetpacking"
+  jet_pack_starts(w)
   M.message(w, wa.msg.FRAME_FINISH)
   local flying = M.spawned[#M.spawned]
   w.state, w.vx, w.vy = "hit", 3, -2
@@ -3118,7 +3123,7 @@ do
   -- The last Helicopter: WA clears the selection when it fires.
   w.state, w.weapon, w.vy = "prefiring", "jet_pack", 0
   M.message(w, wa.msg.FRAME_FINISH)
-  w.state, w.weapon = "jetpacking", nil
+  jet_pack_starts(w); w.weapon = nil
   M.message(w, wa.msg.FRAME_FINISH)
   check("the last one still flies: armed in the wind-up", w.fuel > 99, tostring(w.fuel))
   local before = #M.spawned

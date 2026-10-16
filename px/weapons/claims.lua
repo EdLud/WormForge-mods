@@ -31,6 +31,9 @@ local FIXES = {
   -- could be set off, and its shot never ended. The walker it bursts into
   -- (its one cluster) has its own flag, off too: Space sets it off.
   damage_x2 = { missile = { explode_on_space = true }, clusters = { bit = { explode_on_space = true } } },
+  -- Helicopter: its fuel is its record's, PX's FuelAmount (its script's 100,
+  -- not the record's 255, which the script always replaced).
+  jet_pack = { jet_pack = { fuel = 100 } },
 }
 
 -- `t` laid over `into`, nested tables field by field: a new table, neither
@@ -83,6 +86,11 @@ local function claim(w)
   end
   if FIXES[w.weapon] then
     spec = merged(spec, FIXES[w.weapon])
+    -- A field named here takes the place of the generated raw byte under it.
+    if spec.jet_pack and spec.jet_pack.fuel ~= nil and spec.raw then
+      spec.raw = merged(spec.raw, {})
+      spec.raw[0x038] = nil
+    end
   end
   for key, value in pairs(w) do
     spec[key] = value
