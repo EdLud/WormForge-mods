@@ -7,11 +7,11 @@
 -- a:explode is stock CreateExplosion; bounce is that impulse. Do not zero vy.
 -- a.vx = 0 is this weapon's policy: no sideways speed from radial blasts.
 --
--- 10 seconds after the click the donkey goes off for good: a huge electric
+-- A second after the click the donkey goes off for good: a huge electric
 -- blast that shocks every worm near it, with arcs crackling out to them, and
 -- WA's petrol fires in the colours of the rainbow. It survives its landing
--- blasts until then (`persist`), as the flags version does.
-local FUSE = 500          -- frames from the click: 10 seconds, 50 a second
+-- blasts until then (`persist`); the flags version is gone after its first.
+local FUSE = 50           -- frames from the click: a second, 50 a second
 local SHOCK_RADIUS = 320  -- pixels: worms this near take the shock
 local SHOCK_DAMAGE = 15
 local ARC_FRAMES = 60     -- how long the arcs crackle after the blast

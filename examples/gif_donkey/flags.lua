@@ -5,7 +5,7 @@
 return {
   install = function()
     wa.weapons.replace({
-      copy_from = "stock.grenade",
+      copy_from = "stock.donkey",
       name = "Growth Hormones",
       is_weapon = true,
       panel_icon = "sprites/icon.png",
@@ -25,10 +25,10 @@ return {
           damage_terrain = true,
           collide_worms = true,
           damage_worms = true,
-          persist = true,
+          persist = false,
           drown = true,
           explode = {
-            damage = 50,
+            damage = 250,
             id = 100,
             below = true,
           },

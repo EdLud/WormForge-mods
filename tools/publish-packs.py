@@ -31,15 +31,14 @@ REPO = Path(__file__).resolve().parent.parent
 BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
 INDEX_SCHEMA = 2
 # The mods players get: Highlander and its ports, the add-ons, the examples.
-# The audits and test weapons (`tools`, `labs`) stay in the repo.
+# The audits and test weapons (`tools`, `labs`) stay in the repo, and so do
+# `gravler_strike` and `turret`, which Highlander's px.ports now covers.
 PUBLIC = [
     "mods/px",
     "mods/examples/utilities",
     "mods/examples/component_demo",
     "mods/examples/gif_donkey",
-    "mods/examples/gravler_strike",
     "mods/examples/pooz",
-    "mods/examples/turret",
     "mods/examples/wormcraft",
     "mods/examples/KillTheKing",
 ]
