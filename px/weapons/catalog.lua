@@ -486,10 +486,18 @@ local PX_ART = {
       wthrowd = "sprites/gravler/drawd",
     },
   },
-  { -- Gravler Strike: its record points at the same four frames, so the
-    -- Gravler's overrides draw it.
+  { -- Gravler Strike: its record points at the same four frames, and it
+    -- overrides them too, so it draws its gravlers without the Gravler
+    -- placed (WA would draw the Salvation Army's own). With both placed, the
+    -- second claim of a frame is skipped: the same art either way.
     weapon = "mole_squadron",
     panel_icon = "sprites/gravler/gravlerst_ico.png",
+    sprite_overrides = {
+      wsvr = "sprites/gravler/gravlerdive",                                -- 245
+      wsvru = "sprites/gravler/gravlerdiga",                               -- 246
+      wsvrd = "sprites/gravler/gravlerdigb",                               -- 247
+      wsvb = "sprites/gravler/gravlerdigc",                                -- 248
+    },
   },
   { -- Ghost Sheep: the Aqua Sheep's own sprites, overridden.
     weapon = "aqua_sheep",
