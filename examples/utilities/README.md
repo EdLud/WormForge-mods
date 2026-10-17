@@ -10,21 +10,20 @@ below the list, or write it by hand in a profile file in `WormForge/Profiles`:
 features = ["core.utilities"]
 
 [options."core.utilities"]
-gravity_pct = 60
-wind = "none"
 heal_per_turn = 10
 live_hp = true
 ```
 
 | Setting | Type | What it does |
 |---|---|---|
-| Gravity % | number, 25–200 | Scales the lobby scheme's gravity from the first turn on. Low Gravity still halves it. |
-| Wind | choice | `scheme` leaves WA's wind alone; `calm` halves each turn's wind; `none` stills it. |
 | Heal at turn start | number, 0–50 | Health the worm whose turn starts gets. |
 | ExTurnSide | switch | Left and right turn the worm during rope swings and other actions. By red. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by red. |
 | Live HP | switch | Health bars follow damage as it happens, not at the turn's end. By reddaz. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
+
+Gravity and wind belong to the profile's **Scheme** tab (`[scheme]`),
+including `gravity`, `constant_wind` and `wind`.
 
 ## +10 Seconds
 

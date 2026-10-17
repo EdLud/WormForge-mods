@@ -70,3 +70,7 @@ they are the `px.ports` bundle in `mods/px/`.
   - `profiles/Diagnostics.toml` ticks the counters over the lobby's weapons;
     `profiles/Stress.toml` places the three Highlander weapons the stress test
     fires (it needs `mods/px` too).
+
+Profiles own their game scheme too: unset settings take Intermediate. Use the
+loader's **Scheme** tab or a profile's `[scheme]`; gravity and wind have moved
+there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).

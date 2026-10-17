@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.3.0"
+version = "0.4.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -17,23 +17,6 @@ name = "Utilities"
 description = "Match settings the lobby scheme doesn't have, and some players' favourite packs as switches."
 entry = "features/utilities.lua"
 credits = "ExTurnSide by red, Live HP by reddaz, Agility by Zed and 0rang3 (port by red)"
-
-[[components.options]]
-key = "gravity_pct"
-type = "int"
-default = 100
-min = 25
-max = 200
-label = "Gravity %"
-description = "The scheme's gravity, scaled. Low Gravity still halves it."
-
-[[components.options]]
-key = "wind"
-type = "choice"
-choices = ["scheme", "calm", "none"]
-default = "scheme"
-label = "Wind"
-description = "calm halves each turn's wind; none stills it."
 
 [[components.options]]
 key = "heal_per_turn"
