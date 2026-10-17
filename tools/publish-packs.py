@@ -9,11 +9,25 @@ into <site>/downloads/packs/:
                  so an unchanged mod keeps its sha256 and installed copies
                  stay "up to date";
   index.toml     schema 2 (`weapons::INDEX_SCHEMA`, mods in the current
-                 format): id / folder / version / author / file / sha256 / size;
+                 format): id / folder / version / author / file / sha256 / size,
+                 the store's address and its list's hash;
+  index.toml.sig the index's Ed25519 signature, hex, by the catalogue key
+                 (`weapons::CATALOGUE_KEYS`): the loader uses nothing from an
+                 index without it;
 
-and <site>/downloads/mods.zip, every mod at once, for installing by hand.
+and the public store, <site>/downloads/blobs/ (every published file by
+hash) with each version's file list in <site>/downloads/packs/versions/.
 Of the profiles the mods carry, only PUBLIC_PROFILES go out.
-A zip for a mod no longer published is removed.
+A zip for a mod no longer published is removed, and so is the old
+downloads/mods.zip (every mod at once; the loader installs from the zips).
+
+The signing key's private half (an Ed25519 seed, hex) stays with whoever
+publishes, outside the repo: --key, by default KEY_FILE. Each publisher has
+their own; --new-key makes one and prints its public half, which goes into
+`weapons::CATALOGUE_KEYS` for the next DLL (the private half never leaves
+its machine).
+
+    python3 tools/publish-packs.py --new-key
 
     python3 tools/publish-packs.py --site ../WormForge-site
     # our staging copy of the site (the fork), to test before a PR:
@@ -54,6 +68,8 @@ PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage"}
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}
 FIXED_TIME = (2020, 1, 1, 0, 0, 0)
+# The catalogue key's private half: never in the repo.
+KEY_FILE = Path.home() / ".config" / "wormforge" / "catalogue-signing.key"
 
 _spec = importlib.util.spec_from_file_location("prepare_public_packs", REPO / "tools" / "prepare-public-packs.py")
 prepare = importlib.util.module_from_spec(_spec)
@@ -162,7 +178,52 @@ def store_blobs(site, staged):
     return new, len(hashes)
 
 
-def publish(site, base_url=BASE_URL):
+def load_key(path):
+    """The catalogue key from its file: the seed's hex, `#` lines aside."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    try:
+        lines = [l.strip() for l in path.read_text(encoding="utf-8").splitlines()]
+    except FileNotFoundError:
+        raise SystemExit(f"no catalogue key at {path}: make one with --new-key, and have its public "
+                         "half added to weapons::CATALOGUE_KEYS")
+    except OSError as e:
+        raise SystemExit(f"catalogue key {path}: {e}")
+    seed = next((l for l in lines if l and not l.startswith("#")), "")
+    try:
+        return Ed25519PrivateKey.from_private_bytes(bytes.fromhex(seed))
+    except ValueError:
+        raise SystemExit(f"catalogue key {path}: not a 32-byte Ed25519 seed in hex")
+
+
+def new_key(path):
+    """Make a catalogue key at `path` (never over an existing one) and print
+    its public half."""
+    import os
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    key = Ed25519PrivateKey.generate()
+    seed = key.private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw,
+                             serialization.NoEncryption())
+    public = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        raise SystemExit(f"{path} exists already: a key is never replaced")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write("# WormForge catalogue signing key (Ed25519 seed). Keep it secret and back it up.\n")
+        f.write(seed.hex() + "\n")
+    print(f"Catalogue key written to {path}: keep it secret, and back it up.")
+    print("Its public half, for weapons::CATALOGUE_KEYS (safe to share):")
+    print(public.hex())
+
+
+def sign(key, data):
+    return ("# Ed25519 signature of index.toml by the WormForge catalogue key.\n"
+            + key.sign(data).hex() + "\n")
+
+
+def publish(site, base_url=BASE_URL, key=None):
     out_dir = site / "downloads" / "packs"
     out_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -184,6 +245,7 @@ def publish(site, base_url=BASE_URL):
                 "changed since published under the same version; bump their version in mod.toml:\n  "
                 + "\n  ".join(refused))
         new_blobs, all_blobs = store_blobs(site, staged)
+        hashes_sha = hashlib.sha256((site / "downloads" / "blobs" / "hashes.txt").read_bytes()).hexdigest()
         for mod_id, version, files in versions.values():
             path = version_file(site, mod_id, version)
             if not path.is_file():
@@ -220,31 +282,43 @@ def publish(site, base_url=BASE_URL):
             # The public store: every published file by hash (blobs/<aa>/<sha>,
             # blobs/hashes.txt), and each version's file list (versions/).
             f"blobs = {toml_string(urllib.parse.urljoin(base_url, '../blobs/'))}",
+            f"hashes = {toml_string(hashes_sha)}",
         ]
         for m in mods:
             lines += ["", "[[packs]]"]
             lines += [f"{k} = {toml_string(m[k])}" for k in ("id", "folder", "version", "author", "file", "sha256")]
             lines.append(f"size = {m['size']}")
-        (out_dir / "index.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
-        # Every mod at once, for installing by hand (the loader uses the zips).
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w") as zf:
-            for folder in sorted(p for p in staged.iterdir() if p.is_dir()):
-                for rel in files_of(folder):
-                    add(zf, f"{folder.name}/{rel.as_posix()}", (folder / rel).read_bytes())
-        (site / "downloads" / "mods.zip").write_bytes(buf.getvalue())
+        index = ("\n".join(lines) + "\n").encode("utf-8")
+        (out_dir / "index.toml").write_bytes(index)
+        (out_dir / "index.toml.sig").write_text(sign(key, index), encoding="utf-8")
+        # Every mod at once used to go out too: it grew the site's history by
+        # its whole size on every publish, and the loader never used it.
+        old_all = site / "downloads" / "mods.zip"
+        if old_all.is_file():
+            print("mods.zip         removed (no longer published)")
+            old_all.unlink()
     print(f"{len(mods)} mods, index schema {INDEX_SCHEMA}, in {out_dir}; store: {new_blobs} new of {all_blobs} files")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--site", type=Path, required=True, help="the site repo's checkout (its downloads/ is written)")
+    parser.add_argument("--site", type=Path, help="the site repo's checkout (its downloads/ is written)")
     parser.add_argument("--base-url", default=BASE_URL,
                         help="where the site serves downloads/packs/ (default: the public front, ropa's site)")
+    parser.add_argument("--key", type=Path, default=KEY_FILE,
+                        help=f"the catalogue key's private half (default {KEY_FILE})")
+    parser.add_argument("--new-key", action="store_true",
+                        help="make a catalogue key at --key and print its public half; publish nothing")
     args = parser.parse_args()
+    if args.new_key:
+        new_key(args.key)
+        return
+    if args.site is None:
+        parser.error("--site is required")
     if not args.base_url.startswith("https://") or not args.base_url.endswith("/"):
         raise SystemExit("--base-url must be an https address ending in /")
-    publish(args.site.resolve(), args.base_url)
+    # Before anything is written: no key, no publish.
+    publish(args.site.resolve(), args.base_url, load_key(args.key))
 
 
 if __name__ == "__main__":
