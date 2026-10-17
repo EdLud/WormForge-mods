@@ -899,7 +899,10 @@ do
     for _, block in ipairs(blocks) do
       local id = block:match('id = "(px%.[%w_]+)"')
       local row, column = block:match('default_position = { row = "(%w+)", column = (%d+) }')
-      if id and row then component[slot_at(row, tonumber(column))] = id end
+      -- Highlander's weapons, all through components/weapon.lua: the other
+      -- ports in the bundle (reddaz's) have their own files and no part in it.
+      local highlander = block:find('entry = "components/weapon.lua"', 1, true)
+      if id and row and highlander then component[slot_at(row, tonumber(column))] = id end
     end
     -- The Highlander profile's weapon set: its [weapons] table.
     local file = assert(io.open("mods/px/profiles/Highlander.toml"))

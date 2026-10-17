@@ -118,6 +118,20 @@ later mouse movement.
 During manual placement the worm starts at WA's off-map holding position, so
 Super Tele places it immediately and plays its start sound at the destination.
 
+### Ported by reddaz
+
+Three weapons outside Highlander, ported by reddaz with their own files:
+they take no part in Highlander's pools.
+
+- **Attack Helicopter** (`px.attack_helicopter`, `weapons/attack_helicopter.lua`):
+  Project X's "COLADOR AEREO". Click a target; a helicopter enters from off
+  the map, hovers toward it and fires 17 homing bullets, then leaves.
+- **Bunker Buster** and **Super Bunker Buster** (`px.bunker_buster`,
+  `px.super_bunker_buster`, `weapons/bunker_buster.lua`): Worms Reloaded's
+  drill strike, from Project X's `bunkerbuster.txt`. Click a target; the buster
+  falls, drills down through the land and blows up. The Super sprays fire as
+  it drills and cuts sideways with five overlapping blasts.
+
 ### WA's own weapons
 
 | Slot | Weapon | Notes |

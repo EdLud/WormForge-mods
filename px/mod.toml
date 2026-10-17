@@ -12,7 +12,7 @@
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.ports"
 name = "Project X ports"
-version = "0.10.0"
+version = "0.11.0"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -796,3 +796,33 @@ description = "Highlander's Mole Bomb."
 entry = "components/weapon.lua"
 icon = "mole_bomb"
 default_position = { row = "utility", column = 8 }
+
+[[components]]
+id = "px.attack_helicopter"
+type = "weapon"
+name = "Attack Helicopter"
+credits = "ported by reddaz"
+description = "Project X's air strike: click a target; a helicopter strafes in from off the map and guns it down."
+entry = "weapons/attack_helicopter.lua"
+icon = "sprites/helishootico.png"
+default_position = { row = "F6", column = 4 }
+
+[[components]]
+id = "px.bunker_buster"
+type = "weapon"
+name = "Bunker Buster"
+credits = "ported by reddaz"
+description = "Worms Reloaded's drill strike: click a target; a buster falls, drills down through the land and blows up."
+entry = "weapons/bunker_buster.lua"
+icon = "sprites/bunker_buster/icon.png"
+default_position = { row = "F7", column = 3 }
+
+[[components]]
+id = "px.super_bunker_buster"
+type = "weapon"
+name = "Super Bunker Buster"
+credits = "ported by reddaz"
+description = "The Super: the same drill, spraying fire as it goes and cutting sideways with five blasts that overlap along the drill's line."
+entry = "weapons/bunker_buster.lua"
+icon = "sprites/super_bunker_buster/icon.png"
+default_position = { row = "F7", column = 6 }
