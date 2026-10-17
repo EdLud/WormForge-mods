@@ -25,6 +25,7 @@ local LOW_BOUNCE, LOW_FRICTION = 0.03, 0.03
 local LOW_INERTIA_X, LOW_INERTIA_Y = 0.0, 0.0
 local SLEEP_DISTANCE = 2      -- moved less than this over SLEEP_PERIOD frames: asleep
 local SLEEP_PERIOD = 80
+local SUPPORT = 2             -- asleep, what holds it is within this below it
 local FAST = 4.0              -- MinDamageSpeed: faster, it rolls through worms and hurts
 local SPIN_X, SPIN_Y, MAX_SPIN = 0.06, 0.02, 0.6
 local SHEET = "sprites/bowling_ball/ball.png"
@@ -143,6 +144,13 @@ local function think(b)
     -- No real speed asleep, as PX's: it stops turning too.
     b.x, b.y = b.sleep_x, b.sleep_y
     b.rvx, b.rvy = 0, 0
+    -- Ours, not PX's: a ball asleep on what has gone (a worm that walked
+    -- off, an oil drum that blew, land dug away) wakes and falls, where PX's
+    -- would hang there until something hit it.
+    local below = wa.world.trace({
+      x0 = b.x, y0 = b.y, x1 = b.x, y1 = b.y + SUPPORT, radius = RADIUS, with = SOLID,
+    })
+    if not (below and (below.hit or below.starts_solid)) then wake(b) end
     return 0
   end
   local speed = math.sqrt(b.rvx * b.rvx + b.rvy * b.rvy)
@@ -161,28 +169,37 @@ local function think(b)
     b.gone = true
     return 0
   end
-  local function trace_from(sx, sy, k)
+  local function trace_from(sx, sy, k, group, radius)
     -- Eight moves backwards may not fit where one forward does: no trace.
     if math.abs(sx + k * dx) > EDGE or math.abs(sy + k * dy) > EDGE then return nil end
     return wa.world.trace({
-      x0 = sx, y0 = sy, x1 = sx + k * dx, y1 = sy + k * dy, radius = RADIUS, with = with,
+      x0 = sx, y0 = sy, x1 = sx + k * dx, y1 = sy + k * dy, radius = radius or RADIUS, with = group,
     })
   end
-  local res = trace_from(x, y, 1)
+  local res = trace_from(x, y, 1, with)
   if res and res.starts_solid then
-    -- Stuck in something (another ball can push it in): carry on from where
-    -- the path comes free; else, as PX's unblocking, back out along the move
-    -- eight times its length and come forward from there; else sleep where
-    -- it is, as PX does.
-    if not res.left_x then
-      res = trace_from(x, y, -8)
-      if not (res and res.left_x) then
-        sleep(b)
-        return 0
+    -- Started inside something. As PX's: a worm (one that flew or walked
+    -- into the ball) is no reason, so the move is tried again without
+    -- worms; still inside, it carries on from where the path comes free, or
+    -- backs out along the move eight times its length and comes forward
+    -- from there, with the ball's circle, then with a single point (PX's
+    -- MASK_PIXEL); only then is it stuck, and sleeps where it is. Trying
+    -- again with worms left a ball a worm hit mid-air asleep in the air.
+    res = trace_from(x, y, 1, SOLID_FAST)
+    if res and res.starts_solid then
+      if not res.left_x then
+        res = trace_from(x, y, -8, SOLID_FAST)
+        if not (res and res.left_x) then
+          res = trace_from(x, y, -8, SOLID_FAST, 0)
+          if not (res and res.left_x) then
+            sleep(b)
+            return 0
+          end
+        end
       end
+      x, y = res.left_x, res.left_y
+      res = trace_from(x, y, 1, SOLID_FAST)
     end
-    x, y = res.left_x, res.left_y
-    res = trace_from(x, y, 1)
   end
   if res and res.hit then
     local spt = vx2 * res.tx + vy2 * res.ty

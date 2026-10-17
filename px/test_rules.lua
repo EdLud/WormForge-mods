@@ -367,15 +367,23 @@ local function new_match(opts)
           local t = k * math.pi / 24
           RIM[#RIM + 1] = { math.cos(t), math.sin(t) }
         end
+        -- Bodies as circles, as the engine's: worms 6, crates and drums 9.
+        -- Worms only for the tests that set M.trace_worms: the others' scenes
+        -- leave worms about that would stop a ball.
         local bodies = {}
         for _, kind in ipairs(q.with or {}) do
-          local list = (kind == "crates" and M.crates) or (kind == "oil" and M.oil) or {}
-          for _, o in ipairs(list) do bodies[#bodies + 1] = o end
+          local list = (kind == "crates" and M.crates) or (kind == "oil" and M.oil)
+            or (kind == "worms" and M.trace_worms and worms) or {}
+          local around = kind == "worms" and 6 or 9
+          for _, o in ipairs(list) do
+            if kind ~= "worms" or o.hp > 0 then bodies[#bodies + 1] = { o, around } end
+          end
         end
         local function body_at(x, y)
-          for _, o in ipairs(bodies) do
+          for _, b in ipairs(bodies) do
+            local o, around = b[1], b[2]
             local dx, dy = (x - o.x), (y - o.y)
-            if dx * dx + dy * dy < (r + 9) * (r + 9) then return o end
+            if dx * dx + dy * dy < (r + around) * (r + around) then return o end
           end
         end
         local function solid_at(x, y)
@@ -628,6 +636,12 @@ local function new_match(opts)
       end,
     },
     weapons = {
+      -- Whether a team may select a weapon, as the engine keeps it.
+      set_selectable = function(spec)
+        assert(type(spec.weapon) == "string" and spec.team >= 1 and spec.team <= 6)
+        M.unselectable = M.unselectable or {}
+        M.unselectable[spec.weapon .. "@" .. spec.team] = not spec.selectable or nil
+      end,
       fire_bullet = function(spec)
         assert(SLOT(spec.weapon) == "uzi" and spec.owner ~= nil)
         M.bullets = M.bullets or {}
@@ -709,7 +723,13 @@ local function new_match(opts)
           for _, h in ipairs(M.hurt_handlers) do h(hit) end
         end
       end,
-      death = function(f) M.death = f end,
+      death = function(f)
+        M.death_handlers = M.death_handlers or {}
+        M.death_handlers[#M.death_handlers + 1] = f
+        M.death = function(...)
+          for _, h in ipairs(M.death_handlers) do h(...) end
+        end
+      end,
       -- Every pack module may draw its own HUD lines: run them all.
       hud = function(f)
         M.hud_handlers = M.hud_handlers or {}
@@ -1018,6 +1038,18 @@ do
   check("a full team gets no worm, and an error sound", #M.worm_spawns == 2
     and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav")
   M.team_full, M.water, M.solid = nil, nil, nil
+  -- With eight living worms it can't be used, so it can't be picked: greyed
+  -- on the panel and skipped by the F-keys (wa.weapons.set_selectable),
+  -- from the turn's start, and again as soon as a worm of the team dies.
+  new_match({ per_team = 8 })
+  local full = worm(1000)
+  M.turn_start({ worm = full })
+  check("a team with eight living worms can't select Reinforcement",
+    M.unselectable and M.unselectable["px.reinforcement@1"] and M.unselectable["px.reinforcement@2"])
+  full.hp = 0
+  M.death({ victim = full })
+  check("a worm of the team dies: it can again, the other team still can't",
+    not M.unselectable["px.reinforcement@1"] and M.unselectable["px.reinforcement@2"])
 end
 
 print("Electromagnet: plus-key polarity, stock object force and discharge")
@@ -2788,6 +2820,31 @@ do
   run(30)
   check("another ball rolling into it wakes it and pushes it on", sleeper.x > x0 + 4,
     (sleeper.x - x0) .. " " .. roller.x)
+  -- A worm flying into a falling ball: as PX's, a worm is no reason to be
+  -- stuck, and the ball falls on through it rather than sleeping in the air.
+  local _, falling = rolling(500, 0, 0, 100)
+  M.trace_worms = true
+  local flier = worm(17)
+  flier.x, flier.y, flier.state = 500, 100, "flying"
+  run(1)
+  flier.x, flier.y = 900, 194
+  run(60)
+  check("a worm flying into a ball in mid-air leaves it falling, not asleep in the air",
+    not falling.asleep or falling.y > 170, falling.y .. " " .. tostring(falling.asleep))
+  check("and it lands on the floor", falling.y > 170, tostring(falling.y))
+  -- Asleep on a worm, the ball falls when the worm walks off.
+  local _, perched = rolling(600, 0, 0, 150)
+  M.trace_worms = true
+  local holder = stand(worm(17), 600)
+  run(300)
+  local perched_y = perched.y
+  check("a ball dropped on a standing worm comes to rest on it", perched.asleep and perched_y < 175,
+    perched_y .. " " .. tostring(perched.asleep))
+  holder.x = 900
+  run(60)
+  check("and falls when the worm walks off, where PX's would hang in the air",
+    perched.y > perched_y + 10, perched_y .. " -> " .. perched.y)
+  M.trace_worms = nil
   -- Flung off the map faster than gravity brings it down: it flies on (WA
   -- draws its arrow at the edge) until its next move would leave the range
   -- WA keeps positions in, and then it is gone, as in the water.
@@ -3274,6 +3331,23 @@ do
   w.weapon, w.state = "none", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("equipped glider owns its auto opening",
+    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider" and w.taken)
+  M.message(w, wa.msg.JUMP)
+
+  -- Placed without the balloon, whose module then isn't loaded: the glider
+  -- remembers the equipped weapon itself.
+  new_match()
+  frame()
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
+    "parachute", "sliding", 100, 50, 0, 1, true
+  w.keys = {}
+  M.spawned = {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  require("lib/shared").balloons[w.id] = nil
+  w.weapon, w.state = "none", "parachuting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the glider opens without the balloon's module",
     M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider" and w.taken)
   M.message(w, wa.msg.JUMP)
 
@@ -4359,10 +4433,18 @@ do
       for _, snd in ipairs(r.sounds or {}) do registered[snd] = true end
     end
     local found = 0
+    -- The ports with files of their own (reddaz's) register their sounds
+    -- in them, outside Highlander's entries.
+    local OWN_FILES = { "sounds/attack_helicopter/", "sounds/bunker_buster/" }
+    local function own(rel)
+      for _, dir in ipairs(OWN_FILES) do
+        if rel:sub(1, #dir) == dir then return true end
+      end
+    end
     for line in ls:lines() do
       local rel = line:match("mods/px/(.*)")
       found = found + 1
-      if rel and not registered[rel] then unlisted[#unlisted + 1] = rel end
+      if rel and not registered[rel] and not own(rel) then unlisted[#unlisted + 1] = rel end
     end
     ls:close()
     if found > 0 then

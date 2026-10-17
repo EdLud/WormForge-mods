@@ -44,6 +44,10 @@ do
   local GLIDER_PI = 3.141593
 
   local gliders = {} -- worm id -> { enabled, deployed, x, y, ang, target, cycle, sx, sy, art, pack, pack_t, landing }
+  -- worm id -> its weapon as of its last frame not under a parachute. The
+  -- glider's own: the balloon's module, which keeps the same, is loaded only
+  -- when the balloon is placed.
+  local equipped_before = {}
 
   local function glider_of(worm)
     local g = gliders[worm.id]
@@ -205,8 +209,9 @@ do
 
   local function glider_frame(worm)
     local state = worm.state
+    if state ~= "parachuting" then equipped_before[worm.id] = worm.weapon end
+    local equipped = equipped_before[worm.id]
     local b = balloons[worm.id]
-    local equipped = b and b.equipped_weapon
     if b and b.active then
       local g = gliders[worm.id]
       if g then g.enabled = false end

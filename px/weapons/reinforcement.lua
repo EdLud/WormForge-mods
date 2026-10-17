@@ -24,6 +24,28 @@ end
 -- surface, as PX's falls in. It takes a dead worm's place, as PX's does;
 -- with 8 living worms the team is full (PX: "Too many worms (8) in your
 -- team!").
+-- It can't be used while the team has eight living worms, so it can't be
+-- picked then either: greyed on the panel and skipped by the F-keys
+-- (wa.weapons.set_selectable), rather than picked to be refused. Checked as
+-- each turn starts, when a worm dies and after a worm is placed.
+local ID = "px.reinforcement"
+local FULL = 8
+
+local function update_selectable()
+  -- DLLs before 0.9.1 lack the verb: there it stays selectable, and refused.
+  if not wa.weapons.set_selectable then return end
+  local living = {}
+  for _, w in ipairs(wa.worms.all()) do
+    if w.hp > 0 then living[w.team] = (living[w.team] or 0) + 1 end
+  end
+  for team = 1, 6 do
+    wa.weapons.set_selectable({ weapon = ID, team = team, selectable = (living[team] or 0) < FULL })
+  end
+end
+
+wa.on.turn_start(update_selectable)
+wa.on.death(update_selectable)
+
 shared.fires.reinforcement = function(ev)
   local worm = ev.worm
   local x = ev.x // 1
@@ -33,8 +55,11 @@ shared.fires.reinforcement = function(ev)
   if not ok then
     wa.log("Reinforcement: " .. tostring(spawned))
     wa.sound.play(worm, "sounds/gravity_control/error.wav")
-  elseif shared.fresh_hand then
-    -- Highlander's rules: dealt a fresh hand, as a new worm.
-    shared.fresh_hand(spawned)
+  else
+    if shared.fresh_hand then
+      -- Highlander's rules: dealt a fresh hand, as a new worm.
+      shared.fresh_hand(spawned)
+    end
+    update_selectable()
   end
 end
