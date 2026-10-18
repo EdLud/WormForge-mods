@@ -141,6 +141,11 @@ function Worm:release(vx, vy, opts)
   self.release_options = opts
 end
 function Worm:air_fire(on) self.air_firing = on ~= false end
+-- WA's take-off (the engine's worm:jump): the jump given, else the last.
+function Worm:jump(kind)
+  self.taken, self.state, self.jumped = nil, "jumping", kind or "last"
+  return true
+end
 function Worm:jetpack_steer(on) self.steered = on ~= false end
 -- WA's collision test, in the mock: the land M.solid gives, 4 pixels either
 -- side of the worm and 6 above and below.
@@ -3786,6 +3791,80 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("only the turn's worm dives", not w.taken)
   M.turn_start({ worm = w, active = w })
+end
+
+print("double jump: PX's second jump, WA's take-off with the jump the worm made")
+do
+  new_match()
+  frame()
+  -- Its own component, as the engine installs it: a slot no Highlander
+  -- weapon takes, for the mock.
+  local claiming = HIGHLANDER_CLAIMING
+  HIGHLANDER_CLAIMING = "select_worm"
+  require("weapons/double_jump").install({ id = "px.double_jump" })
+  HIGHLANDER_CLAIMING = claiming
+  local spec = replaced[#replaced]
+  check("PX's record and icon, leaving the turn going", spec.wep == "weps/double_jump.wep"
+    and spec.panel_icon == "sprites/double_jump/icon.png" and spec.handling.ends_turn == false)
+  local w = worm(16)
+  for _, o in ipairs(worms) do o.turn = false end
+  w.turn, w.weapon, w.state_id, w.facing, w.team = true, "px.double_jump", 0x67, 1, 1
+  local spent = 0
+  function w:ammo(id, n) if id == "px.double_jump" then spent = spent + n end end
+  function w:set_state() error("the double jump uses WA's take-off; it sets no state") end
+  function w:take() error("the double jump never holds the worm") end
+  local function in_air(state, weapon)
+    w.state_id, w.state, w.weapon, w.jumped = state or 0x79, "jumping", weapon or "stock.bazooka", nil
+  end
+  local function land()
+    w.state_id = 0x65
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  -- Off: WA's jump keys in the air are WA's.
+  in_air()
+  check("off, Enter in the air is WA's", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
+  -- On: the utility is spent once, and the HUD says it.
+  w.weapon, w.state_id = "px.double_jump", 0x67
+  M.hud_lines = {}
+  check("using it switches it on, eating WA's fire", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
+  M.hud()
+  check("the HUD says it is on", M.hud_lines[#M.hud_lines] == "Double Jump: ON")
+  -- Enter in a jump: WA's take-off at once, with the jump it last made.
+  in_air()
+  check("Enter in a jump: WA's take-off at once, the worm's own jump", M.message(w, wa.msg.JUMP) == "eat"
+    and w.jumped == "last")
+  in_air(0x7A)
+  check("once a jump", M.message(w, wa.msg.JUMP_UP) == nil and not w.jumped)
+  land()
+  in_air(0x7A)
+  check("standing again: Backspace coming down, a jump too", M.message(w, wa.msg.JUMP_UP) == "eat"
+    and w.jumped == "last")
+  -- The Jump's launch counts as a jump; plain falling does not.
+  land()
+  in_air(0x7E)
+  check("falling off a cliff: no second jump", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
+  in_air(0x7E, "px.jump")
+  check("launched by the Jump: a second jump", M.message(w, wa.msg.JUMP) == "eat" and w.jumped == "last")
+  -- Held by a vehicle: nothing.
+  land()
+  in_air()
+  w.taken = { turn = "run" }
+  check("held by a vehicle: nothing", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
+  w.taken = nil
+  -- Used again: off, and nothing spent.
+  w.weapon, w.state_id = "px.double_jump", 0x67
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.hud_lines = {}
+  M.hud()
+  in_air()
+  check("using it again switches it off, spending nothing", spent == -1 and #M.hud_lines == 0
+    and M.message(w, wa.msg.JUMP) == nil)
+  -- The next turn starts it off.
+  w.weapon, w.state_id = "px.double_jump", 0x67
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_start({ worm = w, active = w })
+  in_air()
+  check("off at the next turn", M.message(w, wa.msg.JUMP) == nil)
 end
 
 print("wind changer and gravity control: 0-9 and 1-5, then fire")

@@ -132,6 +132,21 @@ they take no part in Highlander's pools.
   falls, drills down through the land and blows up. The Super sprays fire as
   it drills and cuts sideways with five overlapping blasts.
 
+### Double Jump
+
+`px.double_jump`, its own component (`weapons/double_jump.lua`, PX's
+`utility_doublejump` record and icon), not in Highlander's pools. Using it
+switches a second jump on for the turn, using it again switches it off;
+while it is on, the turn's worm in the air from a jump (WA's own, or the
+Jump's launch) jumps once more on Enter or Backspace, and again once it has
+stood. As PX's, the second jump is the one the worm made (forward after
+forward, a backflip after a backflip): PX sets the worm back to WA's jump
+preparation in the air, and WA takes off at once with the jump its keys
+left; here `worm:jump()` is that take-off, with WA's jump animation and
+speech. Unlike PX's, switching it off spends nothing, it doesn't also
+switch Low Gravity on, it never fizzles into a fall, and the HUD says it
+while it is on.
+
 ### WA's own weapons
 
 | Slot | Weapon | Notes |

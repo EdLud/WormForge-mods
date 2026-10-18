@@ -1597,3 +1597,13 @@ description = "The Super: the same drill, spraying fire as it goes and cutting s
 entry = "weapons/bunker_buster.lua"
 icon = "sprites/super_bunker_buster/icon.png"
 default_position = { row = "F7", column = 6 }
+
+[[components]]
+id = "px.double_jump"
+type = "weapon"
+name = "Double Jump"
+description = "Project X's Double Jump: switched on for the turn, a worm in mid-jump jumps once more on Enter or Backspace."
+entry = "weapons/double_jump.lua"
+icon = "sprites/double_jump/icon.png"
+default_position = { row = "F8", column = 2 }
+
