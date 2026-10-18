@@ -75,17 +75,38 @@ local function electrical_trace(x0, y0, dx, dy)
   return hit
 end
 
+-- Half the width of the line along the beam that strikes what it touches:
+-- the drawn beam wavers about it, so anything whose body is within 4 pixels
+-- of the straight line from the beam's top to where it ends is struck too.
+local STRIKE_HALF_WIDTH = 4
+
+-- Whether `obj` is struck: on the beam's line, from its top to its end, or
+-- (when the beam hit something) about where it ended.
+local function struck(s, obj, length)
+  local ox, oy = obj.x - s.sx, obj.y - s.sy
+  local along = ox * s.dirx + oy * s.diry
+  local across = math.abs(ox * s.diry - oy * s.dirx)
+  if along >= 0 and along <= length and across <= STRIKE_HALF_WIDTH + target_radius(obj) then
+    return true
+  end
+  if not s.hit then return false end
+  local dx, dy = obj.x - s.ex, obj.y - s.ey
+  local r = target_radius(obj) + 6
+  return dx * dx + dy * dy <= r * r
+end
+
 local function strike_hit(s)
   if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
-  if not s.hit then return end
-  turret.capture_hit(s.sentry, s.ex, s.ey, s.alliance)
-  local radius2 = sq(6)
+  if s.hit then turret.capture_hit(s.sentry, s.ex, s.ey, s.alliance) end
+  local length = math.sqrt(sq(s.ex - s.sx) + sq(s.ey - s.sy))
+  -- Everything the line and the end can reach, in WA's entity order: within
+  -- half the line, its width and the largest body (9) of the middle.
   local targets = wa.world.electrical_nearby
-    and wa.world.electrical_nearby(s.ex, s.ey, 24, true) or electrical_targets(true)
+    and wa.world.electrical_nearby((s.sx + s.ex) / 2, (s.sy + s.ey) / 2,
+      math.ceil(length / 2) + STRIKE_HALF_WIDTH + 9 + 6, true)
+    or electrical_targets(true)
   for _, obj in ipairs(targets) do
-    local dx, dy = obj.x - s.ex, obj.y - s.ey
-    local r = (target_radius(obj) + 6)
-    if dx * dx + dy * dy <= math.max(radius2, r * r) then
+    if struck(s, obj, length) then
       if obj.kind == "worm" then
         if not revived_by_lightning[obj.id] then obj:heal(25) end
       elseif obj.kind == "grave" then

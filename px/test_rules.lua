@@ -4191,6 +4191,48 @@ do
     mine.armed >= 1000 and mine.armed <= 5000 and rng ~= before_rng)
 end
 
+print("lightning strike: what its line touches is struck, not only its end")
+do
+  new_match()
+  local by_slot = {}
+  for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
+  local owner = worm(16)
+  for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+  owner.x, owner.y = 1000, 900
+  M.solid, M.trace_hit, M.mines, M.oil, M.graves = nil, nil, {}, {}, {}
+  -- No land: the beam comes from the left, 300 pixels long, down to the
+  -- right from y -270 towards the click's (100, 100).
+  local dirx, diry = 0.5, math.sqrt(3) / 2
+  local sx, sy = 100 - 370 * dirx / diry, -270
+  local px, py = sx + 150 * dirx, sy + 150 * diry -- halfway down
+  local nx, ny = diry, -dirx                        -- across it
+  local function crate_at(off)
+    local c = { id = 800 + off, kind = "crate", x = px + off * nx, y = py + off * ny }
+    function c:hit(damage) self.damage = damage end
+    return c
+  end
+  -- Off the ray the trace follows (a crate's 9 pixels), on the 8-pixel line.
+  local grazed, missed = crate_at(11), crate_at(-25)
+  M.crates = { grazed, missed }
+  local near = worm(17)
+  near.x, near.y, near.hp = px - 9 * nx, py - 9 * ny, 50
+  by_slot.napalm_strike.on_click({ worm = owner, x = 100, y = 100 })
+  local effect = M.spawned[#M.spawned]
+  for _ = 1, 166 do effect.on(effect) end
+  check("a crate the beam grazes is hit", grazed.damage == 100)
+  check("a worm beside the beam is healed", near.hp == 75, near.hp)
+  check("one well off the beam is not", missed.damage == nil)
+  -- Past where the beam ends, the line strikes nothing.
+  M.crates = { crate_at(0) }
+  M.crates[1].x, M.crates[1].y = sx + 320 * dirx + 11 * nx, sy + 320 * diry + 11 * ny
+  near.x, near.y = 1000, 1000
+  by_slot.napalm_strike.on_click({ worm = owner, x = 100, y = 100 })
+  effect = M.spawned[#M.spawned]
+  for _ = 1, 166 do effect.on(effect) end
+  check("beside the line past its end: not struck", M.crates[1].damage == nil)
+  M.crates = {}
+end
+
 print("electric grenade: seek, delayed zap, and target kinds")
 do
   local function setup()
