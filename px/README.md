@@ -24,7 +24,7 @@ weapon on its slot, and that stands in for it.**
 Highlander is a component bundle (`format_version = 2`): installing it runs
 nothing until a profile selects it. Its two profiles (`profiles/`) are copied
 into `WormForge/Profiles` when the mod loader installs the bundle; load
-**Highlander** in the loader's Profile tab. It places every PX weapon where
+**Highlander** in the loader's profile list. It places every PX weapon where
 PX's layout puts it and ticks Highlander rules, which deal them by the rules
 below. **Highlander weapons** places the same weapons without the rules, for
 trying them out: the ammo is the WA lobby scheme's.
