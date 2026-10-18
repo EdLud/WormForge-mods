@@ -30,8 +30,8 @@ its machine).
     python3 tools/publish-packs.py --new-key
 
     python3 tools/publish-packs.py --site ../WormForge-site
-    # our staging copy of the site (the fork), to test before a PR:
-    python3 tools/publish-packs.py --site ../WormForge-site --base-url https://edlud.github.io/WormForge/downloads/packs/
+    # ropa's copy of the site:
+    python3 tools/publish-packs.py --site ../WormForge-site --base-url https://ropahektic.github.io/WormForge/downloads/packs/
 """
 import argparse
 import datetime
@@ -46,9 +46,9 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-# The public front: ropa's site. A staging copy of it (our fork, for testing
-# before a PR, docs/content-store-plan.md) takes --base-url.
-BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
+# The catalogue the DLL reads by default (weapons::PUBLIC_INDEX_URL): our
+# site. Another copy of it (ropa's) takes --base-url.
+BASE_URL = "https://edlud.github.io/WormForge/downloads/packs/"
 INDEX_SCHEMA = 2
 # The mods players get: Highlander and its ports, the add-ons, the examples.
 # The audits and test weapons (`tools`, `labs`) stay in the repo, and so do
