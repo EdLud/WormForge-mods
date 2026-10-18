@@ -12,10 +12,781 @@
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.ports"
 name = "Project X ports"
-version = "0.12.0"
+version = "0.13.0"
 author = "Project X authors"
 api_version = 4
 format_version = 2
+
+# Joined frame folders retain their 15 fps looping playback.
+
+[sprites."sprites/attack_helicopter/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/attack_helicopter/casing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/attack_helicopter/empty.png"]
+frames = 2
+fps = 15
+play = "loop"
+
+[sprites."sprites/attack_helicopter/gun.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/balloon/balloon.png"]
+fps = 15
+play = "pingpong"
+
+[sprites."sprites/balloon/basket.png"]
+fps = 15
+play = "pingpong"
+
+[sprites."sprites/banana_express/plane.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blaster_worm/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bunker_buster/digging.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bunker_buster/idle.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/fire.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/fired.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/burst_rifle/fireu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electric_grenade/explosion.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electric_grenade/tazed1.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electric_grenade/tazed2.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/magnetsparks.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmag2lnk.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmag2lnkd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmag2lnku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmaglnk.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmaglnkd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/electromagnet/wmaglnku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/ferret/walk.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/ghost_sheep/ghstshp1.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/ghost_sheep/ghstshp2.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/gravlerdiga.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/gravlerdigb.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/gravlerdigc.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/gravler/gravlerdive.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hang_glider/glider.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hang_glider/pack.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/helicopter/flying.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/helicopter/jumpin.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hellish/grenade.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/igniter/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/javelin/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/javelin/hold.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/javelin/stamp.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/jump/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/jump/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/jump/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/kamikaze_rocket/fly.png"]
+frames = 5
+fps = 15
+play = "loop"
+
+[sprites."sprites/kamikaze_rocket/launch.png"]
+frames = 11
+fps = 15
+play = "loop"
+
+[sprites."sprites/kamikaze_rocket/take_out.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mortar_strike/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mortar_strike/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mortar_strike/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/pogo_sheep/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/pogo_sheep/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_ball.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_black_mask.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_down.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_link_down.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_link_normal.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_link_up.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_normal.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/portal_gun/portal_gun_up.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/chilli_bomb.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/hand_rad.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/hand_rad_lower.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/hand_rad_upper.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/igniter.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/nuke_rocket.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/shadow_bolt.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/sniper_rifle.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/sticky_bomb.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/remote_roller/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/casing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equip.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equip_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equipd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equipd_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equipu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/equipu_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/turret_base.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/turret_flare.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/turret_gun.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequip.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequip_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequipd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequipd_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequipu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_gun/unequipu_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equip.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equip_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equipd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equipd_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equipu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/equipu_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/turret_barrel.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/turret_base.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/turret_body.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequip.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequip_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequipd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequipd_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequipu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sentry_laser/unequipu_housing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/shadow_bolt/bolt.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/shadow_bolt/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/cluster_homing.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/smart_bomb/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sniper_rifle/fire.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sniper_rifle/fired.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sniper_rifle/fireu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sniper_rifle/flash.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/sniper_rifle/laser.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/sticky_bomb/bomb.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_bunker_buster/digging.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_bunker_buster/idle.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_gravedigger/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/swim_suit/float.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/swim_suit/ring.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/swim_suit/swim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/cluster.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/thumper_nade/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/put_away.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/put_awayd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/put_awayu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/take_out.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/take_outd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/weapon_crate/take_outu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/windy_cluster/cluster.png"]
+fps = 15
+play = "loop"
 
 [[components]]
 id = "hl.rules"

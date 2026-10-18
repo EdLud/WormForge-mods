@@ -173,8 +173,8 @@ places three. Open points:
 ### PX weapons that need only PX's art
 
 None of these has a script in PX. The icons are PX's files byte for byte,
-so replays share them. The strips are split into frame folders with
-`tools/px_split_strip.py`.
+so replays share them. Animations are single vertical PNG strips, with their
+frame count and playback declared in `mod.toml`.
 
 | Slot | Weapon | Art |
 |---|---|---|

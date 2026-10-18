@@ -93,7 +93,7 @@ local function laser_ray(x, y, ang, len)
     end
     wa.draw.quad({
       points = { p0, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, p3 },
-      colors = colors, sprite = "sprites/sniper_rifle/laser", blend = "add",
+      colors = colors, sprite = "sprites/sniper_rifle/laser.png", blend = "add",
     })
     tx, ty = ex, ey
   end
@@ -101,7 +101,7 @@ local function laser_ray(x, y, ang, len)
   wa.draw.quad({
     points = { { tx + wdx, ty + wdy }, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, { tx - wdx, ty - wdy } },
     colors = { LASER_RED, LASER_TIP, LASER_TIP, LASER_RED },
-    sprite = "sprites/sniper_rifle/laser", blend = "add",
+    sprite = "sprites/sniper_rifle/laser.png", blend = "add",
   })
 end
 

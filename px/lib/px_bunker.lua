@@ -202,7 +202,7 @@ function M.install(ctx)
   -- `a.dead`, weapons/attack_helicopter.lua:181), so a five-blast sequence
   -- cannot come out of one actor.
   local function blast(m, x, y)
-    local b = wa.actors.spawn({ sprite = ART .. "idle", x = x, y = y,
+    local b = wa.actors.spawn({ sprite = ART .. "idle.png", x = x, y = y,
       gravity = false, collide = false, owner = m.owner, on = function() end })
     b:scale(0)
     b:explode({ damage = DAMAGE, id = BLAST, below = false })
@@ -347,7 +347,7 @@ function M.install(ctx)
 
       -- ------------------------------------------------------------- drawing
       a.x, a.y = m.x, m.y
-      local sheet = m.dig and (ART .. "digging") or (ART .. "idle")
+      local sheet = m.dig and (ART .. "digging.png") or (ART .. "idle.png")
       if sheet ~= m.sheet then
         a:look(sheet)
         m.sheet = sheet
@@ -372,7 +372,7 @@ function M.install(ctx)
       num = 0, timer = 0, anim = 0, fire_timer = 0, sunk = false, owner = worm,
       mask_timer = 0, snd_timer = 0, piece = 1 } -- both timers fire on the first frame they can
     m.body = wa.actors.spawn({
-      sprite = ART .. "idle", x = x, y = SKY, vx = 0, vy = 0,
+      sprite = ART .. "idle.png", x = x, y = SKY, vx = 0, vy = 0,
       gravity = false, collide = false, owner = worm, as_object = true,
       on = frame_of(m),
     })
@@ -384,7 +384,7 @@ function M.install(ctx)
     return m
   end
 
-  local sprites = { ART .. "idle", ART .. "digging" }
+  local sprites = { ART .. "idle.png", ART .. "digging.png" }
   if super_buster then sprites[#sprites + 1] = ART .. "glow.png" end
 
   -- The registration. Built in a local first: the `handling` line below then
@@ -400,7 +400,7 @@ function M.install(ctx)
     -- (`super_bunkerbuster_wep_broken.wep`) is broken.
     wep = super_buster and "weps/super_bunker_buster.wep" or "weps/bunkerbuster_wep1.wep",
     panel_icon = ART .. "icon.png", -- PX's own icon (ico_bunkerbuster.png / ico_superbunkerbuster.png)
-    -- One directory of frameNNN.png per PX sprite, as cut_lab and stress do.
+    -- One vertical PNG strip per PX sprite; playback is declared in mod.toml.
     sprites = sprites,
     params = { gpu_prefix = "sprites/" },
     -- The bundle's sounds, by path: this list is the declaration, the way `sprites` is

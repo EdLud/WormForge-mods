@@ -61,7 +61,7 @@ do
     -- that half fades into the earth (the engine's buried stamp) instead of
     -- being drawn over it, and the javelin looks stuck.
     wa.land.stamp{
-      sprite = "sprites/javelin/stamp", frame = orientation(vx, vy), x = ev.x, y = ev.y,
+      sprite = "sprites/javelin/stamp.png", frame = orientation(vx, vy), x = ev.x, y = ev.y,
       buried = JAVELIN_BURIED,
     }
     -- PX plays it unplaced. On the turn's worm: an explosion's ev.worm is the

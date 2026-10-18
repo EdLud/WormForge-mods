@@ -223,7 +223,7 @@ local function swim_frame(worm)
     })
   end
   if s.plopped then
-    local sheet = s.floating and "sprites/swim_suit/float" or "sprites/swim_suit/swim"
+    local sheet = s.floating and "sprites/swim_suit/float.png" or "sprites/swim_suit/swim.png"
     if s.body and s.body_sheet ~= sheet then
       s.body:despawn()
       s.body = nil
@@ -256,7 +256,7 @@ if wa.on.draw then
           points = {
             { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h },
           },
-          sprite = "sprites/swim_suit/ring",
+          sprite = "sprites/swim_suit/ring.png",
           depth = SWIM_RING_DEPTH,
         })
       end

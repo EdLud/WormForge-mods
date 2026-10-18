@@ -994,7 +994,7 @@ do
     by_slot.ming_vase and by_slot.ming_vase.panel_icon == nil and by_slot.ming_vase.on_fire == nil)
   check("Windy Cluster brings PX's icon and bits",
     by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
-      and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster")
+      and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster.png")
 end
 
 print("Ice Arrow: only its own arrow freezes after the bow hit")
@@ -1246,8 +1246,8 @@ do
   for _, s in ipairs(replaced) do if s.weapon == "kamikaze" then spec = s end end
   check("it claims Kamikaze, placed as a mine, its housing tinted per team",
     spec and spec.copy_from == "stock.mine" and spec.name == "Sentry Gun" and type(spec.on_fire) == "function"
-      and spec.worm_sprites.weaponlnk == "sprites/sentry_gun/equip"
-      and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_gun/equip_housing"
+      and spec.worm_sprites.weaponlnk == "sprites/sentry_gun/equip.png"
+      and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_gun/equip_housing.png"
       and #spec.worm_sprites_team_tint.colours == 6)
   local owner, enemy = worm(16), worm(32)
   for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
@@ -1292,11 +1292,11 @@ do
     and math.abs(bullet.dx * bullet.dx + bullet.dy * bullet.dy - 1) < 0.001)
   check("rounds create no explosion actors", #M.actor_booms == 0)
   for _, a in ipairs(M.spawned) do
-    check("only body and ejected casings", a == body or a.sprite == "sprites/sentry_gun/casing")
+    check("only body and ejected casings", a == body or a.sprite == "sprites/sentry_gun/casing.png")
   end
   M.quads = {}; M.draw()
   local head
-  for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun" then head = q end end
+  for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun.png" then head = q end end
   check("its head is drawn in its coalition colour", head and (head.color & 0xFFFFFF) == 0xFF6447 and head.depth == wa.depth.FRONT)
   M.message(owner, wa.msg.START_TURN)
   local before = impacts()
@@ -1343,8 +1343,8 @@ do
   for _, s in ipairs(replaced) do if s.weapon == "dragon_ball" then spec = s end end
   check("it claims Dragon Ball, placed as a mine, its body tinted per team",
     spec and spec.copy_from == "stock.mine" and spec.name == "Sentry Laser" and type(spec.on_fire) == "function"
-      and spec.worm_sprites.weaponlnk == "sprites/sentry_laser/equip"
-      and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_laser/equip_housing")
+      and spec.worm_sprites.weaponlnk == "sprites/sentry_laser/equip.png"
+      and spec.worm_sprites_team_tint.worm_sprites.weaponlnk == "sprites/sentry_laser/equip_housing.png")
   local owner, enemy = worm(16), worm(32)
   for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
   owner.x, owner.y, owner.facing = 100, 100, 1
@@ -1932,8 +1932,8 @@ do
     local spec
   for _, s in ipairs(replaced) do if s.weapon == "suicide_bomber" then spec = s end end
   check("it claims Suicide Bomber with PX's record and the Kamikaze's sheets",
-    spec and spec.wep == "weps/suicide_bomber.wep" and spec.worm_sprites.wkamlnk == "sprites/kamikaze_rocket/take_out"
-      and spec.worm_sprites.wkamjmp == "sprites/kamikaze_rocket/launch")
+    spec and spec.wep == "weps/suicide_bomber.wep" and spec.worm_sprites.wkamlnk == "sprites/kamikaze_rocket/take_out.png"
+      and spec.worm_sprites.wkamjmp == "sprites/kamikaze_rocket/launch.png")
   local w = worm(16)
   w.x, w.y, w.weapon, w.turn, w.aim, w.facing, w.state = 100, 100, "suicide_bomber", true, 0.5, 1, "ready"
   M.ctrl, M.digs, M.actor_booms, M.water = false, {}, {}, 500
@@ -2116,7 +2116,7 @@ do
   for _, s in ipairs(replaced) do if s.weapon == "freeze" then spec = s end end
   check("it claims Freeze with PX's record, placed through on_fire",
     spec and spec.wep == "weps/freeze.wep" and type(spec.on_fire) == "function"
-      and spec.worm_sprites.weaponlnk == "sprites/weapon_crate/take_out")
+      and spec.worm_sprites.weaponlnk == "sprites/weapon_crate/take_out.png")
   local w = worm(16)
   w.x, w.y, w.facing = 100, 50, -1
   M.crate_spawns = {}
@@ -2342,18 +2342,18 @@ do
   for _ in pairs(holds) do count = count + 1 end
   check("ten PX holds claimed", count == 10, tostring(count))
   check("Sticky Bomb has a weapon and the lower radial hand",
-    holds.grenade.sheet == "sprites/px_hold/sticky_bomb"
-    and holds.grenade.hand == "sprites/px_hold/hand_rad_lower"
+    holds.grenade.sheet == "sprites/px_hold/sticky_bomb.png"
+    and holds.grenade.hand == "sprites/px_hold/hand_rad_lower.png"
     and holds.grenade.thrown)
   check("Shadow-Bolt animates with no hand",
-    holds.longbow.sheet == "sprites/px_hold/shadow_bolt"
+    holds.longbow.sheet == "sprites/px_hold/shadow_bolt.png"
     and holds.longbow.hand == nil and holds.longbow.frames == 6)
   check("Sniper Rifle keeps its shot hold and flash",
-    holds.handgun.keep_while_firing and holds.handgun.flash.sheet == "sprites/sniper_rifle/flash"
+    holds.handgun.keep_while_firing and holds.handgun.flash.sheet == "sprites/sniper_rifle/flash.png"
     and holds.handgun.hand == nil)
   check("Nuke Rocket uses PX's fixed angles",
     holds.mine.static.weap == -0.1 and holds.mine.static.hand == 0.4
-    and holds.mine.hand == "sprites/px_hold/hand_rad")
+    and holds.mine.hand == "sprites/px_hold/hand_rad.png")
 end
 
 print("sniper rifle: PX's laser sight, drawn only")
@@ -3010,7 +3010,7 @@ do
   local child = { id = 620, phase = "post", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = -1, sprite = 0 }
   M.missile(child)
   check("the five are drawn after the turn ends, for the last turn's worm",
-    M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/chilli_bomb" and M.spawned[1].owner == w)
+    M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/chilli_bomb.png" and M.spawned[1].owner == w)
   for i = 1, 5 do
     spec.on_explode({ x = 1, y = 1, slot = 42, missile = 9000 + i })
   end
@@ -3114,7 +3114,7 @@ do
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
   local climb = M.spawned[#M.spawned]
-  check("the climb-in while WA winds up, the body hidden, the labels kept", climb and climb.sprite == "sprites/helicopter/jumpin"
+  check("the climb-in while WA winds up, the body hidden, the labels kept", climb and climb.sprite == "sprites/helicopter/jumpin.png"
     and w.body_visible == false and w.visible == nil)
   jet_pack_starts(w)
   w.keys.up = true
@@ -3123,7 +3123,7 @@ do
     and w.wind == (0.2), w.fuel .. " " .. w.gravity .. " " .. w.wind)
   check("up: a kick of 0.8 from standstill", near(w.vy, -0.8), tostring(w.vy))
   check("the engine owns the keys after the script reads them", w.steered and w.keys.up)
-  check("the helicopter replaces the climb-in", climb.dead and M.spawned[#M.spawned].sprite == "sprites/helicopter/flying")
+  check("the helicopter replaces the climb-in", climb.dead and M.spawned[#M.spawned].sprite == "sprites/helicopter/flying.png")
   -- In game, the engine consumes this key after the callback.
   w.keys.up = false
   local vy = w.vy
@@ -3218,14 +3218,21 @@ do
   check("its first step: the fall turned upward, damped", w.y - y0 == (1 - 0.25) * 0.79998779296875,
     tostring((w.y - y0)))
   local balloon, basket = M.spawned[1], M.spawned[2]
-  check("the balloon in the team's colour, the basket below", balloon.sprite == "sprites/balloon/balloon"
-    and balloon.tint == 0xFF0096FF and basket.sprite == "sprites/balloon/basket" and w.body_visible == false,
+  check("the balloon in the team's colour, the basket below", balloon.sprite == "sprites/balloon/balloon.png"
+    and balloon.tint == 0xFF0096FF and basket.sprite == "sprites/balloon/basket.png" and w.body_visible == false,
     string.format("%x", balloon.tint or 0))
   check("the balloon 43 above, 6 ahead; the basket's art mirrored facing right",
     balloon.y == w.y - 43 and balloon.x == w.x + 6 and basket.facing == -1)
   -- It settles at four times gravity upward and four times the wind across.
   M.wind = 0.00390625
-  for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
+  local animation_ok = true
+  for _ = 1, 200 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    local ticks = require("lib/shared").balloons[w.id].ticks
+    animation_ok = animation_ok and balloon.shown == (ticks % 200) * 30 // 200
+      and basket.shown == (ticks % 80) * 32 // 80
+  end
+  check("balloon and basket walk the expanded ping-pong cycles at PX's original periods", animation_ok)
   local x1, y1 = w.x, w.y
   M.message(w, wa.msg.FRAME_FINISH)
   check("rising at four times gravity", math.abs((w.y - y1) + 4 * 0.25) <= 8, tostring(w.y - y1))
@@ -3292,7 +3299,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   local balloons = 0
   for i = n + 1, #M.spawned do
-    if M.spawned[i].sprite == "sprites/balloon/balloon" then balloons = balloons + 1 end
+    if M.spawned[i].sprite == "sprites/balloon/balloon.png" then balloons = balloons + 1 end
   end
   check("another slot's parachute is left alone", balloons == 0)
   M.message(w, wa.msg.JUMP)
@@ -3312,10 +3319,10 @@ do
   w.weapon, w.state = "parachute", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("equipped balloon owns the auto opening despite WA's slot change",
-    w.taken and M.spawned[1] and M.spawned[1].sprite == "sprites/balloon/balloon")
+    w.taken and M.spawned[1] and M.spawned[1].sprite == "sprites/balloon/balloon.png")
   local glider = false
   for _, a in ipairs(M.spawned) do
-    if a.sprite == "sprites/hang_glider/glider" then glider = true end
+    if a.sprite == "sprites/hang_glider/glider.png" then glider = true end
   end
   check("equipped balloon does not start the glider", not glider)
   M.message(w, wa.msg.JUMP)
@@ -3331,7 +3338,7 @@ do
   w.weapon, w.state = "none", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("equipped glider owns its auto opening",
-    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider" and w.taken)
+    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider.png" and w.taken)
   M.message(w, wa.msg.JUMP)
 
   -- Placed without the balloon, whose module then isn't loaded: the glider
@@ -3348,7 +3355,7 @@ do
   w.weapon, w.state = "none", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("the glider opens without the balloon's module",
-    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider" and w.taken)
+    M.spawned[1] and M.spawned[1].sprite == "sprites/hang_glider/glider.png" and w.taken)
   M.message(w, wa.msg.JUMP)
 
   new_match()
@@ -3398,7 +3405,7 @@ do
   local art = M.spawned[1]
   check("opens: taken, the glider sound and art, the body hidden", w.taken and w.taken.turn == "run"
     and M.sounds[1] and M.sounds[1]:find("hangopen")
-    and art and art.sprite == "sprites/hang_glider/glider" and w.body_visible == false)
+    and art and art.sprite == "sprites/hang_glider/glider.png" and w.body_visible == false)
   check("its art faces left, as WA's worms: mirrored facing right", art.facing == -1)
   -- Level, the wing's up side is straight up: a quarter of the fall goes.
   check("the speed carries on into the glide; the wing takes a quarter of the fall",
@@ -3444,7 +3451,7 @@ do
   check("about to land: let go", not w.taken and w.state == "sliding")
   local landing_art = M.spawned[#M.spawned]
   check("gentle landing keeps the wing over the worm until contact",
-    landing_art.sprite == "sprites/hang_glider/glider" and not landing_art.dead
+    landing_art.sprite == "sprites/hang_glider/glider.png" and not landing_art.dead
     and w.body_visible == false)
   w.state, w.x, w.y = "jump_falling", w.x + 1, w.y + 1
   M.message(w, wa.msg.FRAME_FINISH)
@@ -3454,7 +3461,7 @@ do
   M.contact(w, { kind = "land" }, { vx = w.vx, vy = w.vy, flags = 0 })
   local pack = M.spawned[#M.spawned]
   check("land contact immediately replaces the wing with pack-away, before WA stands the worm",
-    landing_art.dead and pack.sprite == "sprites/hang_glider/pack"
+    landing_art.dead and pack.sprite == "sprites/hang_glider/pack.png"
     and w.state == "jump_falling" and w.body_visible == false and pack.facing == -1)
   M.message(w, wa.msg.FRAME_FINISH)
   check("pack-away runs while WA is still in the landing handoff",
@@ -3532,7 +3539,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   local glider = false
   for i = n + 1, #M.spawned do
-    if M.spawned[i].sprite == "sprites/hang_glider/glider" then glider = true end
+    if M.spawned[i].sprite == "sprites/hang_glider/glider.png" then glider = true end
   end
   check("the Hot Air Balloon's parachute is left alone", not glider)
   M.message(w, wa.msg.JUMP)
@@ -3559,7 +3566,7 @@ do
   check("its sound", M.sounds[#M.sounds] == "sounds/swim_suit/putting_on_ssuit.wav")
   M.message(w, wa.msg.FRAME_FINISH)
   M.draw()
-  check("a bubble while worn", #M.quads == 1 and M.quads[1].sprite == "sprites/swim_suit/ring")
+  check("a bubble while worn", #M.quads == 1 and M.quads[1].sprite == "sprites/swim_suit/ring.png")
   local bubble = M.quads[1]
   local h = 25
   check("centred on the worm", bubble.points[1][1] == w.x - h and bubble.points[3][1] == w.x + h
@@ -3583,7 +3590,7 @@ do
   check("the speed capped at 5 (2.5 times the swim speed 2), then eased", dx < 5 and dy < 5
     and dx > 4 and dy > 4, dx .. " " .. dy)
   check("the swim animation in its place, facing left art mirrored", w.body_visible == false
-    and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim" and M.spawned[#M.spawned].facing == -1)
+    and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim.png" and M.spawned[#M.spawned].facing == -1)
   -- Swimming left: a push that way, turned.
   x0, w.keys = w.x, { left = true }
   M.message(w, wa.msg.FRAME_FINISH)
@@ -3601,7 +3608,7 @@ do
   -- Still, no key: the float animation, once it has glided to a stop.
   w.keys = {}
   frames(120)
-  check("still: floating", M.spawned[#M.spawned].sprite == "sprites/swim_suit/float" and w.taken)
+  check("still: floating", M.spawned[#M.spawned].sprite == "sprites/swim_suit/float.png" and w.taken)
   -- Up out of the water: released as from a jump, the suit still on.
   w.keys = { up = true }
   frames(200, function() return not w.taken end)
@@ -3743,7 +3750,7 @@ do
     if r.weapon == "ninja_rope" then spec = r end
   end
   check("on the ninja rope's slot, PX's record and aim sheets", spec and spec.copy_from == "stock.ninja_rope"
-    and spec.worm_sprites.weaponlnk == "sprites/jump/aim" and type(spec.on_fire) == "function")
+    and spec.worm_sprites.weaponlnk == "sprites/jump/aim.png" and type(spec.on_fire) == "function")
   local w = worm(33)
   w.turn, w.weapon, w.facing, w.body_visible = true, "ninja_rope", 1, true
   w.x, w.y, w.vx, w.vy, w.state = 100, 50, 0, 0, "standing"
@@ -3815,7 +3822,7 @@ do
   M.missile(m)
   local bolt = M.spawned and M.spawned[#M.spawned]
   check("a bolt on the Shadow-Bolt's missile, owned by the current worm", bolt
-    and bolt.sprite == "sprites/shadow_bolt/bolt" and bolt.x == m.x and bolt.y == m.y
+    and bolt.sprite == "sprites/shadow_bolt/bolt.png" and bolt.x == m.x and bolt.y == m.y
     and bolt.owner == shooter)
   check("flying right, turned to its flight", bolt.facing == 1 and math.abs(bolt.angle - 90) < 1e-6,
     tostring(bolt.angle))
@@ -3840,7 +3847,7 @@ do
   M.missile(m)
   local bullet = M.spawned[#M.spawned]
   check("a bullet on the Igniter's missile", #M.spawned == before + 1
-    and bullet.sprite == "sprites/igniter/flight")
+    and bullet.sprite == "sprites/igniter/flight.png")
   check("turned to its flight, mirrored flying left", bullet.facing == -1
     and math.abs(bullet.angle - 315) < 1e-6, tostring(bullet.angle))
   shown = {}
@@ -4135,7 +4142,7 @@ do
   end
   local spec, owner = setup()
   check("a stock grenade for the worm's throw sheet, PX's hold over it",
-    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim"
+    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim.png"
     and spec.params.gpu_prefix == "sprites/px_hold/")
   -- In flight: the stock grenade hidden, PX's grenade drawn in its place.
   M.spawned = {}
@@ -4387,7 +4394,7 @@ do
   for _, c in ipairs(cases) do
     impact(c[1], c[2])
     local stamp = M.stamps[#M.stamps]
-    good = good and stamp.frame == c[3] and stamp.sprite == "sprites/javelin/stamp"
+    good = good and stamp.frame == c[3] and stamp.sprite == "sprites/javelin/stamp.png"
       and stamp.x == 100 and stamp.y == 100
   end
   check("cardinals, ratio bins and clamps choose PX's centered 60px stamp", good)

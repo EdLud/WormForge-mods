@@ -27,20 +27,20 @@ do
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = {
   prod = {
-    sheet = "sprites/javelin/flight", hide = true,
+    sheet = "sprites/javelin/flight.png", hide = true,
     animate = true, anim_speed = 1.90, frames = 12,
   },
   longbow = { -- Shadow-Bolt
-    sheet = "sprites/shadow_bolt/bolt", animate = true, anim_speed = 1.30, frames = 6,
+    sheet = "sprites/shadow_bolt/bolt.png", animate = true, anim_speed = 1.30, frames = 6,
   },
   super_banana = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
-    sheet = "sprites/px_hold/chilli_bomb", frames = 1,
+    sheet = "sprites/px_hold/chilli_bomb.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
     -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
     hide = true,
   },
   homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
-    sheet = "sprites/igniter/flight", animate = true, anim_speed = 1.0, frames = 16,
+    sheet = "sprites/igniter/flight.png", animate = true, anim_speed = 1.0, frames = 16,
   },
   petrol_bomb = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
     sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,

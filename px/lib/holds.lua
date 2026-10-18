@@ -7,18 +7,18 @@ local shared = require("lib/shared")
 -- time: the worm posture with no weapon in it, and its hands. The engine
 -- draws the weapon and optional hand from the hold claim below.
 local PX_POSTURE = {
-  weaponlnk = "sprites/px_hold/aim", weaponlnku = "sprites/px_hold/aimu",
-  weaponlnkd = "sprites/px_hold/aimd",
-  wthrow = "sprites/px_hold/draw", wthrowu = "sprites/px_hold/drawu",
-  wthrowd = "sprites/px_hold/drawd",
+  weaponlnk = "sprites/px_hold/aim.png", weaponlnku = "sprites/px_hold/aimu.png",
+  weaponlnkd = "sprites/px_hold/aimd.png",
+  wthrow = "sprites/px_hold/draw.png", wthrowu = "sprites/px_hold/drawu.png",
+  wthrowd = "sprites/px_hold/drawd.png",
 }
 local PX_HANDS = {
-  "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad", "sprites/px_hold/hand_rad_upper",
+  "sprites/px_hold/hand_rad_lower.png", "sprites/px_hold/hand_rad.png", "sprites/px_hold/hand_rad_upper.png",
 }
 local PX_HOLDS = {
   prod = {
     keep_while_firing = true,
-    sheet = "sprites/javelin/hold", draw_hand = false,
+    sheet = "sprites/javelin/hold.png", draw_hand = false,
     hand_radius = 0, hand_rotation = 0, hand_radial_rotation = 0,
     weap_radial_rotation = 0, weap_rotation = 1, weap_radius = -11.8,
     animate = true, anim_speed = 1.25, frames = 12,
@@ -33,7 +33,7 @@ local PX_HOLDS = {
     -- Thrown: once fired it has left the worm's hands, and WA puts nothing
     -- away (as for its own grenades), so neither does the rule.
     thrown = true,
-    sheet = "sprites/px_hold/sticky_bomb", hand_type = 1, hand_radius = 24,
+    sheet = "sprites/px_hold/sticky_bomb.png", hand_type = 1, hand_radius = 24,
     hand_rotation = 1.0, hand_radial_rotation = 1.05, hand_scale = 0.8,
     weap_rotation = 0.5, weap_radial_rotation = 0.9, weap_radius = 10,
   },
@@ -45,14 +45,14 @@ local PX_HOLDS = {
   },
   super_banana = { -- Chilli Bomb (chilli_bomb_anim)
     thrown = true,
-    sheet = "sprites/px_hold/chilli_bomb", hand_type = 1, hand_radius = 13,
+    sheet = "sprites/px_hold/chilli_bomb.png", hand_type = 1, hand_radius = 13,
     hand_scale = 0.8, weap_rotation = 0.5, weap_radius = 9,
   },
   homing_missile = { -- Igniter (igniter_anim)
     -- Up through the shot too: it has no firing poses of its own, so WA
     -- fires it in the aim posture, empty-handed without the hold. Not PX's.
     keep_while_firing = true,
-    sheet = "sprites/px_hold/igniter", hand_type = 2, hand_radius = -6.0,
+    sheet = "sprites/px_hold/igniter.png", hand_type = 2, hand_radius = -6.0,
     hand_rotation = 1.0, hand_radial_rotation = 0.9, hand_scale = 0.8,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.0,
   },
@@ -67,7 +67,7 @@ local PX_HOLDS = {
   mine = { -- Nuke Rocket (nuke_rocket_anim): held at a fixed angle, not
     -- the aim's (dont_rotate_with_angle), and placed, so never put away.
     thrown = true,
-    sheet = "sprites/px_hold/nuke_rocket", hand_type = 2, hand_radius = 13.0,
+    sheet = "sprites/px_hold/nuke_rocket.png", hand_type = 2, hand_radius = 13.0,
     hand_rotation = -0.6, hand_radial_rotation = -0.95, hand_scale = 1.0,
     weap_rotation = 0.45, weap_radial_rotation = 1.0, weap_radius = 8.5,
     static = { weap = -0.1, hand = 0.4 }, -- ang_if_static, hand_ang_if_static
@@ -80,8 +80,8 @@ local PX_HOLDS = {
     -- A muzzle flash on each shot. Not PX's: its rifle and snipefire poses
     -- have none. The sentry gun's flare, smaller, at the barrel's tip (30
     -- pixels out, on the barrel 2 to the side, as the laser leaves it).
-    flash = { sheet = "sprites/sniper_rifle/flash", out = 30, side = 2, scale = 0.45, frames = 3 },
-    sheet = "sprites/px_hold/sniper_rifle", draw_hand = false, hand_radius = -6.0,
+    flash = { sheet = "sprites/sniper_rifle/flash.png", out = 30, side = 2, scale = 0.45, frames = 3 },
+    sheet = "sprites/px_hold/sniper_rifle.png", draw_hand = false, hand_radius = -6.0,
     hand_rotation = 1.0, hand_radial_rotation = 0.9,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 0.1,
   },
@@ -89,7 +89,7 @@ local PX_HOLDS = {
     -- The crossbow stays up through the shot: it has no firing poses of
     -- its own, so WA fires it in the aim posture. Not PX's.
     keep_while_firing = true,
-    sheet = "sprites/px_hold/shadow_bolt", draw_hand = false, hand_radius = 0.0,
+    sheet = "sprites/px_hold/shadow_bolt.png", draw_hand = false, hand_radius = 0.0,
     hand_rotation = 0.0, hand_radial_rotation = 0.0,
     weap_rotation = 1.0, weap_radial_rotation = 0.0, weap_radius = 3.5,
     animate = true, anim_speed = 1.30, frames = 6,

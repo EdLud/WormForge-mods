@@ -28,7 +28,7 @@ local LIFT = 13
 local BODY = 8
 local SCALE = 0.95          -- frt_sprscale
 local DEPTH = wa.depth.OBJECTS       -- in front of the terrain, as the Bowling Ball
-local WALK = "sprites/ferret/walk"
+local WALK = "sprites/ferret/walk.png"
 local FRAMES = 10
 local SOUND = "sounds/ferret/walk.wav"
 -- The scheme record's explosion (ExplodeAt): damage 100, blast 50.

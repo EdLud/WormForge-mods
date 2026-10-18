@@ -15,7 +15,7 @@ local HOLE = 8              -- MakeHole(8) each frame
 local BOOM = { damage = 30, id = 100 }
 local HINT_FRAMES = 150
 local STALE = 200           -- other worms' frames without one of its own
-local FLY = "sprites/kamikaze_rocket/fly"
+local FLY = "sprites/kamikaze_rocket/fly.png"
 local FLY_FRAMES, FLY_HALF_W, FLY_HALF_H = 5, 30, 40
 local DEPTH = wa.depth.FRONT
 

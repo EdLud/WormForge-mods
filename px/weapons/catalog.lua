@@ -33,8 +33,8 @@ local PORTED = {
 }
 
 -- PX weapons that need only PX's art: its icons, copied byte for byte so
--- replays share them, and its strips split into frame folders with
--- tools/px_split_strip.py. Where PX draws the worm's hold at run time with
+-- replays share them, and vertical strips with playback in mod.toml.
+-- Where PX draws the worm's hold at run time with
 -- its sprite builder (p_sprite_builder), so does the engine from PX_HOLDS.
 local PX_ART = {
   { -- Ice Arrow: WA's own ArrowEntity supplies its flight and bow impact.
@@ -59,18 +59,18 @@ local PX_ART = {
     fires = { subtype = 3 }, -- the bazooka's hold
     airborne = true,
     worm_sprites = {
-      weaponlnk = "sprites/portal_gun/portal_gun_normal",
-      weaponlnku = "sprites/portal_gun/portal_gun_up",
-      weaponlnkd = "sprites/portal_gun/portal_gun_down",
-      wthrow = "sprites/portal_gun/portal_gun_link_normal",
-      wthrowu = "sprites/portal_gun/portal_gun_link_up",
-      wthrowd = "sprites/portal_gun/portal_gun_link_down",
+      weaponlnk = "sprites/portal_gun/portal_gun_normal.png",
+      weaponlnku = "sprites/portal_gun/portal_gun_up.png",
+      weaponlnkd = "sprites/portal_gun/portal_gun_down.png",
+      wthrow = "sprites/portal_gun/portal_gun_link_normal.png",
+      wthrowu = "sprites/portal_gun/portal_gun_link_up.png",
+      wthrowd = "sprites/portal_gun/portal_gun_link_down.png",
     },
     sprites = {
-      "sprites/portal_gun/portal_ball", "sprites/portal_gun/portal_orange.png",
+      "sprites/portal_gun/portal_ball.png", "sprites/portal_gun/portal_orange.png",
       "sprites/portal_gun/portal_blue.png", "sprites/portal_gun/portal_glow.png",
       "sprites/portal_gun/portal_gun_glow.png",
-      "sprites/portal_gun/lightning_glow.png", "sprites/portal_gun/portal_black_mask",
+      "sprites/portal_gun/lightning_glow.png", "sprites/portal_gun/portal_black_mask.png",
     },
     sounds = { "sounds/portal_gun_shoot.wav", "sounds/portal_gun_hit.wav", "sounds/portal_gun_failhit.wav",
       "sounds/portal_active.wav", "sounds/portal_inactive.wav", "sounds/portal_teleport.wav" },
@@ -88,20 +88,20 @@ local PX_ART = {
     -- red once + switched the worm to attracting (the engine reads + as the
     -- module does, and plays the take-out again in the new colour).
     worm_sprites = {
-      wdynlnk = "sprites/electromagnet/wmag2lnk",
-      wdynlnku = "sprites/electromagnet/wmag2lnku",
-      wdynlnkd = "sprites/electromagnet/wmag2lnkd",
+      wdynlnk = "sprites/electromagnet/wmag2lnk.png",
+      wdynlnku = "sprites/electromagnet/wmag2lnku.png",
+      wdynlnkd = "sprites/electromagnet/wmag2lnkd.png",
     },
     worm_sprites_toggle = { key = "plus_key", worm_sprites = {
-      wdynlnk = "sprites/electromagnet/wmaglnk",
-      wdynlnku = "sprites/electromagnet/wmaglnku",
-      wdynlnkd = "sprites/electromagnet/wmaglnkd",
+      wdynlnk = "sprites/electromagnet/wmaglnk.png",
+      wdynlnku = "sprites/electromagnet/wmaglnku.png",
+      wdynlnkd = "sprites/electromagnet/wmaglnkd.png",
     } },
     sprites = {
       "sprites/electromagnet/magnet.png", "sprites/electromagnet/magnet2.png",
       "sprites/electromagnet/magnet_damaged.png", "sprites/electromagnet/magnet2_damaged.png",
       "sprites/electromagnet/ring_in.png", "sprites/electromagnet/ring_out.png",
-      "sprites/electromagnet/magnetsparks",
+      "sprites/electromagnet/magnetsparks.png",
     },
     params = { gpu_prefix = "sprites/electromagnet/" },
     on_fire = function(fire) fires.electromagnet(fire) end,
@@ -115,23 +115,23 @@ local PX_ART = {
     -- PX's take-out and placing, grey; the housing in them coloured per team
     -- at draw time (one sheet and its housing for six colours).
     worm_sprites = {
-      weaponlnk = "sprites/sentry_gun/equip", weaponlnku = "sprites/sentry_gun/equipu",
-      weaponlnkd = "sprites/sentry_gun/equipd",
-      wthrow = "sprites/sentry_gun/unequip", wthrowu = "sprites/sentry_gun/unequipu",
-      wthrowd = "sprites/sentry_gun/unequipd",
+      weaponlnk = "sprites/sentry_gun/equip.png", weaponlnku = "sprites/sentry_gun/equipu.png",
+      weaponlnkd = "sprites/sentry_gun/equipd.png",
+      wthrow = "sprites/sentry_gun/unequip.png", wthrowu = "sprites/sentry_gun/unequipu.png",
+      wthrowd = "sprites/sentry_gun/unequipd.png",
     },
     worm_sprites_team_tint = {
       worm_sprites = {
-        weaponlnk = "sprites/sentry_gun/equip_housing", weaponlnku = "sprites/sentry_gun/equipu_housing",
-        weaponlnkd = "sprites/sentry_gun/equipd_housing",
-        wthrow = "sprites/sentry_gun/unequip_housing", wthrowu = "sprites/sentry_gun/unequipu_housing",
-        wthrowd = "sprites/sentry_gun/unequipd_housing",
+        weaponlnk = "sprites/sentry_gun/equip_housing.png", weaponlnku = "sprites/sentry_gun/equipu_housing.png",
+        weaponlnkd = "sprites/sentry_gun/equipd_housing.png",
+        wthrow = "sprites/sentry_gun/unequip_housing.png", wthrowu = "sprites/sentry_gun/unequipu_housing.png",
+        wthrowd = "sprites/sentry_gun/unequipd_housing.png",
       },
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing", "sprites/sentry_gun/turret_base", "sprites/sentry_gun/turret_mask.png",
-      "sprites/sentry_gun/turret_gun", "sprites/sentry_gun/turret_flare", "sprites/sentry_gun/turret_light.png",
+      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing.png", "sprites/sentry_gun/turret_base.png", "sprites/sentry_gun/turret_mask.png",
+      "sprites/sentry_gun/turret_gun.png", "sprites/sentry_gun/turret_flare.png", "sprites/sentry_gun/turret_light.png",
     },
     sounds = {
       "sounds/sentry_gun/sentryplace.wav", "sounds/sentry_gun/sentrybeeps2.wav",
@@ -157,24 +157,24 @@ local PX_ART = {
     panel_icon = "sprites/sentry_laser/icon.png",
     is_weapon = true,
     worm_sprites = {
-      weaponlnk = "sprites/sentry_laser/equip", weaponlnku = "sprites/sentry_laser/equipu",
-      weaponlnkd = "sprites/sentry_laser/equipd",
-      wthrow = "sprites/sentry_laser/unequip", wthrowu = "sprites/sentry_laser/unequipu",
-      wthrowd = "sprites/sentry_laser/unequipd",
+      weaponlnk = "sprites/sentry_laser/equip.png", weaponlnku = "sprites/sentry_laser/equipu.png",
+      weaponlnkd = "sprites/sentry_laser/equipd.png",
+      wthrow = "sprites/sentry_laser/unequip.png", wthrowu = "sprites/sentry_laser/unequipu.png",
+      wthrowd = "sprites/sentry_laser/unequipd.png",
     },
     -- The body coloured per team, as on the planted turret; its barrel stays grey.
     worm_sprites_team_tint = {
       worm_sprites = {
-        weaponlnk = "sprites/sentry_laser/equip_housing", weaponlnku = "sprites/sentry_laser/equipu_housing",
-        weaponlnkd = "sprites/sentry_laser/equipd_housing",
-        wthrow = "sprites/sentry_laser/unequip_housing", wthrowu = "sprites/sentry_laser/unequipu_housing",
-        wthrowd = "sprites/sentry_laser/unequipd_housing",
+        weaponlnk = "sprites/sentry_laser/equip_housing.png", weaponlnku = "sprites/sentry_laser/equipu_housing.png",
+        weaponlnkd = "sprites/sentry_laser/equipd_housing.png",
+        wthrow = "sprites/sentry_laser/unequip_housing.png", wthrowu = "sprites/sentry_laser/unequipu_housing.png",
+        wthrowd = "sprites/sentry_laser/unequipd_housing.png",
       },
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_laser/turret_base", "sprites/sentry_laser/turret_mask.png", "sprites/sentry_laser/turret_body",
-      "sprites/sentry_laser/turret_barrel", "sprites/sentry_laser/turret_light.png",
+      "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_mask.png", "sprites/sentry_laser/turret_body.png",
+      "sprites/sentry_laser/turret_barrel.png", "sprites/sentry_laser/turret_light.png",
     },
     sounds = {
       "sounds/sentry_laser/sentrylaserplace.wav", "sounds/sentry_laser/sentrylaserbeep.wav",
@@ -197,10 +197,10 @@ local PX_ART = {
     panel_icon = "sprites/kamikaze_rocket/icon.png",
     -- The Kamikaze's take-out (its last frame the hold) and launch, PX's.
     worm_sprites = {
-      wkamlnk = "sprites/kamikaze_rocket/take_out", wkamlnku = "sprites/kamikaze_rocket/take_out",
-      wkamlnkd = "sprites/kamikaze_rocket/take_out", wkamjmp = "sprites/kamikaze_rocket/launch",
+      wkamlnk = "sprites/kamikaze_rocket/take_out.png", wkamlnku = "sprites/kamikaze_rocket/take_out.png",
+      wkamlnkd = "sprites/kamikaze_rocket/take_out.png", wkamjmp = "sprites/kamikaze_rocket/launch.png",
     },
-    sprites = { "sprites/kamikaze_rocket/fly" },
+    sprites = { "sprites/kamikaze_rocket/fly.png" },
     params = { gpu_prefix = "sprites/kamikaze_rocket/" },
   },
   { -- Weapon Crate: a weapon crate dropped in front of the worm
@@ -210,10 +210,10 @@ local PX_ART = {
     panel_icon = "sprites/weapon_crate/icon.png",
     -- PX's take-out (picking the crate up) and its hold.
     worm_sprites = {
-      weaponlnk = "sprites/weapon_crate/take_out", weaponlnku = "sprites/weapon_crate/take_outu",
-      weaponlnkd = "sprites/weapon_crate/take_outd",
-      wthrow = "sprites/weapon_crate/put_away", wthrowu = "sprites/weapon_crate/put_awayu",
-      wthrowd = "sprites/weapon_crate/put_awayd",
+      weaponlnk = "sprites/weapon_crate/take_out.png", weaponlnku = "sprites/weapon_crate/take_outu.png",
+      weaponlnkd = "sprites/weapon_crate/take_outd.png",
+      wthrow = "sprites/weapon_crate/put_away.png", wthrowu = "sprites/weapon_crate/put_awayu.png",
+      wthrowd = "sprites/weapon_crate/put_awayd.png",
     },
     params = { worm_sprites_animate = true },
     on_fire = function(fire) fires.weapon_crate(fire) end,
@@ -229,7 +229,7 @@ local PX_ART = {
     weapon = "prod", wep = "weps/prod.wep",
     panel_icon = "sprites/javelin/icon.png",
     sprite = "missile", worm_sprites = PX_POSTURE,
-    sprites = { "sprites/javelin/hold", "sprites/javelin/flight", "sprites/javelin/stamp" },
+    sprites = { "sprites/javelin/hold.png", "sprites/javelin/flight.png", "sprites/javelin/stamp.png" },
     sounds = { "sounds/javelin_impact.wav" },
     params = { gpu_prefix = "sprites/javelin/" },
     on_explode = function(ev) fires.javelin(ev) end,
@@ -239,10 +239,10 @@ local PX_ART = {
     wep = "weps/uzi.wep",
     panel_icon = "sprites/laser_gun/ico_lasergun.png",
     worm_sprites = {
-      weaponlnk = "sprites/laser_gun/aim", weaponlnku = "sprites/laser_gun/aimu",
-      weaponlnkd = "sprites/laser_gun/aimd",
-      wthrow = "sprites/laser_gun/draw", wthrowu = "sprites/laser_gun/drawu",
-      wthrowd = "sprites/laser_gun/drawd",
+      weaponlnk = "sprites/laser_gun/aim.png", weaponlnku = "sprites/laser_gun/aimu.png",
+      weaponlnkd = "sprites/laser_gun/aimd.png",
+      wthrow = "sprites/laser_gun/draw.png", wthrowu = "sprites/laser_gun/drawu.png",
+      wthrowd = "sprites/laser_gun/drawd.png",
     },
     sprites = { "sprites/laser_gun/laser_beam.png", "sprites/laser_gun/laser_glow.png" },
     sounds = {
@@ -302,7 +302,7 @@ local PX_ART = {
     wep = "weps/salvation_army.wep",
     panel_icon = "sprites/ferret/icon.png",
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/ferret/walk" },
+    sprites = { "sprites/ferret/walk.png" },
     sounds = { "sounds/ferret/walk.wav" },
     params = { gpu_prefix = "sprites/ferret/" },
     on_fire = function(fire) fires.ferret(fire) end,
@@ -323,8 +323,8 @@ local PX_ART = {
     -- are GPU sheets under this prefix.
     sprites = {
       "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
-      "sprites/electric_grenade/explosion", "sprites/electric_grenade/tazed1",
-      "sprites/electric_grenade/tazed2",
+      "sprites/electric_grenade/explosion.png", "sprites/electric_grenade/tazed1.png",
+      "sprites/electric_grenade/tazed2.png",
     },
     sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav" },
     params = { gpu_prefix = "sprites/" },
@@ -354,7 +354,7 @@ local PX_ART = {
     -- the worm with.
     worm_sprites = PX_POSTURE,
     sprites = {
-      "sprites/px_hold/nuke_rocket",
+      "sprites/px_hold/nuke_rocket.png",
     },
     sounds = { "sounds/nuke_rocket_launch.wav" },
     params = { gpu_prefix = "sprites/px_hold/" },
@@ -378,20 +378,20 @@ local PX_ART = {
   { -- Windy Cluster: the stock cluster bomb's body, PX's bits.
     weapon = "cluster_bomb",
     panel_icon = "sprites/windy_cluster/ico_windyc.png",
-    cluster = { sprite = "sprites/windy_cluster/cluster" },
+    cluster = { sprite = "sprites/windy_cluster/cluster.png" },
   },
   { -- Super Gravedigger, and the worm holding and taking it out.
     weapon = "banana_bomb",
     panel_icon = "sprites/super_gravedigger/sgrave_ico.png",
-    sprite = "sprites/super_gravedigger/flight",
-    cluster = { sprite = "sprites/super_gravedigger/cluster" },
+    sprite = "sprites/super_gravedigger/flight.png",
+    cluster = { sprite = "sprites/super_gravedigger/cluster.png" },
     worm_sprites = {
-      weaponlnk = "sprites/super_gravedigger/aim",
-      weaponlnku = "sprites/super_gravedigger/aimu",
-      weaponlnkd = "sprites/super_gravedigger/aimd",
-      wthrow = "sprites/super_gravedigger/draw",
-      wthrowu = "sprites/super_gravedigger/drawu",
-      wthrowd = "sprites/super_gravedigger/drawd",
+      weaponlnk = "sprites/super_gravedigger/aim.png",
+      weaponlnku = "sprites/super_gravedigger/aimu.png",
+      weaponlnkd = "sprites/super_gravedigger/aimd.png",
+      wthrow = "sprites/super_gravedigger/draw.png",
+      wthrowu = "sprites/super_gravedigger/drawu.png",
+      wthrowd = "sprites/super_gravedigger/drawd.png",
     },
   },
   -- The next three have trails PX draws by overriding stock sprites its
@@ -401,52 +401,52 @@ local PX_ART = {
   { -- S.M.A.R.T Bomb: its bits home, and draw their own sprite doing so.
     weapon = "mortar",
     panel_icon = "sprites/smart_bomb/smart_ico.png",
-    sprite = "sprites/smart_bomb/flight",
+    sprite = "sprites/smart_bomb/flight.png",
     cluster = {
-      sprite = "sprites/smart_bomb/cluster",
-      homing_sprite = "sprites/smart_bomb/cluster_homing",
+      sprite = "sprites/smart_bomb/cluster.png",
+      homing_sprite = "sprites/smart_bomb/cluster_homing.png",
     },
-    sprite_overrides = { wsvbd = "sprites/smart_bomb/trail" },          -- 250
+    sprite_overrides = { wsvbd = "sprites/smart_bomb/trail.png" },          -- 250
     worm_sprites = {
-      weaponlnk = "sprites/smart_bomb/aim",
-      weaponlnku = "sprites/smart_bomb/aimu",
-      weaponlnkd = "sprites/smart_bomb/aimd",
-      wthrow = "sprites/smart_bomb/draw",
-      wthrowu = "sprites/smart_bomb/drawu",
-      wthrowd = "sprites/smart_bomb/drawd",
+      weaponlnk = "sprites/smart_bomb/aim.png",
+      weaponlnku = "sprites/smart_bomb/aimu.png",
+      weaponlnkd = "sprites/smart_bomb/aimd.png",
+      wthrow = "sprites/smart_bomb/draw.png",
+      wthrowu = "sprites/smart_bomb/drawu.png",
+      wthrowd = "sprites/smart_bomb/drawd.png",
     },
   },
   { -- Blaster Worm
     weapon = "homing_pigeon",
     panel_icon = "sprites/blaster_worm/bworm_ico.png",
-    sprite = "sprites/blaster_worm/flight",
-    cluster = { sprite = "sprites/blaster_worm/cluster" },
-    sprite_overrides = { wsvbu = "sprites/blaster_worm/cluster_trail" }, -- 249
+    sprite = "sprites/blaster_worm/flight.png",
+    cluster = { sprite = "sprites/blaster_worm/cluster.png" },
+    sprite_overrides = { wsvbu = "sprites/blaster_worm/cluster_trail.png" }, -- 249
     worm_sprites = {
-      weaponlnk = "sprites/blaster_worm/aim",
-      weaponlnku = "sprites/blaster_worm/aimu",
-      weaponlnkd = "sprites/blaster_worm/aimd",
-      wthrow = "sprites/blaster_worm/draw",
-      wthrowu = "sprites/blaster_worm/drawu",
-      wthrowd = "sprites/blaster_worm/drawd",
+      weaponlnk = "sprites/blaster_worm/aim.png",
+      weaponlnku = "sprites/blaster_worm/aimu.png",
+      weaponlnkd = "sprites/blaster_worm/aimd.png",
+      wthrow = "sprites/blaster_worm/draw.png",
+      wthrowu = "sprites/blaster_worm/drawu.png",
+      wthrowd = "sprites/blaster_worm/drawd.png",
     },
   },
   { -- Thumper Nade
     weapon = "battle_axe",
     panel_icon = "sprites/thumper_nade/thumpern_ico.png",
-    sprite = "sprites/thumper_nade/flight",
-    cluster = { sprite = "sprites/thumper_nade/cluster" },
+    sprite = "sprites/thumper_nade/flight.png",
+    cluster = { sprite = "sprites/thumper_nade/cluster.png" },
     sprite_overrides = {
-      wsvg = "sprites/thumper_nade/trail",                                -- 251
-      wsvgu = "sprites/thumper_nade/cluster_trail",                       -- 252
+      wsvg = "sprites/thumper_nade/trail.png",                                -- 251
+      wsvgu = "sprites/thumper_nade/cluster_trail.png",                       -- 252
     },
     worm_sprites = {
-      weaponlnk = "sprites/thumper_nade/aim",
-      weaponlnku = "sprites/thumper_nade/aimu",
-      weaponlnkd = "sprites/thumper_nade/aimd",
-      wthrow = "sprites/thumper_nade/draw",
-      wthrowu = "sprites/thumper_nade/drawu",
-      wthrowd = "sprites/thumper_nade/drawd",
+      weaponlnk = "sprites/thumper_nade/aim.png",
+      weaponlnku = "sprites/thumper_nade/aimu.png",
+      weaponlnkd = "sprites/thumper_nade/aimd.png",
+      wthrow = "sprites/thumper_nade/draw.png",
+      wthrowu = "sprites/thumper_nade/drawu.png",
+      wthrowd = "sprites/thumper_nade/drawd.png",
     },
   },
   -- Strikes keep their bomb's art 0x14 further along than a projectile
@@ -455,16 +455,16 @@ local PX_ART = {
     -- Nade's own trails (the overrides above).
     weapon = "carpet_bomb",
     panel_icon = "sprites/thumper_nade/thumpernst_ico.png",
-    sprite = "sprites/thumper_nade/flight",
-    cluster = { sprite = "sprites/thumper_nade/cluster" },
+    sprite = "sprites/thumper_nade/flight.png",
+    cluster = { sprite = "sprites/thumper_nade/cluster.png" },
   },
   { -- Mortar Strike: stock mortar shells, PX's trails and bits.
     weapon = "air_strike",
     panel_icon = "sprites/mortar_strike/ico_mortarst.png",
-    cluster = { sprite = "sprites/mortar_strike/cluster" },
+    cluster = { sprite = "sprites/mortar_strike/cluster.png" },
     sprite_overrides = {
-      wsvclnk = "sprites/mortar_strike/trail",                             -- 466
-      wsvc = "sprites/mortar_strike/cluster_trail",                        -- 260
+      wsvclnk = "sprites/mortar_strike/trail.png",                             -- 466
+      wsvc = "sprites/mortar_strike/cluster_trail.png",                        -- 260
     },
   },
   { -- Gravler: a mole bomb whose records point its dive and dig frames at
@@ -472,18 +472,18 @@ local PX_ART = {
     weapon = "mole_bomb",
     panel_icon = "sprites/gravler/gravler_ico.png",
     sprite_overrides = {
-      wsvr = "sprites/gravler/gravlerdive",                                -- 245
-      wsvru = "sprites/gravler/gravlerdiga",                               -- 246
-      wsvrd = "sprites/gravler/gravlerdigb",                               -- 247
-      wsvb = "sprites/gravler/gravlerdigc",                                -- 248
+      wsvr = "sprites/gravler/gravlerdive.png",                                -- 245
+      wsvru = "sprites/gravler/gravlerdiga.png",                               -- 246
+      wsvrd = "sprites/gravler/gravlerdigb.png",                               -- 247
+      wsvb = "sprites/gravler/gravlerdigc.png",                                -- 248
     },
     worm_sprites = {
-      weaponlnk = "sprites/gravler/aim",
-      weaponlnku = "sprites/gravler/aimu",
-      weaponlnkd = "sprites/gravler/aimd",
-      wthrow = "sprites/gravler/draw",
-      wthrowu = "sprites/gravler/drawu",
-      wthrowd = "sprites/gravler/drawd",
+      weaponlnk = "sprites/gravler/aim.png",
+      weaponlnku = "sprites/gravler/aimu.png",
+      weaponlnkd = "sprites/gravler/aimd.png",
+      wthrow = "sprites/gravler/draw.png",
+      wthrowu = "sprites/gravler/drawu.png",
+      wthrowd = "sprites/gravler/drawd.png",
     },
   },
   { -- Gravler Strike: its record points at the same four frames, and it
@@ -493,10 +493,10 @@ local PX_ART = {
     weapon = "mole_squadron",
     panel_icon = "sprites/gravler/gravlerst_ico.png",
     sprite_overrides = {
-      wsvr = "sprites/gravler/gravlerdive",                                -- 245
-      wsvru = "sprites/gravler/gravlerdiga",                               -- 246
-      wsvrd = "sprites/gravler/gravlerdigb",                               -- 247
-      wsvb = "sprites/gravler/gravlerdigc",                                -- 248
+      wsvr = "sprites/gravler/gravlerdive.png",                                -- 245
+      wsvru = "sprites/gravler/gravlerdiga.png",                               -- 246
+      wsvrd = "sprites/gravler/gravlerdigb.png",                               -- 247
+      wsvb = "sprites/gravler/gravlerdigc.png",                                -- 248
     },
   },
   { -- Ghost Sheep: an Aqua Sheep flying PX's ghost art. Its own record's
@@ -504,20 +504,20 @@ local PX_ART = {
     -- Sheep in the match as a ghost once both could be placed).
     weapon = "aqua_sheep",
     panel_icon = "sprites/ghost_sheep/ghost_sheep_ico.png",
-    sheep_sprites = { "sprites/ghost_sheep/ghstshp1", "sprites/ghost_sheep/ghstshp2" },
+    sheep_sprites = { "sprites/ghost_sheep/ghstshp1.png", "sprites/ghost_sheep/ghstshp2.png" },
   },
   { -- Pogo Sheep. Its bits' trail is the Blaster Worm's (249, above).
     weapon = "sheep",
     panel_icon = "sprites/pogo_sheep/psheep_ico.png",
-    sprite = "sprites/pogo_sheep/flight",
-    cluster = { sprite = "sprites/pogo_sheep/cluster" },
+    sprite = "sprites/pogo_sheep/flight.png",
+    cluster = { sprite = "sprites/pogo_sheep/cluster.png" },
   },
   { -- Banana Express: stock banana bombs from PX's banana plane. PX's
     -- record names its plane 704, an id PX adds past WA's sprites; `plane`
     -- gives the strike the sheet instead.
     weapon = "mb_bomb",
     panel_icon = "sprites/banana_express/banana_express_ico.png",
-    plane = "sprites/banana_express/plane",
+    plane = "sprites/banana_express/plane.png",
   },
   { -- Real Shotgun: PX's FireFinal fires the shotgun five times per shot,
     -- five pellets in one frame, each spread by WA's own hitscan cone.
@@ -529,27 +529,27 @@ local PX_ART = {
     -- record, which leaves the flight sprite to the slot.
     weapon = "holy_grenade",
     panel_icon = "sprites/hellish/hhh_ico.png",
-    sprite = "sprites/hellish/grenade",
+    sprite = "sprites/hellish/grenade.png",
     worm_sprites = {
-      weaponlnk = "sprites/hellish/aim",
-      weaponlnku = "sprites/hellish/aimu",
-      weaponlnkd = "sprites/hellish/aimd",
-      wthrow = "sprites/hellish/draw",
-      wthrowu = "sprites/hellish/drawu",
-      wthrowd = "sprites/hellish/drawd",
+      weaponlnk = "sprites/hellish/aim.png",
+      weaponlnku = "sprites/hellish/aimu.png",
+      weaponlnkd = "sprites/hellish/aimd.png",
+      wthrow = "sprites/hellish/draw.png",
+      wthrowu = "sprites/hellish/drawu.png",
+      wthrowd = "sprites/hellish/drawd.png",
     },
   },
   { -- Remote Roller
     weapon = "skunk",
     panel_icon = "sprites/remote_roller/rroller_ico.png",
-    sprite = "sprites/remote_roller/flight",
+    sprite = "sprites/remote_roller/flight.png",
     worm_sprites = {
-      weaponlnk = "sprites/remote_roller/aim",
-      weaponlnku = "sprites/remote_roller/aimu",
-      weaponlnkd = "sprites/remote_roller/aimd",
-      wthrow = "sprites/remote_roller/draw",
-      wthrowu = "sprites/remote_roller/drawu",
-      wthrowd = "sprites/remote_roller/drawd",
+      weaponlnk = "sprites/remote_roller/aim.png",
+      weaponlnku = "sprites/remote_roller/aimu.png",
+      weaponlnkd = "sprites/remote_roller/aimd.png",
+      wthrow = "sprites/remote_roller/draw.png",
+      wthrowu = "sprites/remote_roller/drawu.png",
+      wthrowd = "sprites/remote_roller/drawd.png",
     },
   },
   { -- Igniter: PX sets the missile's own sprite to 0 and draws its bullet at
@@ -559,7 +559,7 @@ local PX_ART = {
     panel_icon = "sprites/igniter/igniter_ico.png",
     worm_sprites = PX_POSTURE,
     sprites = {
-      "sprites/px_hold/igniter", "sprites/igniter/flight",
+      "sprites/px_hold/igniter.png", "sprites/igniter/flight.png",
     },
     params = { gpu_prefix = "sprites/" },
   },
@@ -573,7 +573,7 @@ local PX_ART = {
     sprite = "banana",
     on_explode = function(ev) shared.chilli_bomb_explode(ev) end,
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/chilli_bomb" },
+    sprites = { "sprites/px_hold/chilli_bomb.png" },
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
@@ -583,15 +583,15 @@ local PX_ART = {
     weapon = "grenade",
     panel_icon = "sprites/sticky_bomb/sbico.png",
     sprite = "grenade",
-    cluster = { sprite = "sprites/sticky_bomb/bomb" },
+    cluster = { sprite = "sprites/sticky_bomb/bomb.png" },
     -- Stuck, the bits draw with the frames at +0x178..+0x184, which the
     -- record points at the Salvation Army's 467; PX overrides that too.
     sprite_overrides = {
-      grenade = "sprites/sticky_bomb/bomb",                                -- 50
-      wsvclnku = "sprites/sticky_bomb/bomb",                               -- 467
+      grenade = "sprites/sticky_bomb/bomb.png",                                -- 50
+      wsvclnku = "sprites/sticky_bomb/bomb.png",                               -- 467
     },
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/sticky_bomb" },
+    sprites = { "sprites/px_hold/sticky_bomb.png" },
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Fire Jump: a fire punch, then a jump and a glide (below).
@@ -608,14 +608,14 @@ local PX_ART = {
     weapon = "longbow",
     panel_icon = "sprites/shadow_bolt/ico_shadowb.png",
     worm_sprites = PX_POSTURE,
-    sprite_overrides = { [453] = "sprites/shadow_bolt/trail" },
-    sprites = { "sprites/px_hold/shadow_bolt", "sprites/shadow_bolt/bolt" },
+    sprite_overrides = { [453] = "sprites/shadow_bolt/trail.png" },
+    sprites = { "sprites/px_hold/shadow_bolt.png", "sprites/shadow_bolt/bolt.png" },
     params = { gpu_prefix = "sprites/" },
   },
   { -- Hot Air Balloon: WA's parachute, carried up by PX's script (below).
     weapon = "bungee",
     panel_icon = "sprites/balloon/balloon_icon.png",
-    sprites = { "sprites/balloon/balloon", "sprites/balloon/basket" },
+    sprites = { "sprites/balloon/balloon.png", "sprites/balloon/basket.png" },
     -- A pack WAV plays only once an entry registers it.
     sounds = {
       "sounds/balloon/inflate1.wav", "sounds/balloon/inflate2.wav", "sounds/balloon/inflate3.wav",
@@ -627,14 +627,14 @@ local PX_ART = {
   { -- Hang-Glider: WA's parachute, flown as PX's glider (below).
     weapon = "parachute",
     panel_icon = "sprites/hang_glider/ico_glider.png",
-    sprites = { "sprites/hang_glider/glider", "sprites/hang_glider/pack" },
+    sprites = { "sprites/hang_glider/glider.png", "sprites/hang_glider/pack.png" },
     sounds = { "sounds/hang_glider/hangopen.wav", "sounds/hang_glider/hangclose.wav" },
     params = { gpu_prefix = "sprites/hang_glider/" },
   },
   { -- Swim Suit: on the laser sight's slot; worn, the worm swims (below).
     weapon = "laser_sight",
     panel_icon = "sprites/swim_suit/ico_swimsuit.png",
-    sprites = { "sprites/swim_suit/swim", "sprites/swim_suit/float", "sprites/swim_suit/ring" },
+    sprites = { "sprites/swim_suit/swim.png", "sprites/swim_suit/float.png", "sprites/swim_suit/ring.png" },
     sounds = { "sounds/swim_suit/putting_on_ssuit.wav" },
     params = { gpu_prefix = "sprites/swim_suit/" },
   },
@@ -642,8 +642,8 @@ local PX_ART = {
     weapon = "ninja_rope",
     panel_icon = "sprites/jump/jumpic.png",
     worm_sprites = {
-      weaponlnk = "sprites/jump/aim", weaponlnku = "sprites/jump/aimu",
-      weaponlnkd = "sprites/jump/aimd",
+      weaponlnk = "sprites/jump/aim.png", weaponlnku = "sprites/jump/aimu.png",
+      weaponlnkd = "sprites/jump/aimd.png",
     },
     on_fire = function(fire) fires.jump(fire) end,
   },
@@ -663,7 +663,7 @@ local PX_ART = {
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
     weapon = "jet_pack",
     panel_icon = "sprites/helicopter/heli_ico.png",
-    sprites = { "sprites/helicopter/flying", "sprites/helicopter/jumpin" },
+    sprites = { "sprites/helicopter/flying.png", "sprites/helicopter/jumpin.png" },
     sounds = {
       "sounds/helicopter/helicopterloop.wav",
       "sounds/helicopter/1.wav", "sounds/helicopter/2.wav", "sounds/helicopter/3.wav",
@@ -683,11 +683,11 @@ local PX_ART = {
       weaponlnk = PX_POSTURE.weaponlnk, weaponlnku = PX_POSTURE.weaponlnku,
       weaponlnkd = PX_POSTURE.weaponlnkd,
       wthrow = PX_POSTURE.wthrow, wthrowu = PX_POSTURE.wthrowu, wthrowd = PX_POSTURE.wthrowd,
-      weaponfire = "sprites/sniper_rifle/fire", weaponfireu = "sprites/sniper_rifle/fireu",
-      weaponfired = "sprites/sniper_rifle/fired",
+      weaponfire = "sprites/sniper_rifle/fire.png", weaponfireu = "sprites/sniper_rifle/fireu.png",
+      weaponfired = "sprites/sniper_rifle/fired.png",
     },
     sprites = {
-      "sprites/px_hold/sniper_rifle", "sprites/sniper_rifle/laser", "sprites/sniper_rifle/flash",
+      "sprites/px_hold/sniper_rifle.png", "sprites/sniper_rifle/laser.png", "sprites/sniper_rifle/flash.png",
     },
     sounds = { "sounds/sniper_firing.wav" },
     params = { gpu_prefix = "sprites/" },
@@ -696,15 +696,15 @@ local PX_ART = {
     weapon = "minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
     worm_sprites = {
-      weaponlnk = "sprites/burst_rifle/aim",
-      weaponlnku = "sprites/burst_rifle/aimu",
-      weaponlnkd = "sprites/burst_rifle/aimd",
-      wthrow = "sprites/burst_rifle/draw",
-      wthrowu = "sprites/burst_rifle/drawu",
-      wthrowd = "sprites/burst_rifle/drawd",
-      weaponfire = "sprites/burst_rifle/fire",
-      weaponfireu = "sprites/burst_rifle/fireu",
-      weaponfired = "sprites/burst_rifle/fired",
+      weaponlnk = "sprites/burst_rifle/aim.png",
+      weaponlnku = "sprites/burst_rifle/aimu.png",
+      weaponlnkd = "sprites/burst_rifle/aimd.png",
+      wthrow = "sprites/burst_rifle/draw.png",
+      wthrowu = "sprites/burst_rifle/drawu.png",
+      wthrowd = "sprites/burst_rifle/drawd.png",
+      weaponfire = "sprites/burst_rifle/fire.png",
+      weaponfireu = "sprites/burst_rifle/fireu.png",
+      weaponfired = "sprites/burst_rifle/fired.png",
     },
   },
 }

@@ -317,7 +317,7 @@ end
 if wa.on.draw and wa.draw.quad then
   -- Refill one spec; the engine copies it before the next submission.
   local QUAD = { blend = "add", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
-  local RING_IN, RING_OUT, SPARKS = BODY .. "ring_in.png", BODY .. "ring_out.png", BODY .. "magnetsparks"
+  local RING_IN, RING_OUT, SPARKS = BODY .. "ring_in.png", BODY .. "ring_out.png", BODY .. "magnetsparks.png"
   local function square(sprite, frame, color, depth, x, y, h, angle)
     QUAD.sprite, QUAD.frame, QUAD.color, QUAD.depth = sprite, frame, color, depth
     local c, s = wa.math.cos(angle) * h, wa.math.sin(angle) * h

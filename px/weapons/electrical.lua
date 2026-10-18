@@ -22,7 +22,7 @@ local BEAM = "sprites/lightning/beam.png"
 local GLOW = "sprites/lightning/glow.png"
 local CLOUD = "sprites/lightning/cloud.png" -- a puff made for the pack, in place of WA's cloudl
 local CLOUD_DEPTH = ELECTRIC_DEPTH - 0x1000  -- in front of the beam's top, behind the terrain
-local GRENADE_BURST = "sprites/electric_grenade/explosion"
+local GRENADE_BURST = "sprites/electric_grenade/explosion.png"
 local strikes, arcs, tazed = {}, {}, {}
 
 local function effect_actor(x, y, owner, frame)
@@ -336,7 +336,7 @@ local function progress_arc(arc)
           tazed[key].count = tazed[key].count + 1
         else
           tazed[key] = { x = target.x, y = target.y, count = 1, worm = target,
-            sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1" or "sprites/electric_grenade/tazed2" }
+            sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1.png" or "sprites/electric_grenade/tazed2.png" }
         end
         target.body_visible = false
         -- Held where it stands, the turn stopped, until the zap.

@@ -16,7 +16,7 @@ local SPREAD_TENTHS = 20   -- +-2.0 degrees
 -- PX ejects a shell casing (WA's "uzicase" frames) on every shot, sideways
 -- from the barrel to the side the turret faces, with a little random angle
 -- and speed, gravity and no bounce, gone after 100 frames.
-local CASING = ART .. "casing"
+local CASING = ART .. "casing.png"
 local CASING_FRAMES, CASING_LIFE = 16, 100
 local CASING_JITTER_DEG = 17                  -- PX's RandomFloat(-0.3, 0.3) rad
 local CASING_SPEED_MIN, CASING_SPEED_MAX = 200, 300 -- PX's 2.0 to 3.0, hundredths
@@ -78,7 +78,7 @@ end
 local gun = turret.new({
   kind = "sentry", weapon = "px.sentry_gun",
   muzzle_out = MUZZLE_OUT,
-  art = { base = ART .. "turret_base", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun", flare = ART .. "turret_flare", light = ART .. "turret_light.png" },
+  art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun.png", flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
   sounds = {
     place = SND .. "sentryplace.wav", beep = SND .. "sentrybeeps2.wav",
     fire_loop = SND .. "sentryfireloop.wav", fire_end = SND .. "sentryfireend.wav",

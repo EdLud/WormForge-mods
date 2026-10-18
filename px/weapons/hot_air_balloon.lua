@@ -92,16 +92,18 @@ do
         collide = false, owner = worm, on = function() end,
       })
     end
-    b.balloon = b.balloon or art("sprites/balloon/balloon")
-    b.basket = b.basket or art("sprites/balloon/basket")
+    b.balloon = b.balloon or art("sprites/balloon/balloon.png")
+    b.basket = b.basket or art("sprites/balloon/basket.png")
     local x = b.x + 6 * f
     b.balloon.x, b.balloon.y, b.balloon.vx, b.balloon.vy = x, b.y - 43, 0, 0
-    b.balloon:frame(math.min((b.ticks % 200) * 16 // 200, 15))
+    -- Manifest ping-pong expands the 16/17 source frames to 30/32.
+    -- Walk those sequences over PX's original 200/80-tick periods.
+    b.balloon:frame((b.ticks % 200) * 30 // 200)
     b.balloon:gfx({ tint = 0xFF000000 | (TEAM_RGB[(worm.alliance or 0) + 1] or 0xFFFFFF),
       depth = BALLOON_DEPTH })
     b.basket.x, b.basket.y, b.basket.vx, b.basket.vy = x, b.y + 3, 0, 0
     b.basket.facing = -f
-    b.basket:frame(math.min((b.ticks % 80) * 17 // 80, 16))
+    b.basket:frame((b.ticks % 80) * 32 // 80)
     b.basket:gfx({ depth = BASKET_DEPTH })
     worm.body_visible = false
   end

@@ -143,7 +143,7 @@ end
 draws={}; hooks.draw()
 local single=assert(endpoint("portal_blue.png"), "first endpoint drawn before its partner exists")
 assert(single.color==0xFFFFFFFF and single.blend=="add", "single endpoint stays bright")
-assert(endpoint("portal_black_mask"), "PX's team marker is drawn")
+assert(endpoint("portal_black_mask.png"), "PX's team marker is drawn")
 assert(endpoint("lightning_glow.png"), "PX's impact flash replaces the placeholder halo")
 hooks.turn_end(); assert(not shared.portals.pairs[0].active)
 worm.turn=false; draws={}; hooks.draw()

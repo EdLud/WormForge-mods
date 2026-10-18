@@ -24,8 +24,8 @@
 -- (weapons/electrical.lua:174, weapons/bowling_ball.lua:533) is not PX's. No
 -- `on_fire` and no `eat_fire`: a real strike needs neither.
 --
--- Art is one directory of `frameNNN.png` per PX sprite, as cut_lab and stress
--- do: `empty` (2 rotor frames), `aim` (32), `gun` (2: idle, firing) and
+-- Art is one vertical PNG strip per PX sprite: `empty` (2 rotor frames),
+-- `aim` (32), `gun` (2: idle, firing) and
 -- `casing` (16, the shell), plus `bullet.png` for the bullets. The rotated
 -- draws need the sheets in the GPU atlas (`params.gpu_prefix`).
 --
@@ -212,7 +212,7 @@ return {
       local speed = wa.random(CASING_SPEED_MIN, CASING_SPEED_MAX) / 100
       local life, spin = CASING_LIFE, 0
       wa.actors.spawn({
-        sprite = ART .. "casing", x = h.x, y = h.y + 10, -- PX: PosX, PosY + 10 (:369)
+        sprite = ART .. "casing.png", x = h.x, y = h.y + 10, -- PX: PosX, PosY + 10 (:369)
         vx = wa.math.cos(ang) * speed, vy = wa.math.sin(ang) * speed,
         gravity = false, collide = false, owner = h.owner, kind = "casing",
         on = function(c)
@@ -442,13 +442,13 @@ return {
         gun = -math.pi, worm_frame = 0, rot = 0, frame = 0, ticks = 0,
       }
       h.body = wa.actors.spawn({
-        sprite = ART .. "empty", x = h.x, y = h.y, vx = 0, vy = 0,
+        sprite = ART .. "empty.png", x = h.x, y = h.y, vx = 0, vy = 0,
         gravity = false, collide = true, owner = worm, as_object = true, mask = true,
         on = { frame = frame, hit = hit },
       })
-      h.aim = wa.actors.spawn({ sprite = ART .. "aim", x = h.x, y = h.y,
+      h.aim = wa.actors.spawn({ sprite = ART .. "aim.png", x = h.x, y = h.y,
         gravity = false, collide = false, owner = worm, on = function() end })
-      h.gun_actor = wa.actors.spawn({ sprite = ART .. "gun", x = h.x, y = h.y,
+      h.gun_actor = wa.actors.spawn({ sprite = ART .. "gun.png", x = h.x, y = h.y,
         gravity = false, collide = false, owner = worm, on = function() end })
       helis[h.body.id] = h
     end
@@ -464,8 +464,8 @@ return {
       -- (REPORT.md 11.8). `heliWeap.wep` is no longer used.
       wep = "weps/bullet_wep.wep",
       panel_icon = "sprites/helishootico.png", -- PX's own icon (helishootico.png)
-      -- One directory of frameNNN.png per PX sprite, as cut_lab and stress do.
-      sprites = { ART .. "empty", ART .. "aim", ART .. "gun", ART .. "casing", BULLET,
+      -- One vertical strip per PX sprite, with animation in mod.toml.
+      sprites = { ART .. "empty.png", ART .. "aim.png", ART .. "gun.png", ART .. "casing.png", BULLET,
         trail.BEAM, trail.GLOW },
       params = { gpu_prefix = "sprites/" }, -- route the sheets into the GPU atlas for a:gfx
       sounds = { SND .. "hks1.wav", SND .. "hks2.wav", SND .. "hks3.wav", SND .. "loop.wav" },

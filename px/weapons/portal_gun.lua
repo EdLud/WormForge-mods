@@ -129,7 +129,7 @@ shared.fires.portal_gun = function(fire)
   -- Native ground fire consumes ammo after this callback; airborne fire
   -- dispatches Lua alone and therefore needs no refund.
   if not fire.airborne then worm:ammo(SLOT, 1) end
-  local a = wa.actors.spawn({ sprite = ART .. "portal_ball", x = b.x, y = b.y,
+  local a = wa.actors.spawn({ sprite = ART .. "portal_ball.png", x = b.x, y = b.y,
     owner = worm, gravity = false, collide = false, on = { frame = function() bolt_frame(b) end } })
   b.a, b.id = a, a.id
   a:gfx({ scale = 0.12, tint = colours[colour] & 0xFFFFFF, depth = wa.depth.OBJECTS })
@@ -191,7 +191,7 @@ if wa.on.draw then
           local angle = math.pi / 2 - wa.math.atan(p.nx, p.ny)
           quad(colour == 1 and "portal_orange.png" or "portal_blue.png", p.draw_x, p.draw_y,
             40, 100, angle, 0xFFFFFFFF, "add")
-          quad("portal_black_mask", p.draw_x - (p.x-p.draw_x)*2, p.draw_y - (p.y-p.draw_y)*2,
+          quad("portal_black_mask.png", p.draw_x - (p.x-p.draw_x)*2, p.draw_y - (p.y-p.draw_y)*2,
             12.5, 12.5, 0, (135 << 24) | (p.team_colour or 0xFFFFFF), "alpha",
             wa.depth.OBJECTS - 1, (network.age // 50) % 2)
         end

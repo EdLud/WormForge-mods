@@ -88,7 +88,7 @@ do
   local function glider_begin_pack(worm, g)
     g.landing = nil
     if g.art then g.art:despawn(); g.art = nil end
-    g.pack, g.pack_t = glider_art(worm, worm.x, worm.y, "sprites/hang_glider/pack"), 0
+    g.pack, g.pack_t = glider_art(worm, worm.x, worm.y, "sprites/hang_glider/pack.png"), 0
     g.pack_x, g.pack_y = worm.x, worm.y
     g.pack.facing = -worm.facing
     g.pack:frame(0)
@@ -185,7 +185,7 @@ do
     -- looks: if it fails, the worm still goes back to WA below.
     local looks, err = pcall(function()
       if landing then
-        g.art = g.art or glider_art(worm, worm.x, worm.y, "sprites/hang_glider/glider")
+        g.art = g.art or glider_art(worm, worm.x, worm.y, "sprites/hang_glider/glider.png")
         worm.body_visible = false
       else
         glider_drop_art(worm, g)
@@ -252,7 +252,7 @@ do
       worm:carry(x, y)
       -- CWormGlider::Render, in the worm's place.
       local f = worm.facing
-      g.art = g.art or glider_art(worm, x, y, "sprites/hang_glider/glider")
+      g.art = g.art or glider_art(worm, x, y, "sprites/hang_glider/glider.png")
       local a = g.art
       a.x, a.y, a.vx, a.vy, a.facing = x, y, 0, 0, -f
       a:frame(math.min(math.floor(g.cycle * 10), 9))
