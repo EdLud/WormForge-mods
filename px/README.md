@@ -514,9 +514,11 @@ Here the pack takes the worm when that parachute opens and flies it with WA
 - **Art:** the worm's body is hidden behind the balloon, drawn in its team's
   colour, and the worm in its basket, as PX's `RenderWorm` override draws them.
 
-Flight, cluster and plane sprites take 20 of the 223 shared sprite slots. Worm
-sheets and `sprite_overrides` (the trails and the Gravler's and Ghost Sheep's
-frames) are drawn by the GPU renderer, in true colour, and take none.
+Flight, cluster and plane sprites and the Ghost Sheep's two flying sheets
+(`sheep_sprites`, its own record's, so WA's Aqua Sheep keeps its look) take 22
+of the 223 shared sprite slots. Worm sheets and `sprite_overrides` (the trails
+and the Gravler's frames) are drawn by the GPU renderer, in true colour, and
+take none.
 
 ## Playing it
 

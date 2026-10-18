@@ -499,13 +499,12 @@ local PX_ART = {
       wsvb = "sprites/gravler/gravlerdigc",                                -- 248
     },
   },
-  { -- Ghost Sheep: the Aqua Sheep's own sprites, overridden.
+  { -- Ghost Sheep: an Aqua Sheep flying PX's ghost art. Its own record's
+    -- sheets (PX overrode WA's aquashp1/2, 156/157, which drew every Aqua
+    -- Sheep in the match as a ghost once both could be placed).
     weapon = "aqua_sheep",
     panel_icon = "sprites/ghost_sheep/ghost_sheep_ico.png",
-    sprite_overrides = {
-      aquashp1 = "sprites/ghost_sheep/ghstshp1",                           -- 156
-      aquashp2 = "sprites/ghost_sheep/ghstshp2",                           -- 157
-    },
+    sheep_sprites = { "sprites/ghost_sheep/ghstshp1", "sprites/ghost_sheep/ghstshp2" },
   },
   { -- Pogo Sheep. Its bits' trail is the Blaster Worm's (249, above).
     weapon = "sheep",
