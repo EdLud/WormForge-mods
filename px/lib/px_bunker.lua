@@ -54,9 +54,12 @@
 --     blast (:330-339).
 --
 -- What the API cannot carry (presentation only; REPORT.md 9.3):
---   * the fire's velocity. PX throws each drilling flame up the shaft at 5..15
---     a frame within 45 degrees of the drill (:480-486); `wa.fire.spawn` has no
---     velocity field, so each flame is placed at the body instead;
+--   * the drilling flames' full throw. PX throws each up the shaft at 5..15 a
+--     frame within 45 degrees of the drill (:480-486); the port tosses it
+--     gently (FIRE_TOSS), from just above the body, into the open shaft. Left
+--     at the body with `wa.fire.spawn`'s default fall, flames lay against the
+--     land being drilled, and one caught on the shaft's wall over nothing held
+--     a turn forever (the engine now puts such a flame out);
 --   * the smoke and dust particles (:555-606);
 --   * a sound that can be **stopped**. `wa.sound.play` and `a:sound` can neither
 --     loop nor stop, and PX's drill wav (20.95 s -- an impact, then a long drill, with
@@ -184,6 +187,9 @@ function M.install(ctx)
   local BLAST      = super_buster and 80 or 100 -- ExplosionBlast (:148, :159)
   local DAMAGE     = super_buster and 26 or 38  -- ExplosionDamage (:149, :160)
   local FIRE       = { duration = 1000, up_power = 15, damage = 1 } -- CFireDesc (:33-35)
+  -- The drilling flame's toss, pixels a frame: up 1..2, drifting at most 0.5
+  -- either way. PX's own throw (5..15, :480-486) is far stronger.
+  local FIRE_TOSS  = { up_min = 100, up_max = 200, drift = 50 } -- hundredths
   
   local busters = {} -- body actor id -> state
 
@@ -294,7 +300,9 @@ function M.install(ctx)
           end
           if super_buster then
             if m.fire_timer <= 0 then
-              wa.fire.spawn({ owner = m.owner, x = m.x, y = m.y, count = 1,
+              wa.fire.spawn({ owner = m.owner, x = m.x, y = m.y - R, count = 1,
+                vx = wa.random(-FIRE_TOSS.drift, FIRE_TOSS.drift) / 100,
+                vy = -wa.random(FIRE_TOSS.up_min, FIRE_TOSS.up_max) / 100,
                 duration = FIRE.duration, up_power = FIRE.up_power, damage = FIRE.damage })
               m.fire_timer = wa.random(FIRE_MIN, FIRE_MAX)
             end
