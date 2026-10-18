@@ -78,7 +78,9 @@ return {
     end
 
     wa.weapons.replace({
-      copy_from = "stock.grenade",
+      -- WA's Donkey, as the flags version: a drop from the sky, so on a
+      -- cave map it is kept out of the round as WA's strikes are.
+      copy_from = "stock.donkey",
       name = "Growth Hormones (Lua)",
       is_weapon = true,
       panel_icon = "sprites/icon_lua.png",
