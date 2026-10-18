@@ -3677,6 +3677,95 @@ do
   M.turn_start({ worm = w, active = w })
 end
 
+print("swim suit: a fall into the water dives, kept in control")
+do
+  new_match()
+  frame()
+  M.water, M.gravity, M.wind, M.solid, M.trace_hit = 500, 0.25, 0, nil, nil
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 100, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:ammo() end
+  M.spawned, M.sounds, M.quads = {}, {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  function w:set_state() error("the dive takes and carries the worm; it sets no state") end
+  local function fall(y, vx, vy)
+    w.taken, w.carried, w.state, w.state_id = nil, false, "sliding", 0x7E
+    w.x, w.y, w.vx, w.vy = 100, y, vx, vy
+  end
+  -- Falling slower than WA's 8 pixels a frame, a frame away: WA's still.
+  fall(100, 1, 7)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("still in WA's control below the speed", not w.taken)
+  -- About to lose control, nothing below but water: taken, the turn running.
+  fall(100, 1, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("taken a frame before WA would take its control", w.taken and w.taken.turn == "run"
+    and w.carried and near(w.x, 101) and near(w.y, 107.75), w.x .. " " .. w.y)
+  local frames = 0
+  while w.y < M.water and frames < 200 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    frames = frames + 1
+  end
+  check("carried down its path to the water, then the splash", w.y >= M.water and w.taken
+    and M.sounds[#M.sounds] == 57 and w.state == "sliding" and w.body_visible == false, frames)
+  local y0 = w.y
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("swimming, its speed capped at 5", w.taken and w.y > y0 and w.y - y0 < 5, w.y - y0)
+  w.taken = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.taken, w.collision_mask = nil, 134342
+  w.state, w.state_id, w.y = "standing", 0x65, 100
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.message(w, wa.msg.FRAME_FINISH)
+  -- Land below: WA's fall, looked at once.
+  M.solid = function(_, y) return y >= 300 end
+  local traces = 0
+  M.trace_hit = function(_, y0, _, y1)
+    traces = traces + 1
+    if y1 >= 300 then return { x = 100, y = 300, hit = true } end
+  end
+  fall(100, 0, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  local looked = traces
+  w.vy = 7.8
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("land below: left to WA, its path traced once", not w.taken and looked > 0 and traces == looked,
+    tostring(w.taken) .. " " .. looked .. " " .. traces)
+  -- Landed, the next fall is looked at again.
+  w.state, w.state_id = "standing", 0x65
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.solid, M.trace_hit = nil, nil
+  fall(100, 0, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("after landing, the next fall dives", w.taken)
+  -- Land where there was none: WA's again, moving as it was.
+  M.solid = function(_, y) return y >= w.y + 3 end
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("land in the way mid-dive: released, falling on", not w.taken and w.state == "sliding" and w.vy > 7.5)
+  M.solid = nil
+  -- The engine lets go mid-dive (the turn's end): no carry after.
+  w.state, w.state_id = "standing", 0x65
+  M.message(w, wa.msg.FRAME_FINISH)
+  fall(100, 0, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.taken, w.carried = nil, false
+  local y = w.y
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("let go by the engine: the dive is over", not w.taken and not w.carried and w.y == y)
+  -- Not its turn: no dive.
+  w.state, w.state_id = "standing", 0x65
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.turn = false
+  fall(100, 0, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("only the turn's worm dives", not w.taken)
+  M.turn_start({ worm = w, active = w })
+end
+
 print("wind changer and gravity control: 0-9 and 1-5, then fire")
 do
   new_match()

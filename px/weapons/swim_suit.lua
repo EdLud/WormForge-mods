@@ -22,6 +22,14 @@ do
 -- and 6 for the turn. Missiles in the water can hit a swimming worm: they
 -- blow up on it (damage 100, blast 50).
 --
+-- A worm in the suit falling to the water dives (swim_suit_diving_s, by
+-- PyroMan): where WA would take its control (falling at 8 pixels a frame,
+-- WA's fall height, 0x50D370), the rest of its fall is traced frame by frame
+-- at WA's gravity (wa.land.trace, worm:fits); if it ends in the water, the
+-- pack takes the worm (worm:take) and carries it down that path to the
+-- splash, so it reaches the water in control. PX's looked straight down and
+-- held the worm in a state.
+--
 -- Drawn in the worm's place: the swim or, when still, the float animation,
 -- and a bubble around the worm while it wears the suit.
 --
@@ -49,9 +57,17 @@ local SWIM_RING_HALF = 25
 -- The land a swimmer stops at: its body, 4 pixels either side, 6 above and below.
 local SWIM_HALF_W, SWIM_HALF_H = 4, 6
 
+-- The dive: WA takes a falling worm's control at 8 pixels a frame; taken
+-- a frame early.
+local DIVE_SPEED = 8
+local DIVE_FRAMES = 2000      -- the longest fall traced
+-- WA's states for a worm falling under its own control: jumping, its fall,
+-- falling (off a cliff, or let go).
+local FALLING = { [0x79] = true, [0x7A] = true, [0x7E] = true }
+
 local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
 local swim_in_game = false    -- SwimInGame: someone has worn the suit
-local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy }
+local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy, dive, dived }
 
 local function swimmer_of(worm)
   local s = swimmers[worm.id]
@@ -99,6 +115,32 @@ end
 -- WA's states for a worm knocked flying: tumbling, hit, blasted.
 local KNOCKED = { [0x7F] = true, [0x80] = true, [0x81] = true }
 
+-- One frame of a dive: gravity and wind as WA scales them for the worm, then
+-- the move, its centre traced through the land and the worm's shape tested
+-- where it ends (WA's own test, worm:fits). Returns the new speed and
+-- position, and whether land stops it, in which case the position is where
+-- it still was.
+local function dive_step(worm, x, y, vx, vy)
+  vx = vx + wa.world.wind() * (worm.wind or 0)
+  vy = vy + wa.world.gravity() * (worm.gravity or 1)
+  local nx, ny = x + vx, y + vy
+  if wa.land.trace(x, y, nx, ny) or not worm:fits(nx, ny) then
+    return vx, vy, x, y, true
+  end
+  return vx, vy, nx, ny, false
+end
+
+-- Whether a fall from (x, y) at (vx, vy) reaches the water before land.
+local function dives_into_water(worm, x, y, vx, vy, water)
+  for _ = 1, DIVE_FRAMES do
+    local blocked
+    vx, vy, x, y, blocked = dive_step(worm, x, y, vx, vy)
+    if blocked then return false end
+    if y >= water then return true end
+  end
+  return false
+end
+
 local function swim_frame(worm)
   local s = swimmers[worm.id]
   if not s or not s.suit then
@@ -106,6 +148,41 @@ local function swim_frame(worm)
   end
   local water = wa.world.water()
   local cap = SWIM_CAP * swim_speed
+  if s.dive and not worm.taken then
+    -- The engine let go mid-dive: the turn ended, or WA knocked it flying.
+    s.dive = nil
+  end
+  if not FALLING[worm.state_id] and not s.dive then
+    s.dived = false -- landed, or out of its fall: the next fall is looked at
+  end
+  if s.plopready and not s.dive and not s.dived and worm.turn and FALLING[worm.state_id]
+    and worm.y < water
+    and worm.vy + 2 * wa.world.gravity() * (worm.gravity or 1) >= DIVE_SPEED then
+    -- About to lose control: one look at where the fall ends.
+    s.dived = true
+    if dives_into_water(worm, worm.x, worm.y, worm.vx, worm.vy, water) then
+      s.dive = { x = worm.x, y = worm.y, vx = worm.vx, vy = worm.vy }
+      worm:take{ turn = "run" }
+    end
+  end
+  local dive_into
+  if s.dive then
+    local d = s.dive
+    local blocked
+    d.vx, d.vy, d.x, d.y, blocked = dive_step(worm, d.x, d.y, d.vx, d.vy)
+    if blocked then
+      -- Land where the trace found none (it changed): WA's again, as it flies.
+      s.dive = nil
+      worm.x, worm.y = d.x, d.y
+      worm:release(d.vx, d.vy)
+      return
+    end
+    worm:carry(d.x, d.y)
+    if d.y < water then
+      return
+    end
+    s.dive, dive_into = nil, d
+  end
   if worm.y >= water and s.plopready and KNOCKED[worm.state_id] then
     -- Knocked flying into the water: no swim, the suit gives out, and with
     -- the water's bit back WA's water takes it. Held in WA's hit state
@@ -113,11 +190,13 @@ local function swim_frame(worm)
     suit_off(worm, s, false)
     return
   end
-  if worm.y >= water and s.plopready and worm.state ~= "teleporting" then
+  if dive_into or worm.y >= water and s.plopready and worm.state ~= "teleporting" then
+    -- Into the water: where a dive reached it, at the dive's speed.
+    local d = dive_into or worm
     wa.sound.play(worm, SWIM_SPLASH)
     s.plopready, s.plopped = false, true
-    s.x, s.y = worm.x, worm.y
-    s.vx, s.vy = math.min(worm.vx, cap), math.min(worm.vy, cap)
+    s.x, s.y = d.x, d.y
+    s.vx, s.vy = math.min(d.vx, cap), math.min(d.vy, cap)
     -- Swimming, it fires nothing but Fast Walk (its swim speed); the suit's
     -- own use is this pack's hook.
     worm:take{ turn = "run", fire = { "stock.fast_walk" } }
