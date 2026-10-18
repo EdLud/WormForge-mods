@@ -1,0 +1,10 @@
+description = "Alliance vision with terrain memory; all weapons use the baseline scheme."
+features = ["core.fog"]
+
+[options."core.fog"]
+view_ownership = "alliance"
+circle_radius = 250
+los = true
+discover = "texture"
+spectator_mode = true
+placement_vision = false
