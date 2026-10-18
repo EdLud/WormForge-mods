@@ -12,7 +12,7 @@
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.ports"
 name = "Project X ports"
-version = "0.13.1"
+version = "0.13.2"
 author = "Project X authors"
 api_version = 4
 format_version = 2

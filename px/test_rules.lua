@@ -2698,19 +2698,41 @@ do
       for _, a in ipairs(M.spawned or {}) do if not a.dead then a.on(a) end end
     end
   end
+  -- The click, then the plane flown until it has dropped its three balls:
+  -- the plane, and each ball with where it was dropped and the plane's x then.
+  local function strike(ev)
+    M.spawned, M.sounds = {}, {}
+    local spawn, balls, plane = wa.actors.spawn, {}, nil
+    wa.actors.spawn = function(s)
+      local a = spawn(s)
+      if s.sprite == "sprites/bowling_ball/ball.png" then
+        balls[#balls + 1] = { a = a, x = s.x, y = s.y, plane_x = plane and plane.x }
+      end
+      return a
+    end
+    spec.on_click(ev)
+    plane = M.spawned[1]
+    local frames = 0
+    while #balls < 3 and frames < 200 do run(1); frames = frames + 1 end
+    wa.actors.spawn = spawn
+    return plane, balls, frames
+  end
   local w = worm(16)
   M.gravity = (1 / 4)
   M.solid = function(_, y) return y >= 200 end
-  M.spawned = {}
   -- WA's arrow turned to the right-to-left: the shot's x speed negative.
   -- The click is on the floor.
-  spec.on_click({ worm = w, x = 300, y = 200, vx = -5, vy = 0 })
+  local plane, balls, frames = strike({ worm = w, x = 300, y = 200, vx = -5, vy = 0 })
+  check("WA's air strike jet flies in from off the map's right edge, facing left, with WA's air strike sound",
+    plane and plane.sprite == "airjetb" and plane.facing == 1 and plane.y == -128
+    and M.sounds[1] == 52 and frames > 10, frames)
   local xs = {}
-  for i, a in ipairs(M.spawned) do xs[i] = a.x // 1 end
-  check("three balls 48 apart from PX's plane height, set back upwind of the click", #M.spawned == 3
-    and xs[2] > 300 and xs[1] == xs[2] - 48 and xs[3] == xs[2] + 48 and M.spawned[2].y == -128 + 4,
+  for i, b in ipairs(balls) do xs[i] = b.x // 1 end
+  check("three balls 48 apart from PX's plane height, set back upwind of the click, dropped as it passes",
+    #balls == 3 and xs[2] > 300 and xs[1] == xs[2] + 48 and xs[3] == xs[2] - 48 and balls[2].y == -128 + 4,
     table.concat(xs, ","))
-  local ball = M.spawned[2]
+  check("each dropped where the plane is", balls[2].plane_x == balls[2].x and balls[3].plane_x == balls[3].x)
+  local ball = balls[2].a
   local x_start = ball.x
   run(1)
   check("moving the way WA's strike arrow points: the shot's x speed", ball.x < x_start)
@@ -2721,6 +2743,7 @@ do
   end
   check("the middle ball comes down on the click", landed_x and math.abs(landed_x - 300) <= 6,
     landed_x and tostring(landed_x))
+  check("the plane gone past the left edge", plane.dead)
   check("drawn in front of the terrain", ball.depth == wa.depth.OBJECTS)
   run(600)
   local rest = ball.y
@@ -2739,13 +2762,12 @@ do
   w = worm(16)
   M.gravity = (1 / 4)
   M.solid = function(x, y) return 2 * (y // 1) >= 400 + x // 1 end
-  M.spawned = {}
   -- No arrow pressed: the strike comes from the left (x speed 0 or more).
-  spec.on_click({ worm = w, x = 200, y = 0, vx = 0, vy = 0 })
-  local start2 = M.spawned[2].x
-  run(1)
-  check("unturned, the strike comes from the left", start2 < 200 and M.spawned[2].x > start2)
-  ball = M.spawned[2]
+  plane, balls = strike({ worm = w, x = 200, y = 0, vx = 0, vy = 0 })
+  ball = balls[2].a
+  local start2 = balls[2].x
+  check("unturned, the strike comes from the left: its jet mirrored", plane.facing == -1
+    and start2 < 200 and balls[1].x < balls[2].x and ball.x > start2)
   run(120)
   local landed = ball.x
   run(60)

@@ -3,17 +3,24 @@
 local shared = require("lib/shared")
 local fires = shared.fires
 
--- The strike: PX's plane drops three balls 48 pixels apart from 128 above
--- the map, moving 5 a frame the way it flies. Here they drop together, the
--- way WA's strike arrow points: the sign of the shot's x speed (ev.vx), which
--- PX's PxAirstrike reads, from the left unless the arrow keys turned it. As
--- PX's plane drops them early by how far they drift on the way down (its
--- SpeedCompensation), the drop line is set back by the middle ball's own
--- drift down to the click, so it lands on the click. PX's plane is not drawn.
+-- The strike: PX's plane (pxairstrike's PxAirstrike) drops three balls 48
+-- pixels apart from 128 above the map, moving 5 a frame the way it flies:
+-- the way WA's strike arrow points, the sign of the shot's x speed (ev.vx),
+-- from the left unless the arrow keys turned it. As PX's plane drops them
+-- early by how far they drift on the way down (its SpeedCompensation), the
+-- drop line is set back by the middle ball's own drift down to the click, so
+-- it lands on the click. The plane is WA's air strike jet with its sound: it
+-- comes in from 16 pixels off the map's edge, 48 pixels a frame (a ball's
+-- spacing each frame, PX's FramesBetweenBombs of 1), so that it is over a
+-- drop point every frame it is over the drops, drops a ball there and goes
+-- on until it is 16 pixels past the far edge.
 local STRIKE_BALLS = 3
 local STRIKE_SPACING = 48
 local STRIKE_SPEED = 5
 local STRIKE_Y = -128         -- PX's PlaneAppearYOffset
+local PLANE = "airjetb"       -- WA's air strike jet, sprite 86 (PxAirstrikeParams' Sprite)
+local PLANE_SOUND = 52        -- WA's air strike sound (its Sound)
+local PLANE_EDGE = 16         -- PX's PlaneAppearXOffset
 
 -- PX's CBowlingBall numbers.
 local RADIUS = 16             -- MakeCircleMask(16): the ball's art is 32 across
@@ -550,10 +557,38 @@ fires.bowling_strike = function(ev)
   local dir = (ev.vx or 0) < 0 and -1 or 1
   local y0 = STRIKE_Y
   local back = drift(y0, ev.y - RADIUS, STRIKE_SPEED * dir)
+  -- Where the balls drop, in the order the plane passes over them.
+  local drops = {}
   for i = 1, STRIKE_BALLS do
-    local offset = (i - (STRIKE_BALLS + 1) / 2) * STRIKE_SPACING
-    spawn_ball(ev.worm, ev.x - back + offset, y0, STRIKE_SPEED * dir, 0)
+    drops[i] = ev.x - back + (i - (STRIKE_BALLS + 1) / 2) * STRIKE_SPACING * dir
   end
+  -- How many of its frames before it is over the first: it starts that many
+  -- spacings back, off the map's edge.
+  local width = wa.world.size().w
+  local lead = 0
+  while (dir > 0 and drops[1] - lead * STRIKE_SPACING > -PLANE_EDGE)
+    or (dir < 0 and drops[1] + lead * STRIKE_SPACING < width + PLANE_EDGE) do
+    lead = lead + 1
+  end
+  local x0 = drops[1] - lead * STRIKE_SPACING * dir
+  local step = 0
+  local plane = wa.actors.spawn({
+    sprite = PLANE, x = x0, y = y0, gravity = false, collide = false, owner = ev.worm,
+    on = function(a)
+      local k = step - lead + 1
+      if k >= 1 and k <= STRIKE_BALLS then
+        spawn_ball(ev.worm, drops[k], y0, STRIKE_SPEED * dir, 0)
+      end
+      step = step + 1
+      a.x, a.y, a.vx, a.vy = x0 + step * STRIKE_SPACING * dir, y0, 0, 0
+      if (dir > 0 and a.x > width + PLANE_EDGE) or (dir < 0 and a.x < -PLANE_EDGE) then
+        a:despawn()
+      end
+    end,
+  })
+  -- The jet's art faces left; flying right, it is drawn mirrored.
+  plane.facing = -dir
+  wa.sound.play(plane, PLANE_SOUND)
 end
 
 if wa.on.draw and wa.draw.quad then
