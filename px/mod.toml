@@ -1032,6 +1032,15 @@ default_position = { row = "F4", column = 2 }
 [components.suggests."hl.rules"]
 pool = "second"
 
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 35
+label = "Health"
+description = "Damage the sentry takes before it’s destroyed."
+
 [[components]]
 id = "px.sentry_gun"
 type = "weapon"
@@ -1044,6 +1053,15 @@ default_position = { row = "F4", column = 3 }
 
 [components.suggests."hl.rules"]
 pool = "second"
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 50
+label = "Health"
+description = "Damage the sentry takes before it’s destroyed."
 
 [[components]]
 id = "px.kamikaze_rocket"
@@ -1522,6 +1540,15 @@ default_position = { row = "utility", column = 1 }
 [components.suggests."hl.rules"]
 pool = "movement"
 
+[[components.options]]
+key = "fuel"
+type = "int"
+min = 1
+max = 1000
+default = 100
+label = "Fuel"
+description = "The helicopter's fuel. Project X's is 100."
+
 [[components]]
 id = "px.gravity_control"
 type = "weapon"
@@ -1577,6 +1604,15 @@ description = "Project X's air strike: click a target; a helicopter strafes in f
 entry = "weapons/attack_helicopter.lua"
 icon = "sprites/helishootico.png"
 default_position = { row = "F6", column = 4 }
+
+[[components.options]]
+key = "bullets"
+type = "int"
+min = 1
+max = 1000
+default = 17
+label = "Bullets per strafe"
+description = "How many rounds the helicopter fires before it leaves. Project X fires 17."
 
 [[components]]
 id = "px.bunker_buster"

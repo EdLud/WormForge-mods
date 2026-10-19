@@ -108,6 +108,9 @@ local function heli_frame(worm)
   end
   -- FireFinal: the jet pack it wound up has started.
   if h and h.armed and state == "jetpacking" and not h.flying then
+    -- The native record holds only a byte; worm.fuel is 16.16 and carries
+    -- the full profile amount, once per launch, before this frame's burn.
+    worm.fuel = shared.helicopter_fuel or 100
     worm.gravity = HELI_REALISTIC and 0.2 or 0
     worm:jetpack_steer(true)
     h.flying, h.launch, h.ticks, h.armed = true, true, 0, false

@@ -51,7 +51,7 @@ return {
     trail.install() -- the module's wa.on.missile_frame/wa.on.draw, now that wa is here
     -- --------------------------------------------------------------- tuning
     -- PX's own numbers, in pixels (PX is 16.16 fixed point, so "SpX = 15.0" is 15).
-    local BULLETS        = 17      -- bulletCount (:31)
+    local BULLETS        = ctx.option("bullets") -- PX bulletCount (:31), default 17
     local ENTER_Y        = -288    -- spawn height, above the map (:434)
     local SIDE           = 500     -- spawn offset past the map edge (:437,439)
     local HOVER          = 15      -- entry/hover speed (:443,445)

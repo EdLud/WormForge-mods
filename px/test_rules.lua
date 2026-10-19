@@ -4921,6 +4921,76 @@ do
   end
 end
 
+print("weapon-owned options: installed values reach flight, bullets and sentries")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match()
+    local id, health = "px." .. kind, 123
+    HIGHLANDER_CLAIMING = id
+    require("components/loader").install({ id = id, option = function(key)
+      assert(key == "health"); return health
+    end })
+    HIGHLANDER_CLAIMING = nil
+    local t = require("lib/shared")[kind]
+    local body = t.place({ worm = worm(16) })
+    check(kind .. ": configured health copied to each placement", t.state[body.id].health == health)
+  end
+  for _, fuel in ipairs({ 1, 255, 300, 1000 }) do
+    new_match()
+    HIGHLANDER_CLAIMING = "px.helicopter"
+    require("components/loader").install({ id = "px.helicopter", option = function(key)
+      assert(key == "fuel"); return fuel
+    end })
+    HIGHLANDER_CLAIMING = nil
+    local spec = replaced[#replaced]
+    check("helicopter: byte record bridge for fuel " .. fuel, spec.jet_pack.fuel == math.min(fuel, 255))
+    local w = worm(16)
+    w.weapon, w.state, w.turn = "jet_pack", "prefiring", true
+    w.keys = { up = false, down = false, left = false, right = false }
+    M.message(w, wa.msg.FRAME_FINISH)
+    w.state, w.fuel = "jetpacking", spec.jet_pack.fuel
+    M.message(w, wa.msg.FRAME_FINISH)
+    local first = w.fuel
+    check("helicopter: full fuel applied on take-off " .. fuel, near(first, fuel - 0.02))
+    M.message(w, wa.msg.FRAME_FINISH)
+    check("helicopter: fuel keeps burning without a refill", near(w.fuel, first - 0.02))
+    if fuel == 1000 then
+      M.contact(w, { kind = "land" }, { vx = 10, vy = 10 })
+      local boom = M.spawned[#M.spawned].spec.explode
+      check("helicopter: high-fuel crash retains PX's formula", boom.id == 924 and boom.damage == 1848,
+        "blast=" .. boom.id .. " damage=" .. boom.damage)
+    end
+  end
+  for _, bullets in ipairs({ 3, 1000 }) do
+    new_match()
+    local claim, ticks, shot_frames = nil, 0, {}
+    wa.weapons.replace = function(spec) claim = spec end
+    wa.weapons.launch = function(spec)
+      assert(spec.weapon == "stock.bazooka")
+      shot_frames[#shot_frames + 1] = ticks
+      -- Flight lifetime is independent of missile handles/trail rendering.
+      return nil
+    end
+    require("weapons/attack_helicopter").install({ position = { row = "F6", column = 4 },
+      option = function(key) assert(key == "bullets"); return bullets end })
+    local w = worm(16)
+    w.facing = -1
+    claim.on_click({ worm = w, x = 1000, y = 500 })
+    local body = M.spawned[#M.spawned - 2]
+    while not body.dead and ticks < 8000 do
+      ticks = ticks + 1
+      body.on(body)
+    end
+    check("attack helicopter: configured " .. bullets .. " shots then exits", #shot_frames == bullets and body.dead,
+      #shot_frames .. " shots in " .. ticks .. " frames")
+    check("attack helicopter: existing cooldown is five frames between rounds", shot_frames[2] - shot_frames[1] == 5)
+    if bullets == 1000 then
+      check("1000 rounds finish their strafe before the actor leaves", shot_frames[1000] - shot_frames[1] == 4995,
+        (shot_frames[1000] - shot_frames[1]) / 50 .. " seconds from first to last round")
+    end
+  end
+end
+
 -- ------------------------------------------------------------ baseline
 
 -- A value as text: tables with their keys sorted, functions as <function>.

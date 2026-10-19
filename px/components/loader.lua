@@ -130,7 +130,16 @@ end
 -- the whole loadout, once; then this weapon's claim of its slot.
 function loader.install(ctx)
   loader.load(loader.place(ctx))
-  if not shared.claim(ctx.id) then
+  local options
+  if ctx.id == "px.helicopter" then
+    options = { fuel = ctx.option("fuel") }
+    shared.helicopter_fuel = options.fuel
+  elseif ctx.id == "px.sentry_gun" then
+    shared.sentry_gun.health = ctx.option("health")
+  elseif ctx.id == "px.sentry_laser" then
+    shared.sentry_laser.health = ctx.option("health")
+  end
+  if not shared.claim(ctx.id, options) then
     error(ctx.id .. ": not a Highlander weapon")
   end
 end

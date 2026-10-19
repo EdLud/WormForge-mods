@@ -39,13 +39,25 @@ local settings = {}
 -- weapon is the last `id =` seen (mod.toml's components).
 -- Highlander's weapons: mod.toml's components that enter through
 -- components/weapon.lua (the others, reddaz's, have their own files).
-local highlander = {}
+local highlander, own_options = {}, {}
 local function read(path, header)
   local f = assert(io.open(root .. path, "r"))
-  local id
+  local id, option_key, in_options
   for line in f:lines() do
+    if line:match("^%[") then
+      in_options = line == "[[components.options]]"
+      option_key = nil
+    end
     id = line:match('^id = "([%w_%.]+)"') or (header and line:match(header)) or id
     if id and line == 'entry = "components/weapon.lua"' then highlander[id] = true end
+    if in_options then
+      option_key = line:match('^key = "([%w_]+)"') or option_key
+      local default = line:match("^default = (%d+)$")
+      if id and option_key and default then
+        own_options[id] = own_options[id] or {}
+        own_options[id][option_key] = tonumber(default)
+      end
+    end
     local pool = line:match('^pool = "([%w ]+)"')
     local cavern = line:match("^cavern = (%a+)")
     if id and (pool or cavern) then
@@ -85,7 +97,12 @@ require("components/highlander").install({ id = "hl.rules", weapons = weapons, p
 for _, w in ipairs(placed) do
   if highlander[w.id] then
     HIGHLANDER_CLAIMING = w.id
-    loader.install({ id = w.id, weapons = weapons, placed = placed })
+    local options = own_options[w.id] or {}
+    loader.install({ id = w.id, weapons = weapons, placed = placed,
+      options = options, option = function(key)
+        assert(options[key] ~= nil, w.id .. " has no option " .. key)
+        return options[key]
+      end })
   end
 end
 HIGHLANDER_CLAIMING = nil

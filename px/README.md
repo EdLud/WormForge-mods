@@ -45,6 +45,27 @@ rules, moved weapons are dealt where they are, and one taken out is not dealt. A
 some of them next to WA's own weapons: they then keep the ammo, delay and
 crate odds that profile gives them. Search for them in the Weapons tab.
 
+### Weapon options
+
+In **Weapons**, select a weapon and open its settings. Its own options appear
+before Highlander's pool and cavern settings; Reset restores the defaults.
+These settings do not change **Ammo**, the number of uses a team gets.
+
+| Weapon | Setting | Range | Default |
+|---|---|---|---|
+| Attack Helicopter (`px.attack_helicopter`) | Bullets per strafe (`bullets`) | 1–1000 | 17 |
+| Helicopter (`px.helicopter`) | Fuel (`fuel`) | 1–1000 | 100 |
+| Sentry Gun (`px.sentry_gun`) | Health (`health`) | 1–500 | 50 |
+| Sentry Laser (`px.sentry_laser`) | Health (`health`) | 1–500 | 35 |
+
+Profiles store these under `[options."<weapon id>"]`, for example
+`[options."px.helicopter"]` followed by `fuel = 300`. Helicopter fuel is
+applied once on take-off through `worm.fuel`, since WA's native record holds
+only a byte. Its crash still scales with fuel left and speed, so more fuel
+can cause much larger explosions. An Attack Helicopter with 1000 rounds
+strafes for roughly 100 seconds plus its entry, wind-up and exit (the
+current four-frame cooldown fires every fifth frame).
+
 ## Rules
 
 - At the start of the match, every worm is dealt **one weapon from each

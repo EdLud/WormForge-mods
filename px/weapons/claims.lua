@@ -93,7 +93,7 @@ end
 -- One weapon's claim of the slot the profile placed it on: built on its
 -- `base`, WA's own weapon's record, with PX's changes to it (WEP_FIELDS), or
 -- on PX's own record (`wep`).
-local function claim(w)
+local function claim(w, options)
   owned[w.id] = true
   local spec = w.wep and { wep = w.wep } or { copy_from = w.base, name = WEP_NAME[w.id] }
   if w.id == "px.old_woman_launcher" then
@@ -110,6 +110,10 @@ local function claim(w)
       spec.raw[0x038] = nil
     end
   end
+  if w.id == "px.helicopter" and options then
+    -- WA's record is a byte. Lua sets the full configured amount on take-off.
+    spec.jet_pack.fuel = math.min(options.fuel, 255)
+  end
   for key, value in pairs(w) do
     spec[key] = value
   end
@@ -123,11 +127,11 @@ local function claim(w)
 end
 
 -- A weapon component claims only the slot it was placed on: the weapon `id`.
-shared.claim = function(id)
+shared.claim = function(id, options)
   for _, list in ipairs({ PORTED, PX_ART }) do
     for _, w in ipairs(list) do
       if w.id == id then
-        claim(w)
+        claim(w, options)
         return true
       end
     end
