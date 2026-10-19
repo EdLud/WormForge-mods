@@ -124,7 +124,7 @@ local PX_ART = {
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing.png", "sprites/sentry_gun/turret_base.png", "sprites/sentry_gun/turret_mask.png",
+      "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing.png", "sprites/sentry_gun/turret_base.png",
       "sprites/sentry_gun/turret_gun.png", "sprites/sentry_gun/turret_flare.png", "sprites/sentry_gun/turret_light.png",
     },
     sounds = {
@@ -167,7 +167,7 @@ local PX_ART = {
       colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
     },
     sprites = {
-      "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_mask.png", "sprites/sentry_laser/turret_body.png",
+      "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_body.png",
       "sprites/sentry_laser/turret_barrel.png", "sprites/sentry_laser/turret_light.png",
     },
     sounds = {

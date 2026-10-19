@@ -417,7 +417,7 @@ function turret.new(cfg)
     if not s or not ev.other then return end
     local uid = ev.other.uid
     if uid and s.script_hits[uid] then s.script_hits[uid] = nil; return end
-    if ev.other.kind == "worm" and s.planter and ev.other.id == s.planter_id then return end
+    if ev.other.kind == "worm" and s.phase ~= 3 then return end
     -- Sentries used to meet through their fixed terrain footprints. Keep
     -- them as supports rather than adding projectile momentum to a stack.
     if ev.other.kind == "actor" then
@@ -445,9 +445,10 @@ function turret.new(cfg)
     end
     if planted and not s.planted then
       s.planted = true
-      if not s.mask_active then
-        a.solid = true
-        s.mask_active = true
+      if not s.landed_once then
+        s.landed_once = true
+        s.phase = s.planter and 2 or 3
+        a.hit_by = s.phase == 3 and "all" or { arrows = true, melee = true, fire = true, dragon_ball = true }
       end
       wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
         t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
@@ -487,7 +488,7 @@ function turret.new(cfg)
       -- clear, including a fast fall past the planter in this tick.
       if not planter or (not feet.overlaps_worm(s.x, s.y, planter)
         and not feet.overlaps_worm(previous_x, previous_y, planter)) then
-        a:collision_ignore(s.planter, false)
+        s.phase, a.hit_by = 3, "all"
         wa.log(string.format("Sentry passage ended %s id=%d planter=%d (%s)",
           t.kind, a.id, s.planter_id, planter and "clear" or "gone"))
         s.planter, s.planter_id = nil, nil
@@ -567,7 +568,7 @@ function turret.new(cfg)
     for _, other_t in ipairs(turrets) do
       for _, id in ipairs(wa.sorted(other_t.state)) do
         local other = other_t.state[id]
-        if other.mask_active and other.body.id == id then
+        if (other.landed_once or other.phase == 3) and other.body.id == id then
           obstacles[#obstacles + 1] = { x = other.body.x, y = other.body.y }
         end
       end
@@ -614,16 +615,14 @@ function turret.new(cfg)
       return nil
     end
     local body = wa.actors.spawn({
-      sprite = t.art.mask, x = x, y = y,
+      sprite = false, x = x, y = y,
       vx = 0, vy = 0,
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
-      gravity = true, collide_terrain = true, collide_worms = false, drown = false, as_object = true,
-      shape = "sprite", solid = false,
-      -- Native object collision uses the authored shape, without terrain stamps.
-      mask = false, mask_rope = false,
+      gravity = true, drown = false,
+      body = { shape = t.art.mask, hits = { land = true, objects = true },
+        hit_by = { fire = true, dragon_ball = true } },
       on = { frame = brain, hit = hit, contact = touched },
     })
-    assert(body:collision_ignore(worm, true), "Sentry: could not register planter passage")
     local s = {
       alliance = alliance, planted = false, active = true, disabled = false, ammo = t.ammo,
       x = x, y = y, vx = body.vx, vy = body.vy, tick = 0,
@@ -632,17 +631,28 @@ function turret.new(cfg)
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,
       planter = worm, planter_id = worm.id,
-      mask_active = false,
+      landed_once = false, phase = 1,
     }
     state[body.id] = s
     s.body = body
-    body:frame(0)
-    -- Zero additive colour hides the mechanical mask without removing its alpha.
-    body:gfx({ tint = 0, blend = "add", depth = wa.depth.BEHIND_TERRAIN })
     wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) passage=on",
       t.kind, body.id, worm.id, x, y))
     return body, s
   end
+
+  -- A planter cannot carry partial immunity into a later turn, even
+  -- when the sentry is still falling.
+  wa.on.turn_end(function(ev)
+    local worm = ev.worm
+    if not worm then return end
+    for _, id in ipairs(wa.sorted(state)) do
+      local s = state[id]
+      if s.body.id == id and s.planter_id == worm.id then
+        s.planter, s.planter_id = nil, nil
+        s.phase, s.body.hit_by = 3, "all"
+      end
+    end
+  end)
 
   -- Each turn reloads and reactivates every turret, and forgets what moved
   -- and what it aimed at. Order-independent: each entry gets the same reset.
