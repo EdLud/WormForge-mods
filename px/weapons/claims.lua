@@ -63,6 +63,29 @@ local KEEPS_TURN = {
   scales_of_justice = true,
 }
 
+-- WA remembers a worm's weapon between turns (RubberWorm's Remember
+-- Weapons: each worm's own, team arena +0x411C) and re-equips it only when
+-- its record says so: +0x0C, the record field `fires.aims`, which WA 3.8.1
+-- reads nowhere else (the keep at 0x556190, the remember at 0x5582D3, the
+-- re-equip at 0x556621). PX's records turn it off on almost every weapon,
+-- so no PX weapon was remembered. Here every PX weapon is, but the strikes
+-- and the Super Gravedigger, by name (WA doesn't remember its own strikes
+-- either).
+-- WA's own re-equip order stays: its 70 by id, then these in slot order
+-- (engine more_weapons). Of WA's own, 18 are remembered: Bazooka, Mortar,
+-- Grenade, Cluster Bomb, Battle Axe, Shotgun, Handgun, Uzi, Longbow, Fire
+-- Punch, Super and Aqua Sheep, Mole Bomb, Blow Torch, Drill, Ninja Rope,
+-- Flame Thrower and Petrol Bomb (its InitWeaponTable, run natively in
+-- engine/src/profile_scheme_tests.rs).
+local NOT_REMEMBERED = {
+  ["px.banana_express"] = true, ["px.bowling_ball_strike"] = true, ["px.crate_strike"] = true,
+  ["px.gravler_strike"] = true, ["px.lightning_strike"] = true, ["px.mortar_strike"] = true,
+  ["px.pigeon_strike"] = true, ["px.thumper_nade_strike"] = true, ["px.super_gravedigger"] = true,
+}
+-- Each claim's weapon by its home slot, the key claim() is called with.
+local ID_OF = {}
+for id, home in pairs(require("lib/homes")) do ID_OF[home] = id end
+
 -- The weapons Highlander claimed this match, by home slot. Code that acts on
 -- a weapon it looks up by slot (a missile's sprite, a held weapon's sight)
 -- asks first: as a component bundle only the placed weapons claim, and
@@ -96,6 +119,10 @@ local function claim(w)
     spec[key] = value
   end
   spec.handling = merged(spec.handling, { ends_turn = not KEEPS_TURN[w.weapon] })
+  local id = ID_OF[w.weapon]
+  if id then
+    spec.fires = merged(spec.fires, { aims = not NOT_REMEMBERED[id] })
+  end
   -- No slot: a weapon component claims the one it was placed on.
   spec.weapon = nil
   spec.hold = PX_HOLDS[w.weapon]
