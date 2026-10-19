@@ -4,7 +4,7 @@ features = ["core.fog"]
 [options."core.fog"]
 view_ownership = "alliance"
 circle_radius = 250
-los = true
+shadow_cast = true
 discover = "texture"
 spectator_mode = true
 placement_vision = false

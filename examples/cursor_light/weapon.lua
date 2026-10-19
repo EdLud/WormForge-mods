@@ -28,7 +28,7 @@ return {
       -- for this cursor, using its native pointer position every frame.
       cursor.light = {
         mode = "light", circle = 300, cone = { length = 0 },
-        los = true, seen_by = "owner", discover = false,
+        shadow_cast = true, seen_by = "owner", discover = false,
       }
     end
 

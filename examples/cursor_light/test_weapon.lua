@@ -34,7 +34,7 @@ local select = function() claim.on_select.on{worm = worm, x = 120, y = 80} end
 select()
 local a = spawned[#spawned]
 assert(a.spec.owner == worm and a.spec.x == 120 and a.spec.y == 80)
-assert(a.light.mode == 'light' and a.light.los == true and a.light.circle == 300)
+assert(a.light.mode == 'light' and a.light.shadow_cast == true and a.light.circle == 300)
 assert(a.light.cone.length == 0 and a.light.discover == false and a.light.seen_by == 'owner')
 claim.on_click{}
 a.spec.on()
@@ -63,4 +63,4 @@ assert(#spawned == count, 'inactive selection creates no cursor')
 worm.turn, worm.weapon = true, 'stock.skip_go'
 emit('turn_start', {worm = worm})
 assert(#spawned == count, 'another weapon does not create a cursor')
-print('PASS: LOS light, click/reselect, weapon switch, turn transition, death and inactive selection')
+print('PASS: shadow-casting light, click/reselect, weapon switch, turn transition, death and inactive selection')

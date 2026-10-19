@@ -44,11 +44,11 @@ label = "Cone length"
 description = "Reach of the aim-directed view cone, in pixels. 0 means no cone."
 
 [[components.options]]
-key = "los"
+key = "shadow_cast"
 type = "bool"
 default = true
-label = "Terrain blocks vision"
-description = "Terrain blocks vision, for worms and animals alike. false reveals the full circle regardless of terrain."
+label = "Shadow casting"
+description = "Shadow casting: terrain blocks worms' and animals' vision. Off lights the full circle, whatever the terrain."
 
 [[components.options]]
 key = "discover"
@@ -121,11 +121,11 @@ label = "Proj cone width"
 description = "Width of a projectile's view cone, in degrees. 360 is a full circle."
 
 [[components.options]]
-key = "proj_los"
+key = "proj_shadow_cast"
 type = "bool"
 default = false
-label = "Terrain blocks projectile light"
-description = "Terrain blocks projectile vision."
+label = "Projectile shadow casting"
+description = "Shadow casting for projectiles' light: terrain blocks it."
 
 [[components.options]]
 key = "explosion_circle"
