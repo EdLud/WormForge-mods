@@ -4024,7 +4024,8 @@ end
 print("reddaz's ports: each claims PX's record, px's worm library and its own strips")
 do
   local function exists(path)
-    local f = io.open("mods/px/" .. path, "rb")
+    -- HIGHLANDER_ROOT is px's folder when the engine's loader test runs the suite.
+    local f = io.open((HIGHLANDER_ROOT or "mods/px/") .. path, "rb")
     if f then f:close() end
     return f ~= nil
   end
