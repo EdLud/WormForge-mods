@@ -169,17 +169,24 @@ hands out together with its missile flight drawing (`sb.flight`).
   crate for 10 damage and a shove. A thin ribbon (`lib/px_trail.lua`) trails
   it.
 - **Health Zone** (`px.health_zone`), by PyroMan: a thrown zone that once a
-  second for its turns heals the worm inside it, or resurrects a grave at 1
-  health, or damages one without killing it. 1-5 set its turns, `+` heals,
-  `-` damages.
+  second heals the worm inside it, resurrects a grave at 1 health, or damages
+  one without killing it. Weapon settings control **Healing per minute**
+  (1–60000, default 60 = 1 HP/sec) and **Turns** (1–20, default 3). Fractional
+  rates accumulate: 30 HP/min heals 1 HP every two seconds. Empty time does
+  not bank healing. Duration counts from the next turn: if A plants a
+  one-turn zone, it lasts through B's turn. `+` heals, `-` damages at 1 HP/sec.
 - **Blast Zone** (`px.blast_zone`), by PyroMan: the same round, and the 45x45
   zone it leaves explodes (30 damage and a shove) whenever a worm, mine,
   barrel, crate, arrow or missile is inside it. 1-5 set its turns.
 
 The zones share PX's `CWZone` machinery (`lib/px_zone.lua`): the turn count,
 the seven seconds of inactivity after a turn, the box and its one activator.
-Their art came as frame folders and is joined into strips, as the rest of
-px's.
+Health Zone's animated medical crate/fallout, its held-vial particles and both
+weapons' flight trails use the original art and particle parameters from the
+28.09.2026 PX build. Blast Zone uses PX's three rotated, additive explosion
+animations. Expired zones fade visually for three seconds after their effects
+stop; fading does not heal or explode. Cosmetic particles use a separate
+random stream and do not alter gameplay randomness.
 
 ### Double Jump
 

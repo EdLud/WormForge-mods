@@ -54,6 +54,7 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/blast_zone/exp.png"]
+frames = 10
 fps = 15
 play = "loop"
 
@@ -249,7 +250,23 @@ play = "loop"
 fps = 15
 play = "loop"
 
-[sprites."sprites/health_zone/zone.png"]
+[sprites."sprites/zone_fx/mcrate0.png"]
+frames = 61
+fps = 20
+play = "loop"
+
+[sprites."sprites/zone_fx/fallout.png"]
+frames = 32
+fps = 20
+play = "loop"
+
+[sprites."sprites/zone_fx/wormhit2.png"]
+frames = 10
+fps = 20
+play = "loop"
+
+[sprites."sprites/zone_fx/glow.png"]
+frames = 1
 fps = 15
 play = "loop"
 
@@ -1707,10 +1724,28 @@ type = "weapon"
 name = "Health Zone"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Health Zone: a thrown zone that once a second heals the worm inside it, or resurrects a grave, for its turns, or damages one, as the keys set: 1-5 turns, + heals, - damages."
+description = "Project X's Health Zone: a thrown zone that heals the worm inside it at the configured rate, or resurrects a grave at 1 HP. Duration counts from the next turn. + heals, - damages (1 HP/sec without killing)."
 entry = "weapons/health_zone.lua"
 icon = "sprites/health_zone/icon.png"
 default_position = { row = "F9", column = 3 }
+
+[[components.options]]
+key = "healing_per_minute"
+type = "int"
+label = "Healing per minute"
+description = "HP restored per minute of healing a worm. 60 = 1 HP/sec; 30 = 1 HP every two seconds."
+min = 1
+max = 60000
+default = 60
+
+[[components.options]]
+key = "turns"
+type = "int"
+label = "Turns"
+description = "Number of active turns, counted from the turn after placement."
+min = 1
+max = 20
+default = 3
 
 [[components]]
 id = "px.blast_zone"

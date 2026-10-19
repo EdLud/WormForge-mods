@@ -36,6 +36,8 @@
 --   half_height      ...)` :382 is 40x30, the blast zone's 45x45 :374).
 --   kinds            which object kinds count (PX's `OC_*` list, :334).
 --   one_shot         `CBlast`'s `worknow`: act once per waking (:328-346).
+--   next_turn        begin spending turns after the next turn starts.
+--   fade_frames      visual-only tail after expiry; payload stops immediately.
 --   wakes(z, obj)    whether this activator acts at all -- the health zone's
 --                    resting-only rule while `start_be_inactive` (:207-213).
 --   frame(z)         every world frame, before the fps gate (an animation).
@@ -108,7 +110,8 @@ local function tick(o)
   o.timer = o.timer + 1
   if spec.frame then spec.frame(o) end
   if o.turns <= 0 then
-    forget(o)
+    o.fade = (o.fade or 0) + 1
+    if o.fade >= (spec.fade_frames or 0) then forget(o) end
     return
   end
   if spec.fps and o.timer % spec.fps == 0 then
@@ -146,7 +149,7 @@ end
 -- object's turns, and starts its seven-second countdown.
 local function spend_turn()
   for _, o in ipairs(objects) do
-    o.turns = o.turns - 1
+    if o.counting then o.turns = o.turns - 1 end
     o.start_be_inactive = true
     o.inactive = 0
   end
@@ -155,6 +158,7 @@ end
 -- PX's M_TURNBEGIN (:175-183): a live object wakes for the new turn.
 local function wake()
   for _, o in ipairs(objects) do
+    o.counting = true
     o.active, o.start_be_inactive, o.inactive = true, false, 0
   end
 end
@@ -191,7 +195,7 @@ function M.register(spec)
     if wa.on.draw and wa.draw.quad then
       wa.on.draw(function()
         for _, o in ipairs(objects) do
-          if o.spec.draw then o.spec.draw(o) end
+          if o.spec.draw and (o.turns > 0 or o.spec.fade_frames) then o.spec.draw(o) end
         end
       end)
     end
@@ -214,6 +218,7 @@ function M.register(spec)
     local o = state or {}
     o.spec, o.x, o.y, o.timer = spec, x, y, 0
     o.active, o.start_be_inactive, o.inactive = true, false, 0
+    o.counting = not spec.next_turn
     o.armed = spec.one_shot and true or false
     -- PX's objects are `CObject`s that live on M_FRAME (:167-230, :306-347):
     -- here that is an actor with a per-frame brain and no body -- brains run on

@@ -363,6 +363,7 @@ local function new_match(opts)
       return out
     end,
     log = function(s) logs[#logs + 1] = s end,
+    assets = { load = function() end },
     hud = { line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24,
       JUMP_UP = 0x25, RELEASE_WEAPON = 0x27 },
@@ -4036,7 +4037,10 @@ do
     -- weapon takes, for the mock.
     local claiming = HIGHLANDER_CLAIMING
     HIGHLANDER_CLAIMING = "select_worm"
-    require("weapons/" .. name).install({ id = "px." .. name })
+    require("weapons/" .. name).install({ id = "px." .. name,
+      option = function(key)
+        return ({ turns = 3, healing_per_minute = 60 })[key]
+      end })
     HIGHLANDER_CLAIMING = claiming
     local spec = replaced[#replaced]
     local files = spec.hold and exists(spec.hold.sheet) and exists(spec.panel_icon)

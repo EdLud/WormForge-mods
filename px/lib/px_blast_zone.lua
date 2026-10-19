@@ -36,16 +36,10 @@
 -- -- it exposes the slot the match drew the worm in -- so PX's six default
 -- values are used for it, and they are the six WA ships with.
 --
--- Not ported, and why:
---   * `CheckParticlesNumber` and the aim/flight particles (`:395-404`, `:525`)
---     -- no particle API (REPORT.md 6 #1);
---   * the explosions' fade (`ZoneParams->duration = 3`, :255) -- drawn at PX's
---     colour alpha throughout, as the Health Zone's patch is;
---   * the team credit of the blast -- `a:explode` has no team field, so the
---     engine credits its actor's owner, which is the thrower; PX's
---     `DoExplosion(..., Team)` asks for the same thing;
---   * `fix_flip_rotation` (`blast_zone_anim.txt:22`) -- no such hold field in
---     this engine (`crates/lua-host/src/api.rs:1615-1643`).
+-- Art/timing verified against weapon_zones.pxl, p_animation.pxl and
+-- pxparticles.pxl in the 28.09.2026 PX build. Trails and animation use the
+-- existing drawing API; lib/px_zone_fx.lua keeps cosmetic RNG separate.
+-- Visual expiry fades for three game seconds, independent of render rate.
 --
 -- A component's file, and anything it requires, runs where `wa` does not exist
 -- yet: this module is pure data at load and touches `wa` only in `install`.
@@ -78,6 +72,8 @@ function M.install(ctx)
   local ART = "sprites/blast_zone/"
   local sb = require("lib/px_sprite_builder")
   local zone = require("lib/px_zone")
+  local fx = require("lib/px_zone_fx")
+  fx.install()
 
   -- PX's numbers (`zone_launchers_script.txt`).
   local TURNS_MIN, TURNS_MAX = 2, 6 -- the 1..5 keys give 2..6 turns (:429-459)
@@ -91,19 +87,12 @@ function M.install(ctx)
   -- (`mods/px/weapons/electromagnet.lua:64`, `wa.random(1000, 4999)`); followed
   -- here, because a millisecond is not observable and his is the working one.
   local MINE_FUSE_MIN, MINE_FUSE_MAX = 1000, 4999
-  local WORLD_FPS = 50              -- the engine's frame rate (REPORT.md 13)
 
   -- The explosion, PX's `pyroman_explosion` (`bz_exp.png`, 10 frames of 150x150)
   -- at `scale = 0.5` (:260): 75 pixels, drawn three times, once per rotation
   -- (:259, :279, :281).
   local EXP_FRAMES = 10
-  -- Read as ten animation frames a second, so the ten frame the explosion shows
-  -- and the ping-pong below takes about half a second. `CAnimation` is not in the
-  -- repo, so what PX's `speed` counts is unknown (ASSUMPTIONS); what is knowable
-  -- is that 35 is far too small to be his sprite builder's fractional
-  -- `anim_speed` -- that one is scaled by 30/1000
-  -- (`red_sprite_builder.txt:51-57`) and would wrap every frame.
-  local EXP_SPEED = 35              -- `speed = 35` (:254)
+  local EXP_SPEED = 35 -- normalized phase increment = speed/1000 per frame
   local EXP_SIZE = 75
   local ROTATIONS = { math.pi / 2, math.pi / 4, -math.pi / 4 }
   -- PX's `ZoneParams->ZPlane` is set once, by the health zone (:106), and his
@@ -161,11 +150,8 @@ function M.install(ctx)
   -- frames run out and back, for as long as the zone lives. Stepped here, once
   -- a world frame, rather than in the draw, so the frame is the same on every
   -- peer and in a replay whatever the renderer is doing.
-  local CYCLE = 2 * EXP_FRAMES - 2
   local function animate(z)
-    z.phase = z.phase + EXP_SPEED / WORLD_FPS
-    local step = math.floor(z.phase) % CYCLE
-    z.frame = step < EXP_FRAMES and step or CYCLE - step
+    z.frame = fx.frame(z.timer, EXP_SPEED, EXP_FRAMES)
   end
 
   -- PX's `CBlast`, through the shared machine: a 45x45 box, a tick every 0.1 s,
@@ -178,12 +164,16 @@ function M.install(ctx)
     half_height = RADIUS,
     kinds = { worm = true, oil = true, mine = true, crate = true, arrow = true, missile = true },
     one_shot = true,
+    fade_frames = fx.FADE,
     frame = animate,
     tick = boom,
     draw = function(z)
-      local colour = TEAM_COLOURS[(z.colour or 0) + 1] or TEAM_COLOURS[1]
+      local colour = fx.faded(TEAM_COLOURS[(z.colour or 0) + 1] or TEAM_COLOURS[1], z)
       for _, angle in ipairs(ROTATIONS) do
-        zone.mark(EXP_SHEET, z.x, z.y, EXP_SIZE, angle, colour, "add", EXP_DEPTH, z.frame)
+        -- CAnimation emits floor(150/15 * 35/100) = three additive copies.
+        for _ = 1, 3 do
+          zone.mark(EXP_SHEET, z.x, z.y, EXP_SIZE, angle, colour, "add", EXP_DEPTH, z.frame)
+        end
       end
     end,
   })
@@ -228,6 +218,7 @@ function M.install(ctx)
   -- and draws PX's `blast_zone_bullet.png` on the missile, turned by the
   -- record's own animation type: `+0x64` is 2, the track-movement type, a
   -- bazooka shell facing its flight (`highlander_0rang3_test/lib/missile_sprites.lua:22-25`).
+  fx.flight("px.blast_zone")
   sb.flight(ctx, {
     weapon = "px.blast_zone",
     sheet = ART .. "bullet.png",
@@ -278,7 +269,7 @@ function M.install(ctx)
         -- `worm.alliance` is the colour index (0 red to 5 cyan), taken now so
         -- the draw never reads a worm that has since died.
         colour = shooter and shooter.alliance or 0,
-        phase = 0, frame = 0,
+        frame = 0,
       })
     end,
   }

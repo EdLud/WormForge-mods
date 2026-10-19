@@ -12,7 +12,7 @@
 -- zone lasts `turns` turns and, once a second while it is active, acts on the
 -- one object inside it:
 --
---   * healing: +1 health to that worm, or a grave resurrected at 1 health
+--   * healing: configurable health to that worm, or a grave resurrected at 1 health
 --     (`AddHealth`, :134-165);
 --   * damaging: -1 health, never below 1 (`DamageHealth`, :118-132).
 --
@@ -26,23 +26,13 @@
 -- (`lib/px_sprite_builder.lua`, `PX_POSTURE`) with PX's one held PNG over it,
 -- exactly as `health_zone_anim.txt` states it (`hand_type` 3, the upper hand).
 --
--- The zone's patch is the one thing here that is not PX's art: his two sprites
--- are WA's own (`mcrate0` / `fallout`) and no `wa.draw.quad` may draw a stock
--- sprite (see `ZONE_SHEET`), so `build_hold_library.py` generates a white disc
--- and PX's own tints colour it.
---
--- Not ported, and why:
---   * the flight trail and the aim particles (`do_sprite_trail_effects(108/106,
---     ...)`, :397-398; `DoAnimParticleEffects`, `health_zone_anim.txt:67`) --
---     there is no particle API (REPORT.md 6 #1), as with the Security Grenade's
---     own trail;
---   * the jet-fuel and sickness halves of `AddHealth`/`DamageHealth`
---     (:130, :161-162) -- the API has no jet-fuel or poison value;
---   * `fix_flip_rotation` (`health_zone_anim.txt:25`) -- no such hold field in
---     this engine (`crates/lua-host/src/api.rs:1615-1643`);
---   * the patch's fade (`ZoneParams->duration = 3`, :99) -- the quad is drawn at
---     a constant alpha, as PX's `alpha` (:105) is not modelled either; his own
---     colour carries the alpha this port uses (`HEAL_TINT`).
+-- Art and particle parameters verified against weapon_zones.pxl, p_animation.pxl
+-- and pxparticles.pxl in the 28.09.2026 PX build. Original stock strips are
+-- bundled as GPU sheets; lib/px_zone_fx.lua reproduces the cosmetic particles.
+-- Fuel and poison effects remain outside this visual/settings pass.
+-- PX's stock animation is drawn in full colour, with its colour wash layered
+-- using alpha (the quad API does not expose PX blend mode 6). Fade uses three
+-- game seconds, as the source comment intends, instead of render-call counts.
 --
 -- A component's file, and anything it requires, runs where `wa` does not exist
 -- yet: this module is pure data at load and touches `wa` only in `install`.
@@ -75,47 +65,42 @@ function M.install(ctx)
   local ART = "sprites/health_zone/"
   local sb = require("lib/px_sprite_builder")
   local zone = require("lib/px_zone")
+  local fx = require("lib/px_zone_fx")
+  fx.install()
 
   -- PX's numbers (`zone_launchers_script.txt`).
-  local TURNS_MIN, TURNS_MAX = 2, 6 -- the 1..5 keys give 2..6 turns (:479-508)
+  local turns = ctx.option("turns")
+  local healing_per_minute = ctx.option("healing_per_minute")
   local FPS = 50                    -- a tick a second, `fps = 50` (:87)
   local MIN_HP = 1                  -- `minHP`: a damaging zone never kills (:89)
   local RADIUS = 20                 -- `CWZone(x, y, 40, 30, ...)`: a 40x30 box (:382)
   local HALF_HEIGHT = 15
   local ROTATION = math.pi          -- `ZoneParams->rot = 180` (:103)
-  local ZONE_SIZE = 32              -- `ZoneParams->scale = 1.0` of a 32 px sprite (:104)
+  local ZONE_SIZE = 60              -- scale 1 of the PX editor's padded 60px frame
   local ZONE_DEPTH = wa.depth.WORMS + 1 -- PX's `ZPlane = 16` (:106): behind worms
 
-  -- The zone's own patch. PX drew it with WA's sprites, named only as the
-  -- literal ids 108 (`mcrate0`) and 106 (`fallout`) (:96-97, REPORT.md 16.4).
-  -- Those ids *resolve* in Lua (`spawn::resolve_sprite_name`,
-  -- `crates/lua-host/src/spawn.rs:1182`), but a `wa.draw.quad` may only draw a
-  -- GPU sheet: the renderer asks `crate::sprite::gpu_frame(q.sprite)` and, for a
-  -- stock id, logs "its sprite is not a GPU sheet" and draws nothing
-  -- (`crates/engine/src/gpu.rs:999-1001`). So the patch is our own PNG, white,
-  -- and PX's own tints colour it just as they coloured his.
-  local ZONE_SHEET = ART .. "zone.png"
   local HEAL_TINT = 0x4164DC64   -- ARGB(65, 100, 220, 100), green (:111)
   local DAMAGE_TINT = 0x41D26464 -- ARGB(65, 210, 100, 100), red  (:112)
 
-  -- PX's module state: `HealthPlus` and `HealthTurns` (:37, :17). The keys below
-  -- change them for the rest of the match, as PX's do.
+  -- Duration comes from the profile; +/- retain PX's mode controls.
   local healing = true
-  local turns = TURNS_MAX
-  local digit_held, plus_held, minus_held
+  local plus_held, minus_held
 
   -- The thrower, PX's `ClWT`/`ClWN` (:529-530): the flight actor's owner.
   local shooter
 
   -- PX's `AddHealth` (:134-165).
-  local function add_health(obj)
+  local function add_health(z, obj)
     if obj.kind == "grave" then
       -- A grave with a bound worm comes back at 1 health (:143-146).
       if obj.worm_id ~= 0 then obj:revive(obj.worm_id, 1) end
     elseif obj.kind == "worm" then
-      -- +1 health. PX caps at his 500 (:160); the engine caps at the scheme's own
-      -- maximum, and at it `heal` does nothing -- which is what PX's guard means.
-      obj:heal(1)
+      -- Keep the remainder in integer HP/min units: no fractional native HP,
+      -- no floating-point drift, and no healing banked while the zone is empty.
+      z.healing_credit = (z.healing_credit or 0) + healing_per_minute
+      local amount = math.floor(z.healing_credit / 60)
+      z.healing_credit = z.healing_credit % 60
+      if amount > 0 then obj:heal(amount) end
     end
   end
 
@@ -137,47 +122,39 @@ function M.install(ctx)
   local ZONES = zone.register({
     name = "Health Zone",
     fps = FPS,
+    next_turn = true,
+    fade_frames = fx.FADE,
     radius = RADIUS,
     half_height = HALF_HEIGHT,
     kinds = { worm = true, grave = true },
     wakes = function(z, obj) return not z.start_be_inactive or resting(obj) end,
     tick = function(z, obj)
-      if z.healing then add_health(obj) else damage_health(obj) end
+      if z.healing then add_health(z, obj) else damage_health(obj) end
     end,
-    -- PX's zone animation is one static sheet, rotated 180 (:103), tinted and
-    -- blended down (:105, :111-112). Drawn as the engine's quad rather than as
-    -- the actor's sprite so the tint and the rotation are the engine's -- and
-    -- because a stock sprite cannot be a quad at all (see `ZONE_SHEET`).
     draw = function(z)
-      zone.mark(ZONE_SHEET, z.x, z.y, ZONE_SIZE, ROTATION,
-        z.healing and HEAL_TINT or DAMAGE_TINT, "alpha", ZONE_DEPTH, 0)
+      local sheet, frames = z.healing and fx.HEAL or fx.DAMAGE, z.healing and 61 or 32
+      local frame = fx.frame(z.timer, 20, frames)
+      zone.mark(sheet, z.x, z.y, ZONE_SIZE, ROTATION,
+        fx.faded(0xFFFFFFFF, z), "alpha", ZONE_DEPTH, frame)
+      zone.mark(sheet, z.x, z.y, ZONE_SIZE, ROTATION,
+        fx.faded(z.healing and HEAL_TINT or DAMAGE_TINT, z), "alpha", ZONE_DEPTH, frame)
     end,
   })
 
-  -- PX's in-match keys (:462-511): 1..5 set the turns (to 2..6), `+` heals and
-  -- `-` damages. PX gates each change behind two presses (`SH_pressing`, :466);
-  -- here one press acts, on the key's edge, which is what PX's gate is standing
-  -- in for. The digit is the one held, 0..9 or nil (`crates/lua-host/src/spawn.rs:825-829`).
-  --
-  -- The thrower comes from the same place PX takes it: `FireFinal` saves `ClWT` /
-  -- `ClWN` (:529-530), which here is the worm the engine says fired this component.
+  -- +/- change mode; the component's duration is frozen with the profile.
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FIRE_WEAPON then
       if worm.weapon == "px.health_zone" then shooter = worm end
       return
     end
     local keys = worm.turn and worm.weapon == "px.health_zone" and wa.world.keys() or nil
-    local digit = keys and keys.digit
     if keys then
-      if digit and digit >= 1 and digit <= 5 and digit ~= digit_held then
-        turns = math.min(TURNS_MAX, math.max(TURNS_MIN, digit + 1))
-      end
       if keys.plus_key and not plus_held then healing = true end
       if keys.minus_key and not minus_held then healing = false end
+      if worm.aiming then fx.aim(worm, healing) end
     end
     -- Held past the weapon's deselect, re-select and press would read as no
     -- edge: the flags track the key even while another weapon is out.
-    digit_held = digit
     plus_held = keys ~= nil and keys.plus_key or false
     minus_held = keys ~= nil and keys.minus_key or false
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
@@ -194,7 +171,7 @@ function M.install(ctx)
       local worm = current_worm()
       if worm and worm.weapon == "px.health_zone" then
         wa.hud.line((healing and "Health Zone: HEALING" or "Health Zone: DAMAGING")
-          .. " for " .. turns .. " turns  (1-5 turns, + heals, - damages)")
+          .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ heals, - damages)")
       end
     end)
   end
@@ -204,6 +181,7 @@ function M.install(ctx)
   -- and draws PX's `health_zone_bullet.png` on the missile, turned by the
   -- record's own animation type: `+0x64` is 2, the track-movement type, a
   -- bazooka shell facing its flight (`highlander_0rang3_test/lib/missile_sprites.lua:22-25`).
+  fx.flight("px.health_zone", function() return healing end)
   sb.flight(ctx, {
     weapon = "px.health_zone",
     sheet = ART .. "bullet.png",
@@ -251,9 +229,8 @@ function M.install(ctx)
     sprite = "missile",
     worm_sprites = sb.PX_POSTURE,
     hold = hold,
-    -- Route the flight sheet into the GPU atlas for the flight actor, and the
-    -- zone's patch for its quad. The hold sheet comes in through `hold` itself.
-    sprites = { ART .. "bullet.png", ZONE_SHEET },
+    -- The flight and hold art; fx.install loads the shared zone/particle sheets.
+    sprites = { ART .. "bullet.png" },
     params = { gpu_prefix = ART },
     -- PX's `ExplodeAt` (:377-384), after WA's own impact (there is no injury: the
     -- record's damage and blast are 0, its bombs are the zone).
