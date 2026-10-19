@@ -405,8 +405,9 @@ function turret.new(cfg)
   end
 
   function t.push(a, s, vx, vy)
-    s.vx, s.vy = s.vx + vx, s.vy + vy
-    a.vx, a.vy = 0, 0
+    s.vx, s.vy = a.vx + vx, a.vy + vy
+    -- Wake WA's settled body as well as changing its momentum.
+    a:warp { x = a.x, y = a.y, vx = s.vx, vy = s.vy }
     if vy < 0 then s.planted = false end
     if vx ~= 0 or vy ~= 0 then t.stop_firing(a, s) end
   end
@@ -417,6 +418,13 @@ function turret.new(cfg)
     local uid = ev.other.uid
     if uid and s.script_hits[uid] then s.script_hits[uid] = nil; return end
     if ev.other.kind == "worm" and s.planter and ev.other.id == s.planter_id then return end
+    -- Sentries used to meet through their fixed terrain footprints. Keep
+    -- them as supports rather than adding projectile momentum to a stack.
+    if ev.other.kind == "actor" then
+      for _, other_t in ipairs(turrets) do
+        if other_t.state[ev.other.id] then return end
+      end
+    end
     local fraction = ev.other.kind == "worm" and t.contact_worm or t.contact_projectile
     t.push(a, s, (ev.vx or 0) * fraction, (ev.vy or 0) * fraction)
   end
@@ -426,102 +434,32 @@ function turret.new(cfg)
     hit(a, { damage = damage, vx = vx, vy = vy })
   end
 
+  -- WA moves the sprite-shaped body before FRAME_FINISH. Lua owns only
+  -- planting policy and sliding friction, never a second physics step.
   local function motion(a, s)
-    local obstacles, land = nil, {}
-    local function other_feet()
-      if obstacles then return obstacles end
-      obstacles = {}
-      -- Settled sentries need only support probes. Snapshot obstacles once
-      -- when moving, including positions moved earlier in this Lua frame.
-      for _, other_t in ipairs(turrets) do
-        for _, id in ipairs(wa.sorted(other_t.state)) do
-          local other = other_t.state[id]
-          if id ~= a.id and other.body.id == id then
-            obstacles[#obstacles + 1] = { x = other.x, y = other.y }
-          end
-        end
-      end
-      return obstacles
-    end
-    local function solid(px, py)
-      px, py = math.floor(px), math.floor(py)
-      local row = land[py]
-      if not row then row = {}; land[py] = row end
-      if row[px] == nil then
-        -- Most leading pixels are air. Filter our own stamp only when the
-        -- grid says solid; real dirt and overlapping masks stay solid.
-        row[px] = wa.land.solid(px, py) and turret.trace(a, px, py, px, py) ~= nil
-      end
-      return row[px]
-    end
-    local function support(x, y)
-      for _, dx in ipairs(t.foot_offsets) do
-        if solid(x + dx, y - t.sink_px + 1) then return true end
-      end
-      return false
-    end
-    local function blocked(x, y)
-      for _, other in ipairs(other_feet()) do
-        if feet.intersects(x, y, other.x, other.y) then return true end
-      end
-      -- Test the newly entered silhouette pixels. Existing burial cannot
-      -- trap a knocked turret, and the burial band may slide through soil.
-      local ox, oy = math.floor(s.x), math.floor(s.y)
-      x, y = math.floor(x), math.floor(y)
-      for _, row in ipairs(feet.rows) do
-        if row[1] <= -t.settle_px then
-          for i = 2, #row, 2 do
-            for px = x + row[i], x + row[i + 1] do
-              if not feet.contains(ox, oy, px, y + row[1]) and solid(px, y + row[1]) then return true end
-            end
-          end
-        end
-      end
-      return false
-    end
-    if s.planted and not support(s.x, s.y) then
-      s.planted = false
+    s.x, s.y, s.vx, s.vy = a.x, a.y, a.vx, a.vy
+    local planted = s.vy == 0 and a:on_feet()
+    if s.planted and not planted then
       t.stop_firing(a, s)
       update_servo(a, s, false)
     end
-    if s.planted and s.vy > 0 then s.vy = 0 end
-    if not s.planted then s.vy = s.vy + wa.world.gravity() end
-    if s.vx ~= 0 or s.vy ~= 0 or not s.planted then
-      local n = math.max(1, math.ceil(math.max(math.abs(s.vx), math.abs(s.vy))))
-      local dx, dy = s.vx / n, s.vy / n
-      for _ = 1, n do
-        if dx ~= 0 then
-          if blocked(s.x + dx, s.y) then s.vx, dx = 0, 0
-          else s.x = s.x + dx end
-        end
-        if dy < 0 then
-          if blocked(s.x, s.y + dy) then s.vy, dy = 0, 0
-          else s.y = s.y + dy; s.planted = false end
-        elseif dy > 0 then
-          if blocked(s.x, s.y + dy) and not support(s.x, s.y + dy) then
-            s.vy, dy = 0, 0
-          else
-            s.y = s.y + dy
-            if support(s.x, s.y) then
-              s.vy, dy = 0, 0
-              if not s.planted then
-                s.planted = true
-                wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
-                  t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
-                play(a, t.sounds.place)
-              end
-            end
-          end
-        end
-        if s.planted and not support(s.x, s.y) then s.planted = false end
+    if planted and not s.planted then
+      s.planted = true
+      if not s.mask_active then
+        a.solid = true
+        s.mask_active = true
       end
-      if s.planted then
-        if math.abs(s.vx) <= t.slide_friction then s.vx = 0
-        elseif s.vx > 0 then s.vx = s.vx - t.slide_friction
-        else s.vx = s.vx + t.slide_friction end
-      end
+      wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
+        t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
+      play(a, t.sounds.place)
     end
-    a.x, a.y, a.vx, a.vy = s.x, s.y, 0, 0
+    s.planted = planted
+    if s.planted then
+      if math.abs(s.vx) <= t.slide_friction then s.vx = 0
+      elseif s.vx > 0 then s.vx = s.vx - t.slide_friction
+      else s.vx = s.vx + t.slide_friction end
+      a.vx = s.vx
+    end
     if a:in_water() then destroy(a, s, false); return false end
     return true
   end
@@ -538,18 +476,17 @@ function turret.new(cfg)
     end
     if s.recoil > 0 then s.recoil = s.recoil - 1 end
     if s.firing or s.recoil > 0 then s.anim = s.anim + 1 end
-    local stamped_x, stamped_y = s.x, s.y
+    local previous_x, previous_y = s.x, s.y
     if not motion(a, s) then return end
     if s.planter then
       local planter
       for _, w in ipairs(wa.worms.all()) do
         if w.id == s.planter_id and w.hp > 0 then planter = w; break end
       end
-      -- WA uses the stamp from the frame's start until the next frame.
-      -- When falling, clear both that footprint and the moved feet before
-      -- ending passage, so a remaining old stamp cannot trap the planter.
+      -- Keep passage until both the previous and current footprints are
+      -- clear, including a fast fall past the planter in this tick.
       if not planter or (not feet.overlaps_worm(s.x, s.y, planter)
-        and not feet.overlaps_worm(stamped_x, stamped_y, planter)) then
+        and not feet.overlaps_worm(previous_x, previous_y, planter)) then
         a:collision_ignore(s.planter, false)
         wa.log(string.format("Sentry passage ended %s id=%d planter=%d (%s)",
           t.kind, a.id, s.planter_id, planter and "clear" or "gone"))
@@ -630,7 +567,9 @@ function turret.new(cfg)
     for _, other_t in ipairs(turrets) do
       for _, id in ipairs(wa.sorted(other_t.state)) do
         local other = other_t.state[id]
-        if other.body.id == id then obstacles[#obstacles + 1] = { x = other.x, y = other.y } end
+        if other.mask_active and other.body.id == id then
+          obstacles[#obstacles + 1] = { x = other.body.x, y = other.body.y }
+        end
       end
     end
     local function solid(px, py)
@@ -650,7 +589,7 @@ function turret.new(cfg)
         for _, other in ipairs(obstacles) do
           if feet.intersects(tx, ty, other.x, other.y) then blocked = true; break end
         end
-        if not blocked and feet.clear(tx, ty, worms, planter_id, t.settle_px, solid) then
+        if not blocked and feet.clear(tx, ty, worms, planter_id, 0, solid) then
           local hit = wa.land.trace(wx, wy - 8, tx, ty - feet.top / 2)
           if not hit or not hit.hit then return tx, ty end
         end
@@ -678,10 +617,10 @@ function turret.new(cfg)
       sprite = t.art.mask, x = x, y = y,
       vx = 0, vy = 0,
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
-      gravity = false, collide = false, drown = false, as_object = true,
-      mask = true, mask_worms = true, mask_weapons = true, mask_land = false, mask_actors = false,
-      -- WA's rope passes it, as it passes oil drums; worms still stand on it.
-      mask_rope = false,
+      gravity = true, collide_terrain = true, collide_worms = false, drown = false, as_object = true,
+      shape = "sprite", solid = false,
+      -- Native object collision uses the authored shape, without terrain stamps.
+      mask = false, mask_rope = false,
       on = { frame = brain, hit = hit, contact = touched },
     })
     assert(body:collision_ignore(worm, true), "Sentry: could not register planter passage")
@@ -693,6 +632,7 @@ function turret.new(cfg)
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,
       planter = worm, planter_id = worm.id,
+      mask_active = false,
     }
     state[body.id] = s
     s.body = body

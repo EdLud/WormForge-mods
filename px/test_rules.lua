@@ -461,7 +461,7 @@ local function new_match(opts)
           for _, a in ipairs(M.trace_masks or {}) do
             local ignored = false
             for _, o in ipairs(q.ignore or {}) do if o == a then ignored = true end end
-            if not ignored then
+            if not ignored and (a.shape ~= "sprite" or a.solid) then
               for _, row in ipairs(require("lib/sentry_mask").rows) do
                 if y == math.floor(a.y) + row[1] then
                   for i = 2, #row, 2 do
@@ -639,10 +639,53 @@ local function new_match(opts)
         -- `on` is a frame function or a table of handlers (frame, land, hit).
         local on, hit, contact = spec.on, nil, nil
         if type(on) == "table" then on, hit, contact = spec.on.frame, spec.on.hit, spec.on.contact end
-        local a = { id = M.next_actor_id, sprite = spec.sprite, x = spec.x, y = spec.y,
+        local a = { id = M.next_actor_id, kind = "actor", sprite = spec.sprite, x = spec.x, y = spec.y,
                     vx = spec.vx or 0, vy = spec.vy or 0, dead = false,
                     explode = spec.explode, on = on, hit = hit, contact = contact, owner = spec.owner, as_object = spec.as_object,
                     shape = spec.shape, spec = spec }
+        a.solid = spec.solid ~= false
+        if spec.shape == "sprite" then
+          -- Test-side native physics: the pack receives a body that WA has
+          -- already moved. Exact native bitmap behavior has a Wine fixture.
+          local frame = on
+          local mask = require("lib/sentry_mask")
+          local function clear(x, y)
+            for _, other in ipairs(M.spawned or {}) do
+              if other ~= a and not other.dead and other.shape == "sprite" and other.solid
+                and mask.intersects(x, y, other.x, other.y) then return false end
+            end
+            for _, row in ipairs(mask.rows) do
+              for i = 2, #row, 2 do
+                for px = math.floor(x) + row[i], math.floor(x) + row[i + 1] do
+                  if M.solid and M.solid(px, math.floor(y) + row[1]) then return false end
+                end
+              end
+            end
+            return true
+          end
+          function a:on_feet() return not clear(self.x, self.y + 1) end
+          function a:warp(v)
+            self.x, self.y = v.x, v.y
+            self.vx, self.vy = v.vx or self.vx, v.vy or self.vy
+            return true
+          end
+          a.on = function(self)
+            if self.vy < 0 or not self:on_feet() then self.vy = self.vy + (M.gravity or 0) end
+            local steps = math.max(1, math.ceil(math.max(math.abs(self.vx), math.abs(self.vy))))
+            local dx, dy = self.vx / steps, self.vy / steps
+            for _ = 1, steps do
+              if dx ~= 0 then
+                if clear(self.x + dx, self.y) then self.x = self.x + dx
+                else dx, self.vx = 0, 0 end
+              end
+              if dy ~= 0 then
+                if clear(self.x, self.y + dy) then self.y = self.y + dy
+                else dy, self.vy = 0, 0 end
+              end
+            end
+            frame(self, {})
+          end
+        end
         function a:gfx(g)
           self.angle, self.scale, self.tint, self.blend, self.depth = g.angle, g.scale, g.tint, g.blend, g.depth
         end
@@ -665,8 +708,10 @@ local function new_match(opts)
           end
           return true
         end
-        function a:look(sprite) self.sprite = sprite end
-        function a:look(sprite) self.sprite = sprite end
+        function a:look(sprite)
+          self.sprite = sprite
+          self.look_calls = (self.look_calls or 0) + 1
+        end
         -- As the engine's auto physics, simply: gravity, a step, and land
         -- where M.solid says.
         function a:gravity() self.vy = (self.vy or 0) + (M.gravity or 0) end
@@ -1326,9 +1371,9 @@ do
   local turret = require("lib/shared").sentry_gun
   local state = turret.state[body.id]
   check("one persistent body carries indestructible feet for worms and weapons", #M.spawned == 1
-    and body.sprite == "sprites/sentry_gun/turret_mask.png" and body.x == 100
-    and body.spec.mask and body.spec.mask_worms and body.spec.mask_weapons
-    and not body.spec.mask_land and not body.spec.mask_actors and body.as_object)
+    and body.spec.sprite == "sprites/sentry_gun/turret_mask.png" and body.x == 100
+    and body.shape == "sprite" and not body.spec.mask and body.spec.gravity
+    and body.spec.collide_terrain and not body.spec.collide_worms and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it falls and plants on the land, with PX's sound",
     body.y >= 109 and body.y < 110 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
@@ -1421,7 +1466,7 @@ do
   local body = M.spawned[#M.spawned]
   local turret = require("lib/shared").sentry_laser
   check("one body, with the head and barrel rendered separately", #M.spawned == 1
-    and body.sprite == "sprites/sentry_laser/turret_mask.png" and body.spec.mask and body.as_object)
+    and body.spec.sprite == "sprites/sentry_laser/turret_mask.png" and body.shape == "sprite" and not body.spec.mask and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it plants with PX's sound", M.actor_sounds[#M.actor_sounds] == "sounds/sentry_laser/sentrylaserplace.wav")
   M.trace_masks = { body }
@@ -1632,24 +1677,11 @@ do
     check(kind .. ": the mask rests on the ground, its feet not sunk (sink_px 0)", s.planted and y >= 109 and y < 110, y)
     for _ = 1, 30 do body.on(body) end
     check(kind .. ": no repeated planting or downward creep", s.planted and body.y == y)
-    local mask = require("lib/sentry_mask")
-    local stamped_x, stamped_y = math.floor(s.x), math.floor(s.y)
     floor = 200
-    M.solid = function(px, py)
-      px, py = math.floor(px), math.floor(py)
-      if py >= floor then return true end
-      for _, row in ipairs(mask.rows) do
-        if py == stamped_y + row[1] then
-          for i = 2, #row, 2 do
-            if px >= stamped_x + row[i] and px <= stamped_x + row[i+1] then return true end
-          end
-        end
-      end
-      return false
-    end
-    body.on(body)
-    check(kind .. ": destroying support starts a fall despite its old stamped mask", not s.planted and body.y > y and s.health == hp)
     M.solid = function(_, py) return py >= floor end
+    body.on(body)
+    check(kind .. ": destroying support starts a fall without a terrain stamp", not s.planted and body.y > y and s.health == hp
+      and not body.spec.mask)
     for _ = 1, 60 do body.on(body) end
     check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 199 and body.y < 200 and #M.spawned == 1)
     y = body.y
@@ -1729,35 +1761,116 @@ do
     check(kind .. ": a freed stock arrow supplies quarter incoming momentum", s.vx == -2 and s.health == hp)
     a.on(a)
     check(kind .. ": a horizontal push slides on supported ground", a.x < x and s.planted and s.vx > -2)
-    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 100, 0, true
+    s.x, s.y, a.x, a.y, a.vx, a.vy, s.planted = x, y, x, y, 100, 0, true
     M.solid = function(px, py) return py >= 110 or px >= 125 end
     a.on(a)
     check(kind .. ": fast rightward motion cannot tunnel through a one-pixel wall", a.x > x and a.x < 125 and s.vx == 0)
-    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, -100, 0, true
+    s.x, s.y, a.x, a.y, a.vx, a.vy, s.planted = x, y, x, y, -100, 0, true
     M.solid = function(px, py) return py >= 110 or px <= 75 end
     a.on(a)
     check(kind .. ": fast leftward motion stops at the authored feet", a.x < x and a.x > 75 and s.vx == 0)
-    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 0, -50, false
+    s.x, s.y, a.x, a.y, a.vx, a.vy, s.planted = x, y, x, y, 0, -50, false
     M.solid = function(_, py) return py >= 110 or py <= 60 end
     a.on(a)
     check(kind .. ": upward momentum stops below a ceiling", a.y < y and a.y - 22 > 60 and s.vy == 0)
-    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 20, 0, true
+    s.x, s.y, a.x, a.y, a.vx, a.vy, s.planted = x, y, x, y, 20, 0, true
     M.solid = function(px, py) return px < 105 and py >= 110 end
     a.on(a); a.on(a)
     check(kind .. ": sliding beyond support retains momentum and starts falling", a.x > 120 and a.y > y and not s.planted and s.vx > 0)
-    s.x, s.y, a.x, a.y, s.vx, s.vy, s.planted = x, y, x, y, 0, 0, true
+    s.x, s.y, a.x, a.y, a.vx, a.vy, s.planted = x, y, x, y, 0, 0, true
     M.solid = function(_, py) return py >= 110 end
     owner.x, owner.y = 140, 100
     local other = t.place({ worm = owner })
     for _ = 1, 40 do other.on(other) end
     owner.x = 5000
-    s.vx = 60; a.on(a)
+    a.vx = 60; a.on(a)
     check(kind .. ": another sentry stops sliding with no overlapping silhouettes",
       not require("lib/sentry_mask").intersects(a.x, a.y, other.x, other.y) and a.x < other.x and s.vx == 0)
-    s.vx, s.vy = 0, 0
+    a.vx, a.vy = 0, 0
     t.projectile_hit(a, s, 20, 2, -1, 777)
     a.contact(a, { other = { kind = "missile", uid = 777, alive = false }, vx = 8, vy = -4 })
     check(kind .. ": Javelin contact does not add its impulse twice", s.vx == 2 and s.vy == -1 and s.health == hp - 20)
+    M.solid, M.gravity = nil, nil
+  end
+end
+
+print("Sentry masks: grace ends at first plant regardless of firing pose; planter passage remains")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, state in ipairs({ 0x65, 0x67, 0x6A, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81 }) do
+      new_match()
+      local t, owner = require("lib/shared")[kind], worm(16)
+      for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+      owner.x, owner.y, owner.state_id = 100, 100, state
+      M.gravity, M.solid = 0.25, function(_, y) return y >= 110 end
+      local body, s = t.place({ worm = owner })
+      check(kind .. ": every firing pose waits for first plant (" .. state .. ")",
+        not s.mask_active and not body.solid and body.sprite == t.art.mask
+        and body.shape == "sprite" and not body.spec.mask
+        and body.ignored_worms[owner.id] and body.as_object)
+      M.trace_masks = { body }
+      body.on(body)
+      local probe = wa.world.trace { x0 = body.x, y0 = body.y - 10, x1 = body.x, y1 = body.y - 10,
+        radius = 0, with = { "terrain" } }
+      check(kind .. ": grace leaves an empty footprint", not (probe and probe.starts_solid))
+      for _ = 1, 40 do body.on(body) end
+      check(kind .. ": first plant enables the normal mask without ending planter passage",
+        s.planted and s.mask_active and body.solid and body.sprite == t.art.mask and body.ignored_worms[owner.id]
+        and body.tint == 0 and body.blend == "add")
+      body.contact(body, { other = owner, vx = 8, vy = -4 })
+      check(kind .. ": planter still cannot push its own sentry while overlapping", s.vx == 0 and s.vy == 0)
+      local looks = body.look_calls or 0
+      t.push(body, s, 0, -2)
+      body.on(body)
+      check(kind .. ": later airborne motion keeps the activated mask",
+        not s.planted and s.mask_active and body.solid and body.sprite == t.art.mask and (body.look_calls or 0) == looks)
+      M.solid, M.gravity = nil, nil
+    end
+  end
+end
+
+print("Sentry masks: overlapping airborne sentries cannot obstruct or support one another")
+do
+  for _, reverse in ipairs({ false, true }) do
+    new_match()
+    local shared, owner = require("lib/shared"), worm(16)
+    for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+    -- The native fire callback need not expose an airborne worm state.
+    owner.x, owner.y, owner.state_id = 100, 100, 0x6A
+    M.gravity, M.solid = 0.25, function(_, y) return y >= 500 end
+    local falling = {}
+    for i = 1, 12 do
+      local t = i % 2 == 0 and shared.sentry_gun or shared.sentry_laser
+      local a, s = t.place({ worm = owner })
+      falling[#falling + 1] = { a = a, s = s, t = t }
+      check("pending sentries do not displace the next placement", a and a.x == 100 and a.y == 92)
+    end
+    M.trace_masks = M.spawned
+    for _ = 1, 20 do
+      for j = 1, #falling do
+        local entry = falling[reverse and #falling + 1 - j or j]
+        entry.a.on(entry.a)
+      end
+    end
+    for _, entry in ipairs(falling) do
+      check("crowded mid-air sentry keeps falling without activating its mask",
+        not entry.s.planted and not entry.s.mask_active and entry.s.vy == 5 and math.abs(entry.a.y - 144.5) < 0.000001,
+        string.format("planted=%s active=%s vy=%.9f y=%.9f", tostring(entry.s.planted), tostring(entry.s.mask_active), entry.s.vy, entry.a.y))
+    end
+    -- Once a real landing has happened, the usual solid body is restored.
+    M.solid = function(_, y) return y >= 146 end
+    local bottom = falling[1]
+    bottom.a.on(bottom.a)
+    check("first real landing activates the mask", bottom.s.planted and bottom.s.mask_active)
+    local above = falling[2]
+    above.s.x, above.a.x = bottom.s.x + 6, bottom.a.x + 6
+    above.s.y, above.a.y, above.a.vy = bottom.s.y - 24, bottom.s.y - 24, 1
+    for _ = 1, 5 do above.a.on(above.a) end
+    check("an activated sentry can still support another sentry", above.s.planted and above.s.mask_active
+      and above.a.y < bottom.a.y - 10, string.format("planted=%s active=%s y=%.9f bottom=%.9f vy=%.9f",
+        tostring(above.s.planted), tostring(above.s.mask_active), above.a.y, bottom.a.y, above.s.vy))
+    bottom.a.contact(bottom.a, { other = above.a, vx = 20, vy = 20 })
+    check("a landing sentry does not apply projectile pushes to its support", bottom.a.vx == 0 and bottom.a.vy == 0)
     M.solid, M.gravity = nil, nil
   end
 end
@@ -1778,7 +1891,7 @@ do
       check(kind .. ": plants at the worm without launch momentum, facing " .. facing,
         body and body.x == owner.x and body.y == owner.y - 8 and body.vx == 0 and body.vy == 0
         and body.ignored_worms[owner.id] and mask.clear(body.x, body.y, { owner }, owner.id, t.settle_px))
-      check(kind .. ": only the mechanical mask is hidden", body.tint == 0 and body.blend == "add" and body.spec.mask)
+      check(kind .. ": only the mechanical mask is hidden", body.tint == 0 and body.blend == "add" and body.shape == "sprite" and not body.spec.mask)
       for _ = 1, 40 do body.on(body) end
       M.quads = {}; M.draw()
       local base
@@ -1882,8 +1995,9 @@ do
   for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
   owner.x, owner.y = 100, 100
   M.solid = function(_, y) return y >= 100 end
-  M.gravity, M.spawned = 0, {}
+  M.gravity, M.spawned = 0.25, {}
   local first = shared.sentry_gun.place({ worm = owner })
+  for _ = 1, 40 do first.on(first) end
   local second = shared.sentry_laser.place({ worm = owner })
   check("a second sentry searches nearby without overlapping the first mask",
     first and second and not mask.intersects(first.x, first.y, second.x, second.y))
@@ -1901,7 +2015,7 @@ do
   M.solid = function(_, y) return y >= 500 end
   M.gravity, M.spawned = 0, {}
   local falling, fs = t.place({ worm = planter })
-  fs.vy = 40
+  falling.vy = 40
   falling.on(falling)
   check("falling retains passage while the frame's old stamp overlaps the planter", fs.planter ~= nil
     and not mask.overlaps_worm(fs.x, fs.y, planter) and falling.ignored_worms[planter.id])
