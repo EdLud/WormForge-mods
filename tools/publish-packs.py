@@ -65,7 +65,7 @@ PUBLIC = [
     "mods/examples/KillTheKing",
 ]
 # The saved profiles players get, from the mods' `profiles/`. Any other a
-# mod carries (Growth Hormones, Highlander weapons) stays in the repo.
+# mod carries (Growth Hormones) stays in the repo.
 PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage", "Fog of war", "Cursor Light"}
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}

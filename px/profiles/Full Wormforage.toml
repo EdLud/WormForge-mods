@@ -1,10 +1,5 @@
-# Full Wormforage: the whole panel filled, 13 rows of 10. Every published
-# mod's weapons first, each at its default position or the next free cell
-# of its row, then WA's own at home; what doesn't fit its row takes the
-# first free cell. Left out, to make 130: WA's four instant utilities
-# (with infinite ammo WA would switch them on every turn) and Skip Go and
-# Surrender, which PX's Skip Go/Surrender does both of.
-description = "Every published weapon on a full panel: the mods' own first, then WA's. Infinite ammo, and no shot ends the turn."
+# Full Wormforage: the whole panel filled, 13 rows of 10. 
+description = "The Full Fromage"
 
 [weapons]
 "px.double_bazooka" = { row = "F1", column = 1 }

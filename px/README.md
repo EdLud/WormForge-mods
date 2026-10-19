@@ -22,12 +22,11 @@ weapon on its slot, and that stands in for it.**
 ## Playing it
 
 Highlander is a component bundle (`format_version = 2`): installing it runs
-nothing until a profile selects it. Its two profiles (`profiles/`) are copied
+nothing until a profile selects it. Its profiles (`profiles/`) are copied
 into `WormForge/Profiles` when the mod loader installs the bundle; load
 **Highlander** in the loader's profile list. It places every PX weapon where
 PX's layout puts it and ticks Highlander rules, which deal them by the rules
-below. **Highlander weapons** places the same weapons without the rules, for
-trying them out: the ammo is the WA lobby scheme's.
+below.
 
 Any profile can tick Highlander rules over its own weapon set. Each placed
 weapon then has two more settings in the Weapons tab: its **Highlander pool**
@@ -658,7 +657,7 @@ profile's match, WA's own weapons on their slots and Highlander's past WA's
 | `weapons/` | One module per weapon or weapon family, plus the claim tables (`catalog.lua`, `claims.lua`) and the generated record data (`wep_data.lua`, written by `tools/embed_weps.py`). |
 | `scheme/` | Highlander's rules: its pools, its state and the rules themselves. |
 | `components/` | The bundle's entries: the rules add-on, the weapon component, and the loader that maps placed weapons to modules. |
-| `profiles/` | Highlander and Highlander weapons, copied into `WormForge/Profiles` when the loader installs the bundle. |
+| `profiles/` | Highlander, Full Wormforage and Funny, copied into `WormForge/Profiles` when the loader installs the bundle. |
 
 A module reads another's value as `local name = shared.name`; one that is
 set later (an explode handler the claims call) is used as `shared.name`
