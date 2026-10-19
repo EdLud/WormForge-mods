@@ -4021,6 +4021,33 @@ do
   M.turn_start({ worm = w, active = w })
 end
 
+print("reddaz's ports: each claims PX's record, px's worm library and its own strips")
+do
+  local function exists(path)
+    local f = io.open("mods/px/" .. path, "rb")
+    if f then f:close() end
+    return f ~= nil
+  end
+  for _, name in ipairs({ "ninja_star", "security_grenade", "health_zone", "blast_zone" }) do
+    new_match()
+    frame()
+    -- Its own component, as the engine installs it, on a slot no Highlander
+    -- weapon takes, for the mock.
+    local claiming = HIGHLANDER_CLAIMING
+    HIGHLANDER_CLAIMING = "select_worm"
+    require("weapons/" .. name).install({ id = "px." .. name })
+    HIGHLANDER_CLAIMING = claiming
+    local spec = replaced[#replaced]
+    local files = spec.hold and exists(spec.hold.sheet) and exists(spec.panel_icon)
+    for _, sheet in ipairs(spec.sprites or {}) do files = files and exists(sheet) end
+    check(name .. ": PX's record, px's posture and hands, its art on disk",
+      spec.wep == "weps/" .. name .. "_wep.wep"
+        and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim.png" and exists(spec.worm_sprites.wthrow)
+        and (spec.hold.hand == nil or exists(spec.hold.hand)) and files,
+      spec.wep)
+  end
+end
+
 print("double jump: PX's second jump, WA's take-off with the jump the worm made")
 do
   new_match()
@@ -4902,7 +4929,7 @@ do
     local found = 0
     -- The ports with files of their own (reddaz's) register their sounds
     -- in them, outside Highlander's entries.
-    local OWN_FILES = { "sounds/attack_helicopter/", "sounds/bunker_buster/" }
+    local OWN_FILES = { "sounds/attack_helicopter/", "sounds/bunker_buster/", "sounds/ninja_star/" }
     local function own(rel)
       for _, dir in ipairs(OWN_FILES) do
         if rel:sub(1, #dir) == dir then return true end

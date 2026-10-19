@@ -142,7 +142,7 @@ Super Tele places it immediately and plays its start sound at the destination.
 
 ### Ported by reddaz
 
-Three weapons outside Highlander, ported by reddaz with their own files:
+Seven weapons outside Highlander, ported by reddaz with their own files:
 they take no part in Highlander's pools.
 
 - **Attack Helicopter** (`px.attack_helicopter`, `weapons/attack_helicopter.lua`):
@@ -153,6 +153,34 @@ they take no part in Highlander's pools.
   drill strike, from Project X's `bunkerbuster.txt`. Click a target; the buster
   falls, drills down through the land and blows up. The Super sprays fire as
   it drills and cuts sideways with five overlapping blasts.
+
+Four more come from his Project X sprite-builder ports. Each is its own
+component (`weapons/<name>.lua`, the port in `lib/px_<name>.lua`) on PX's own
+record (`weps/<name>_wep.wep`): the throw, the arc, the wind on it and the
+blast are WA's with PX's numbers. The worm holds them with px's posture
+library (`lib/holds.lua`, `sprites/px_hold/`), which `lib/px_sprite_builder.lua`
+hands out together with its missile flight drawing (`sb.flight`).
+
+- **Security Grenade** (`px.security_grenade`), by PyroMan: WA's own grenade,
+  and on top of its blast a ring of eight more blasts, 60 px out, 25 damage
+  each.
+- **Ninja Star** (`px.ninja_star`), credited to Curtis (its script loads his
+  sprite library `sprite_curtis_457`, as the other Curtis weapons here do):
+  it sticks in the land where it lands, or bites a worm, mine, oil drum or
+  crate for 10 damage and a shove. A thin ribbon (`lib/px_trail.lua`) trails
+  it.
+- **Health Zone** (`px.health_zone`), by PyroMan: a thrown zone that once a
+  second for its turns heals the worm inside it, or resurrects a grave at 1
+  health, or damages one without killing it. 1-5 set its turns, `+` heals,
+  `-` damages.
+- **Blast Zone** (`px.blast_zone`), by PyroMan: the same round, and the 45x45
+  zone it leaves explodes (30 damage and a shove) whenever a worm, mine,
+  barrel, crate, arrow or missile is inside it. 1-5 set its turns.
+
+The zones share PX's `CWZone` machinery (`lib/px_zone.lua`): the turn count,
+the seven seconds of inactivity after a turn, the box and its one activator.
+Their art came as frame folders and is joined into strips, as the rest of
+px's.
 
 ### Double Jump
 

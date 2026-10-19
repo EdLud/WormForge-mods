@@ -104,3 +104,4 @@ end
 
 shared.PX_HOLDS = PX_HOLDS
 shared.PX_POSTURE = PX_POSTURE
+shared.PX_HANDS = PX_HANDS

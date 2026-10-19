@@ -49,6 +49,18 @@ frames = 1
 fps = 15
 play = "loop"
 
+[sprites."sprites/blast_zone/bullet.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blast_zone/exp.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/blast_zone/hold.png"]
+fps = 15
+play = "loop"
+
 [sprites."sprites/blaster_worm/aim.png"]
 fps = 15
 play = "loop"
@@ -229,6 +241,18 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/health_zone/bullet.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/health_zone/hold.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/health_zone/zone.png"]
+fps = 15
+play = "loop"
+
 [sprites."sprites/helicopter/flying.png"]
 fps = 15
 play = "loop"
@@ -340,6 +364,14 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/mortar_strike/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/ninja_star/hold.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/ninja_star/stamp.png"]
 fps = 15
 play = "loop"
 
@@ -468,6 +500,10 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/remote_roller/flight.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/security_grenade/bullet.png"]
 fps = 15
 play = "loop"
 
@@ -1643,3 +1679,46 @@ entry = "weapons/double_jump.lua"
 icon = "sprites/double_jump/icon.png"
 default_position = { row = "F8", column = 2 }
 
+[[components]]
+id = "px.security_grenade"
+type = "weapon"
+name = "Security Grenade"
+authors = ["PyroMan"]
+credits = "ported by reddaz"
+description = "Project X's Security Grenade: WA's own grenade, and on top of its blast a ring of eight more blasts, 60 pixels out, 25 damage each."
+entry = "weapons/security_grenade.lua"
+icon = "sprites/security_grenade/icon.png"
+default_position = { row = "F2", column = 6 }
+
+[[components]]
+id = "px.ninja_star"
+type = "weapon"
+name = "Ninja Star"
+authors = ["Curtis"]
+credits = "ported by reddaz"
+description = "Project X's thrown star: it sticks in the land where it lands. Land it on a worm, a mine, a barrel or a crate instead and it bites, 10 damage and a shove, with the blast as well. A thin ribbon trails the star in flight."
+entry = "weapons/ninja_star.lua"
+icon = "sprites/ninja_star/icon.png"
+default_position = { row = "F2", column = 7 }
+
+[[components]]
+id = "px.health_zone"
+type = "weapon"
+name = "Health Zone"
+authors = ["PyroMan"]
+credits = "ported by reddaz"
+description = "Project X's Health Zone: a thrown zone that once a second heals the worm inside it, or resurrects a grave, for its turns, or damages one, as the keys set: 1-5 turns, + heals, - damages."
+entry = "weapons/health_zone.lua"
+icon = "sprites/health_zone/icon.png"
+default_position = { row = "F9", column = 3 }
+
+[[components]]
+id = "px.blast_zone"
+type = "weapon"
+name = "Blast Zone"
+authors = ["PyroMan"]
+credits = "ported by reddaz"
+description = "Project X's Blast Zone: the Health Zone's round, but the 45x45 zone it leaves explodes, 30 damage and a shove, whenever a worm, mine, barrel, crate, arrow or missile is inside it, and arms a mine it catches with a random 1-5 second fuse. 1-5 turns."
+entry = "weapons/blast_zone.lua"
+icon = "sprites/blast_zone/icon.png"
+default_position = { row = "F9", column = 6 }
