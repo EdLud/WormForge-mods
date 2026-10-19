@@ -53,7 +53,7 @@ These settings do not change **Ammo**, the number of uses a team gets.
 | Weapon | Setting | Range | Default |
 |---|---|---|---|
 | Attack Helicopter (`px.attack_helicopter`) | Bullets per strafe (`bullets`) | 1–1000 | 17 |
-| Helicopter (`px.helicopter`) | Fuel (`fuel`) | 1–1000 | 100 |
+| Helicopter (`px.helicopter`) | Fuel (`fuel`) | 1–999 | 100 |
 | Sentry Gun (`px.sentry_gun`) | Health (`health`) | 1–500 | 50 |
 | Sentry Laser (`px.sentry_laser`) | Health (`health`) | 1–500 | 35 |
 

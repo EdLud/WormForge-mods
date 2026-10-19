@@ -4962,7 +4962,7 @@ do
     local body = t.place({ worm = worm(16) })
     check(kind .. ": configured health copied to each placement", t.state[body.id].health == health)
   end
-  for _, fuel in ipairs({ 1, 255, 300, 1000 }) do
+  for _, fuel in ipairs({ 1, 255, 300, 999 }) do
     new_match()
     HIGHLANDER_CLAIMING = "px.helicopter"
     require("components/loader").install({ id = "px.helicopter", option = function(key)
@@ -4981,10 +4981,10 @@ do
     check("helicopter: full fuel applied on take-off " .. fuel, near(first, fuel - 0.02))
     M.message(w, wa.msg.FRAME_FINISH)
     check("helicopter: fuel keeps burning without a refill", near(w.fuel, first - 0.02))
-    if fuel == 1000 then
+    if fuel == 999 then
       M.contact(w, { kind = "land" }, { vx = 10, vy = 10 })
       local boom = M.spawned[#M.spawned].spec.explode
-      check("helicopter: high-fuel crash retains PX's formula", boom.id == 924 and boom.damage == 1848,
+      check("helicopter: high-fuel crash retains PX's formula", boom.id == 923 and boom.damage == 1846,
         "blast=" .. boom.id .. " damage=" .. boom.damage)
     end
   end
