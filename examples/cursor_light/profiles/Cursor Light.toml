@@ -1,0 +1,27 @@
+description = "Move Cursor Light (F8) around the map: a 300 px circle lights only what the cursor can see through terrain."
+features = ["core.fog"]
+
+[weapons]
+"lights.cursor_light" = { row = "F8", column = 1 }
+"stock.skip_go" = { row = "F12", column = 1 }
+
+[weapon_settings."lights.cursor_light"]
+ammo = -1
+delay = 0
+crate = 0
+
+[options."core.fog"]
+fog_floor = 0
+discover = "off"
+view_ownership = "alliance"
+circle_radius = 0
+cone_length = 0
+animal_circle_radius = 0
+animal_cone_length = 0
+proj_circle = 0
+proj_cone_length = 0
+proj_los = true
+crate_circle = 0
+explosion_circle = 0
+spectator_mode = false
+placement_vision = false

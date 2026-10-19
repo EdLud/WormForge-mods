@@ -57,6 +57,7 @@ PUBLIC = [
     "mods/px",
     "mods/examples/utilities",
     "mods/examples/fog_demo",
+    "mods/examples/cursor_light",
     "mods/examples/component_demo",
     "mods/examples/gif_donkey",
     "mods/examples/pooz",
@@ -65,7 +66,7 @@ PUBLIC = [
 ]
 # The saved profiles players get, from the mods' `profiles/`. Any other a
 # mod carries (Growth Hormones, Highlander weapons) stays in the repo.
-PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage", "Fog of war"}
+PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage", "Fog of war", "Cursor Light"}
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}
 FIXED_TIME = (2020, 1, 1, 0, 0, 0)

@@ -16,6 +16,10 @@ they are the `px.ports` bundle in `mods/px/`.
 - `fog_demo` (`core.fog`) — Fog of war, a profile add-on with declared vision,
   terrain memory, lighting, spectator and placement settings. Its supplied
   profile starts with alliance vision and texture memory.
+- `cursor_light` (`example.cursor_light`) — Cursor Light, a weapon whose land
+  cursor gives terrain-blocked light while it's equipped: `a.light` on a
+  `wa.cursor.spawn` actor. Its `Cursor Light` profile turns the fog on with
+  every other light off.
 - `labs` (`example.labs`) — one small weapon per part of the API, each in its
   own folder or file; `profiles/Labs.toml` places them all.
   - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it
