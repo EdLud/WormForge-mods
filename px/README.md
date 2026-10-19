@@ -797,7 +797,9 @@ the placing worm's death does not change ownership.
 The shared `lib/turret.lua` configuration keeps motion in Lua:
 `slide_friction = 0.20` pixels/frame per supported frame,
 `contact_worm = 0.5` and `contact_projectile = 0.25` incoming velocity multipliers.
-Existing `settle_px` and `foot_offsets` still control planting and support.
+`sink_px = 0` is how deep the mask's feet rest in the land once planted (on
+it, not in it); `settle_px = 4` is how far the mask may overlap land while
+placing or sliding; `foot_offsets` are where support is tested.
 
 Sentry targeting ignores terrain inside a circle centred on the barrel pivot,
 with radius `muzzle_out + sight_grace_px`. The default `sight_grace_px = 4`

@@ -1269,7 +1269,7 @@ do
     and not body.spec.mask_land and not body.spec.mask_actors and body.as_object)
   for _ = 1, 40 do body.on(body) end
   check("it falls and plants on the land, with PX's sound",
-    body.y >= 113 and body.y < 114 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
+    body.y >= 109 and body.y < 110 and M.actor_sounds[#M.actor_sounds] == "sounds/sentry_gun/sentryplace.wav", body.y)
   M.trace_masks = { body }
   M.trace_hit = { x = body.x, y = body.y - turret.muzzle_up }
   check("its sight origin is inside its own authored mask",
@@ -1567,7 +1567,7 @@ do
     local body, s = t.place({ worm = owner })
     for _ = 1, 40 do body.on(body) end
     local x, y, hp = body.x, body.y, s.health
-    check(kind .. ": mask overlaps the ground by the requested settling depth", s.planted and y >= 113 and y < 114)
+    check(kind .. ": the mask rests on the ground, its feet not sunk (sink_px 0)", s.planted and y >= 109 and y < 110, y)
     for _ = 1, 30 do body.on(body) end
     check(kind .. ": no repeated planting or downward creep", s.planted and body.y == y)
     local mask = require("lib/sentry_mask")
@@ -1589,7 +1589,7 @@ do
     check(kind .. ": destroying support starts a fall despite its old stamped mask", not s.planted and body.y > y and s.health == hp)
     M.solid = function(_, py) return py >= floor end
     for _ = 1, 60 do body.on(body) end
-    check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 203 and body.y < 204 and #M.spawned == 1)
+    check(kind .. ": resettles on lower terrain with the same feet actor", s.planted and body.y >= 199 and body.y < 200 and #M.spawned == 1)
     y = body.y
     body.hit(body, { kind = "blast", damage = 3, vx = 9, vy = -4 })
     body.on(body, { damage = 3 })
@@ -1725,7 +1725,7 @@ do
       -- The original feet are at source row49, 17px below its quad centre.
       local visible_feet = centre_y + 17
       check(kind .. ": full feet art remains 8px below the buried mask anchor", math.abs(visible_feet-body.y-8) < 0.000001
-        and visible_feet > 100 and body.y >= 103 and body.y < 104
+        and visible_feet > 100 and body.y >= 99 and body.y < 100
         and base.depth == wa.depth.BEHIND_TERRAIN)
       body:despawn(); t.state[body.id] = nil
       -- An allied worm stands exactly where the first candidate would be.

@@ -76,7 +76,8 @@ local DEFAULTS = {
   aim_tolerance = 1.5,  -- PX fires only after rotation reaches the target
   require_motion = true, -- PX only acquires walking/jumping/moving worms
   hold_own_turn = true, -- the Sentry Gun holds fire on its colour's turns
-  settle_px = 4,        -- mask may overlap real terrain by this depth
+  settle_px = 4,        -- mask may overlap real terrain by this depth (placing, sliding)
+  sink_px = 0,          -- how deep the mask's feet rest in the land once planted
   foot_offsets = { -6, 7 }, -- support beside the buried mask, never inside it
   top_px = feet.top,         -- top of the feet/hub silhouette above its anchor
   capture_radius = 24, -- Lightning's circle around the body
@@ -455,7 +456,7 @@ function turret.new(cfg)
     end
     local function support(x, y)
       for _, dx in ipairs(t.foot_offsets) do
-        if solid(x + dx, y - t.settle_px + 1) then return true end
+        if solid(x + dx, y - t.sink_px + 1) then return true end
       end
       return false
     end
@@ -506,7 +507,7 @@ function turret.new(cfg)
               if not s.planted then
                 s.planted = true
                 wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
-                  t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.settle_px + 1, t.settle_px))
+                  t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
                 play(a, t.sounds.place)
               end
             end
