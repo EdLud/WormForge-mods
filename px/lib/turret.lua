@@ -679,6 +679,8 @@ function turret.new(cfg)
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
       gravity = false, collide = false, drown = false, as_object = true,
       mask = true, mask_worms = true, mask_weapons = true, mask_land = false, mask_actors = false,
+      -- WA's rope passes it, as it passes oil drums; worms still stand on it.
+      mask_rope = false,
       on = { frame = brain, hit = hit, contact = touched },
     })
     assert(body:collision_ignore(worm, true), "Sentry: could not register planter passage")
