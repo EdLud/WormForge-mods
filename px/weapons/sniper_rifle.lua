@@ -8,8 +8,8 @@ wa.on.worm_message(function(worm, msg)
   local h = held[worm.id]
   if msg == wa.msg.FIRE_WEAPON and h then h.firing = true end
   if msg ~= wa.msg.FRAME_FINISH then return end
-  if worm.weapon == "px.sniper_rifle" and worm.aiming and shared.owns("handgun") then
-    held[worm.id] = { slot = "handgun", aim = worm.aim }
+  if worm.weapon == "px.sniper_rifle" and worm.aiming and shared.owns("px.sniper_rifle") then
+    held[worm.id] = { weapon = "px.sniper_rifle", aim = worm.aim }
   elseif not (h and h.firing and worm.weapon == "px.sniper_rifle"
       and (worm.state == "firing" or worm.state == "fired")) then
     held[worm.id] = nil
@@ -111,7 +111,7 @@ if wa.on.draw then
       -- The aim the rifle was drawn with, so the ray leaves along it; while
       -- the worm aims or fires the rifle, not while it puts it away.
       local h = worm.turn and held[worm.id]
-      local aim = h and h.slot == "handgun" and h.aim
+      local aim = h and h.weapon == "px.sniper_rifle" and h.aim
       if aim then
         local ang = (1 - aim) * 3.14159
         if worm.facing < 0 then

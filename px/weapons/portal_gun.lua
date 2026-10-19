@@ -4,8 +4,8 @@
 local shared = require("lib/shared")
 local Portals = require("lib/portals")
 local Effects = require("lib/portal_effects")
--- The slot the Portal Gun sits on this match (its home: Scales of Justice).
-local SLOT, ART = "px.portal_gun", "sprites/portal_gun/"
+-- The Portal Gun, by its id.
+local ID, ART = "px.portal_gun", "sprites/portal_gun/"
 local SPEED = 35
 local chosen, held, half_used = {}, {}, {}
 local bolts, effects = {}, Effects.new()
@@ -77,7 +77,7 @@ local function place(b, hit)
   if half_used[b.worm_id] then
     half_used[b.worm_id] = nil
     local worm = shooter(b)
-    if worm then worm:ammo(SLOT, -1) end
+    if worm then worm:ammo(ID, -1) end
   else half_used[b.worm_id] = true end
   return true
 end
@@ -128,7 +128,7 @@ shared.fires.portal_gun = function(fire)
     colour = colour, age = 0 }
   -- Native ground fire consumes ammo after this callback; airborne fire
   -- dispatches Lua alone and therefore needs no refund.
-  if not fire.airborne then worm:ammo(SLOT, 1) end
+  if not fire.airborne then worm:ammo(ID, 1) end
   local a = wa.actors.spawn({ sprite = ART .. "portal_ball.png", x = b.x, y = b.y,
     owner = worm, gravity = false, collide = false, on = { frame = function() bolt_frame(b) end } })
   b.a, b.id = a, a.id
@@ -152,18 +152,18 @@ wa.on.worm_message(function(worm)
   end
   -- Jumping and falling it fires through on_fire (the claim's airborne =
   -- true, the profile's "Fires jumping, falling" setting).
-  if worm.weapon == SLOT then
+  if worm.weapon == ID then
     if keys.minus_key and not old.minus_key then chosen[team] = 1 end
     if keys.plus_key and not old.plus_key then chosen[team] = 2 end
   end
-  held[id] = { portal = worm.weapon == SLOT, plus_key = keys.plus_key, minus_key = keys.minus_key, pause_key = keys.pause_key }
+  held[id] = { portal = worm.weapon == ID, plus_key = keys.plus_key, minus_key = keys.minus_key, pause_key = keys.pause_key }
 end, { msgs = { wa.msg.FRAME_FINISH } })
 wa.on.turn_start(function() network:turn_start(); held = {} end)
 wa.on.turn_end(function() network:turn_end() end)
 
 if wa.on.hud then wa.on.hud(function()
   local worm = shared.current_worm()
-  if worm and worm.weapon == SLOT then
+  if worm and worm.weapon == ID then
     wa.hud.line("Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
       .. " (- orange, + blue; Ctrl/Alt other colour; Pause toggle)")
   end
@@ -199,7 +199,7 @@ if wa.on.draw then
     end
     effects:draw(quad)
     local worm = shared.current_worm()
-    if worm and worm.weapon == SLOT and worm.aiming then
+    if worm and worm.weapon == ID and worm.aiming then
       local keys = wa.world.keys()
       local colour = chosen[worm.team] or 1
       if keys.ctrl or keys.alt then colour = 3 - colour end

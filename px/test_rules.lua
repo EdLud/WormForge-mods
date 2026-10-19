@@ -42,11 +42,73 @@ for _, n in ipairs(STOCK) do
   IS_STOCK[n] = true
 end
 
--- The engine names weapons by id; the suite, like WA, by slot. rules.lua puts
--- every Highlander weapon on its home slot (lib/homes.lua), so this mock
--- engine translates at its boundary as the real one does: a slot reads as
--- the id of the weapon on it, and an id the pack passes is that slot.
-local HOME = assert(loadfile((HIGHLANDER_ROOT or "mods/px/") .. "lib/homes.lua"))()
+-- The engine names weapons by id; this suite, written before that, names
+-- each Highlander weapon by a WA slot name, PX's layout's: its vocabulary
+-- only, which the mock translates at its boundary (a slot reads as the id of
+-- the weapon on it, an id the pack passes is that slot). The pack itself has
+-- no such notion; moving the suite's literals to ids retires this table.
+local HOME = {
+  ["px.double_bazooka"] = "bazooka",
+  ["px.igniter"] = "homing_missile",
+  ["px.s_m_a_r_t_bomb"] = "mortar",
+  ["px.blaster_worm"] = "homing_pigeon",
+  ["px.burning_sheep_launcher"] = "sheep_launcher",
+  ["px.sticky_bomb"] = "grenade",
+  ["px.windy_cluster"] = "cluster_bomb",
+  ["px.super_gravedigger"] = "banana_bomb",
+  ["px.thumper_nade"] = "battle_axe",
+  ["px.electric_grenade"] = "earthquake",
+  ["px.real_shotgun"] = "shotgun",
+  ["px.sniper_rifle"] = "handgun",
+  ["px.laser_gun"] = "uzi",
+  ["px.burst_rifle"] = "minigun",
+  ["px.shadow_bolt"] = "longbow",
+  ["px.fire_jump"] = "fire_punch",
+  ["px.sentry_laser"] = "dragon_ball",
+  ["px.sentry_gun"] = "kamikaze",
+  ["px.kamikaze_rocket"] = "suicide_bomber",
+  ["px.javelin"] = "prod",
+  ["px.nuke_rocket"] = "mine",
+  ["px.pogo_sheep"] = "sheep",
+  ["px.ghost_sheep"] = "aqua_sheep",
+  ["px.gravler"] = "mole_bomb",
+  ["px.mortar_strike"] = "air_strike",
+  ["px.lightning_strike"] = "napalm_strike",
+  ["px.pigeon_strike"] = "mail_strike",
+  ["px.gravler_strike"] = "mole_squadron",
+  ["px.blowtorch"] = "blow_torch",
+  ["px.super_drill"] = "pneumatic_drill",
+  ["px.electromagnet"] = "baseball_bat",
+  ["px.3_girder_pack"] = "girder_pack",
+  ["px.jump"] = "ninja_rope",
+  ["px.hot_air_balloon"] = "bungee",
+  ["px.hang_glider"] = "parachute",
+  ["px.super_tele"] = "teleport",
+  ["px.portal_gun"] = "scales_of_justice",
+  ["px.chilli_bomb"] = "super_banana",
+  ["px.hellish_hand_grenade"] = "holy_grenade",
+  ["px.ferret"] = "salvation_army",
+  ["px.banana_express"] = "mb_bomb",
+  ["px.valyrian_fire"] = "petrol_bomb",
+  ["px.remote_roller"] = "skunk",
+  ["px.priceless_ming_vase"] = "ming_vase",
+  ["px.bowling_ball_strike"] = "sheep_strike",
+  ["px.thumper_nade_strike"] = "carpet_bomb",
+  ["px.cow_launcher"] = "mad_cow",
+  ["px.old_woman_launcher"] = "old_woman",
+  ["px.crate_strike"] = "donkey",
+  ["px.reinforcement"] = "nuclear_test",
+  ["px.ice_arrow"] = "armageddon",
+  ["px.skip_go_surrender"] = "skip_go",
+  ["px.wind_changer"] = "surrender",
+  ["px.weapon_crate"] = "freeze",
+  ["px.cluster_bomb"] = "magic_bullet",
+  ["px.helicopter"] = "jet_pack",
+  ["px.gravity_control"] = "low_gravity",
+  ["px.swim_suit"] = "laser_sight",
+  ["px.skunk"] = "damage_x2",
+  ["px.mole_bomb"] = "double_turn_time",
+}
 local ID_ON = {}
 for id, home in pairs(HOME) do ID_ON[home] = id end
 local function ID(slot)
@@ -654,7 +716,7 @@ local function new_match(opts)
       end,
       -- A weapon component claims the slot rules.lua is installing it on.
       replace = function(spec)
-        spec.weapon = SLOT(spec.weapon) or HIGHLANDER_CLAIMING
+        spec.weapon = SLOT(spec.weapon) or SLOT(HIGHLANDER_CLAIMING)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
         replaced[#replaced + 1] = spec
       end,
@@ -4844,23 +4906,24 @@ do
   end
 end
 
-print("components: weapons by id, Highlander's own by their home")
+print("components: weapons by id, from loading to claiming")
 do
   new_match()
   -- A fresh loader: the match's own has placed rules.lua's whole layout.
   local root = HIGHLANDER_ROOT or "mods/px/"
   local loader = assert(loadfile(root .. "components/loader.lua", "t", setmetatable({}, { __index = _G })))()
   local shared = require("lib/shared")
-  local homes = loader.place({ weapons = {
+  local ids = loader.place({ weapons = {
     ["px.swim_suit"] = {}, ["px.super_tele"] = {}, ["px.nuke_rocket"] = {},
-    ["stock.fast_walk"] = {}, ["stock.flame_thrower"] = {}, ["stock.teleport"] = {}, ["stock.mine"] = {},
+    ["stock.fast_walk"] = {}, ["stock.teleport"] = {}, ["stock.mine"] = {},
   } })
-  check("only Highlander's weapons load code", same(homes, { "laser_sight", "mine", "teleport" }),
-    table.concat(homes, ","))
-  check("a Highlander weapon's home", shared.home("px.super_tele") == "teleport")
-  check("WA's own weapon is its stock name", shared.home("stock.fast_walk") == "fast_walk")
-  check("WA's own weapon never takes a Highlander weapon's home",
-    shared.home("stock.teleport") == nil and shared.home("stock.mine") == nil)
+  check("the placed weapons, by id, in one order on every machine", same(ids, {
+    "px.nuke_rocket", "px.super_tele", "px.swim_suit", "stock.fast_walk", "stock.mine", "stock.teleport",
+  }), table.concat(ids, ","))
+  check("a Highlander weapon claims by its id", shared.owns("px.super_tele") and shared.owns("px.nuke_rocket"))
+  check("WA's own weapons are never Highlander's", not shared.owns("stock.teleport")
+    and not shared.owns("stock.mine") and not shared.owns(nil))
+  check("only a Highlander weapon has a claim", not shared.claim("stock.mine") and not shared.claim("px.double_jump"))
 end
 
 print("")

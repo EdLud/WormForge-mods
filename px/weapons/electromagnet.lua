@@ -294,7 +294,7 @@ end, { msgs = { wa.msg.FRAME_FINISH } })
 -- icon already shown does nothing.
 local icon_shown = true
 local function show_mode_icon(worm)
-  if not (icon_shown and wa.weapons.panel_icon and shared.owns("baseball_bat")) then return end
+  if not (icon_shown and wa.weapons.panel_icon and shared.owns("px.electromagnet")) then return end
   local attract = worm and (polarity[worm.id] or 1) < 0
   local ok, err = pcall(wa.weapons.panel_icon, "px.electromagnet", attract and 0 or 1)
   if not ok then

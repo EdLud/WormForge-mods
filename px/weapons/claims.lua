@@ -25,15 +25,15 @@ local FIXES = {
   -- S.M.A.R.T Bomb: homing bits leave the bomb's red trail circles (stock 250,
   -- drawn as sprites/smart_bomb/trail), not WA's green gas cloud (608) the
   -- record named.
-  mortar = { clusters = { bit = { homing = { trail = { sprite = 250 } } } } },
+  ["px.s_m_a_r_t_bomb"] = { clusters = { bit = { homing = { trail = { sprite = 250 } } } } },
   -- Skunk: Space lets the gas out, as WA's own Skunk; PX's record left the
   -- flag at the Double Damage's (off), so the walker never told the team it
   -- could be set off, and its shot never ended. The walker it bursts into
   -- (its one cluster) has its own flag, off too: Space sets it off.
-  damage_x2 = { missile = { explode_on_space = true }, clusters = { bit = { explode_on_space = true } } },
+  ["px.skunk"] = { missile = { explode_on_space = true }, clusters = { bit = { explode_on_space = true } } },
   -- Helicopter: its fuel is its record's, PX's FuelAmount (its script's 100,
   -- not the record's 255, which the script always replaced).
-  jet_pack = { jet_pack = { fuel = 100 } },
+  ["px.helicopter"] = { jet_pack = { fuel = 100 } },
 }
 
 -- `t` laid over `into`, nested tables field by field: a new table, neither
@@ -58,9 +58,9 @@ end
 -- never do (WA's rope, bungee, parachute, jet pack and the like, and the
 -- Portal Gun, so both portals go down in one turn).
 local KEEPS_TURN = {
-  ninja_rope = true, bungee = true, parachute = true, select_worm = true, jet_pack = true,
-  low_gravity = true, fast_walk = true, laser_sight = true, crate_spy = true, crate_shower = true,
-  scales_of_justice = true,
+  ["px.jump"] = true, ["px.hot_air_balloon"] = true, ["px.hang_glider"] = true,
+  ["px.helicopter"] = true, ["px.gravity_control"] = true, ["px.swim_suit"] = true,
+  ["px.portal_gun"] = true,
 }
 
 -- WA remembers a worm's weapon between turns (RubberWorm's Remember
@@ -82,33 +82,28 @@ local NOT_REMEMBERED = {
   ["px.gravler_strike"] = true, ["px.lightning_strike"] = true, ["px.mortar_strike"] = true,
   ["px.pigeon_strike"] = true, ["px.thumper_nade_strike"] = true, ["px.super_gravedigger"] = true,
 }
--- Each claim's weapon by its home slot, the key claim() is called with.
-local ID_OF = {}
-for id, home in pairs(require("lib/homes")) do ID_OF[home] = id end
-
--- The weapons Highlander claimed this match, by home slot. Code that acts on
--- a weapon it looks up by slot (a missile's sprite, a held weapon's sight)
--- asks first: as a component bundle only the placed weapons claim, and
--- another scheme may put WA's own weapon, or another bundle's, on the rest.
+-- The weapons Highlander claimed this match, by id. Code that acts on one
+-- (a missile's sprite, a held weapon's sight) asks first: as a component
+-- bundle only the placed weapons claim.
 local owned = {}
-shared.owns = function(home)
-  return home ~= nil and owned[home] == true
+shared.owns = function(id)
+  return id ~= nil and owned[id] == true
 end
 
--- One weapon's claim of the slot the profile placed it on (`w.weapon` is its
--- home slot, the pack's key for it, whose stock record it builds on).
+-- One weapon's claim of the slot the profile placed it on: built on its
+-- `base`, WA's own weapon's record, with PX's changes to it (WEP_FIELDS), or
+-- on PX's own record (`wep`).
 local function claim(w)
-  owned[w.weapon] = true
-  -- copy_from + name + the record's fields (stock base); was weps/<slot>.wep
-  local spec = w.wep and { wep = w.wep } or { copy_from = "stock." .. w.weapon, name = WEP_NAME[w.weapon] }
-  if w.weapon == "old_woman" then
+  owned[w.id] = true
+  local spec = w.wep and { wep = w.wep } or { copy_from = w.base, name = WEP_NAME[w.id] }
+  if w.id == "px.old_woman_launcher" then
     spec = merged(spec, OLD_WOMAN_LAUNCHER)
     spec.on_fire = function(fire) fires.old_woman(fire) end
-  elseif not w.wep and WEP_FIELDS[w.weapon] then
-    spec = merged(spec, WEP_FIELDS[w.weapon])
+  elseif not w.wep and WEP_FIELDS[w.id] then
+    spec = merged(spec, WEP_FIELDS[w.id])
   end
-  if FIXES[w.weapon] then
-    spec = merged(spec, FIXES[w.weapon])
+  if FIXES[w.id] then
+    spec = merged(spec, FIXES[w.id])
     -- A field named here takes the place of the generated raw byte under it.
     if spec.jet_pack and spec.jet_pack.fuel ~= nil and spec.raw then
       spec.raw = merged(spec.raw, {})
@@ -118,23 +113,20 @@ local function claim(w)
   for key, value in pairs(w) do
     spec[key] = value
   end
-  spec.handling = merged(spec.handling, { ends_turn = not KEEPS_TURN[w.weapon] })
-  local id = ID_OF[w.weapon]
-  if id then
-    spec.fires = merged(spec.fires, { aims = not NOT_REMEMBERED[id] })
-  end
-  -- No slot: a weapon component claims the one it was placed on.
-  spec.weapon = nil
-  spec.hold = PX_HOLDS[w.weapon]
+  spec.handling = merged(spec.handling, { ends_turn = not KEEPS_TURN[w.id] })
+  spec.fires = merged(spec.fires, { aims = not NOT_REMEMBERED[w.id] })
+  -- No slot: a weapon component claims the one it was placed on. The id and
+  -- base are the catalog's, not the record's.
+  spec.id, spec.base = nil, nil
+  spec.hold = PX_HOLDS[w.id]
   wa.weapons.replace(spec)
 end
 
--- A weapon component claims only the slot it was placed on: the weapon with
--- home slot `home`.
-shared.claim = function(home)
+-- A weapon component claims only the slot it was placed on: the weapon `id`.
+shared.claim = function(id)
   for _, list in ipairs({ PORTED, PX_ART }) do
     for _, w in ipairs(list) do
-      if w.weapon == home then
+      if w.id == id then
         claim(w)
         return true
       end

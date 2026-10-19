@@ -14,22 +14,16 @@ local fires = {}
 -- stock slot borrows its own stock icon.
 local PORTED = {
   { -- PX's Skip Go/Surrender: stock Skip Go, or stock Surrender with Ctrl.
-    weapon = "skip_go", name = "Skip Go/Surrender",
+    id = "px.skip_go_surrender", base = "stock.skip_go", name = "Skip Go/Surrender",
     panel_icon = "sprites/skip_go/icon.png",
     stock_fire_choice = { held = "ctrl", alternate = "stock.surrender" },
   },
-  { weapon = "dynamite" },
-  { weapon = "blow_torch" },                                   -- BlowTorch
-  { weapon = "flame_thrower" },
-  { weapon = "girder_pack" },                                  -- 3 Girder Pack
-  { weapon = "fast_walk" },
-  { weapon = "crate_spy" },
-  { weapon = "crate_shower" },
-  { weapon = "magic_bullet", panel_icon = "cluster_bomb" },    -- Cluster Bomb
-  { weapon = "invisibility", panel_icon = "teleport" },        -- Teleport
-  { weapon = "damage_x2", panel_icon = "skunk" },              -- Skunk
-  { weapon = "double_turn_time", panel_icon = "mole_bomb" },   -- Mole Bomb
-  { weapon = "ming_vase" },                                    -- Priceless Ming Vase
+  { id = "px.blowtorch", base = "stock.blow_torch" },                                   -- BlowTorch
+  { id = "px.3_girder_pack", base = "stock.girder_pack" },                                  -- 3 Girder Pack
+  { id = "px.cluster_bomb", base = "stock.magic_bullet", panel_icon = "cluster_bomb" },    -- Cluster Bomb
+  { id = "px.skunk", base = "stock.damage_x2", panel_icon = "skunk" },              -- Skunk
+  { id = "px.mole_bomb", base = "stock.double_turn_time", panel_icon = "mole_bomb" },   -- Mole Bomb
+  { id = "px.priceless_ming_vase", base = "stock.ming_vase" },                                    -- Priceless Ming Vase
 }
 
 -- PX weapons that need only PX's art: its icons, copied byte for byte so
@@ -38,19 +32,19 @@ local PORTED = {
 -- its sprite builder (p_sprite_builder), so does the engine from PX_HOLDS.
 local PX_ART = {
   { -- Ice Arrow: WA's own ArrowEntity supplies its flight and bow impact.
-    -- The Highlander script freezes only a worm hit by this slot's arrow.
-    weapon = "armageddon", wep = "weps/armageddon.wep",
+    -- The Highlander script freezes only a worm hit by this weapon's arrow.
+    id = "px.ice_arrow", wep = "weps/armageddon.wep",
     panel_icon = "sprites/ice_arrow/icon.png",
   },
   { -- Reinforcement: PX's new worm for the team (weapons/reinforcement.lua),
-    -- on Nuclear Test's slot. Click-only, as the Super Tele.
-    weapon = "nuclear_test", wep = "weps/nuclear_test.wep",
+    -- on PX's record. Click-only, as the Super Tele.
+    id = "px.reinforcement", wep = "weps/nuclear_test.wep",
     panel_icon = "sprites/reinforcement/icon.png",
     on_select = { cursor = true },
     on_click = function(ev) fires.reinforcement(ev) end,
   },
   { -- Portal Gun: custom bolts and per-team pairs, on Scales of Justice.
-    weapon = "scales_of_justice", wep = "weps/scales_of_justice.wep",
+    id = "px.portal_gun", wep = "weps/scales_of_justice.wep",
     panel_icon = "sprites/portal_gun/icon.png",
     -- The native shot remains usable while Lua accounts for pairs. PX's
     -- CanFire/state hacks are replaced by keeping the turn (claims.lua's
@@ -77,8 +71,8 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/portal_gun/" },
     on_fire = function(fire) fires.portal_gun(fire) end,
   },
-  { -- Electromagnet: PX's placed, persistent field on the Baseball Bat slot.
-    weapon = "baseball_bat", wep = "weps/baseball_bat.wep",
+  { -- Electromagnet: PX's placed, persistent field, on PX's record.
+    id = "px.electromagnet", wep = "weps/baseball_bat.wep",
     -- PX's red icon is attract mode; ours, recoloured to the blue magnet's
     -- colours, repel (the HUD hook in electromagnet.lua shows the mode).
     panel_icon = "sprites/electromagnet/ico_magnet.png",
@@ -109,7 +103,7 @@ local PX_ART = {
   { -- Sentry Gun: PX's turret (weapons/sentry_gun.lua, lib/turret.lua) on
     -- the Kamikaze slot, placed as WA places a mine: its timing, ammo and
     -- retreat, with the turret as a Lua body instead of a mine.
-    weapon = "kamikaze", copy_from = "stock.mine", name = "Sentry Gun",
+    id = "px.sentry_gun", base = "stock.kamikaze", copy_from = "stock.mine", name = "Sentry Gun",
     panel_icon = "sprites/sentry_gun/icon.png",
     is_weapon = true,
     -- PX's take-out and placing, grey; the housing in them coloured per team
@@ -152,8 +146,8 @@ local PX_ART = {
     on_fire = function(fire) fires.sentry_gun(fire) end,
   },
   { -- Sentry Laser: PX's projectile-defence turret (weapons/sentry_laser.lua,
-    -- lib/turret.lua) on the Dragon Ball slot, placed as the Sentry Gun.
-    weapon = "dragon_ball", copy_from = "stock.mine", name = "Sentry Laser",
+    -- lib/turret.lua), placed as the Sentry Gun.
+    id = "px.sentry_laser", base = "stock.dragon_ball", copy_from = "stock.mine", name = "Sentry Laser",
     panel_icon = "sprites/sentry_laser/icon.png",
     is_weapon = true,
     worm_sprites = {
@@ -193,7 +187,7 @@ local PX_ART = {
   { -- Kamikaze Rocket: PX's steered Kamikaze (weapons/kamikaze_rocket.lua) on
     -- the Suicide Bomber slot. Its record is WA's Kamikaze's, so WA flies,
     -- digs and hits as its own Kamikaze; the pack steers it.
-    weapon = "suicide_bomber", wep = "weps/suicide_bomber.wep",
+    id = "px.kamikaze_rocket", wep = "weps/suicide_bomber.wep",
     panel_icon = "sprites/kamikaze_rocket/icon.png",
     -- The Kamikaze's take-out (its last frame the hold) and launch, PX's.
     worm_sprites = {
@@ -204,9 +198,9 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/kamikaze_rocket/" },
   },
   { -- Weapon Crate: a weapon crate dropped in front of the worm
-    -- (weapons/weapon_crate.lua) on the Freeze slot, placed as WA places a
+    -- (weapons/weapon_crate.lua), placed as WA places a
     -- mine (PX's record), the crate instead of the mine.
-    weapon = "freeze", wep = "weps/freeze.wep",
+    id = "px.weapon_crate", wep = "weps/freeze.wep",
     panel_icon = "sprites/weapon_crate/icon.png",
     -- PX's take-out (picking the crate up) and its hold.
     worm_sprites = {
@@ -218,15 +212,15 @@ local PX_ART = {
     params = { worm_sprites_animate = true },
     on_fire = function(fire) fires.weapon_crate(fire) end,
   },
-  { -- Super Tele: the PX record is a type-3 cursor weapon on teleport's slot.
-    weapon = "teleport",
+  { -- Super Tele: the PX record is a type-3 cursor weapon.
+    id = "px.super_tele",
     wep = "weps/teleport.wep",
     panel_icon = "sprites/super_tele/icon.png",
     on_select = { cursor = true },
     on_click = function(ev) fires.super_tele_click(ev) end,
   },
   { -- Javelin: stock flight, direct thrust or a permanent terrain stamp.
-    weapon = "prod", wep = "weps/prod.wep",
+    id = "px.javelin", wep = "weps/prod.wep",
     panel_icon = "sprites/javelin/icon.png",
     sprite = "missile", worm_sprites = PX_POSTURE,
     sprites = { "sprites/javelin/hold.png", "sprites/javelin/flight.png", "sprites/javelin/stamp.png" },
@@ -235,7 +229,7 @@ local PX_ART = {
     on_explode = function(ev) fires.javelin(ev) end,
   },
   { -- Laser Gun: a 5 s beam in place of the uzi's bullet (its section below).
-    weapon = "uzi",
+    id = "px.laser_gun",
     wep = "weps/uzi.wep",
     panel_icon = "sprites/laser_gun/ico_lasergun.png",
     worm_sprites = {
@@ -259,7 +253,7 @@ local PX_ART = {
     -- none, so the worm vanished: here the stock grenade, hidden in flight,
     -- as for the Sticky Bomb. The arc's sheets come with the Lightning
     -- Strike's (its entry below), this prefix being the hold's.
-    weapon = "earthquake",
+    id = "px.electric_grenade",
     wep = "weps/earthquake.wep",
     panel_icon = "sprites/electric_grenade/icon.png",
     sprite = "grenade",
@@ -274,7 +268,7 @@ local PX_ART = {
     -- 15 pixels further out. PX's record leaves the flight sprite 0, as the
     -- Electric Grenade's: here the stock bottle, for the worm's throw sheet,
     -- hidden in flight.
-    weapon = "petrol_bomb",
+    id = "px.valyrian_fire",
     wep = "weps/petrol_bomb.wep",
     panel_icon = "sprites/valyrian_fire/icon.png",
     sprite = "petrolbm",
@@ -287,7 +281,7 @@ local PX_ART = {
   { -- Bowling Ball Strike: PX's three rolling balls (weapons/bowling_ball.lua),
     -- not WA's sheep. Click-only, as the Lightning Strike: the engine ends
     -- WA's prefire after the click.
-    weapon = "sheep_strike",
+    id = "px.bowling_ball_strike",
     wep = "weps/sheep_strike.wep",
     panel_icon = "sprites/bowling_ball/strike_icon.png",
     sprites = { "sprites/bowling_ball/ball.png", "sprites/bowling_ball/glow.png", "sprites/bowling_ball/spark.png",
@@ -298,7 +292,7 @@ local PX_ART = {
   },
   { -- Ferret: PX's terrain-walking ferret (weapons/ferret.lua), thrown in
     -- place of WA's Salvation Army.
-    weapon = "salvation_army",
+    id = "px.ferret",
     wep = "weps/salvation_army.wep",
     panel_icon = "sprites/ferret/icon.png",
     worm_sprites = PX_POSTURE,
@@ -309,14 +303,14 @@ local PX_ART = {
   },
   { -- Crate Strike: PX's three parachute crates (weapons/crate_strike.lua),
     -- not WA's donkey. Click-only, as the Lightning Strike.
-    weapon = "donkey",
+    id = "px.crate_strike",
     wep = "weps/donkey.wep",
     panel_icon = "sprites/crate_strike/icon.png",
     on_select = { cursor = true },
     on_click = function(ev) fires.crate_strike(ev) end,
   },
   { -- Lightning Strike: the PX strike is an effect, not WA's napalm plane.
-    weapon = "napalm_strike",
+    id = "px.lightning_strike",
     wep = "weps/napalm_strike.wep",
     panel_icon = "sprites/lightning/icon.png",
     -- With the Electric Grenade's arc and zap sheets: both weapons' effects
@@ -338,14 +332,14 @@ local PX_ART = {
     -- explodes (its section below). Held as a plain bazooka: the pack's
     -- record has launcher 3 (wbaz) at +0x34 where the scheme's has 7, the
     -- homing missile's recoloured wbaz2 (Weapon__hold_sheet, 0x51C060).
-    weapon = "bazooka",
+    id = "px.double_bazooka", base = "stock.bazooka",
     panel_icon = "sprites/double_bazooka/double_bazooka_ico.png",
     on_explode = function(ev) shared.double_bazooka_explode(ev) end,
   },
   { -- Nuke Rocket: a rocket fuses on the ground, then a nuke climbs out of
     -- it (its section below). PX draws both upright (a type 5 WeapSprite,
     -- mirrored flying left), as WA draws a flight sprite.
-    weapon = "mine",
+    id = "px.nuke_rocket", base = "stock.mine",
     panel_icon = "sprites/nuke_rocket/nuke_rocket_ico.png",
     sprite = "sprites/nuke_rocket/nuke_rocket_bullet.png",
     on_explode = function(ev) shared.nuke_rocket_explode(ev) end,
@@ -360,28 +354,28 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Burning Sheep Launcher
-    weapon = "sheep_launcher",
+    id = "px.burning_sheep_launcher", base = "stock.sheep_launcher",
     panel_icon = "sprites/launchers/burning_sheep_launcher_ico.png",
   },
   { -- Cow Launcher
-    weapon = "mad_cow",
+    id = "px.cow_launcher", base = "stock.mad_cow",
     panel_icon = "sprites/launchers/cow_launcher_ico.png",
   },
   { -- Old Woman Launcher: WA's animal launched from a clear muzzle point.
-    weapon = "old_woman",
+    id = "px.old_woman_launcher", base = "stock.old_woman",
     panel_icon = "sprites/launchers/old_woman_launcher_ico.png",
   },
   { -- Pigeon Strike
-    weapon = "mail_strike",
+    id = "px.pigeon_strike", base = "stock.mail_strike",
     panel_icon = "sprites/pigeon_strike/ico_pigeonst.png",
   },
   { -- Windy Cluster: the stock cluster bomb's body, PX's bits.
-    weapon = "cluster_bomb",
+    id = "px.windy_cluster", base = "stock.cluster_bomb",
     panel_icon = "sprites/windy_cluster/ico_windyc.png",
     cluster = { sprite = "sprites/windy_cluster/cluster.png" },
   },
   { -- Super Gravedigger, and the worm holding and taking it out.
-    weapon = "banana_bomb",
+    id = "px.super_gravedigger", base = "stock.banana_bomb",
     panel_icon = "sprites/super_gravedigger/sgrave_ico.png",
     sprite = "sprites/super_gravedigger/flight.png",
     cluster = { sprite = "sprites/super_gravedigger/cluster.png" },
@@ -399,7 +393,7 @@ local PX_ART = {
   -- the Ferret holds that slot. sprite_overrides does the same, for the
   -- whole match. The trail art is PX's sprite_curtis_<id> libraries'.
   { -- S.M.A.R.T Bomb: its bits home, and draw their own sprite doing so.
-    weapon = "mortar",
+    id = "px.s_m_a_r_t_bomb", base = "stock.mortar",
     panel_icon = "sprites/smart_bomb/smart_ico.png",
     sprite = "sprites/smart_bomb/flight.png",
     cluster = {
@@ -417,7 +411,7 @@ local PX_ART = {
     },
   },
   { -- Blaster Worm
-    weapon = "homing_pigeon",
+    id = "px.blaster_worm", base = "stock.homing_pigeon",
     panel_icon = "sprites/blaster_worm/bworm_ico.png",
     sprite = "sprites/blaster_worm/flight.png",
     cluster = { sprite = "sprites/blaster_worm/cluster.png" },
@@ -432,7 +426,7 @@ local PX_ART = {
     },
   },
   { -- Thumper Nade
-    weapon = "battle_axe",
+    id = "px.thumper_nade", base = "stock.battle_axe",
     panel_icon = "sprites/thumper_nade/thumpern_ico.png",
     sprite = "sprites/thumper_nade/flight.png",
     cluster = { sprite = "sprites/thumper_nade/cluster.png" },
@@ -453,13 +447,13 @@ local PX_ART = {
   -- does; `sprite` and `cluster.sprite` follow it there.
   { -- Thumper Nade Strike: Thumper Nades from the sky, with the Thumper
     -- Nade's own trails (the overrides above).
-    weapon = "carpet_bomb",
+    id = "px.thumper_nade_strike", base = "stock.carpet_bomb",
     panel_icon = "sprites/thumper_nade/thumpernst_ico.png",
     sprite = "sprites/thumper_nade/flight.png",
     cluster = { sprite = "sprites/thumper_nade/cluster.png" },
   },
   { -- Mortar Strike: stock mortar shells, PX's trails and bits.
-    weapon = "air_strike",
+    id = "px.mortar_strike", base = "stock.air_strike",
     panel_icon = "sprites/mortar_strike/ico_mortarst.png",
     cluster = { sprite = "sprites/mortar_strike/cluster.png" },
     sprite_overrides = {
@@ -469,7 +463,7 @@ local PX_ART = {
   },
   { -- Gravler: a mole bomb whose records point its dive and dig frames at
     -- the Salvation Army's wsvr*/wsvb, which PX's script overrides.
-    weapon = "mole_bomb",
+    id = "px.gravler", base = "stock.mole_bomb",
     panel_icon = "sprites/gravler/gravler_ico.png",
     sprite_overrides = {
       wsvr = "sprites/gravler/gravlerdive.png",                                -- 245
@@ -490,7 +484,7 @@ local PX_ART = {
     -- overrides them too, so it draws its gravlers without the Gravler
     -- placed (WA would draw the Salvation Army's own). With both placed, the
     -- second claim of a frame is skipped: the same art either way.
-    weapon = "mole_squadron",
+    id = "px.gravler_strike", base = "stock.mole_squadron",
     panel_icon = "sprites/gravler/gravlerst_ico.png",
     sprite_overrides = {
       wsvr = "sprites/gravler/gravlerdive.png",                                -- 245
@@ -502,12 +496,12 @@ local PX_ART = {
   { -- Ghost Sheep: an Aqua Sheep flying PX's ghost art. Its own record's
     -- sheets (PX overrode WA's aquashp1/2, 156/157, which drew every Aqua
     -- Sheep in the match as a ghost once both could be placed).
-    weapon = "aqua_sheep",
+    id = "px.ghost_sheep", base = "stock.aqua_sheep",
     panel_icon = "sprites/ghost_sheep/ghost_sheep_ico.png",
     sheep_sprites = { "sprites/ghost_sheep/ghstshp1.png", "sprites/ghost_sheep/ghstshp2.png" },
   },
   { -- Pogo Sheep. Its bits' trail is the Blaster Worm's (249, above).
-    weapon = "sheep",
+    id = "px.pogo_sheep", base = "stock.sheep",
     panel_icon = "sprites/pogo_sheep/psheep_ico.png",
     sprite = "sprites/pogo_sheep/flight.png",
     cluster = { sprite = "sprites/pogo_sheep/cluster.png" },
@@ -515,19 +509,19 @@ local PX_ART = {
   { -- Banana Express: stock banana bombs from PX's banana plane. PX's
     -- record names its plane 704, an id PX adds past WA's sprites; `plane`
     -- gives the strike the sheet instead.
-    weapon = "mb_bomb",
+    id = "px.banana_express", base = "stock.mb_bomb",
     panel_icon = "sprites/banana_express/banana_express_ico.png",
     plane = "sprites/banana_express/plane.png",
   },
   { -- Real Shotgun: PX's FireFinal fires the shotgun five times per shot,
     -- five pellets in one frame, each spread by WA's own hitscan cone.
-    weapon = "shotgun",
+    id = "px.real_shotgun", base = "stock.shotgun",
     panel_icon = "sprites/real_shotgun/real_shotgun_ico.png",
     fire_repeat = 5,
   },
   { -- Hellish Hand-Grenade: the hellish_grenade example's art on the scheme's
-    -- record, which leaves the flight sprite to the slot.
-    weapon = "holy_grenade",
+    -- record, which leaves the flight sprite to its base.
+    id = "px.hellish_hand_grenade", base = "stock.holy_grenade",
     panel_icon = "sprites/hellish/hhh_ico.png",
     sprite = "sprites/hellish/grenade.png",
     worm_sprites = {
@@ -540,7 +534,7 @@ local PX_ART = {
     },
   },
   { -- Remote Roller
-    weapon = "skunk",
+    id = "px.remote_roller", base = "stock.skunk",
     panel_icon = "sprites/remote_roller/rroller_ico.png",
     sprite = "sprites/remote_roller/flight.png",
     worm_sprites = {
@@ -555,7 +549,7 @@ local PX_ART = {
   { -- Igniter: PX sets the missile's own sprite to 0 and draws its bullet at
     -- run time, animated and turned to its flight (PX_WEAP_SPRITES below).
     -- WA still draws its homing missile's rocket under it for now.
-    weapon = "homing_missile",
+    id = "px.igniter", base = "stock.homing_missile",
     panel_icon = "sprites/igniter/igniter_ico.png",
     worm_sprites = PX_POSTURE,
     sprites = {
@@ -568,7 +562,7 @@ local PX_ART = {
     -- at run time, turned to its flight (PX_WEAP_SPRITES below). A thrown
     -- weapon's worm posture is picked by its sprite, so the record keeps the
     -- banana, and each missile's own copy is set to 0 in flight instead.
-    weapon = "super_banana",
+    id = "px.chilli_bomb", base = "stock.super_banana",
     panel_icon = "sprites/chilli_bomb/chilli_ico.png",
     sprite = "banana",
     on_explode = function(ev) shared.chilli_bomb_explode(ev) end,
@@ -580,7 +574,7 @@ local PX_ART = {
     -- draws the bomb at run time. Here the bomb is the stock grenade sprite
     -- again -- a grenade-type slot picks the worm's throw sheet from it, and
     -- 0 has none -- which the override draws as PX's bomb. The bits too.
-    weapon = "grenade",
+    id = "px.sticky_bomb", base = "stock.grenade",
     panel_icon = "sprites/sticky_bomb/sbico.png",
     sprite = "grenade",
     cluster = { sprite = "sprites/sticky_bomb/bomb.png" },
@@ -595,17 +589,17 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Fire Jump: a fire punch, then a jump and a glide (below).
-    weapon = "fire_punch",
+    id = "px.fire_jump", base = "stock.fire_punch",
     panel_icon = "sprites/fire_jump/fire_jump_ico.png",
   },
   { -- Super Drill: WA's drill, cutting a second hole each frame (below).
-    weapon = "pneumatic_drill",
+    id = "px.super_drill", base = "stock.pneumatic_drill",
     panel_icon = "sprites/super_drill/ico_superdrill.png",
   },
   { -- Shadow-Bolt: the record leaves the bolt's sprite 0, and PX draws the
     -- bolt at run time, animated and turned to its flight (PX_WEAP_SPRITES
     -- below), with its trail on stock 453 (sprite_curtis_453).
-    weapon = "longbow",
+    id = "px.shadow_bolt", base = "stock.longbow",
     panel_icon = "sprites/shadow_bolt/ico_shadowb.png",
     worm_sprites = PX_POSTURE,
     sprite_overrides = { [453] = "sprites/shadow_bolt/trail.png" },
@@ -613,7 +607,7 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/" },
   },
   { -- Hot Air Balloon: WA's parachute, carried up by PX's script (below).
-    weapon = "bungee",
+    id = "px.hot_air_balloon", base = "stock.bungee",
     panel_icon = "sprites/balloon/balloon_icon.png",
     sprites = { "sprites/balloon/balloon.png", "sprites/balloon/basket.png" },
     -- A pack WAV plays only once an entry registers it.
@@ -625,21 +619,21 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/balloon/" },
   },
   { -- Hang-Glider: WA's parachute, flown as PX's glider (below).
-    weapon = "parachute",
+    id = "px.hang_glider", base = "stock.parachute",
     panel_icon = "sprites/hang_glider/ico_glider.png",
     sprites = { "sprites/hang_glider/glider.png", "sprites/hang_glider/pack.png" },
     sounds = { "sounds/hang_glider/hangopen.wav", "sounds/hang_glider/hangclose.wav" },
     params = { gpu_prefix = "sprites/hang_glider/" },
   },
-  { -- Swim Suit: on the laser sight's slot; worn, the worm swims (below).
-    weapon = "laser_sight",
+  { -- Swim Suit: built on WA's Laser Sight; worn, the worm swims (below).
+    id = "px.swim_suit", base = "stock.laser_sight",
     panel_icon = "sprites/swim_suit/ico_swimsuit.png",
     sprites = { "sprites/swim_suit/swim.png", "sprites/swim_suit/float.png", "sprites/swim_suit/ring.png" },
     sounds = { "sounds/swim_suit/putting_on_ssuit.wav" },
     params = { gpu_prefix = "sprites/swim_suit/" },
   },
-  { -- Jump: on the ninja rope's slot; the worm leaves with the shot (below).
-    weapon = "ninja_rope",
+  { -- Jump: built on WA's Ninja Rope; the worm leaves with the shot (below).
+    id = "px.jump", base = "stock.ninja_rope",
     panel_icon = "sprites/jump/jumpic.png",
     worm_sprites = {
       weaponlnk = "sprites/jump/aim.png", weaponlnku = "sprites/jump/aimu.png",
@@ -647,21 +641,21 @@ local PX_ART = {
     },
     on_fire = function(fire) fires.jump(fire) end,
   },
-  { -- Wind Changer: on the surrender's slot; sets the wind (below).
-    weapon = "surrender",
+  { -- Wind Changer: built on WA's Surrender; sets the wind (below).
+    id = "px.wind_changer", base = "stock.surrender",
     panel_icon = "sprites/wind_changer/ico_windchanger.png",
     sounds = {
       "sounds/wind_changer/breeze.wav", "sounds/wind_changer/calm_wind.wav",
       "sounds/wind_changer/strong_wind.wav",
     },
   },
-  { -- Gravity Control: on low gravity's slot; sets the gravity (below).
-    weapon = "low_gravity",
+  { -- Gravity Control: built on WA's Low Gravity; sets the gravity (below).
+    id = "px.gravity_control", base = "stock.low_gravity",
     panel_icon = "sprites/gravity_control/gravity_control_ico.png",
     sounds = { "sounds/gravity_control/activate.wav", "sounds/gravity_control/error.wav" },
   },
   { -- Helicopter: WA's jet pack, flown by PX's script (below).
-    weapon = "jet_pack",
+    id = "px.helicopter", base = "stock.jet_pack",
     panel_icon = "sprites/helicopter/heli_ico.png",
     sprites = { "sprites/helicopter/flying.png", "sprites/helicopter/jumpin.png" },
     sounds = {
@@ -677,7 +671,7 @@ local PX_ART = {
     -- and its own shot (below). Firing, the worm takes the snipefire poses
     -- the scheme's record names (lit by the muzzle), not WA's handgun, and
     -- the hold and laser stay up over them (PX_HOLDS).
-    weapon = "handgun",
+    id = "px.sniper_rifle", base = "stock.handgun",
     panel_icon = "sprites/sniper_rifle/srico.png",
     worm_sprites = {
       weaponlnk = PX_POSTURE.weaponlnk, weaponlnku = PX_POSTURE.weaponlnku,
@@ -693,7 +687,7 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/" },
   },
   { -- Burst Rifle: the worm aiming it, taking it out and firing it.
-    weapon = "minigun",
+    id = "px.burst_rifle", base = "stock.minigun",
     panel_icon = "sprites/burst_rifle/ico_burstr.png",
     worm_sprites = {
       weaponlnk = "sprites/burst_rifle/aim.png",

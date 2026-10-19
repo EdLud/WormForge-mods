@@ -26,28 +26,28 @@ do
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = {
-  prod = {
+  ["px.javelin"] = {
     sheet = "sprites/javelin/flight.png", hide = true,
     animate = true, anim_speed = 1.90, frames = 12,
   },
-  longbow = { -- Shadow-Bolt
+  ["px.shadow_bolt"] = { -- Shadow-Bolt
     sheet = "sprites/shadow_bolt/bolt.png", animate = true, anim_speed = 1.30, frames = 6,
   },
-  super_banana = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
+  ["px.chilli_bomb"] = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
     sheet = "sprites/px_hold/chilli_bomb.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
     -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
     hide = true,
   },
-  homing_missile = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
+  ["px.igniter"] = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
     sheet = "sprites/igniter/flight.png", animate = true, anim_speed = 1.0, frames = 16,
   },
-  petrol_bomb = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
+  ["px.valyrian_fire"] = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
     sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,
     spin = true, spin_speed = 0.35,
     hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
   },
-  earthquake = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
+  ["px.electric_grenade"] = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
     sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
     -- PX's record has sprite 0; the pack's stock grenade is only for the
@@ -110,8 +110,7 @@ local function sprite_owner()
 end
 
 wa.on.missile_frame(function(m)
-  local home = shared.home(m.weapon)
-  local p = shared.owns(home) and PX_WEAP_SPRITES[home]
+  local p = shared.owns(m.weapon) and PX_WEAP_SPRITES[m.weapon]
   -- WA's sprite is hidden only where PX's is drawn in its place: with no
   -- owner for ours, WA's stays.
   if p and p.hide and m.phase == "pre" and (flying[m.id] or sprite_owner()) then
