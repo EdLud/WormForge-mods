@@ -46,7 +46,7 @@ key = "live_hp"
 type = "bool"
 default = false
 label = "Live HP"
-description = "Health bars follow damage as it happens, not at the turn's end. By reddaz."
+description = "Non-active worms' health bars follow damage immediately, down to zero, preserving frozen state and momentum. Death timing stays with WA. Originally by reddaz."
 
 [[components.options]]
 key = "collect_viewer"

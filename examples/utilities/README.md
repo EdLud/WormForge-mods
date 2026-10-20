@@ -19,11 +19,21 @@ live_hp = true
 | Heal at turn start | number, 0–50 | Health the worm whose turn starts gets. |
 | ExTurnSide | switch | Left and right turn the worm during rope swings and other actions. By red. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by red. |
-| Live HP | switch | Health bars follow damage as it happens, not at the turn's end. By reddaz. |
+| Live HP | switch | Non-active worms' health bars follow damage immediately, down to zero, preserving freeze and momentum. Originally by reddaz. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
 
 Gravity and wind belong to the profile's **Scheme** tab (`[scheme]`),
 including `gravity`, `constant_wind` and `wind`.
+
+Live HP requires a DLL providing `worm:commit_health()`. It commits actual
+damage through WA's health-label handler, including for 1 HP survivors
+and zero-HP worms awaiting their death animation,
+without synthetic hits, healing pulses or changing the worm's state. Ice
+Arrow can freeze its victim normally. Active worms retain WA's ordinary
+health timing; death timing stays with WA for every worm. Nothing forces
+worms to die in mid-flight.
+Run its regression harness from the repository root with
+`lua mods/examples/utilities/test_live_hp.lua`.
 
 ## +10 Seconds
 
