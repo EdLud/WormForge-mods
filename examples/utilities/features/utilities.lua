@@ -8,6 +8,7 @@ local PACKS = {
   { "ex_turn_side", "features/ex_turn_side" },
   { "agility", "features/agility" },
   { "live_hp", "features/live_hp" },
+  { "instant_death", "features/instant_death" },
   { "collect_viewer", "features/collect_viewer" },
 }
 

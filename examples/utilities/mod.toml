@@ -49,6 +49,13 @@ label = "Live HP"
 description = "Non-active worms' health bars follow damage immediately, down to zero, preserving frozen state and momentum. Death timing stays with WA. Originally by reddaz."
 
 [[components.options]]
+key = "instant_death"
+type = "bool"
+default = false
+label = "Instant Death"
+description = "Zero-HP non-active worms begin their normal death sequence once their own motion settles, without waiting for other objects. Works independently of Live HP."
+
+[[components.options]]
 key = "collect_viewer"
 type = "bool"
 default = false
