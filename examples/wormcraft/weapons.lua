@@ -84,8 +84,9 @@ return {
         end
         local age = t - delay
         if age == 0 then
-          a.x = dest_x
-          a.y = dest_y
+          -- A warp, not a write: the drawn position doesn't glide from the
+          -- hiding place above the map.
+          a:warp({ x = dest_x, y = dest_y })
           if last then
             a:sound("sounds/emotional-damage.wav")
           end
