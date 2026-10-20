@@ -194,6 +194,19 @@ animations. Expired zones fade visually for three seconds after their effects
 stop; fading does not heal or explode. Cosmetic particles use a separate
 random stream and do not alter gameplay randomness.
 
+### Homing Air Strike
+
+`px.homing_air_strike`, Worms 2's, its own component
+(`weapons/homing_air_strike.lua`), not in Highlander's pools. Project X's
+library has no script for it, only its record and art: the record
+(`weps/hairstrike_WEAP.wep`, the same in PX's library and in both schemes that
+carry it) is WA's Air Strike with five homing missiles, each a smaller blast
+than WA's (18 to 30), arming 250 ms after the drop and steering for the click
+for 3.5 seconds. The missiles fly in the KAOS scheme's `hairmsl.png`, its
+frames put in WA's airmisl order (`sprites/homing_air_strike/flight.png`),
+homing or not: the record's homing frame names the bomb's sprite, and the
+engine moves it to the pack sheet with the bomb.
+
 ### Double Jump
 
 `px.double_jump`, its own component (`weapons/double_jump.lua`, PX's

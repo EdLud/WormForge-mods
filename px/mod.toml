@@ -306,6 +306,10 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/homing_air_strike/flight.png"]
+fps = 15
+play = "loop"
+
 [sprites."sprites/igniter/flight.png"]
 fps = 15
 play = "loop"
@@ -1207,6 +1211,16 @@ default_position = { row = "F6", column = 1 }
 [components.suggests."hl.rules"]
 pool = "offensive"
 cavern = false
+
+[[components]]
+id = "px.homing_air_strike"
+type = "weapon"
+name = "Homing Air Strike"
+authors = ["Worms 2"]
+description = "Worms 2's Homing Air Strike: click a target; a jet drops five homing missiles that steer for it."
+entry = "weapons/homing_air_strike.lua"
+icon = "sprites/homing_air_strike/ico_hairstrike.png"
+default_position = { row = "F6", column = 6 }
 
 [[components]]
 id = "px.lightning_strike"

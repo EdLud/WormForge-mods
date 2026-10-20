@@ -4128,6 +4128,27 @@ do
   end
 end
 
+print("homing air strike: PX's record, its missiles' art, the turn ends")
+do
+  local function exists(path)
+    local f = io.open((HIGHLANDER_ROOT or "mods/px/") .. path, "rb")
+    if f then f:close() end
+    return f ~= nil
+  end
+  new_match()
+  frame()
+  local claiming = HIGHLANDER_CLAIMING
+  HIGHLANDER_CLAIMING = "select_worm"
+  require("weapons/homing_air_strike").install({ id = "px.homing_air_strike" })
+  HIGHLANDER_CLAIMING = claiming
+  local spec = replaced[#replaced]
+  check("its own record, icon and flight strip, on disk",
+    spec.wep == "weps/hairstrike_WEAP.wep" and exists(spec.wep)
+      and exists(spec.panel_icon) and exists(spec.sprite)
+      and spec.handling.ends_turn == true,
+    spec.wep)
+end
+
 print("double jump: PX's second jump, WA's take-off with the jump the worm made")
 do
   new_match()
