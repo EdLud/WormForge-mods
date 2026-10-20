@@ -528,6 +528,11 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/sentry_ui/digits.png"]
+frames = 10
+fps = 1
+play = "loop"
+
 [sprites."sprites/sentry_gun/equip.png"]
 fps = 15
 play = "loop"

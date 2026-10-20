@@ -57,6 +57,12 @@ These settings do not change **Ammo**, the number of uses a team gets.
 | Sentry Gun (`px.sentry_gun`) | Health (`health`) | 1–500 | 50 |
 | Sentry Laser (`px.sentry_laser`) | Health (`health`) | 1–500 | 35 |
 
+Active sentries blink on every turn, including the planter's turn; housing
+colour shows ownership. Both types display a small translucent health number
+above the head, green at full health, yellow at half and red near zero. The
+number stays at a fixed height above the head and barrel as they turn.
+Sentry Gun still holds fire during its own coalition's turns.
+
 Profiles store these under `[options."<weapon id>"]`, for example
 `[options."px.helicopter"]` followed by `fuel = 300`. Helicopter fuel is
 applied once on take-off through `worm.fuel`, since WA's native record holds

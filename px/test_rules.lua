@@ -1730,9 +1730,84 @@ do
     check(kind .. ": capture lockout ends on the next turn", not s.disabled)
     check(kind .. ": gun holds allied turns; laser remains active", select(3, t.status(s)) == "ready")
     M.message(enemy, wa.msg.START_TURN); body.on(body)
-    check(kind .. ": own coalition turn follows captured ownership", select(3, t.status(s)) == (t.hold_own_turn and "inactive" or "ready"))
+    local _, blinking, mode = t.status(s)
+    check(kind .. ": active light still blinks on its own coalition turn", blinking and mode == "ready")
     M.water = body.y - 1; body.on(body)
     check(kind .. ": water removes the single actor and visual state", body.dead and t.state[body.id] == nil)
+    M.water, M.solid, M.gravity = nil, nil, nil
+  end
+end
+
+print("Sentries: translucent health numbers above both bodies")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match()
+    local t, owner = require("lib/shared")[kind], worm(16)
+    for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+    owner.x, owner.y = 100, 100
+    M.gravity, M.solid = 0.25, function(_, y) return y >= 110 end
+    M.message(owner, wa.msg.START_TURN)
+    t.health = 200 -- each instance's configured maximum, rather than 50/35
+    local a, s = t.place({ worm = owner })
+    for _ = 1, 40 do a.on(a) end
+    local _, flash, status = t.status(s)
+    check(kind .. ": blinks as soon as planted, during the planter's turn", flash and status == "ready")
+    local function label()
+      M.quads = {}; M.draw()
+      local digits = {}
+      for _, q in ipairs(M.quads) do
+        if q.sprite == "sprites/sentry_ui/digits.png" and q.color >> 24 == 0xB0 then
+          digits[#digits + 1] = q
+        end
+      end
+      return digits
+    end
+    local before_rng, before_spawn = rng, #M.spawned
+    s.angle = 90
+    local digits = label()
+    check(kind .. ": displays configured 200 HP with small translucent digits",
+      #digits == 3 and digits[1].frame == 2 and digits[2].frame == 0 and digits[3].frame == 0
+      and digits[1].blend == "alpha" and digits[1].points[3][2] - digits[1].points[1][2] == 7)
+    check(kind .. ": full health is green", digits[1].color == 0xB050F060)
+    local pivot_y, radius = s.y - t.muzzle_up, t.art.barrel and 26 or 25
+    check(kind .. ": fixed counter sits five pixels below its previous height",
+      digits[1].points[3][2] + 1 == math.floor(pivot_y - radius - 4) + 5
+      and digits[1].depth < t.head_depth)
+    local stationary = true
+    for angle = 0, 360, 5 do
+      s.angle, s.tick = angle, angle
+      local turned = label()
+      for i, q in ipairs(turned) do
+        stationary = stationary and q.frame == digits[i].frame and q.color == digits[i].color
+        for j, p in ipairs(q.points) do
+          stationary = stationary and p[1] == digits[i].points[j][1] and p[2] == digits[i].points[j][2]
+        end
+      end
+    end
+    check(kind .. ": digits stay stationary throughout idle, blink and aim cycles", stationary)
+    s.angle = 90
+    s.health = 100; digits = label()
+    check(kind .. ": half health is yellow and shows the current value",
+      digits[1].color == 0xB0F0D850 and digits[1].frame == 1 and #digits == 3)
+    s.health = 1; digits = label()
+    local c = digits[1].color
+    check(kind .. ": critical health is red and re-centers to one digit",
+      #digits == 1 and digits[1].frame == 1 and ((c >> 16) & 255) > ((c >> 8) & 255)
+      and math.abs((digits[1].points[1][1] + digits[1].points[2][1]) / 2 - s.x) <= 0.5)
+    local x, y = digits[1].points[1][1], digits[1].points[1][2]
+    s.x, s.y = s.x + 40, s.y - 20; digits = label()
+    check(kind .. ": label follows a moving body", digits[1].points[1][1] == x + 40
+      and digits[1].points[1][2] == y - 20)
+    s.x, s.y = s.x + 0.25, s.y + 0.25; digits = label()
+    local aligned = true
+    for _, q in ipairs(digits) do
+      for _, p in ipairs(q.points) do aligned = aligned and p[1] % 1 == 0 and p[2] % 1 == 0 end
+    end
+    check(kind .. ": fractional body positions keep glyphs on whole pixels", aligned)
+    check(kind .. ": drawing health changes no health, RNG or actors", s.health == 1
+      and rng == before_rng and #M.spawned == before_spawn)
+    M.water = a.y - 1; a.on(a)
+    check(kind .. ": removed sentry leaves no health number", #label() == 0)
     M.water, M.solid, M.gravity = nil, nil, nil
   end
 end

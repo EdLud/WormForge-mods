@@ -11,6 +11,7 @@
 local turret = {}
 local turrets = {}
 local feet = require("lib/sentry_mask")
+local health_label = require("lib/sentry_health")
 
 -- Scripted bodies are not in the stock electrical target list. Include
 -- their whole body circle in Lightning's existing beam selection in Lua.
@@ -165,6 +166,7 @@ end
 -- poses, and the gun's two frames are its art and its mirror image, for a
 -- turret that has turned to face left (PX draws it flipped).
 function turret.new(cfg)
+  health_label.install()
   local t = {}
   for k, v in pairs(DEFAULTS) do t[k] = v end
   for k, v in pairs(cfg) do t[k] = v end
@@ -500,13 +502,17 @@ function turret.new(cfg)
 
   local function status(s)
     if s.ammo <= 0 then return 0x808080, true, "empty" end
-    if not s.planted or not s.active or (t.hold_own_turn and active_alliance == s.alliance) then
+    if not s.planted or not s.active then
       return 0x202020, false, "inactive"
     end
     if s.firing or s.had_target or s.lost or s.recoil > 0 then return 0xFF3030, true, "tracking" end
     return 0x30FF50, true, "ready"
   end
   t.status = status
+
+  -- Fixed height based on the visible head/barrel sweep, with the counter
+  -- lowered 5px for readability. Following the idle sweep made digits shimmer.
+  local label_clearance = t.art.barrel and 26 or 25
 
   -- One gameplay actor; its head, barrel, flare and added LED are draw calls.
   local function sheet(path, x, y, frame, angle, rgb, depth, blend, size)
@@ -539,6 +545,8 @@ function turret.new(cfg)
           local r = math.rad(angle)
           local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
           sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
+          health_label.draw(s.health, s.max_health, x,
+            y - label_clearance + 1, t.head_depth - 2)
         end
       end
     end)
@@ -626,7 +634,8 @@ function turret.new(cfg)
     local s = {
       alliance = alliance, planted = false, active = true, disabled = false, ammo = t.ammo,
       x = x, y = y, vx = body.vx, vy = body.vy, tick = 0,
-      script_hits = {}, health = t.health, angle = idle, idle = idle, side = facing < 0 and -1 or 1,
+      script_hits = {}, health = t.health, max_health = t.health,
+      angle = idle, idle = idle, side = facing < 0 and -1 or 1,
       sweep_dir = 1, shots = 0, firing = false, anim = 0, rotating = false,
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,
