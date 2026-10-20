@@ -510,8 +510,8 @@ function turret.new(cfg)
   end
   t.status = status
 
-  -- Fixed height based on the visible head/barrel sweep, with the counter
-  -- lowered 5px for readability. Following the idle sweep made digits shimmer.
+  -- Fixed height with the in-game-tuned offset. Following the idle sweep's
+  -- changing top made tiny digits shimmer.
   local label_clearance = t.art.barrel and 26 or 25
 
   -- One gameplay actor; its head, barrel, flare and added LED are draw calls.
@@ -546,7 +546,7 @@ function turret.new(cfg)
           local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
           sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
           health_label.draw(s.health, s.max_health, x,
-            y - label_clearance + 1, t.head_depth - 2)
+            y - label_clearance + 20, t.head_depth - 2)
         end
       end
     end)

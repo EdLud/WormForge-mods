@@ -1770,8 +1770,8 @@ do
       and digits[1].blend == "alpha" and digits[1].points[3][2] - digits[1].points[1][2] == 7)
     check(kind .. ": full health is green", digits[1].color == 0xB050F060)
     local pivot_y, radius = s.y - t.muzzle_up, t.art.barrel and 26 or 25
-    check(kind .. ": fixed counter sits five pixels below its previous height",
-      digits[1].points[3][2] + 1 == math.floor(pivot_y - radius - 4) + 5
+    check(kind .. ": fixed counter uses the in-game-tuned height",
+      digits[1].points[3][2] + 1 == math.floor(pivot_y - radius + 20)
       and digits[1].depth < t.head_depth)
     local stationary = true
     for angle = 0, 360, 5 do
