@@ -20,6 +20,9 @@ they are the `px.ports` bundle in `mods/px/`.
   cursor gives terrain-blocked light while it's equipped: `a.light` on a
   `wa.cursor.spawn` actor. Its `Cursor Light` profile turns the fog on with
   every other light off.
+- `magnet_cursor` (`example.magnet_cursor`) — the same land-cursor interaction,
+  with a shared magnetic field: 1–9 set strength, + switches attraction/repulsion.
+  Its profile includes PX's Bunker Busters and Bowling Ball Strike for tests.
 - `labs` (`example.labs`) — one small weapon per part of the API, each in its
   own folder or file; `profiles/Labs.toml` places them all.
   - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it

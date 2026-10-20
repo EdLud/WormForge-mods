@@ -877,6 +877,66 @@ local function new_match(opts)
   M.quads, M.ribbons, M.sounds, M.sound_flags, M.sound_positions, M.trace_hit, M.draws =
     {}, {}, {}, {}, {}, nil, nil
   M.mines, M.missiles, M.crates, M.oil, M.graves = {}, {}, {}, {}, {}
+  -- Model the engine's per-step field snapshot. Exact falloff, native writes,
+  -- lifetime identities and cross-component bindings have Rust/Wine tests.
+  M.magnetic_fields, M.magnetic_snapshot, M.magnetic_wakes = {}, {}, {}
+  local function contains(f, x, y)
+    local dx, dy = x - f.x, y - f.y
+    return dx * dx + dy * dy + f.softening * f.softening <= f.range * f.range
+  end
+  local function sample(x, y, native)
+    local fx, fy, inside, waking = 0, 0, false, false
+    for _, f in ipairs(M.magnetic_snapshot) do
+      if (not native or f.native) and contains(f, x, y) then
+        local dx, dy = x - f.x, y - f.y
+        local r2 = dx * dx + dy * dy + f.softening * f.softening
+        local scale = math.min(f.max_force, f.strength / r2) / math.sqrt(r2)
+          * (f.polarity == "attract" and -1 or 1)
+        fx, fy, inside = fx + dx * scale, fy + dy * scale, true
+        waking = waking or f.moving
+      end
+    end
+    if not native then
+      for _, f in ipairs(M.magnetic_wakes) do waking = waking or contains(f, x, y) end
+    end
+    return fx, fy, inside, waking
+  end
+  wa.magnetism = {
+    field = function(s)
+      local f = deep_copy(s)
+      f.source = s.source
+      f.enabled, f.native = s.enabled ~= false, s.native ~= false
+      f.x, f.y, f.was_enabled = s.source.x, s.source.y, f.enabled
+      function f:remove() self.removed = true end
+      function f:contains(x, y)
+        for _, v in ipairs(M.magnetic_snapshot) do
+          if v.field == self and contains(v, x, y) then return true end
+        end
+        return false
+      end
+      M.magnetic_fields[#M.magnetic_fields + 1] = f
+      return f
+    end,
+    sample = function(x, y) return sample(x, y, false) end,
+  }
+  function M.magnetic_step()
+    M.magnetic_snapshot, M.magnetic_wakes = {}, {}
+    for _, f in ipairs(M.magnetic_fields) do
+      local enabled = f.enabled and not f.removed and not f.source.dead
+      local v = { x = f.source.x, y = f.source.y, range = f.range, softening = f.softening,
+        max_force = f.max_force, strength = f.strength, polarity = f.polarity,
+        native = f.native, field = f, moving = f.source.x ~= f.x or f.source.y ~= f.y }
+      if enabled then M.magnetic_snapshot[#M.magnetic_snapshot + 1] = v
+      elseif f.was_enabled then M.magnetic_wakes[#M.magnetic_wakes + 1] = v end
+      f.x, f.y, f.was_enabled = v.x, v.y, enabled
+    end
+    for _, group in ipairs({M.mines, M.missiles}) do
+      for _, object in ipairs(group) do
+        local fx, fy = sample(object.x, object.y, true)
+        if (fx ~= 0 or fy ~= 0) and object.impulse then object:impulse(fx, fy) end
+      end
+    end
+  end
   M.trace_masks = nil
   -- The engine's require: a pack module runs once per match, in its own
   -- environment that reads the shared globals and keeps its writes.
@@ -1172,6 +1232,7 @@ end
 print("Electromagnet: plus-key polarity, stock object force and discharge")
 do
   new_match()
+  local function magnet_frame(a) M.magnetic_step(); a.on(a) end
   local w = worm(16)
   w.x, w.y, w.weapon, w.turn = 100, 100, "baseball_bat", true
   local shot = assert((function()
@@ -1191,7 +1252,7 @@ do
   check("the HUD names the mode", M.hud_lines and M.hud_lines[#M.hud_lines]:find("REPEL") ~= nil)
   shot({ worm = w })
   local repel = M.spawned[#M.spawned]
-  repel.on(repel)
+  magnet_frame(repel)
   check("default repel sends stock objects away", mine.dx > 0 and missile.dx < 0)
   check("a random-fuse mine it catches gets 1 to 5 seconds", mine.armed >= 1000 and mine.armed <= 4999)
   check("a mine with a fuse is triggered with its own", timed.armed == 2000)
@@ -1205,7 +1266,7 @@ do
     shot({ worm = other })
     local m = M.spawned[#M.spawned]
     mine.dx = 0
-    m.on(m)
+    magnet_frame(m)
     return mine.dx > 0
   end)())
   M.plus_key = true
@@ -1215,10 +1276,12 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   M.hud()
   check("the HUD follows the switch", M.hud_lines[#M.hud_lines]:find("ATTRACT") ~= nil)
+  -- Test the new magnet in isolation; automatic force now sums every source.
+  for _, field in ipairs(M.magnetic_fields) do field.enabled = false end
   shot({ worm = w })
   local attract = M.spawned[#M.spawned]
   mine.dx = 0
-  attract.on(attract)
+  magnet_frame(attract)
   check("one plus press switches the next magnet to attract", mine.dx < 0)
   -- The Hellish Hand-Grenade slows in a live field; another missile doesn't.
   local hellish = { phase = "pre", weapon = "holy_grenade", x = 120, y = 100, vx = 1000, vy = 0 }
@@ -1230,16 +1293,16 @@ do
   -- 300 frames after the turn ended, missiles and mines are let go (a dud
   -- mine held against a magnet would never rest, and the turn never end).
   M.turn_end({ worm = w })
-  for _ = 1, 299 do attract.on(attract) end
+  for _ = 1, 299 do magnet_frame(attract) end
   missile.dx, mine.dx = 0, 0
-  attract.on(attract)
+  magnet_frame(attract)
   check("still held 300 frames after the turn ends", missile.dx ~= 0 and mine.dx ~= 0)
   missile.dx, mine.dx = 0, 0
-  attract.on(attract)
+  magnet_frame(attract)
   check("missiles and mines are let go after that", missile.dx == 0 and mine.dx == 0)
   M.turn_start({ worm = other, active = other })
   missile.dx, mine.dx = 0, 0
-  attract.on(attract)
+  magnet_frame(attract)
   check("and caught again from the next turn", missile.dx ~= 0 and mine.dx ~= 0)
   -- A blast hurts it less the further off (PX's TakeExplosionDamage).
   local function blast(m, damage, dist)
@@ -1252,10 +1315,10 @@ do
   M.actor_booms = M.actor_booms or {}
   local before = #M.actor_booms
   blast(target, 49, 0) -- 50 -> 1
-  target.on(target)
+  magnet_frame(target)
   check("a blast hurts it by PX's falloff", #M.actor_booms == before)
   blast(target, 1, 0)
-  target.on(target)
+  magnet_frame(target)
   check("at 0 health it explodes, blast 100, damage 50", #M.actor_booms == before + 1
     and M.actor_booms[#M.actor_booms].opts.id == 100 and M.actor_booms[#M.actor_booms].opts.damage == 50)
   -- Four of its owner's turns discharge it; the last one triggers mines.
@@ -1265,9 +1328,44 @@ do
   check("the last turn triggers the mines in range, without a push", late.armed ~= nil and late.dx == nil)
   mine.dx = 0
   M.mines = { mine }
-  repel.on(repel)
-  attract.on(attract)
+  magnet_frame(repel)
+  magnet_frame(attract)
   check("four owner turns discharge both magnets", mine.dx == 0)
+end
+
+print("Bowling Balls: shared magnetic fields, quarter response and sleep/wake")
+do
+  new_match()
+  local shared = require("lib/shared")
+  check("Electromagnet has no weapon-specific Bowling Ball callback", shared.magnet_bowling_balls == nil)
+  local w = worm(16)
+  w.x, w.y = -1000, -1000
+  local source = wa.actors.spawn({ owner = w, x = 100, y = 100, on = function() end })
+  local field = wa.magnetism.field({source=source,range=170,strength=14000,max_force=12,softening=5,polarity="repel"})
+  local a,b = shared.spawn_bowling_ball(w,150,100,0,0)
+  M.magnetic_step()
+  local fx = wa.magnetism.sample(b.x,b.y)
+  local x = b.x
+  a.on(a)
+  check("custom ball movement receives the combined field at quarter strength", math.abs(b.x-x-fx*0.25)<1e-9)
+  -- A supported sleeping ball ignores a stationary field.
+  -- Support a sleeper without making its subsequent motion start inside
+  -- the mock's solid terrain (native bitmap tangency has separate tests).
+  wa.world.trace = function(q)
+    if q.x0==q.x1 and q.y1-q.y0==2 then return {hit=true} end
+  end
+  b.x,b.y,b.vx,b.vy,b.asleep,b.sleep_x,b.sleep_y = 150,100,0,0,true,150,100
+  M.magnetic_step(); a.on(a)
+  check("a stationary field leaves a supported sleeper alone", b.asleep and b.vx==0 and b.vy==0)
+  source.x=101
+  M.magnetic_step(); a.on(a)
+  check("a moving source wakes a sleeper", not b.asleep)
+  b.x,b.y,b.vx,b.vy,b.asleep,b.sleep_x,b.sleep_y = 150,100,0,0,true,150,100
+  field.enabled=false
+  M.magnetic_step()
+  local release_x,release_y=wa.magnetism.sample(b.x,b.y)
+  a.on(a)
+  check("discharge wakes a sleeper without a magnetic shove", not b.asleep and release_x==0 and release_y==0)
 end
 
 print("Electromagnet: it lands and rests on the land, and sinks in the water")

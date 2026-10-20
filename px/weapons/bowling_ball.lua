@@ -366,21 +366,6 @@ shared.kick_bowling_balls = function(x, y, reach, vx, vy)
   end
 end
 
--- PX's magnet (CMagnet::ApplyForce): a ball in its field gets its push
--- (pixels/frame). A sleeping ball is left
--- alone unless `waking` (the magnet moving, discharging or exploding).
-shared.magnet_bowling_balls = function(force, waking)
-  for _, id in ipairs(balls_in_order()) do
-    local b = shared.bowling_balls[id]
-    local dx, dy = force(b.x, b.y)
-    if dx and (waking or not b.asleep) then
-      if waking then wake(b) end
-      b.vx = b.vx + dx
-      b.vy = b.vy + dy
-    end
-  end
-end
-
 shared.zap_bowling_balls = function(x, y)
   local reach = (ZAP_REACH + RADIUS) * (ZAP_REACH + RADIUS)
   for _, id in ipairs(balls_in_order()) do
@@ -494,6 +479,14 @@ local function spawn_ball(owner, x, y, vx, vy)
           shared.bowling_balls[a.id] = nil
           a:despawn()
           return
+        end
+        -- Custom movement samples the same global field as native bodies.
+        -- A ball gets PX's quarter share; stationary fields leave sleepers
+        -- alone, while moving/discharging sources wake them.
+        local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y)
+        if waking then wake(b) end
+        if not b.asleep then
+          b.vx, b.vy = b.vx + fx * 0.25, b.vy + fy * 0.25
         end
         tick(a.id)
         if b.zapped then electrified_frame(b) end

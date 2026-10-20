@@ -1,0 +1,31 @@
+description = "Select Magnet Cursor (F8): move the mouse to attract objects within 300 px. 1-9 set strength, + switches attract/repel. Includes PX's Bunker Busters and Bowling Ball Strike for magnetic tests."
+features = []
+
+[weapons]
+"magnets.magnet_cursor" = { row = "F8", column = 1 }
+"stock.mine" = { row = "F5", column = 1 }
+"px.bunker_buster" = { row = "F6", column = 1 }
+"px.super_bunker_buster" = { row = "F6", column = 2 }
+"px.bowling_ball_strike" = { row = "F6", column = 3 }
+"stock.skip_go" = { row = "F12", column = 1 }
+
+[weapon_settings."magnets.magnet_cursor"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."stock.mine"]
+ammo = -1
+after_use = "continue"
+
+[weapon_settings."px.bunker_buster"]
+ammo = -1
+after_use = "continue"
+
+[weapon_settings."px.super_bunker_buster"]
+ammo = -1
+after_use = "continue"
+
+[weapon_settings."px.bowling_ball_strike"]
+ammo = -1
+after_use = "continue"

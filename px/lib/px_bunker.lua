@@ -16,25 +16,23 @@
 -- blows up (:523-527), as it does on touching anything that is not land
 -- (:320-323, its `ColGroupDigging`, :185-196).
 --
--- The port does not copy PX's implementation, only its behaviour and numbers.
--- The request is explicit: PX's body "bounces" where it should drill, and its
--- magnet steering (:449-452) goes:
+-- The port keeps its playtested drill speed and time budget, with PX's magnetic
+-- response restored through the shared wa.magnetism service:
 --
 --   * the fall: WA's gravity from above the level, at the click's x --
 --     PX's plane drop, minus the plane;
---   * the drill: one fixed step down, at 1.5 px a frame (PX randomizes 0.5..2.0
---     every 5..15 frames, :463-467; its own top speed is `DrillMaxSpeed = 2.0`,
---     :127). A fixed step is how WA's own diggers move and is immune to a push,
---     as the request asks (PX's direction itself is steered by the magnet,
---     :449-452 -- dropped); 1.5 is a quarter under PX's top speed, from playtest;
+--   * the drill: a fixed-speed step along its direction. PX's global field
+--     contributes at 0.4 strength (:427), capped to 0.1 while drilling (:204,
+--     :442-446), then blended as normalize(10 * direction + 3 * force)
+--     (:128, :449-452). The force changes heading, never drill speed;
 --   * the hole: `wa.land.cut{ shape = "drill" }`, WA's own drill mask, which is
 --     the shape PX's masks 1 and 13 make (super_drill.lua:17, cut_lab.lua:12).
 --     PX cuts only while drilling (:508-510); the port cuts every 10 frames
 --     whatever the body is doing, so a buster that has fallen into a wall gets
 --     its hole cut for it instead of sitting there (seen stuck in match);
 --   * the "limited distance": PX's `DrillFuelAmount = 880` (:124) spent per pixel
---     (:516). The port counts frames of drilling instead -- 587, which is PX's 880 px at
---     this port's 1.5 px a frame -- so the clock ticks only while the drill is going:
+--     (:516). The port keeps its existing 300/450 drilling-frame budgets,
+--     so the clock ticks only while the drill is going:
 --     it pauses when the buster falls and carries on when it hits again, and is never
 --     refreshed by a penetration (which is what let it dig without end);
 --   * leaving the land: PX probes 10 px ahead of the body with its collision
@@ -71,7 +69,6 @@
 --     when the digging stops. The Attack Helicopter's rotor is the same idea with one
 --     piece (`weapons/attack_helicopter.lua:71,410`);
 --   * the `space` early detonation (:655-676) -- no such key is exposed;
---   * the magnet steering (:449-452), dropped on purpose.
 --
 -- Girders: the trace has no girder kind, so a girder in the path is simply
 -- passed through -- which is WR's "burrows through terrain and girders".
@@ -158,13 +155,12 @@ function M.install(ctx)
   -- PX's numbers, by line in bunkerbuster.txt.
   local R          = 8      -- the collision circle, CColMask(8, 8, MakeCircleMask(8)) (:38)
   local SKY        = -128   -- the drop height above the level (PX's PlaneAppearYOffset; bowling_ball.lua:16)
-  -- PX's fixed-step drill (:497-498) at its **fastest** (DrillMaxSpeed = 2.0, :127); PX's own
-  -- random 0.5..2.0 (:463-467) averages 1.25. 1.5 is a quarter under PX's top speed, slower than
-  -- PX's average would be slow in feel terms: playtested as right for the weight of the buster.
+  -- The port's existing playtested speed. PX randomizes 0.5..2.0 every few
+  -- frames (:463-467); magnetic steering changes direction, not this speed.
   local DIG_SPEED  = 1.15
+  local MAGNET_SHARE, MAX_DRILL_FORCE, DIG_MAGNET_FACTOR = 0.4, 0.1, 3
   -- PX's "limited distance" is a fuel amount (`:124`, spent per pixel at `:516`); the port counts
-  -- **frames of drilling** instead, which is the same distance at this fixed speed -- PX's 880 px
-  -- over 1.5 px a frame is 587 frames -- and reads as what it is: the drill's own clock. It ticks
+  -- **frames of drilling** instead, using its existing 300/450-frame clocks. Each ticks
   -- only while the body is actually drilling, so it pauses when the buster falls (past a girder,
   -- out of a cave roof) and carries on when it hits again, instead of starting over. It is not
   -- refreshed on a penetration, which is what let a buster dig without end.
@@ -213,6 +209,13 @@ function M.install(ctx)
     end
   end
 
+  -- PX's SetDirection (:287-301), including its zero-speed fallback.
+  local function direction(m, dx, dy)
+    local length = math.sqrt(dx * dx + dy * dy)
+    if length < 0.0001 then m.dir_x, m.dir_y = 0, 1
+    else m.dir_x, m.dir_y = dx / length, dy / length end
+  end
+
   local function remove(m)
     busters[m.body.id] = nil
     if not m.body.dead then m.body:despawn() end
@@ -232,8 +235,9 @@ function M.install(ctx)
   -- Where the drill probes: a line at one edge of the body, from its tip
   -- LOOKAHEAD down (PX's FindInMask probe, :530).
   local function land_ahead(m, edge)
-    local x, tip = m.x + edge, m.y + R
-    return wa.land.trace(x, tip, x, tip + LOOKAHEAD) ~= nil
+    local x = m.x + m.dir_x * R + m.dir_y * edge
+    local y = m.y + m.dir_y * R - m.dir_x * edge
+    return wa.land.trace(x, y, x + m.dir_x * LOOKAHEAD, y + m.dir_y * LOOKAHEAD) ~= nil
   end
 
   -- PX's Collide on anything that is not land (:320-323): its `ColGroupDigging`
@@ -252,11 +256,9 @@ function M.install(ctx)
         if m.num >= NUM then remove(m) return end
         if m.timer <= 0 then
           local d = EXPL_DIST * m.num
-          -- PX: PosX + DirY * dist, PosY - DirX * dist (:406-409). The drill is
-          -- straight down, so (DirX, DirY) is (0, 1) and the offsets are across
-          -- it: the line of blasts is horizontal.
-          blast(m, m.x + d, m.y)
-          if m.num > 0 then blast(m, m.x - d, m.y) end
+          -- PX's flare stays perpendicular to the steered drill (:406-409).
+          blast(m, m.x + m.dir_y * d, m.y - m.dir_x * d)
+          if m.num > 0 then blast(m, m.x - m.dir_y * d, m.y + m.dir_x * d) end
           m.timer, m.num = EXPL_DELTA, m.num + 1
         end
         m.timer = m.timer - 1
@@ -276,17 +278,25 @@ function M.install(ctx)
 
       -- ------------------------------------------------------ drill or fall
       local px, py = m.x, m.y
+      local fx, fy, inside = wa.magnetism.sample(m.x, m.y)
+      fx, fy = fx * MAGNET_SHARE, fy * MAGNET_SHARE
+      -- PX's small sideways tie-breaker in a live field (:429-431).
+      if inside and fx == 0 then fx = 0.01 end
       if m.dig then
-        -- PX's drill frame (:434-543), less the magnet steer (:449-452) and
-        -- the random speed (:463-467): one fixed step down.
+        local force = math.sqrt(fx * fx + fy * fy)
+        if force > MAX_DRILL_FORCE then
+          fx, fy = fx * MAX_DRILL_FORCE / force, fy * MAX_DRILL_FORCE / force
+        end
+        direction(m, 10 * m.dir_x + DIG_MAGNET_FACTOR * fx,
+          10 * m.dir_y + DIG_MAGNET_FACTOR * fy)
         if not land_ahead(m, -EDGE) and not land_ahead(m, EDGE) then
           -- No land ahead at either edge: fall again (PX's StopDigging, :530-537).
-          -- PX also nudges a non-vertical drill on its way (:533-534); a
-          -- straight-down drill takes no nudge.
           m.dig = false
-          m.vy = DIG_SPEED
+          local speed = DIG_SPEED * (1 + 2 * (1 - m.dir_y)) -- PX's exit nudge
+          m.vx, m.vy = m.dir_x * speed, m.dir_y * speed
         else
-          m.y = m.y + DIG_SPEED
+          m.vx, m.vy = m.dir_x * DIG_SPEED, m.dir_y * DIG_SPEED
+          m.x, m.y = m.x + m.vx, m.y + m.vy
           m.dig_time = m.dig_time - 1                  -- the drill's clock, ticking (see DIG_FRAMES)
           if m.dig_time <= 0 then boom(m) return end   -- PX: out of fuel -> explode (:523-527)
           -- PX's StartDigging sound (:240), in the two halves the wav is made of: the loop
@@ -300,9 +310,11 @@ function M.install(ctx)
           end
           if super_buster then
             if m.fire_timer <= 0 then
-              wa.fire.spawn({ owner = m.owner, x = m.x, y = m.y - R, count = 1,
-                vx = wa.random(-FIRE_TOSS.drift, FIRE_TOSS.drift) / 100,
-                vy = -wa.random(FIRE_TOSS.up_min, FIRE_TOSS.up_max) / 100,
+              local drift = wa.random(-FIRE_TOSS.drift, FIRE_TOSS.drift) / 100
+              local up = wa.random(FIRE_TOSS.up_min, FIRE_TOSS.up_max) / 100
+              wa.fire.spawn({ owner = m.owner, x = m.x - m.dir_x * R, y = m.y - m.dir_y * R, count = 1,
+                vx = m.dir_y * drift - m.dir_x * up,
+                vy = -m.dir_x * drift - m.dir_y * up,
                 duration = FIRE.duration, up_power = FIRE.up_power, damage = FIRE.damage })
               m.fire_timer = wa.random(FIRE_MIN, FIRE_MAX)
             end
@@ -313,11 +325,13 @@ function M.install(ctx)
         -- Falling: WA's gravity while the land is clear (PX's GravityFactor 1,
         -- :255). The tip's own path is the line traced, so a step of any size
         -- meets the first land it crosses. PX's Collide -> StartDigging (:317).
-        m.vy = m.vy + wa.world.gravity()
-        local ny = m.y + m.vy
-        local hit = wa.land.trace(m.x, m.y + R, m.x, ny + R)
+        m.vx, m.vy = m.vx + fx, m.vy + wa.world.gravity() + fy
+        direction(m, m.vx, m.vy)
+        local nx, ny = m.x + m.vx, m.y + m.vy
+        local tip_x, tip_y = m.dir_x * R, m.dir_y * R
+        local hit = wa.land.trace(m.x + tip_x, m.y + tip_y, nx + tip_x, ny + tip_y)
         if hit then
-          m.y = (hit.y or ny) - R
+          m.x, m.y = (hit.x or nx + tip_x) - tip_x, (hit.y or ny + tip_y) - tip_y
           m.dig, m.fire_timer = true, 0
           -- PX's StartDigging sound (:240) is the wav's own impact, and it plays on
           -- **every** entry into the land: the first drop, and each time a drill that ran out
@@ -326,7 +340,7 @@ function M.install(ctx)
           a:sound(SND .. IMPACT_SOUND)
           m.piece, m.snd_timer = 1, IMPACT_FRAMES
         else
-          m.y = ny
+          m.x, m.y = nx, ny
         end
       end
 
@@ -337,7 +351,7 @@ function M.install(ctx)
       m.mask_timer = m.mask_timer - 1
       if m.mask_timer <= 0 then
         m.mask_timer = MASK_EVERY
-        if wa.land.solid(m.x, m.y) or wa.land.solid(m.x, m.y + R) then
+        if wa.land.solid(m.x, m.y) or wa.land.solid(m.x + m.dir_x * R, m.y + m.dir_y * R) then
           wa.land.cut({ x = m.x, y = m.y, shape = "drill" }) -- PX's masks 1 and 13 (:508-510)
         end
       end
@@ -354,12 +368,13 @@ function M.install(ctx)
       end
       m.anim = (m.anim + ANIM_SPEED) % 1.0 -- PX's AnimCycle (:423-424)
       a:frame(math.min(FRAMES - 1, math.floor(m.anim * FRAMES)))
-      a:gfx({ depth = wa.depth.OBJECTS + 2 }) -- PX's z 10.01, behind the worms
+      local angle = -math.deg(wa.math.atan(m.dir_x, m.dir_y)) -- PX's UpdateRotation
+      a:gfx({ angle = angle, depth = wa.depth.OBJECTS + 2 }) -- PX's z 10.01, behind the worms
       if m.glow then
         -- PX's glow (SpriteGlow, :378-385): PX's z 10, in front of the body,
         -- additive, tinted RGB(255, 70, 0).
         m.glow.x, m.glow.y = m.x, m.y
-        m.glow:gfx({ depth = wa.depth.OBJECTS + 1, blend = "add", tint = 0xFF4600 })
+        m.glow:gfx({ angle = angle, depth = wa.depth.OBJECTS + 1, blend = "add", tint = 0xFF4600 })
       end
     end
   end
@@ -368,7 +383,8 @@ function M.install(ctx)
   -- still above the level, on WA's gravity.
   local function drop(worm, x, y)
     wa.sound.play(worm, SND .. "bunkbustfall.wav") -- PX's fall sound (:202)
-    local m = { x = x, y = SKY, vy = 0, dig_time = DIG_FRAMES, dig = false, boom = false,
+    local m = { x = x, y = SKY, vx = 0, vy = 0, dir_x = 0, dir_y = 1,
+      dig_time = DIG_FRAMES, dig = false, boom = false,
       num = 0, timer = 0, anim = 0, fire_timer = 0, sunk = false, owner = worm,
       mask_timer = 0, snd_timer = 0, piece = 1 } -- both timers fire on the first frame they can
     m.body = wa.actors.spawn({

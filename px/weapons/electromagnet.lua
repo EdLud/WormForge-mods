@@ -1,7 +1,7 @@
 -- Highlander's Electromagnet, on the Baseball Bat slot (PX weapon_magnet:
 -- magnet.txt's CMagnet). Placed, it stays: for four of its owner's turns
 -- its field pushes (repel) or pulls (attract) WA's own mines and missiles
--- and the Bowling Balls, and it triggers the mines it catches. The objects
+-- and opted-in actors across all packs; it triggers the mines it catches. The objects
 -- it moves stay WA's, so their own flight, collisions and fuses run. It is
 -- an object in the oil-drum layer: blasts, guns and fires hit it, and at
 -- 0 health it explodes.
@@ -12,11 +12,8 @@ local function sq(v) return v * v end
 local shared = require("lib/shared")
 local RANGE2 = 170 * 170           -- MaxRange
 local SYNC2 = RANGE2 // 4          -- MaxSyncRange: MaxRange * 0.25
-local FORCE, COEFFICIENT = 12, 14000
-local ATTRACT_OFFSET, REPEL_OFFSET = 10 * 10, 5 * 5
 local TURNS, HEALTH, LOW_HEALTH = 4, 80, 30
 local BOOM = { id = 100, damage = 50, below = false } -- ExplosionBlast, ExplosionDamage
-local BALL_SHARE = 0.25            -- a Bowling Ball gets a quarter of the force
 -- Not PX's: PX explodes the missiles still in a field 300 frames after the
 -- turn ended, so none circles a magnet for ever. With no way to burst a
 -- stock missile from Lua, the field lets go of them instead, and each ends
@@ -43,18 +40,6 @@ local plus_held = {} -- worm id -> the synchronized + key last frame
 
 local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
 
--- PX's CalculateMagneticForce at (x, y), pixels: the push in pixels/frame,
--- or nil out of range or discharged. Distances in pixels, as PX's.
-local function force(m, x, y, scale)
-  if m.turns <= 0 or not m.alive then return nil end
-  local dx, dy = (x - m.x), (y - m.y)
-  local r2 = dx * dx + dy * dy + (m.pol < 0 and ATTRACT_OFFSET or REPEL_OFFSET)
-  if r2 > RANGE2 then return nil end
-  local strength = math.min(FORCE, COEFFICIENT / r2) * (scale or 1) * m.pol
-  local r = math.sqrt(r2)
-  return (dx / r * strength), (dy / r * strength)
-end
-
 -- PX's TriggerMine: a random-fuse mine gets 1 to 5 seconds; an attracting
 -- magnet sets it close to the longest fuse among the mines it already holds,
 -- so they go off together. Then the mine is armed.
@@ -76,27 +61,16 @@ local function trigger_mine(m, mine, mines)
   mine:arm(fuse)
 end
 
--- PX's DoMagneticField: `scale` 1 pushes, 0 only triggers mines and wakes
--- balls (a discharging or exploding magnet). A moving magnet wakes what it
--- reaches, as PX's.
-local function field(m, scale, wake)
-  wake = wake or m.vx ~= 0 or m.vy ~= 0
+-- Force calculation and application belong to the match-wide field service.
+-- The weapon retains PX's mine arming/fuse policy, including its final pulse.
+local function trigger_mines(m)
   if not (m.ended_at and m.age - m.ended_at > RELEASE_AFTER) then
     local mines = wa.mines.all()
     for _, mine in ipairs(mines) do
-      local dx, dy = force(m, mine.x, mine.y, scale)
-      if dx then
+      if m.field:contains(mine.x, mine.y) then
         trigger_mine(m, mine, mines)
-        if dx ~= 0 or dy ~= 0 then mine:impulse(dx, dy) end
       end
     end
-    for _, missile in ipairs(wa.missiles.all()) do
-      local dx, dy = force(m, missile.x, missile.y, scale)
-      if dx and (dx ~= 0 or dy ~= 0) then missile:impulse(dx, dy) end
-    end
-  end
-  if shared.magnet_bowling_balls then
-    shared.magnet_bowling_balls(function(x, y) return force(m, x, y, scale * BALL_SHARE) end, wake)
   end
 end
 
@@ -108,6 +82,7 @@ end
 
 local function remove(m)
   m.alive = false
+  m.field:remove()
   for i, other in ipairs(magnets) do
     if other == m then table.remove(magnets, i); break end
   end
@@ -115,7 +90,8 @@ end
 
 local function discharge(m)
   if m.turns <= 0 then return end
-  field(m, 0, true)
+  trigger_mines(m)
+  m.field.enabled = false -- also wakes custom sleepers for one simulation step
   m.turns = 0
 end
 
@@ -192,7 +168,7 @@ local function frame(m, a)
   end
   a.x, a.y, a.vx, a.vy = m.x, m.y, 0, 0
   if m.health <= 0 then
-    field(m, 0, true)
+    trigger_mines(m)
     remove(m)
     a.y = m.y - 20
     a:explode(BOOM)
@@ -200,7 +176,10 @@ local function frame(m, a)
     return
   end
   if m.turns > 0 then
-    field(m, 1)
+    -- Settings enter the next step's snapshot. Releasing at age 300 means
+    -- the first step without native force is 301, as in the original port.
+    m.field.native = not (m.ended_at and m.age - m.ended_at >= RELEASE_AFTER)
+    trigger_mines(m)
     m.spark = (m.spark + 0.02) % 1.4
   end
   -- PX's UpdateRotation: spun by its speed, at most half a radian a frame.
@@ -246,6 +225,9 @@ shared.fires.electromagnet = function(fire)
     },
   })
   m.a, m.team = a, worm.team
+  m.field = wa.magnetism.field({ source = a, range = 170,
+    strength = 14000, max_force = 12, softening = pol < 0 and 10 or 5,
+    polarity = pol < 0 and "attract" or "repel" })
   m.sprite = sprite(m)
   magnets[#magnets + 1] = m
 end
@@ -256,6 +238,7 @@ wa.on.turn_start(function(event)
   local team = event.worm and event.worm.team
   for _, m in ipairs(magnets) do
     m.ended_at = nil
+    m.field.native = true
     if m.alive and m.team == team and m.turns > 0 then
       if m.turns == 1 then discharge(m) else m.turns = m.turns - 1 end
     end
@@ -270,7 +253,7 @@ end)
 wa.on.missile_frame(function(missile)
   if missile.phase ~= "pre" or not DAMPED[missile.weapon] then return end
   for _, m in ipairs(magnets) do
-    if force(m, missile.x, missile.y) then
+    if m.field:contains(missile.x, missile.y) then
       missile.vx, missile.vy = missile.vx * DAMPING, missile.vy * DAMPING
       return
     end
@@ -350,5 +333,3 @@ if wa.on.draw and wa.draw.quad then
     end
   end)
 end
-
-shared.magnet_force = force -- for the Highlander mock
