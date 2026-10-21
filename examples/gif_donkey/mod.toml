@@ -1,7 +1,7 @@
 # One weapon written twice: as data flags (flags.lua) and as Lua (lua.lua).
 # profiles/Growth Hormones.toml places both, side by side.
 id = "example.gif_donkey"
-version = "0.2.1"
+version = "0.2.2"
 author = "wkLua"
 api_version = 4
 format_version = 2

@@ -1,6 +1,6 @@
 id = "example.cursor_suite"
 name = "Cursor Suite"
-version = "0.2.0"
+version = "0.2.1"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -11,5 +11,5 @@ type = "weapon"
 name = "Cursor"
 description = "Press + to cycle Light, Magnet attract, Magnet repel, Revive, Freeze and Fire. Click to revive/freeze; hold left mouse for rainbow fire."
 entry = "weapon.lua"
-icon = "teleport"
+icon = "sprites/icon.png"
 default_position = { row = "F8", column = 1 }

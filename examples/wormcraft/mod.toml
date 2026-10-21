@@ -1,6 +1,6 @@
 # WormCraft: a full-screen cut-in, a courier, and WormCraft spelled out.
 id = "example.wormcraft"
-version = "0.2.1"
+version = "0.2.2"
 author = "wkLua"
 api_version = 4
 format_version = 2

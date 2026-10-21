@@ -32,17 +32,17 @@ mode stops emission; existing flames burn out naturally. The rainbow tint
 requires WA's D3D9 shader renderer. Simulation callbacks own mode changes
 and actions; HUD drawing only reads the applied mode.
 
-The **Cursor** and **Cursor Suite** profiles place Cursor on F8 alongside
-stock weapons for testing. **Cursor Light** enables fog with other light
-sources off. **Cursor Magnet** includes PX's Bunker Busters and Bowling Ball
-Strike for magnetic tests; select Cursor, then press + once for attraction
-or twice for repulsion. Cursor Suite itself has no PX dependency.
+The **0.9.3 demo profile** places Cursor and PX's Bowling Ball Strike, with
+fog, Live HP and Instant Death enabled. Select Cursor and press + to try the
+other modes. The demo needs the Fog of war, Utilities and Project X ports
+bundles; Cursor Suite itself has no PX dependency.
 
 This replaces the five separate cursor weapon components. Existing saved
 profiles are kept unchanged: replace their old cursor entries with
-`cursors.cursor` in the loader, or select the new **Cursor** profile. The
-old standalone Cursor Light and Magnet Cursor bundle folders must remain
-removed when using this bundle.
+`cursors.cursor` in the loader, or select **0.9.3 demo profile**. The old
+individual Cursor profiles are no longer bundled. The standalone Cursor
+Light and Magnet Cursor bundle folders must remain removed when using this
+bundle.
 
 Run from this folder:
 

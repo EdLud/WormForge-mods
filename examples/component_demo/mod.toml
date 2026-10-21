@@ -1,7 +1,7 @@
 # A component bundle (format_version 2): nothing runs until a profile selects
 # its components. profiles/ holds two to load in the mod loader. See README.md.
 id = "example.components"
-version = "0.1.0"
+version = "0.1.1"
 author = "wkLua"
 api_version = 4
 format_version = 2

@@ -43,6 +43,7 @@ return {
 
     cursor.install(ctx, {
       name = "Cursor",
+      icon = "sprites/icon.png",
       start = function(a, worm)
         source, owner = a, worm
         mode = remembered[worm.id] or 1
