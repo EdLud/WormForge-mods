@@ -21,6 +21,12 @@ local jumps = {}   -- worm id -> frames since the punch
 local winding = {} -- worm id -> frames since fire was pressed
 -- A wind-up never takes this long; give up rather than fire late.
 local WIND_UP_MAX = 100
+-- Ready/charging, the firing sequence, then the native punch. A hit, fall,
+-- freeze or other loss of control must not become a delayed Fire Jump.
+local WIND_UP_STATES = {
+  [0x67] = true, [0x68] = true, [0x69] = true,
+  [0x6A] = true, [0x6B] = true, [0x6C] = true,
+}
 
 local function fire_jump(worm, t)
   if t == 1 then
@@ -54,17 +60,28 @@ wa.on.worm_message(function(worm, msg)
     -- Neither eats the shot: WA's drill and fire punch still run.
     return
   end
-  if msg == wa.msg.FRAME_FINISH and winding[worm.id] then
-    if worm.vy < 0 then
-      winding[worm.id], jumps[worm.id] = nil, 0
+  if msg ~= wa.msg.FRAME_FINISH then return end
+  local id = worm.id
+  if not (winding[id] or jumps[id]) then return end
+  -- Once WA ends the punch, its collisions and knockback own the speed.
+  -- Forget the timeline permanently; regaining control cannot resume it.
+  if not worm.turn or worm.hp <= 0 or worm.taken
+      or (winding[id] and not WIND_UP_STATES[worm.state_id])
+      or (jumps[id] and worm.state ~= "punching") then
+    winding[id], jumps[id] = nil, nil
+    return
+  end
+  if winding[id] then
+    if worm.state == "punching" and worm.vy < 0 then
+      winding[id], jumps[id] = nil, 0
     else
-      local w = winding[worm.id] + 1
-      winding[worm.id] = w < WIND_UP_MAX and w or nil
+      local w = winding[id] + 1
+      winding[id] = w < WIND_UP_MAX and w or nil
     end
   end
-  if msg == wa.msg.FRAME_FINISH and jumps[worm.id] then
-    local t = jumps[worm.id] + 1
+  if jumps[id] then
+    local t = jumps[id] + 1
     fire_jump(worm, t)
-    jumps[worm.id] = t < 211 and t or nil
+    jumps[id] = t < 211 and t or nil
   end
 end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })

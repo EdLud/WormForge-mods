@@ -2694,13 +2694,14 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.facing, w.vx, w.vy = "fire_punch", -1, 0, 0
+  w.turn, w.state, w.state_id = true, "prefiring", 0x69
   ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   -- WA's wind-up: the worm stands still, and nothing may move it.
   for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
   check("nothing during the wind-up", w.vx == 0 and w.vy == 0, w.vx .. " " .. w.vy)
   -- FireFinal: WA's setup_Punching starts the worm up at 6.
-  w.vy = -6
+  w.vy, w.state, w.state_id = -6, "punching", 0x6C
   local at = {}
   for t = 1, 215 do
     if t == 100 then w.vy = 8 end -- falling fast mid-glide
@@ -2730,12 +2731,57 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.vy = "fire_punch", 0
+  w.turn, w.state, w.state_id = true, "prefiring", 0x69
   ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
   w.vy = -3  -- a later jump of some other kind
   M.message(w, wa.msg.FRAME_FINISH)
   check("is forgotten", w.vy == -3, tostring(w.vy))
+end
+
+print("fire jump: loss of control cancels the wind-up and speed overrides")
+do
+  local losses = {
+    { name = "blast", state = "blasted", state_id = 0x81 },
+    { name = "hit", state = "hit", state_id = 0x80 },
+    { name = "tumble", state = "tumbling", state_id = 0x7F },
+    { name = "landing", state = "standing", state_id = 0x65 },
+    { name = "freeze", state = "frozen", state_id = 0x86 },
+    { name = "turn end", turn = false },
+    { name = "death", hp = 0 },
+    { name = "taken by another weapon", taken = true },
+  }
+  for _, during_windup in ipairs({ true, false }) do
+    for _, loss in ipairs(losses) do
+      new_match()
+      frame()
+      local w = worm(16)
+      w.weapon, w.turn, w.hp = "fire_punch", true, 100
+      w.state, w.state_id, w.vx, w.vy = "prefiring", 0x69, 0, 0
+      ammo[w.ammo_group].fire_punch = 1
+      M.message(w, wa.msg.FIRE_WEAPON)
+      if not during_windup then
+        w.state, w.state_id, w.vy = "punching", 0x6C, -6
+        for _ = 1, 29 do M.message(w, wa.msg.FRAME_FINISH) end
+      end
+      -- An explosion's momentum must survive the imminent horizontal
+      -- override and the later fall-speed cap, including an upward blast.
+      for key, value in pairs(loss) do if key ~= "name" then w[key] = value end end
+      w.vx, w.vy = 15, -12
+      M.message(w, wa.msg.FRAME_FINISH)
+      check(loss.name .. " preserves knockback " .. (during_windup and "during wind-up" or "during jump"),
+        w.vx == 15 and w.vy == -12)
+      w.state, w.state_id, w.turn, w.hp, w.taken = "punching", 0x6C, true, 100, nil
+      w.vy = 8
+      for _ = 1, 215 do M.message(w, wa.msg.FRAME_FINISH) end
+      check(loss.name .. " cannot resume the canceled timeline", w.vx == 15 and w.vy == 8)
+      M.message(w, wa.msg.FIRE_WEAPON)
+      w.vy = -6
+      M.message(w, wa.msg.FRAME_FINISH)
+      check("a new Fire Jump still works after " .. loss.name, w.vy == -9)
+    end
+  end
 end
 
 print("px holds: each replacement carries declarative engine hold data")
