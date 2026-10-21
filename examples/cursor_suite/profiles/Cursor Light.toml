@@ -1,11 +1,11 @@
-description = "Move Cursor Light (F8) around the map: a 300 px circle lights only what the cursor can see through terrain."
+description = "Select Cursor (F8) in Light mode: a 300 px terrain-blocked circle. Press + to cycle modes."
 features = ["core.fog"]
 
 [weapons]
-"lights.cursor_light" = { row = "F8", column = 1 }
+"cursors.cursor" = { row = "F8", column = 1 }
 "stock.skip_go" = { row = "F12", column = 1 }
 
-[weapon_settings."lights.cursor_light"]
+[weapon_settings."cursors.cursor"]
 ammo = -1
 delay = 0
 crate = 0
