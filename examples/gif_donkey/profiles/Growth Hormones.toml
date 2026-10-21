@@ -1,5 +1,0 @@
-description = "Growth Hormones twice: the flags version and the Lua version, side by side."
-
-[weapons]
-"gif.flags" = true
-"gif.lua" = true
