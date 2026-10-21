@@ -1,0 +1,8 @@
+# Source checks and Git-archive builds must agree on Windows and Unix.
+* text=auto eol=lf
+*.png binary
+*.gif binary
+*.wav binary
+*.wep binary
+*.mp3 binary
+*.zip binary
