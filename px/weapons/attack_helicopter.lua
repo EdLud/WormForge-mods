@@ -456,6 +456,9 @@ return {
     wa.log(("Attack Helicopter at %s %d"):format(ctx.position.row, ctx.position.column))
 
     wa.weapons.replace({
+      -- This slot also launches the helicopter's bullets, so its bullet
+      -- record must stay intact; the strike itself needs an open-sky map.
+      available_in_caves = false,
       -- The slot is the profile's (`F6 2`); a component names no `weapon`, only
       -- the record it builds on. The record is PX's **bullet** (`bullet_wep.wep`,
       -- name "bullet"; damage 13 at +0x54, fuse 3000 at +0x20, a type-3 cursor
