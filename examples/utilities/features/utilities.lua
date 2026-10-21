@@ -25,6 +25,13 @@ return function(ctx)
       on[#on + 1] = pack[1]
     end
   end
+  
+  if ctx.option("damage_numbers") then
+    require("features/damage_numbers")({
+      side = ctx.option("damage_numbers_side"),
+    })
+    on[#on + 1] = "damage_numbers"
+  end
 
   wa.log(("heal %d, packs %s"):format(
     heal, #on > 0 and table.concat(on, " ") or "none"))
