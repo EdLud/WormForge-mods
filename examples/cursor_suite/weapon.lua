@@ -6,6 +6,7 @@ local MODES = {
   { name = "Revive", hint = "click a gravestone" },
   { name = "Freeze", hint = "click a worm" },
   { name = "Fire", hint = "hold left mouse for rainbow fire" },
+  { name = "Hurt", hint = "click a worm: 10 HP damage" },
 }
 local RAINBOW = { 0xFF2A2A, 0xFF8C1A, 0xFFE81A, 0x3CFF4A, 0x2E8CFF, 0x8A3CFF, 0xFF3CD2 }
 
@@ -89,6 +90,11 @@ return {
             return w.hp > 0
           end)
           if worm then worm:freeze() end
+        elseif mode == 7 then
+          local worm = cursor.nearest(wa.worms.all(), ev.x, ev.y, function(w)
+            return w.hp > 0
+          end)
+          if worm then worm:hurt(10) end
         end
       end,
     })

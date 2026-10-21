@@ -11,6 +11,7 @@ or teleport on click. Select it, then press **+** (top row or keypad) to cycle:
 | Revive | Click near a linked gravestone to revive its original worm with 100 HP |
 | Freeze | Click near a living worm to apply WA's native freeze |
 | Fire | Hold the left mouse button to spray rainbow petrol flames at 25 flames/second |
+| Hurt | Click near a living worm to deal 10 HP damage through `worm:hurt(10)` |
 
 The HUD names the current mode. Holding + advances once; release and press
 again to advance another mode. Each worm starts in Light and remembers its
@@ -19,10 +20,14 @@ Switching modes removes the previous light or magnetic field immediately.
 Switching weapons, dying or ending the turn removes the cursor and its effect;
 a remembered selection restores it next turn.
 
-Revive and Freeze choose the nearest eligible target within 24 px. Revive
+Revive, Freeze and Hurt choose the nearest eligible target within 24 px. Revive
 leaves unlinked graves and any revival WA refuses alone. Freeze can target
 either team, including the caster. WA owns revival placement, turn effects
 and freeze/thaw behavior.
+
+Hurt can target either team, including the caster, and can kill. Each click
+sends one ordinary `worm:hurt(10)` with no knockback; health display, loss of
+control and death timing follow the engine and the profile's settings.
 
 Fire uses WA's fire physics and damage. Its rainbow petrol flames do not
 spread into untinted fires, but still burn worms. On selection or entering

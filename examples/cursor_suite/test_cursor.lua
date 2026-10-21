@@ -121,8 +121,13 @@ click(120, 80, { id = 32 })
 assert(graves[1].calls == 1, "outside radius and foreign clicks are ignored")
 next_mode("Freeze")
 local function worm(x, y, hp)
-  local w = { x = x, y = y, hp = hp, calls = 0 }
+  local w = { x = x, y = y, hp = hp, calls = 0, hurts = 0 }
   function w:freeze() assert(sim); self.calls = self.calls + 1 end
+  function w:hurt(amount)
+    assert(sim and amount == 10)
+    self.hurts = self.hurts + 1
+    self.hp = math.max(0, self.hp - amount)
+  end
   return w
 end
 worms = { worm(120, 80, 0), worm(130, 80, 100), worm(121, 80, 50) }
@@ -158,6 +163,22 @@ assert(#fires == 25)
 pointer.x, pointer.y, pointer.down = 300, 200, true
 tick(a)
 assert(#fires == 26 and fires[26].x == 300 and fires[26].y == 194)
+next_mode("Hurt")
+worms = { worm(300, 200, 0), worm(310, 200, 30), worm(301, 200, 6) }
+for _ = 1, 10 do tick(a) end
+assert(#fires == 26 and worms[3].hurts == 0, "Hurt stops fire and damages only on click")
+click()
+assert(worms[1].hurts == 0 and worms[2].hurts == 0 and worms[3].hurts == 1)
+assert(worms[3].hp == 0, "Hurt permits lethal damage through the ordinary hurt call")
+click()
+assert(worms[2].hp == 20 and worms[2].hurts == 1 and worms[3].hurts == 1, "skip dead targets")
+click(400, 300)
+click(300, 200, { id = 99 })
+assert(worms[2].hurts == 1, "outside radius and foreign clicks cannot hurt")
+caster.x, caster.y, caster.hurts = 300, 200, 0
+caster.hurt = worms[2].hurt
+worms = { caster }; click()
+assert(caster.hp == 90 and caster.hurts == 1, "self damage uses the same ordinary hurt call")
 next_mode("Light")
 assert(a.light.circle == 300 and #fires == 26, "leaving Fire stops spraying even while held")
 
@@ -178,7 +199,7 @@ assert(#fires == before + 1, "selection grace persists after consolidation")
 local other = { id = 32, hp = 100, turn = true, weapon = "cursors.cursor" }
 caster = other; a = select()
 assert(a.light.circle == 300 and hud():find("Light"), "another worm starts with its own mode")
-for _, name in ipairs({ "Magnet attract", "Magnet repel", "Revive", "Freeze", "Fire", "Light" }) do
+for _, name in ipairs({ "Magnet attract", "Magnet repel", "Revive", "Freeze", "Fire", "Hurt", "Light" }) do
   next_mode(name)
   local last_field = fields[#fields]
   local prior = a
@@ -206,4 +227,4 @@ for _, name in ipairs({ "Magnet attract", "Magnet repel", "Revive", "Freeze", "F
   caster.turn = true; a = select()
 end
 for _, f in ipairs(fields) do assert(f.removed, "no orphaned magnetic fields") end
-print("PASS: one Cursor, six modes, + edges, fixed magnet strength, light/field cleanup, revive/freeze, guarded rainbow fire and lifecycle")
+print("PASS: one Cursor, seven modes, + edges, fixed magnet strength, light/field cleanup, revive/freeze/hurt, guarded rainbow fire and lifecycle")
