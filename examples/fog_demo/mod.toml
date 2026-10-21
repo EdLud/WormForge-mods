@@ -1,6 +1,6 @@
 id = "core.fog"
 name = "Fog of war"
-version = "0.3.1"
+version = "0.3.2"
 author = "WormForge"
 api_version = 4
 format_version = 2

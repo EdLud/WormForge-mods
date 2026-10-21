@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the online mod catalogue the WormForge loader reads (Check online).
 
-The published mods (PUBLIC: `mods/px` and the public examples), staged
+The packs selected by catalogue.toml, staged
 without their diagnostic components by `tools/prepare-public-packs.py`, go
 into <site>/downloads/packs/:
 
@@ -17,7 +17,7 @@ into <site>/downloads/packs/:
 
 and the public store, <site>/downloads/blobs/ (every published file by
 hash) with each version's file list in <site>/downloads/packs/versions/.
-Of the profiles the mods carry, only PUBLIC_PROFILES go out.
+Of the profiles the mods carry, only those selected in catalogue.toml go out.
 A zip for a mod no longer published is removed, and so is the old
 downloads/mods.zip (every mod at once; the loader installs from the zips).
 
@@ -39,6 +39,9 @@ import hashlib
 import importlib.util
 import io
 import shutil
+import re
+import subprocess
+import tarfile
 import tempfile
 import tomllib
 import urllib.parse
@@ -50,23 +53,7 @@ REPO = Path(__file__).resolve().parent.parent
 # public front, ropahektic/WormForge. Another copy of it takes --base-url.
 BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
 INDEX_SCHEMA = 2
-# The mods players get: Highlander and its ports, the add-ons, the examples.
-# The audits and test weapons (`tools`, `labs`) stay in the repo, and so do
-# `gravler_strike` and `turret`, which Highlander's px.ports now covers.
-PUBLIC = [
-    "mods/px",
-    "mods/examples/utilities",
-    "mods/examples/fog_demo",
-    "mods/examples/cursor_suite",
-    "mods/examples/component_demo",
-    "mods/examples/gif_donkey",
-    "mods/examples/pooz",
-    "mods/examples/wormcraft",
-    "mods/examples/KillTheKing",
-]
-# The saved profiles players get, from the mods' `profiles/`. Any other a
-# mod carries (Growth Hormones) stays in the repo.
-PUBLIC_PROFILES = {"Demo", "Funny", "Highlander", "Full Wormforage", "Fog of war", "0.9.3 demo profile"}
+SOURCE_URL = "https://github.com/EdLud/WormForge-mods"
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}
 FIXED_TIME = (2020, 1, 1, 0, 0, 0)
@@ -82,6 +69,8 @@ def files_of(folder):
     out = []
     for path in folder.rglob("*"):
         rel = path.relative_to(folder)
+        if path.is_symlink():
+            raise ValueError(f"source symlinks are not supported: {path}")
         if path.is_file() and not any(part in SKIP for part in rel.parts):
             out.append(rel)
     return sorted(out, key=lambda r: r.as_posix().lower())
@@ -103,30 +92,77 @@ def mod_zip(folder):
     return buf.getvalue()
 
 
+def catalogue():
+    """Explicit source selection, shared by validation and publication."""
+    config = tomllib.loads((REPO / "catalogue.toml").read_text(encoding="utf-8"))
+    if config.get("schema") != 1 or set(config) != {"schema", "packs", "profiles"}:
+        raise ValueError("catalogue.toml needs schema=1, packs and profiles")
+    packs, profiles = config["packs"], config["profiles"]
+    if not isinstance(packs, list) or not packs or not isinstance(profiles, list):
+        raise ValueError("catalogue packs must be a nonempty list; profiles must be a list")
+    for value in packs + profiles:
+        if not isinstance(value, str):
+            raise ValueError("catalogue paths must be strings")
+        path = Path(value)
+        if path.is_absolute() or ".." in path.parts or "\\" in value or str(path) != value:
+            raise ValueError(f"unsafe catalogue path: {value!r}")
+        if not (REPO / path).resolve().is_relative_to(REPO.resolve()):
+            raise ValueError(f"catalogue path escapes repository: {value}")
+    if len({Path(p).name.casefold() for p in packs}) != len(packs):
+        raise ValueError("catalogue pack folder names must be unique")
+    if len(set(profiles)) != len(profiles):
+        raise ValueError("catalogue profiles must be unique")
+    for profile in profiles:
+        if not any(Path(profile).parent == Path(pack) / "profiles" for pack in packs):
+            raise ValueError(f"profile is not in a selected pack: {profile}")
+        if Path(profile).suffix != ".toml":
+            raise ValueError(f"profile is not TOML: {profile}")
+    return packs, profiles
+
+
 def stage_public(tmp):
-    """The public mods as players get them, staged under `tmp`: diagnostic
-    components dropped (`tools/prepare-public-packs.py`), and of the
-    profiles only PUBLIC_PROFILES. Returns the staged folder, one
-    subfolder per mod."""
+    """Stage exactly the selected packs/profiles, excluding diagnostics."""
+    public, profiles = catalogue()
     gathered, staged = Path(tmp) / "source", Path(tmp) / "public"
     gathered.mkdir()
-    for rel in PUBLIC:
+    ids, components = set(), set()
+    for rel in public:
         src = REPO / rel
-        if not (src / "mod.toml").is_file():
-            raise SystemExit(f"{rel}: no mod.toml")
+        manifest = src / "mod.toml"
+        if not manifest.is_file():
+            raise ValueError(f"{rel}: no mod.toml")
+        data = tomllib.loads(manifest.read_text(encoding="utf-8"))
+        if data.get("format_version") != 2 or data.get("api_version") != 4:
+            raise ValueError(f"{rel}: expected bundle format 2 / API 4")
+        for key in ("id", "version"):
+            value = data.get(key, "")
+            if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*", value):
+                raise ValueError(f"{rel}: unsafe or missing {key}")
+        if data["id"] in ids:
+            raise ValueError(f"duplicate pack id: {data['id']}")
+        ids.add(data["id"])
+        for component in data.get("components", []):
+            if component["id"] in components:
+                raise ValueError(f"duplicate component id: {component['id']}")
+            components.add(component["id"])
+        # Reject symlinks before copytree could follow one outside the source.
+        files_of(src)
         shutil.copytree(src, gathered / src.name, ignore=shutil.ignore_patterns(*SKIP))
     prepare.stage(gathered, staged)
+    selected = {Path(Path(p).parent.parent.name) / "profiles" / Path(p).name for p in profiles}
     found = set()
     for profile in staged.glob("*/profiles/*.toml"):
-        if profile.stem in PUBLIC_PROFILES:
-            found.add(profile.stem)
+        rel = profile.relative_to(staged)
+        if rel in selected:
+            tomllib.loads(profile.read_text(encoding="utf-8"))
+            found.add(rel)
         else:
             profile.unlink()
+    if found != selected:
+        raise ValueError(f"public profiles missing or diagnostic: {sorted(str(p) for p in selected - found)}")
     for folder in staged.glob("*/profiles"):
         if not any(folder.iterdir()):
             folder.rmdir()
-    if found != PUBLIC_PROFILES:
-        raise SystemExit(f"public profiles not found: {sorted(PUBLIC_PROFILES - found)}")
     return staged
 
 
@@ -225,7 +261,124 @@ def sign(key, data):
             + key.sign(data).hex() + "\n")
 
 
-def publish(site, base_url=BASE_URL, key=None):
+def checked_versions(staged, site):
+    """Reject all reused versions before any download file is written."""
+    versions, refused = {}, []
+    for folder in sorted(p for p in staged.iterdir() if p.is_dir()):
+        manifest = tomllib.loads((folder / "mod.toml").read_text(encoding="utf-8"))
+        mod_id, version = manifest["id"], manifest["version"]
+        files = file_hashes(folder)
+        known = version_file(site, mod_id, version) if site is not None else None
+        if known is not None and known.is_file() and read_version(known) != files:
+            refused.append(f"{mod_id} v{version} ({folder.name})")
+        versions[folder.name] = (mod_id, version, files)
+    if refused:
+        raise ValueError("changed since published under the same version; bump mod.toml:\n  "
+                         + "\n  ".join(refused))
+    return versions
+
+
+def check_source(site=None):
+    if site is not None and not (site / "downloads/packs").is_dir():
+        raise ValueError(f"site has no downloads/packs history: {site}")
+    with tempfile.TemporaryDirectory() as tmp:
+        staged = stage_public(tmp)
+        versions = checked_versions(staged, site)
+        for mod_id, version, files in versions.values():
+            print(f"{mod_id} {version}: {len(files)} files")
+        return versions
+
+
+def verify_site(site, public_key):
+    """Check the complete local download snapshot, including its signature."""
+    packs, blobs = site / "downloads/packs", site / "downloads/blobs"
+    raw = (packs / "index.toml").read_bytes()
+    signature = "".join(line.strip() for line in (packs / "index.toml.sig").read_text().splitlines()
+                        if line.strip() and not line.startswith("#"))
+    public_key.verify(bytes.fromhex(signature), raw)
+    index = tomllib.loads(raw.decode("utf-8"))
+    if index["schema"] != INDEX_SCHEMA:
+        raise ValueError("unsupported catalogue schema")
+    hashes = (blobs / "hashes.txt").read_bytes()
+    if hashlib.sha256(hashes).hexdigest() != index["hashes"]:
+        raise ValueError("blob list does not match signed index")
+    names = hashes.decode("ascii").splitlines()
+    if names != sorted(set(names)):
+        raise ValueError("blob list must be sorted and unique")
+    for sha in names:
+        if not re.fullmatch(r"[0-9a-f]{64}", sha):
+            raise ValueError("invalid blob hash")
+        if hashlib.sha256((blobs / sha[:2] / sha).read_bytes()).hexdigest() != sha:
+            raise ValueError(f"corrupt blob: {sha}")
+    available = set(names)
+    # Historical versions must remain reconstructible after every build.
+    for path in (packs / "versions").glob("*/*.toml"):
+        if not set(read_version(path).values()) <= available:
+            raise ValueError(f"historical version references missing blobs: {path}")
+    seen = set()
+    for pack in index["packs"]:
+        if pack["id"] in seen:
+            raise ValueError(f"duplicate pack id: {pack['id']}")
+        seen.add(pack["id"])
+        for field in ("id", "version", "folder", "file"):
+            value = pack[field]
+            if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*", value):
+                raise ValueError(f"unsafe pack {field}: {value}")
+        data = (packs / pack["file"]).read_bytes()
+        if len(data) != pack["size"] or hashlib.sha256(data).hexdigest() != pack["sha256"]:
+            raise ValueError(f"archive mismatch: {pack['id']}")
+        expected = read_version(version_file(site, pack["id"], pack["version"]))
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            actual = {name: hashlib.sha256(archive.read(name)).hexdigest() for name in archive.namelist()}
+            if len(actual) != len(archive.namelist()):
+                raise ValueError(f"duplicate archive entries: {pack['id']}")
+        if actual != {f"{pack['folder']}/{path}": sha for path, sha in expected.items()}:
+            raise ValueError(f"archive does not match version manifest: {pack['id']}")
+    print(f"Verified signed catalogue: {len(seen)} packs, {len(names)} blobs")
+
+
+def build_site(site, base_url, key):
+    """Build a committed source snapshot; verify before replacing downloads."""
+    global REPO
+    status = subprocess.check_output(["git", "-C", str(REPO), "status", "--porcelain",
+                                      "--untracked-files=normal"], text=True)
+    if status:
+        raise ValueError("commit mods repository changes before building; use --check for a working-tree preview")
+    commit = subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip()
+    epoch = int(subprocess.check_output(["git", "-C", str(REPO), "show", "-s", "--format=%ct", "HEAD"]))
+    snapshot = subprocess.check_output(["git", "-C", str(REPO), "archive", "--format=tar", commit])
+    if not site.is_dir():
+        raise ValueError(f"site checkout does not exist: {site}")
+    with tempfile.TemporaryDirectory(prefix=".catalogue-build-", dir=site) as temp:
+        root = Path(temp)
+        source, candidate = root / "source", root / "site"
+        source.mkdir()
+        candidate.mkdir()
+        with tarfile.open(fileobj=io.BytesIO(snapshot)) as archive:
+            archive.extractall(source, filter="data")
+        downloads = site / "downloads"
+        if downloads.exists():
+            shutil.copytree(downloads, candidate / "downloads")
+        # The archive is the only input: ignored files never enter a pack.
+        previous = REPO
+        try:
+            REPO = source
+            publish(candidate, base_url, key, commit, epoch)
+            verify_site(candidate, key.public_key())
+        finally:
+            REPO = previous
+        if downloads.exists():
+            downloads.rename(root / "previous-downloads")
+        try:
+            (candidate / "downloads").rename(downloads)
+        except BaseException:
+            if (root / "previous-downloads").exists():
+                (root / "previous-downloads").rename(downloads)
+            raise
+    print(f"Built from {SOURCE_URL}@{commit}; review and commit the website changes")
+
+
+def publish(site, base_url=BASE_URL, key=None, source_commit=None, source_time=None):
     out_dir = site / "downloads" / "packs"
     out_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -233,19 +386,7 @@ def publish(site, base_url=BASE_URL, key=None):
         # A published version never changes: content that differs from what
         # a version was published with needs a new version. Checked for every
         # mod before anything is written.
-        versions, refused = {}, []
-        for folder in sorted(p for p in staged.iterdir() if p.is_dir()):
-            manifest = tomllib.loads((folder / "mod.toml").read_text(encoding="utf-8"))
-            mod_id, version = manifest["id"], manifest.get("version", "0.1.0")
-            files = file_hashes(folder)
-            known = version_file(site, mod_id, version)
-            if known.is_file() and read_version(known) != files:
-                refused.append(f"{mod_id} v{version} ({folder.name})")
-            versions[folder.name] = (mod_id, version, files)
-        if refused:
-            raise SystemExit(
-                "changed since published under the same version; bump their version in mod.toml:\n  "
-                + "\n  ".join(refused))
+        versions = checked_versions(staged, site)
         new_blobs, all_blobs = store_blobs(site, staged)
         hashes_sha = hashlib.sha256((site / "downloads" / "blobs" / "hashes.txt").read_bytes()).hexdigest()
         for mod_id, version, files in versions.values():
@@ -276,16 +417,21 @@ def publish(site, base_url=BASE_URL, key=None):
             if old.name not in known:
                 print(f"{old.name:16} removed (no longer published)")
                 old.unlink()
+        generated = (datetime.datetime.fromtimestamp(source_time, datetime.timezone.utc)
+                     if source_time is not None else datetime.datetime.now(datetime.timezone.utc))
         lines = [
             "# WormForge mod index. Generated by tools/publish-packs.py; do not edit by hand.",
             f"schema = {INDEX_SCHEMA}",
-            f"generated = \"{datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}\"",
+            f"generated = {toml_string(generated.strftime('%Y-%m-%dT%H:%M:%SZ'))}",
             f"base = {toml_string(base_url)}",
             # The public store: every published file by hash (blobs/<aa>/<sha>,
             # blobs/hashes.txt), and each version's file list (versions/).
             f"blobs = {toml_string(urllib.parse.urljoin(base_url, '../blobs/'))}",
             f"hashes = {toml_string(hashes_sha)}",
         ]
+        if source_commit is not None:
+            lines += [f"source_repository = {toml_string(SOURCE_URL)}",
+                      f"source_commit = {toml_string(source_commit)}"]
         for m in mods:
             lines += ["", "[[packs]]"]
             lines += [f"{k} = {toml_string(m[k])}" for k in ("id", "folder", "version", "author", "file", "sha256")]
@@ -305,22 +451,38 @@ def publish(site, base_url=BASE_URL, key=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--site", type=Path, help="the site repo's checkout (its downloads/ is written)")
-    parser.add_argument("--base-url", default=BASE_URL,
-                        help="where the site serves downloads/packs/ (default: the public front, ropa's site)")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--channel", choices=("staging", "production"),
+                        help="select EdLud's staging site or ropahektic's production site (default)")
+    target.add_argument("--base-url", help="custom HTTPS downloads/packs/ address")
     parser.add_argument("--key", type=Path, default=KEY_FILE,
                         help=f"the catalogue key's private half (default {KEY_FILE})")
     parser.add_argument("--new-key", action="store_true",
                         help="make a catalogue key at --key and print its public half; publish nothing")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true",
+                      help="validate working sources and optional --site version history; write nothing")
+    mode.add_argument("--verify", action="store_true",
+                      help="verify an existing site's signed downloads using --key; write nothing")
     args = parser.parse_args()
     if args.new_key:
         new_key(args.key)
         return
+    if args.check:
+        check_source(args.site.resolve() if args.site is not None else None)
+        return
     if args.site is None:
         parser.error("--site is required")
-    if not args.base_url.startswith("https://") or not args.base_url.endswith("/"):
+    base_url = args.base_url or ("https://edlud.github.io/WormForge/downloads/packs/"
+                                if args.channel == "staging" else BASE_URL)
+    if not base_url.startswith("https://") or not base_url.endswith("/"):
         raise SystemExit("--base-url must be an https address ending in /")
     # Before anything is written: no key, no publish.
-    publish(args.site.resolve(), args.base_url, load_key(args.key))
+    key = load_key(args.key)
+    if args.verify:
+        verify_site(args.site.resolve(), key.public_key())
+    else:
+        build_site(args.site.resolve(), base_url, key)
 
 
 if __name__ == "__main__":

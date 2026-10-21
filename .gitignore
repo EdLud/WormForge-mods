@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+/tmp/
+/downloads/
+.catalogue-build-*/
+.env
+.env.*
+*.key
+*.pem
