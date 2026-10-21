@@ -1,11 +1,9 @@
 -- +10 Seconds: an instant utility of our own, in place of Double Time. It
 -- adds ten seconds to the turn going on, whoever's it is.
 --
--- From a crate it does what the profile's `on_collect` says. `use` (the
--- default) takes it at once: the grant handler gives the copy WA stocked
--- back and adds the time. `keep` leaves it stocked, and firing it adds the
--- time, without ending the turn. It comes in utility crates by its own
--- crate type.
+-- Auto-Use is the profile's compatible on_collect="use" spelling: spend
+-- one at turn start or on pickup if none was used this turn, bank the rest.
+-- "keep" leaves every pickup stocked for manual firing.
 --
 -- It's built on Double Time's record: a utility, no aim, and the worm holds
 -- WA's utility pose (wutllnk), which WA picks by the record's subtype. Its
@@ -29,31 +27,51 @@ return {
   },
   install = function(ctx)
     local id = ctx.id
+    local used = {}
     wa.weapons.replace({
       copy_from = "stock.double_turn_time",
       name = "+10 Seconds",
       panel_icon = "sprites/plus_ten.png",
       on_fire = function(fire)
+        used[fire.worm.ammo_group] = true
         add_time(SECONDS)
       end,
     })
     if ctx.data.on_collect == "keep" then
       return
     end
-    -- Used on pickup: undo the copy WA stocked, and add the time now.
+    local pending
+    local function auto_use(worm)
+      if used[worm.ammo_group] then return end
+      local held = worm:ammo(id)
+      if held == 0 then return end
+      if held > 0 then worm:ammo(id, -1) end
+      used[worm.ammo_group] = true
+      add_time(SECONDS)
+    end
+    wa.on.turn_start(function(ev)
+      -- WA still initializes the turn clock after StartTurn returns.
+      pending = ev.worm.id
+    end)
+    wa.on.worm_message(function(worm)
+      if pending == worm.id and worm.turn then
+        pending = nil
+        auto_use(worm)
+      end
+    end, { msgs = { wa.msg.FRAME_FINISH } })
+    wa.on.turn_cleanup(function()
+      used = {}
+      pending = nil
+    end)
     wa.on.weapon_grant(function(ev)
       for _, item in ipairs(ev.items) do
         if item.weapon == id and item.amount > 0 then
           for _, worm in ipairs(wa.worms.all()) do
             if worm.id == ev.worm_id then
-              local held = worm:ammo(id)
-              if held >= 0 then
-                worm:ammo(id, { set = math.max(held - item.amount, 0) })
-              end
+              auto_use(worm)
               break
             end
           end
-          add_time(SECONDS * item.amount)
         end
       end
     end)

@@ -50,9 +50,11 @@ to check both switches independently and together.
 A weapon (`utilities.plus_ten`): an instant utility of our own, in place of
 Double Time. It adds ten seconds to the turn going on, through
 `wa.world.set_turn_clock`, and comes in utility crates (`crate.type`, a
-40% weight by default). From a crate it does what its `on_collect` setting
-says: `use` (the default) adds the time at once, `keep` stocks it, and
-firing it then adds the time without ending the turn. Place it on a profile's
+40% weight by default). With **Auto-Use=true** (`on_collect = "use"`, the
+default), it spends one at turn start or on pickup if unused this turn,
+keeping extra copies for later turns. Infinite ammo remains infinite.
+**Auto-Use=false** (`on_collect = "keep"`) stocks every pickup for manual
+use. Firing adds ten seconds without ending the turn. Place it on a profile's
 panel and set it on the Weapons tab like any weapon:
 
 ```toml
