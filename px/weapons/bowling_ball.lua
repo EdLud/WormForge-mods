@@ -483,7 +483,7 @@ local function spawn_ball(owner, x, y, vx, vy)
         -- Custom movement samples the same global field as native bodies.
         -- A ball gets PX's quarter share; stationary fields leave sleepers
         -- alone, while moving/discharging sources wake them.
-        local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y)
+        local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y, a)
         if waking then wake(b) end
         if not b.asleep then
           b.vx, b.vy = b.vx + fx * 0.25, b.vy + fy * 0.25

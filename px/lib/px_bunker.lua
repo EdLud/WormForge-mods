@@ -278,7 +278,7 @@ function M.install(ctx)
 
       -- ------------------------------------------------------ drill or fall
       local px, py = m.x, m.y
-      local fx, fy, inside = wa.magnetism.sample(m.x, m.y)
+      local fx, fy, inside = wa.magnetism.sample(m.x, m.y, a)
       fx, fy = fx * MAGNET_SHARE, fy * MAGNET_SHARE
       -- PX's small sideways tie-breaker in a live field (:429-431).
       if inside and fx == 0 then fx = 0.01 end
