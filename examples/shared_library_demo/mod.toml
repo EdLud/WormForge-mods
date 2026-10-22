@@ -1,0 +1,21 @@
+id = "example.shared_library"
+name = "Shared library demo"
+version = "0.1.0"
+author = "WormForge"
+api_version = 4
+format_version = 2
+dependencies = ["wf.sdk"]
+
+[[components]]
+id = "example.shared_sprite_builder"
+type = "weapon"
+name = "Shared Sprite Builder"
+description = "A separate mod using the public PX posture, hands and flight helper."
+entry = "weapon.lua"
+default_position = { row = "F1", column = 1 }
+icon = "bazooka"
+
+[sprites."sprites/weapon.png"]
+frames = 12
+fps = 15
+play = "loop"

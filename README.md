@@ -12,6 +12,20 @@ and their support files are removed during public staging.
 
 ## Working locally
 
+In the game installation, create your own bundle directly under
+`WormForge/Mods/<my-mod>/`. Catalogue downloads go under `Mods/wf-lib/`, which
+contains a warning explaining ownership. Update All skips locally edited packs.
+**Replace (backup)** explicitly installs the catalogue copy while retaining the
+complete previous folder under `WormForge/Backups/Packs/`; saved profiles stay
+under `WormForge/Profiles/`.
+
+The public [SDK helpers](sdk/README.md) expose the PX sprite builder, postures
+and hands through `require("wf-lib/px_sprite_builder")` with
+`dependencies = ["wf.sdk"]` in your manifest. See
+[`examples/shared_library_demo`](examples/shared_library_demo) for a separate
+weapon using these helpers. Library state stays private to each consuming
+bundle. Selected dependencies and assets are frozen for online games and replays.
+
 The engine checks this repository out at `mods/`; the website checks it out at
 `catalogue/`. Both are Git submodules pinned to a particular commit. Initialize
 them with `git submodule update --init --recursive` after cloning a parent.
@@ -82,6 +96,10 @@ The DLL's default remains the production catalogue. Test staging with a separate
 installation or backed-up settings; leave ordinary players on production.
 
 ## Promoting to production
+
+Shared-library catalogues use schema 3. Publish a compatible engine DLL before
+promoting them; older DLLs refuse schema 3 without installing any packs. Current
+DLLs continue to accept older schema 2 catalogues.
 
 1. Test the staging catalogue through the loader and in game.
 2. Pin the **same mods commit** in the production website checkout.

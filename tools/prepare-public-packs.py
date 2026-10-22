@@ -34,6 +34,7 @@ def stage(source, output):
         diagnostic_ids.update(c["id"] for c in diagnostic)
         manifests[bundle] = (text, diagnostic)
     for bundle, (text, diagnostic) in manifests.items():
+        declared_exports = tomllib.loads(text).get("exports", {})
         excluded = set()
         for c in diagnostic:
             entry = Path(c["entry"])
@@ -41,11 +42,21 @@ def stage(source, output):
                 raise ValueError(f"unsafe entry path: {entry}")
             # Entries in a subdirectory own that diagnostic tool's supporting files.
             excluded.add(entry if entry.parent == Path(".") else Path(entry.parts[0]))
+        # Exports are a root table even when written after a diagnostic
+        # component. Preserve them before filtering component blocks. Keep
+        # existing bundles byte-identical when they have no exports.
+        exports = []
+        def keep_exports(match):
+            exports.append(match.group(0))
+            return ""
+        text = re.sub(r"(?ms)^[ \t]*\[exports\][ \t]*(?:\#[^\n]*)?\n.*?(?=^[ \t]*\[|\Z)", keep_exports, text)
         pieces = re.split(r"(?m)^\s*\[\[components\]\]\s*$", text)
         header = re.sub(r"(?m)^\s*debug_(?:input|worm_state)\s*=.*\n?", "", pieces[0])
         kept = [piece for piece in pieces[1:]
                 if not tomllib.loads("[[components]]\n" + piece)["components"][0].get("diagnostics", False)]
-        public_manifest = header + "".join("[[components]]\n" + piece for piece in kept)
+        public_manifest = header + "".join(exports) + "".join("[[components]]\n" + piece for piece in kept)
+        if tomllib.loads(public_manifest).get("exports", {}) != declared_exports:
+            raise ValueError(f"{bundle.name}: public exports were removed with diagnostic components")
         public_components = tomllib.loads(public_manifest).get("components", [])
         for c in public_components:
             if set(c.get("requires", [])) & diagnostic_ids:

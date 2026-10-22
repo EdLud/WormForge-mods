@@ -12,10 +12,11 @@
 # rules.lua is the Highlander pack in one piece, as the Lua tests load it.
 id = "px.ports"
 name = "Project X ports"
-version = "0.16.2"
+version = "0.16.3"
 author = "Project X authors"
 api_version = 4
 format_version = 2
+dependencies = ["wf.sdk"]
 
 # Joined frame folders retain their 15 fps looping playback.
 
@@ -436,43 +437,7 @@ play = "loop"
 fps = 15
 play = "loop"
 
-[sprites."sprites/px_hold/aim.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/aimd.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/aimu.png"]
-fps = 15
-play = "loop"
-
 [sprites."sprites/px_hold/chilli_bomb.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/draw.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/drawd.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/drawu.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/hand_rad.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/hand_rad_lower.png"]
-fps = 15
-play = "loop"
-
-[sprites."sprites/px_hold/hand_rad_upper.png"]
 fps = 15
 play = "loop"
 

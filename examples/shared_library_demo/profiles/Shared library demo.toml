@@ -1,0 +1,4 @@
+description = "A mod outside wf-lib using the shared PX sprite builder and library-owned artwork."
+[weapons."example.shared_sprite_builder"]
+row = "F1"
+column = 1

@@ -8,7 +8,7 @@ into <site>/downloads/packs/:
   <folder>.zip   one per mod, deterministic (sorted entries, a fixed time),
                  so an unchanged mod keeps its sha256 and installed copies
                  stay "up to date";
-  index.toml     schema 2 (`weapons::INDEX_SCHEMA`, mods in the current
+  index.toml     schema 3 (`weapons::INDEX_SCHEMA`, mods in the current
                  format): id / folder / version / author / file / sha256 / size,
                  the store's address and its list's hash;
   index.toml.sig the index's Ed25519 signature, hex, by the catalogue key
@@ -52,7 +52,7 @@ REPO = Path(__file__).resolve().parent.parent
 # The catalogue the DLL reads by default (weapons::PUBLIC_INDEX_URL): the
 # public front, ropahektic/WormForge. Another copy of it takes --base-url.
 BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
-INDEX_SCHEMA = 2
+INDEX_SCHEMA = 3
 SOURCE_URL = "https://github.com/EdLud/WormForge-mods"
 # Never in a zip: the OS's and Python's leftovers.
 SKIP = {".DS_Store", "__pycache__", "Thumbs.db"}
@@ -149,6 +149,7 @@ def stage_public(tmp):
         files_of(src)
         shutil.copytree(src, gathered / src.name, ignore=shutil.ignore_patterns(*SKIP))
     prepare.stage(gathered, staged)
+    validate_libraries(staged)
     selected = {Path(Path(p).parent.parent.name) / "profiles" / Path(p).name for p in profiles}
     found = set()
     for profile in staged.glob("*/profiles/*.toml"):
@@ -164,6 +165,48 @@ def stage_public(tmp):
         if not any(folder.iterdir()):
             folder.rmdir()
     return staged
+
+
+def validate_libraries(staged):
+    """Check dependencies and exported files in the actual public payload."""
+    packs, exports, namespaces = {}, {}, {}
+    for folder in staged.iterdir():
+        data = tomllib.loads((folder / "mod.toml").read_text(encoding="utf-8"))
+        packs[data["id"]] = data
+        deps = data.get("dependencies", [])
+        if not isinstance(deps, list) or any(not isinstance(d, str) for d in deps) or len(set(deps)) != len(deps):
+            raise ValueError(f"{data['id']}: invalid dependencies")
+        namespace = data.get("asset_namespace")
+        if namespace is not None:
+            if not isinstance(namespace, str) or not re.fullmatch(r"wf-lib/[A-Za-z0-9_-]+", namespace):
+                raise ValueError(f"{data['id']}: invalid asset namespace")
+            if namespace in namespaces:
+                raise ValueError(f"duplicate asset namespace: {namespace}")
+            namespaces[namespace] = data["id"]
+        for name, entry in data.get("exports", {}).items():
+            if not re.fullmatch(r"wf-lib/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", name):
+                raise ValueError(f"{data['id']}: invalid export {name}")
+            if name in exports:
+                raise ValueError(f"duplicate library export: {name}")
+            exports[name] = data["id"]
+            if (not isinstance(entry, str) or not re.fullmatch(r"[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.lua", entry)
+                    or not (folder / entry).is_file()):
+                raise ValueError(f"{data['id']}: missing or invalid public export file {entry}")
+    done = set()
+
+    def visit(mod_id, active):
+        if mod_id in active:
+            raise ValueError(f"library dependency cycle: {' -> '.join(active + [mod_id])}")
+        if mod_id not in packs:
+            raise ValueError(f"missing published library dependency: {mod_id}")
+        if mod_id in done:
+            return
+        for dependency in packs[mod_id].get("dependencies", []):
+            visit(dependency, active + [mod_id])
+        done.add(mod_id)
+
+    for mod_id in packs:
+        visit(mod_id, [])
 
 
 def toml_string(s):

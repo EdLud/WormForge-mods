@@ -6,15 +6,8 @@ local shared = require("lib/shared")
 -- PX's sprite builder, for the weapons below whose hold PX draws at run
 -- time: the worm posture with no weapon in it, and its hands. The engine
 -- draws the weapon and optional hand from the hold claim below.
-local PX_POSTURE = {
-  weaponlnk = "sprites/px_hold/aim.png", weaponlnku = "sprites/px_hold/aimu.png",
-  weaponlnkd = "sprites/px_hold/aimd.png",
-  wthrow = "sprites/px_hold/draw.png", wthrowu = "sprites/px_hold/drawu.png",
-  wthrowd = "sprites/px_hold/drawd.png",
-}
-local PX_HANDS = {
-  "sprites/px_hold/hand_rad_lower.png", "sprites/px_hold/hand_rad.png", "sprites/px_hold/hand_rad_upper.png",
-}
+local sdk = require("wf-lib/holds")
+local PX_POSTURE, PX_HANDS = sdk.PX_POSTURE, sdk.PX_HANDS
 local PX_HOLDS = {
   ["px.javelin"] = {
     keep_while_firing = true,

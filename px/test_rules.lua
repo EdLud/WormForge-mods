@@ -941,16 +941,24 @@ local function new_match(opts)
   -- The engine's require: a pack module runs once per match, in its own
   -- environment that reads the shared globals and keeps its writes.
   local modules = {}
-  function require(name)
-    if modules[name] ~= nil then return modules[name] end
-    local env = setmetatable({}, { __index = _G })
+  local function load_module(name, sdk)
+    local key = (sdk and "sdk:" or "px:") .. name
+    if modules[key] ~= nil then return modules[key] end
     local root = HIGHLANDER_ROOT or "mods/px/"
+    if name:sub(1, 7) == "wf-lib/" then
+      name, sdk = name:sub(8), true
+      key = "sdk:" .. name
+      if modules[key] ~= nil then return modules[key] end
+    end
+    if sdk then root = root:gsub("px/$", "sdk/") end
+    local env = setmetatable({ require = function(child) return load_module(child, sdk) end }, { __index = _G })
     local chunk = assert(loadfile(root .. name .. ".lua", "t", env))
     local result = chunk()
     if result == nil then result = true end
-    modules[name] = result
+    modules[key] = result
     return result
   end
+  function require(name) return load_module(name, false) end
   dofile("mods/px/rules.lua")
 end
 
@@ -1102,9 +1110,13 @@ do
       if id and row and highlander then component[slot_at(row, tonumber(column))] = id end
     end
     -- The Highlander profile's weapon set: its [weapons] table.
-    local file = assert(io.open("mods/px/profiles/Highlander.toml"))
-    local weapons = file:read("a"):match("%[weapons%](.-)\n%[") or ""
-    file:close()
+    local profile = HIGHLANDER_PROFILE
+    if not profile then
+      local file = assert(io.open("crates/lua-host/tests/fixtures/highlander.toml"))
+      profile = file:read("a")
+      file:close()
+    end
+    local weapons = profile:match("%[weapons%](.-)\n%[") or ""
     for id, row, column in weapons:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
       preset[slot_at(row, tonumber(column))] = id
     end
@@ -2796,7 +2808,7 @@ do
   check("ten PX holds claimed", count == 10, tostring(count))
   check("Sticky Bomb has a weapon and the lower radial hand",
     holds.grenade.sheet == "sprites/px_hold/sticky_bomb.png"
-    and holds.grenade.hand == "sprites/px_hold/hand_rad_lower.png"
+    and holds.grenade.hand == "wf-lib/px/sprites/px_hold/hand_rad_lower.png"
     and holds.grenade.thrown)
   check("Shadow-Bolt animates with no hand",
     holds.longbow.sheet == "sprites/px_hold/shadow_bolt.png"
@@ -2806,7 +2818,7 @@ do
     and holds.handgun.hand == nil)
   check("Nuke Rocket uses PX's fixed angles",
     holds.mine.static.weap == -0.1 and holds.mine.static.hand == 0.4
-    and holds.mine.hand == "sprites/px_hold/hand_rad.png")
+    and holds.mine.hand == "wf-lib/px/sprites/px_hold/hand_rad.png")
 end
 
 print("sniper rifle: PX's laser sight, drawn only")
@@ -4245,7 +4257,11 @@ print("reddaz's ports: each claims PX's record, px's worm library and its own st
 do
   local function exists(path)
     -- HIGHLANDER_ROOT is px's folder when the engine's loader test runs the suite.
-    local f = io.open((HIGHLANDER_ROOT or "mods/px/") .. path, "rb")
+    local root = HIGHLANDER_ROOT or "mods/px/"
+    if path:sub(1, 10) == "wf-lib/px/" then
+      root, path = root:gsub("px/$", "sdk/"), path:sub(11)
+    end
+    local f = io.open(root .. path, "rb")
     if f then f:close() end
     return f ~= nil
   end
@@ -4266,7 +4282,7 @@ do
     for _, sheet in ipairs(spec.sprites or {}) do files = files and exists(sheet) end
     check(name .. ": PX's record, px's posture and hands, its art on disk",
       spec.wep == "weps/" .. name .. "_wep.wep"
-        and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim.png" and exists(spec.worm_sprites.wthrow)
+        and spec.worm_sprites.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png" and exists(spec.worm_sprites.wthrow)
         and (spec.hold.hand == nil or exists(spec.hold.hand)) and files,
       spec.wep)
   end
@@ -4275,7 +4291,11 @@ end
 print("homing air strike: PX's record, its missiles' art, the turn ends")
 do
   local function exists(path)
-    local f = io.open((HIGHLANDER_ROOT or "mods/px/") .. path, "rb")
+    local root = HIGHLANDER_ROOT or "mods/px/"
+    if path:sub(1, 10) == "wf-lib/px/" then
+      root, path = root:gsub("px/$", "sdk/"), path:sub(11)
+    end
+    local f = io.open(root .. path, "rb")
     if f then f:close() end
     return f ~= nil
   end
@@ -4874,7 +4894,7 @@ do
   end
   local spec, owner = setup()
   check("a stock grenade for the worm's throw sheet, PX's hold over it",
-    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "sprites/px_hold/aim.png"
+    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png"
     and spec.params.gpu_prefix == "sprites/px_hold/")
   -- In flight: the stock grenade hidden, PX's grenade drawn in its place.
   M.spawned = {}

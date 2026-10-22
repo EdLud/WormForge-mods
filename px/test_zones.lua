@@ -1,6 +1,14 @@
 -- lua mods/px/test_zones.lua (or the embedded Lua-host test).
 local root = HIGHLANDER_ROOT or "mods/px/"
 package.path = root .. "?.lua;" .. package.path
+package.preload["wf-lib/px_sprite_builder"] = function()
+  local sdk = root:gsub("px/$", "sdk/")
+  local env = setmetatable({ require = function(name)
+    assert(name == "holds")
+    return assert(loadfile(sdk .. "holds.lua"))()
+  end }, { __index = _G })
+  return assert(loadfile(sdk .. "px_sprite_builder.lua", "t", env))()
+end
 local hooks, actors, claims, draws, nearby, worms, keys, assets
 local blasts, sim_random, asset_loads
 local function event(name, ...)

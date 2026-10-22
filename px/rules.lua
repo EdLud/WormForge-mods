@@ -41,9 +41,16 @@ local settings = {}
 -- components/weapon.lua (the others, reddaz's, have their own files).
 local highlander, own_options = {}, {}
 local function read(path, header)
-  local f = assert(io.open(root .. path, "r"))
+  local text = path == "profiles/Highlander.toml" and HIGHLANDER_PROFILE
+  if not text then
+    local location = path == "profiles/Highlander.toml"
+      and "crates/lua-host/tests/fixtures/highlander.toml" or root .. path
+    local f = assert(io.open(location, "r"))
+    text = f:read("a")
+    f:close()
+  end
   local id, option_key, in_options
-  for line in f:lines() do
+  for line in text:gmatch("[^\r\n]+") do
     if line:match("^%[") then
       in_options = line == "[[components.options]]"
       option_key = nil
@@ -66,7 +73,6 @@ local function read(path, header)
       if cavern then settings[id].cavern = cavern == "true" end
     end
   end
-  f:close()
 end
 read("mod.toml")
 read("profiles/Highlander.toml", '^%[weapon_options%."hl%.rules"%."([%w_%.]+)"%]')

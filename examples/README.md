@@ -80,3 +80,7 @@ they are the `px.ports` bundle in `mods/px/`.
 Profiles own their game scheme too: unset settings take Intermediate. Use the
 loader's **Scheme** tab or a profile's `[scheme]`; gravity and wind have moved
 there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).
+
+- `shared_library_demo` (`example.shared_library`) — an independent weapon using
+  `dependencies = ["wf.sdk"]` and `require("wf-lib/px_sprite_builder")`, including
+  shared posture/hand art and native missile flight drawing.

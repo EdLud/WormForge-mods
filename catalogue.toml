@@ -1,6 +1,7 @@
 # The player catalogue, distinct from the developer examples in this repository.
 schema = 1
 packs = [
+  "sdk",
   "px",
   "examples/utilities",
   "examples/fog_demo",

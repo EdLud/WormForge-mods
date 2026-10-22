@@ -110,6 +110,25 @@ diagnostics = true
         with tempfile.TemporaryDirectory() as temp, self.assertRaisesRegex(ValueError, "symlinks"):
             publisher.stage_public(temp)
 
+    def test_libraries_require_published_dependencies_and_reject_cycles(self):
+        manifest = self.repo / "pack/mod.toml"
+        original = manifest.read_text()
+        for dependency, reason in [("missing.sdk", "missing published"), ("example.test", "dependency cycle")]:
+            manifest.write_text(f'dependencies = ["{dependency}"]\n' + original)
+            with tempfile.TemporaryDirectory() as temp, self.assertRaisesRegex(ValueError, reason):
+                publisher.stage_public(temp)
+
+    def test_exports_must_survive_public_filter_and_stay_inside_the_library(self):
+        manifest = self.repo / "pack/mod.toml"
+        original = manifest.read_text()
+        for entry in ("../outside.lua", "audit/run.lua", "missing.lua"):
+            manifest.write_text(original + f'\n[exports]\n"wf-lib/demo" = "{entry}"\n')
+            with tempfile.TemporaryDirectory() as temp, self.assertRaisesRegex(ValueError, "public export file"):
+                publisher.stage_public(temp)
+        manifest.write_text(original + '\n[exports]\n"wf-lib/demo" = "weapon.lua"\n')
+        with tempfile.TemporaryDirectory() as temp:
+            publisher.stage_public(temp)
+
     def test_committed_build_is_reproducible_signed_and_records_source(self):
         self.build()
         first = hashes(self.site / "downloads")
