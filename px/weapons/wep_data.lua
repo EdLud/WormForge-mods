@@ -228,14 +228,12 @@ local WEP_FIELDS = {
       fire = {
         burn_time_ms = 4000,
         spread_delay_ms = 100,
+        spread_generations = 20,
       },
       trail = {
         power = 20,
         speed = 50,
       },
-    },
-    clusters = {
-      count = 40,
     },
     raw = {
       [0x074] = 0,
@@ -552,16 +550,14 @@ local WEP_FIELDS = {
       },
       fire = {
         burn_time_ms = 1000,
+        decay_mode = "on_hit",
         spread_delay_ms = 70,
+        spread_generations = 75,
       },
       trail = {
         power = 20,
         sprite = 8,
       },
-    },
-    clusters = {
-      angle = 1,
-      count = 150,
     },
   },
   ["px.hot_air_balloon"] = {
@@ -571,8 +567,8 @@ local WEP_FIELDS = {
     handling = {
       retreat = -1,
     },
-    raw = {
-      [0x038] = 100,
+    parachute = {
+      wind_pct = 100,
     },
   },
   ["px.igniter"] = {
@@ -603,15 +599,13 @@ local WEP_FIELDS = {
       },
       fire = {
         burn_time_ms = 1000,
+        decay_mode = "on_hit",
         spread_delay_ms = 150,
+        spread_generations = 75,
       },
       trail = {
         speed = 0,
       },
-    },
-    clusters = {
-      angle = 1,
-      count = 150,
     },
   },
   ["px.jump"] = {
