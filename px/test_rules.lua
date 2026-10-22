@@ -4071,6 +4071,7 @@ do
   M.draw()
   check("a bubble while worn", #M.quads == 1 and M.quads[1].sprite == "sprites/swim_suit/ring.png")
   local bubble = M.quads[1]
+  check("bubble inherits its wearer's native Invisibility", bubble.visibility and bubble.visibility.id == w.id)
   local h = 25
   check("centred on the worm", bubble.points[1][1] == w.x - h and bubble.points[3][1] == w.x + h
     and bubble.points[1][2] == w.y - h and bubble.points[3][2] == w.y + h)
@@ -4094,6 +4095,7 @@ do
     and dx > 4 and dy > 4, dx .. " " .. dy)
   check("the swim animation in its place, facing left art mirrored", w.body_visible == false
     and M.spawned[#M.spawned].sprite == "sprites/swim_suit/swim.png" and M.spawned[#M.spawned].facing == -1)
+  check("replacement body inherits Invisibility while the native body is hidden", M.spawned[#M.spawned].spec.visibility == w)
   -- Swimming left: a push that way, turned.
   x0, w.keys = w.x, { left = true }
   M.message(w, wa.msg.FRAME_FINISH)

@@ -74,7 +74,7 @@ do
   local function glider_art(worm, x, y, sheet)
     return wa.actors.spawn({
       sprite = sheet, x = x, y = y, gravity = false,
-      collide = false, owner = worm, on = function() end,
+      collide = false, owner = worm, visibility = worm, on = function() end,
     })
   end
 

@@ -27,6 +27,7 @@ local hint = 0     -- frames left of the "hold Ctrl" line
 -- on its side.
 local function launch(worm)
   rockets[worm.id] = {
+    worm = worm,
     x = worm.x, y = worm.y, angle = worm.aim * worm.facing, life = LIFE, age = 0,
     facing = worm.facing, stale = 0,
   }
@@ -128,6 +129,7 @@ if wa.on.draw and wa.draw.quad then
     for _, id in ipairs(wa.sorted(rockets)) do
       local r = rockets[id]
       if not r.done then
+        QUAD.visibility = r.worm
         local t = -r.angle * math.pi
         local c, s = wa.math.cos(t), wa.math.sin(t)
         local flip = r.facing > 0 and -1 or 1

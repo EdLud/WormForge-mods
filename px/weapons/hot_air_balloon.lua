@@ -89,7 +89,7 @@ do
     local function art(sheet)
       return wa.actors.spawn({
         sprite = sheet, x = b.x, y = b.y, gravity = false,
-        collide = false, owner = worm, on = function() end,
+        collide = false, owner = worm, visibility = worm, on = function() end,
       })
     end
     b.balloon = b.balloon or art("sprites/balloon/balloon.png")

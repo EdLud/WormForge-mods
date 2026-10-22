@@ -298,7 +298,7 @@ local function swim_frame(worm)
   local function art(sheet)
     return wa.actors.spawn({
       sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-      collide = false, owner = worm, on = function() end,
+      collide = false, owner = worm, visibility = worm, on = function() end,
     })
   end
   if s.plopped then
@@ -336,6 +336,7 @@ if wa.on.draw then
             { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h },
           },
           sprite = "sprites/swim_suit/ring.png",
+          visibility = worm,
           depth = SWIM_RING_DEPTH,
         })
       end

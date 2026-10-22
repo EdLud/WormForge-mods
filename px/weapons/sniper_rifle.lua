@@ -69,7 +69,7 @@ local function laser_length(x, y, dx, dy, shooter)
 end
 
 -- laserray's MakeLaserRayF, point for point.
-local function laser_ray(x, y, ang, len)
+local function laser_ray(x, y, ang, len, worm)
   local rdx, rdy = wa.math.sin(ang - 1.57), -wa.math.cos(ang - 1.57)
   local dx, dy = wa.math.sin(ang), -wa.math.cos(ang)
   local tx, ty = x, y
@@ -93,7 +93,7 @@ local function laser_ray(x, y, ang, len)
     end
     wa.draw.quad({
       points = { p0, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, p3 },
-      colors = colors, sprite = "sprites/sniper_rifle/laser.png", blend = "add",
+      colors = colors, sprite = "sprites/sniper_rifle/laser.png", blend = "add", visibility = worm,
     })
     tx, ty = ex, ey
   end
@@ -101,7 +101,7 @@ local function laser_ray(x, y, ang, len)
   wa.draw.quad({
     points = { { tx + wdx, ty + wdy }, { ex + wdx, ey + wdy }, { ex - wdx, ey - wdy }, { tx - wdx, ty - wdy } },
     colors = { LASER_RED, LASER_TIP, LASER_TIP, LASER_RED },
-    sprite = "sprites/sniper_rifle/laser.png", blend = "add",
+    sprite = "sprites/sniper_rifle/laser.png", blend = "add", visibility = worm,
   })
 end
 
@@ -120,7 +120,7 @@ if wa.on.draw then
         local side = LASER_BARREL * worm.facing
         local x = worm.x + wa.math.sin(ang) * 12 - wa.math.cos(ang) * side
         local y = worm.y - wa.math.cos(ang) * 12 - wa.math.sin(ang) * side
-        laser_ray(x, y, ang, laser_length(x, y, wa.math.sin(ang), -wa.math.cos(ang), worm.id))
+        laser_ray(x, y, ang, laser_length(x, y, wa.math.sin(ang), -wa.math.cos(ang), worm.id), worm)
       end
     end
   end)

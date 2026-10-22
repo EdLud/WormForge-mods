@@ -44,7 +44,7 @@ end
 local function heli_actor(worm, sheet)
   return wa.actors.spawn({
     sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-    collide = false, owner = worm, on = function() end,
+    collide = false, owner = worm, visibility = worm, on = function() end,
   })
 end
 
