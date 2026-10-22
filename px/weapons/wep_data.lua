@@ -109,6 +109,7 @@ local WEP_FIELDS = {
         sprite_count = 1,
         bounce = {
           bounciness = 60,
+          contact_sides = 8,
           flags = 204414,
           sound = 111,
           terrain_keep_pct = 100,
@@ -124,14 +125,13 @@ local WEP_FIELDS = {
       },
     },
     strike = {
+      munition_speed = 1.5,
+      plane_sound = 52,
       spacing = 30,
     },
     raw = {
-      [0x044] = 150,
-      [0x048] = 52,
       [0x088] = 50,
       [0x14C] = 50,
-      [0x190] = 8,
       [0x1C8] = 50,
     },
   },
@@ -212,6 +212,7 @@ local WEP_FIELDS = {
       sprite = 64,
       bounce = {
         bounciness = 50,
+        extra_reverse_chance_pct = 50,
         flags = 4194430,
         max_bounces = 2,
         terrain_keep_pct = 30,
@@ -224,6 +225,10 @@ local WEP_FIELDS = {
         power = 50,
         push_pct = 100,
       },
+      fire = {
+        burn_time_ms = 4000,
+        spread_delay_ms = 100,
+      },
       trail = {
         power = 20,
         speed = 50,
@@ -234,9 +239,6 @@ local WEP_FIELDS = {
     },
     raw = {
       [0x074] = 0,
-      [0x0BC] = 50,
-      [0x0FC] = 100,
-      [0x100] = 4000,
     },
   },
   ["px.burst_rifle"] = {
@@ -263,6 +265,7 @@ local WEP_FIELDS = {
       retreat = 3000,
     },
     missile = {
+      alarm_worms = true,
       burst = "nothing",
       countdown = 5000,
       explode_on_space = false,
@@ -298,7 +301,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x044] = 1,
       [0x0FC] = 30,
       [0x100] = 1500,
       [0x1C8] = 25,
@@ -313,6 +315,7 @@ local WEP_FIELDS = {
     },
     missile = {
       action = "bounce",
+      alarm_worms = true,
       burst = "clusters",
       collides = 0,
       countdown = 5000,
@@ -321,6 +324,8 @@ local WEP_FIELDS = {
       sprite = 53,
       bounce = {
         bounciness = 0,
+        contact_sides = 8,
+        extra_reverse_chance_pct = 0,
         flags = 4331614,
         sound = 113,
         terrain_keep_pct = 100,
@@ -354,6 +359,7 @@ local WEP_FIELDS = {
         sprite = 54,
         sprite_count = 1,
         bounce = {
+          contact_sides = 8,
           flags = 4331614,
           sound = 113,
           terrain_keep_pct = 100,
@@ -370,11 +376,7 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x044] = 1,
-      [0x0B8] = 8,
-      [0x0BC] = 0,
       [0x138] = 50,
-      [0x17C] = 8,
       [0x1C8] = 25,
       [0x1CC] = 70,
     },
@@ -517,10 +519,8 @@ local WEP_FIELDS = {
     },
     strike = {
       count = 4,
+      munition_speed = 1.1,
       spacing = 15,
-    },
-    raw = {
-      [0x044] = 110,
     },
   },
   ["px.helicopter"] = {
@@ -550,6 +550,10 @@ local WEP_FIELDS = {
       explosion_sound = {
         sound = 154,
       },
+      fire = {
+        burn_time_ms = 1000,
+        spread_delay_ms = 70,
+      },
       trail = {
         power = 20,
         sprite = 8,
@@ -558,10 +562,6 @@ local WEP_FIELDS = {
     clusters = {
       angle = 1,
       count = 150,
-    },
-    raw = {
-      [0x0FC] = 70,
-      [0x100] = 1000,
     },
   },
   ["px.hot_air_balloon"] = {
@@ -586,6 +586,8 @@ local WEP_FIELDS = {
       fuse = 9000,
       bounce = {
         bounciness = 1,
+        contact_sides = 8,
+        extra_reverse_chance_pct = 0,
         flags = 4194304,
         sound = 0,
         terrain_keep_pct = 0,
@@ -599,6 +601,10 @@ local WEP_FIELDS = {
       explosion = {
         bias = 0,
       },
+      fire = {
+        burn_time_ms = 1000,
+        spread_delay_ms = 150,
+      },
       trail = {
         speed = 0,
       },
@@ -606,12 +612,6 @@ local WEP_FIELDS = {
     clusters = {
       angle = 1,
       count = 150,
-    },
-    raw = {
-      [0x0B8] = 8,
-      [0x0BC] = 0,
-      [0x0FC] = 150,
-      [0x100] = 1000,
     },
   },
   ["px.jump"] = {
@@ -627,12 +627,15 @@ local WEP_FIELDS = {
     },
     missile = {
       action = "bounce",
+      alarm_worms = true,
       animation = 1,
+      collision_shape = 2,
       countdown = 5000,
       gravity_pct = 100,
       speed_pct = 100,
       sprite = 50,
       bounce = {
+        contact_sides = 8,
         flags = 4331614,
         sound = 113,
         terrain_keep_pct = 100,
@@ -648,10 +651,7 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 2,
-      [0x044] = 1,
       [0x074] = 50,
-      [0x0B8] = 8,
       [0x1CC] = 70,
     },
   },
@@ -671,6 +671,7 @@ local WEP_FIELDS = {
       action = "roam",
       animation = 6,
       burst = "clusters",
+      collision_shape = 2,
       countdown = 5000,
       explode_on_space = true,
       flight_sound = 65575,
@@ -729,7 +730,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 2,
       [0x074] = 50,
       [0x0B4] = 8,
       [0x138] = 50,
@@ -805,14 +805,17 @@ local WEP_FIELDS = {
     },
     missile = {
       action = "bounce",
+      alarm_worms = true,
       animation = 2,
       collides = 0,
+      collision_shape = 2,
       flight_sound = 65602,
       fuse = 3000,
       gravity_pct = 100,
       speed_pct = 100,
       bounce = {
         bounciness = 30,
+        contact_sides = 8,
         flags = 4331614,
         sound = 113,
       },
@@ -839,6 +842,7 @@ local WEP_FIELDS = {
         sprite_count = 1,
         bounce = {
           bounciness = 1,
+          contact_sides = 8,
         },
         explosion = {
           power = 20,
@@ -851,14 +855,10 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 2,
-      [0x044] = 1,
       [0x074] = 50,
-      [0x0B8] = 8,
       [0x0FC] = 33,
       [0x100] = 33,
       [0x138] = 50,
-      [0x17C] = 8,
       [0x1CC] = 100,
     },
   },
@@ -947,6 +947,7 @@ local WEP_FIELDS = {
         sprite_count = 1,
         bounce = {
           bounciness = 20,
+          contact_sides = 8,
           flags = 137282,
           max_bounces = 1,
           terrain_keep_pct = 20,
@@ -955,14 +956,13 @@ local WEP_FIELDS = {
     },
     strike = {
       count = 3,
+      munition_speed = 12.0,
       plane = 86,
       spacing = 45,
     },
     raw = {
-      [0x044] = 1200,
       [0x0D4] = 50,
       [0x14C] = 50,
-      [0x190] = 8,
       [0x1C8] = 50,
     },
   },
@@ -1043,6 +1043,7 @@ local WEP_FIELDS = {
       launch_power_pct = 15,
     },
     missile = {
+      alarm_worms = true,
       burst = "nothing",
       countdown = 0,
       flight_sound = 88,
@@ -1100,7 +1101,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x044] = 1,
       [0x0B4] = 20,
       [0x138] = 0,
       [0x16C] = 0,
@@ -1177,6 +1177,7 @@ local WEP_FIELDS = {
       action = "bounce",
       animation = 2,
       collides = 4332604,
+      collision_shape = 3,
       flight_sound = 122,
       fuse = 10000,
       gravity_pct = 110,
@@ -1200,7 +1201,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 3,
       [0x074] = 50,
     },
   },
@@ -1220,6 +1220,7 @@ local WEP_FIELDS = {
       action = "roam",
       animation = 6,
       burst = "clusters",
+      collision_shape = 2,
       flight_sound = 65578,
       gravity_pct = 100,
       speed_pct = 100,
@@ -1281,7 +1282,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 2,
       [0x074] = 50,
       [0x0B4] = 4,
       [0x138] = 50,
@@ -1388,6 +1388,7 @@ local WEP_FIELDS = {
       action = "none",
       animation = 5,
       collides = 4339766,
+      collision_shape = 3,
       countdown = 0,
       flight_sound = 126,
       gravity_pct = 116,
@@ -1432,7 +1433,6 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 3,
       [0x0A8] = 4325376,
       [0x0AC] = 7,
       [0x0B0] = 99,
@@ -1458,14 +1458,17 @@ local WEP_FIELDS = {
     },
     missile = {
       action = "bounce",
+      alarm_worms = true,
       animation = 1,
       burst = "clusters",
       collides = 4194304,
+      collision_shape = 2,
       fuse = 9000,
       gravity_pct = 120,
       speed_pct = 100,
       bounce = {
         bounciness = 60,
+        contact_sides = 8,
         flags = 4373598,
         max_bounces = 2,
         sound = 30,
@@ -1513,10 +1516,7 @@ local WEP_FIELDS = {
       },
     },
     raw = {
-      [0x03C] = 2,
-      [0x044] = 1,
       [0x074] = 50,
-      [0x0B8] = 8,
       [0x1CC] = 70,
     },
   },
@@ -1531,6 +1531,7 @@ local WEP_FIELDS = {
       random_motion = 10,
       bounce = {
         bounciness = 60,
+        extra_reverse_chance_pct = 0,
         flags = 4439166,
         max_bounces = 2,
         sound = 30,
@@ -1580,7 +1581,6 @@ local WEP_FIELDS = {
       spacing = 30,
     },
     raw = {
-      [0x0D0] = 0,
       [0x1C8] = 50,
     },
   },
@@ -1601,6 +1601,7 @@ local WEP_FIELDS = {
       aims = false,
     },
     missile = {
+      alarm_worms = false,
       wind_pct = 48,
     },
     clusters = {
@@ -1615,9 +1616,6 @@ local WEP_FIELDS = {
           sprite = 615,
         },
       },
-    },
-    raw = {
-      [0x044] = 0,
     },
   },
 }
