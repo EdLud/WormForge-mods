@@ -25,12 +25,9 @@ local RELEASE_AFTER = 300
 -- damps its Hellish Hand-Grenade there by 0.985 a frame).
 local DAMPED = { ["px.hellish_hand_grenade"] = true }
 local DAMPING = 0.985
--- Its body: PX's magnet is a mine (CMine) and moves as one. Here it is a
--- circle traced against the land (the art is 26 pixels across), bouncing
--- a little and rubbing along what it lands on until it rests.
-local RADIUS = 8
-local BOUNCE, FRICTION = 0.3, 0.3
-local REST = (1 / 8)                -- slower on contact than 1/8 pixel a frame: at rest
+-- Native mine motion, collision response and impact audio; Lua owns policy.
+local RADIUS = 8                   -- conservative planter clearance around the art
+local PLANTER_GRACE = 13           -- 250 ms rounded up at 50 simulation frames/s
 local SINK = (1 / 2)                -- in the water it sinks half a pixel a frame
 local SUNK = 200                -- and is gone this far below the surface
 local BODY = "sprites/electromagnet/"
@@ -95,78 +92,55 @@ local function discharge(m)
   m.turns = 0
 end
 
--- Where a body inside the land may go, nearest first: in rings a pixel
--- apart, out to UNSTICK_REACH, below and to the sides before above, as
--- gravity would take it. Placed under a ceiling, the magnet's circle
--- overlaps the rock above the worm: it belongs in the tunnel below, not on
--- top of the rock.
-local UNSTICK_REACH = 24
-local UNSTICK = {}
-for d = 1, UNSTICK_REACH do
-  for _, v in ipairs({ { 0, 1 }, { -1, 1 }, { 1, 1 }, { -1, 0 }, { 1, 0 }, { -1, -1 }, { 1, -1 }, { 0, -1 } }) do
-    UNSTICK[#UNSTICK + 1] = { v[1] * d, v[2] * d }
-  end
-end
-
--- The nearest place out of the land, or nil: then it stays put, as PX's
--- magnet (a mine) does, rather than tunnel through the land.
-local function unstick(m)
-  for _, o in ipairs(UNSTICK) do
-    local x, y = m.x + o[1], m.y + o[2]
-    if not wa.world.collides({ x = x, y = y, radius = RADIUS, with = { "terrain" } }) then
-      return x, y
+-- Placement correction only: use the inherited native shape to find a clear
+-- point below/along a ceiling. Subsequent motion belongs entirely to WA.
+local function clear_spawn(a)
+  if a:fits(a.x, a.y) then return end
+  for d = 1, 24 do
+    for _, v in ipairs({ {0, 1}, {-1, 1}, {1, 1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}, {0, -1} }) do
+      local x, y = a.x + v[1] * d, a.y + v[2] * d
+      if a:fits(x, y) then a:warp { x = x, y = y }; return end
     end
   end
 end
 
--- One frame of the body: gravity, then the move traced against the land.
-local function move(m)
-  local vx, vy = m.vx, m.vy + wa.world.gravity()
-  local function trace()
-    return wa.world.trace({ x0 = m.x, y0 = m.y, x1 = m.x + vx, y1 = m.y + vy, radius = RADIUS })
+-- The same conservative worm clearance used for placed sentry feet, expanded
+-- by the magnet's radius. Keep passage while either end of this move overlaps.
+local function overlaps_planter(x, y, worm)
+  return x + RADIUS >= worm.x - 10 and x - RADIUS <= worm.x + 10
+    and y + RADIUS >= worm.y - 20 and y - RADIUS <= worm.y + 6
+end
+
+local function planter_grace(m, a, previous_x, previous_y)
+  if not m.planter then return end
+  local planter
+  for _, worm in ipairs(wa.worms.all()) do
+    if worm.id == m.planter_id and worm.hp > 0 then planter = worm; break end
   end
-  local res = trace()
-  if res and res.starts_solid then
-    -- Inside the land (placed under a ceiling, or the land moved): out
-    -- where the path comes free, else at the nearest free place.
-    if res.left_x then
-      m.x, m.y = res.left_x, res.left_y
-    else
-      local x, y = unstick(m)
-      m.vx, m.vy = 0, 0
-      if x then m.x, m.y = x, y end
-      return
-    end
-    res = trace()
+  if not planter or (m.age >= PLANTER_GRACE
+    and not overlaps_planter(previous_x, previous_y, planter)
+    and not overlaps_planter(m.x, m.y, planter)) then
+    a:collision_ignore(m.planter, false)
+    m.planter, m.planter_id = nil, nil
   end
-  if res and res.hit then
-    local spn = vx * res.nx + vy * res.ny
-    local spt = vx * res.tx + vy * res.ty
-    vx = vx - spn * res.nx * (1 + BOUNCE) - spt * res.tx * FRICTION
-    vy = vy - spn * res.ny * (1 + BOUNCE) - spt * res.ty * FRICTION
-    if math.abs(vx) < REST and math.abs(vy) < REST then vx, vy = 0, 0 end
-    m.x, m.y = res.x, res.y
-  else
-    m.x, m.y = m.x + vx, m.y + vy
-  end
-  m.vx, m.vy = vx, vy
 end
 
 local function frame(m, a)
   m.age = m.age + 1
+  local previous_x, previous_y = m.x, m.y
+  if not m.sinking then m.x, m.y, m.vx, m.vy = a.x, a.y, a.vx, a.vy end
   if m.y >= wa.world.water() then
     -- In the water: it stops working and sinks out of sight.
     discharge(m)
+    if not m.sinking then m.sinking = true; a.hits = {} end
     m.vx, m.vy, m.y = 0, 0, m.y + SINK
+    a:warp { x = m.x, y = m.y, vx = 0, vy = 0 }
     if m.y >= wa.world.water() + SUNK then
       remove(m)
       a:despawn()
       return
     end
-  else
-    move(m)
   end
-  a.x, a.y, a.vx, a.vy = m.x, m.y, 0, 0
   if m.health <= 0 then
     trigger_mines(m)
     remove(m)
@@ -175,6 +149,7 @@ local function frame(m, a)
     a:despawn()
     return
   end
+  planter_grace(m, a, previous_x, previous_y)
   if m.turns > 0 then
     -- Settings enter the next step's snapshot. Releasing at age 300 means
     -- the first step without native force is 301, as in the original port.
@@ -201,8 +176,10 @@ local function hit(m, a, event)
     damage = trunc(m.health * damage / 100)
   end
   if damage > 0 then m.health = m.health - damage end
-  m.vx = m.vx + (event.vx or 0)
-  m.vy = m.vy + (event.vy or 0)
+  local vx, vy = event.vx or 0, event.vy or 0
+  if vx ~= 0 or vy ~= 0 then
+    a:warp { x = a.x, y = a.y, vx = a.vx + vx, vy = a.vy + vy }
+  end
 end
 
 -- CWorm::FireFinal's Electromagnet: dropped where it is fired (at the
@@ -218,13 +195,16 @@ shared.fires.electromagnet = function(fire)
     vy = worm.vy - 0.15 }
   local a = wa.actors.spawn({
     sprite = BODY .. (pol < 0 and "magnet.png" or "magnet2.png"),
-    x = m.x, y = m.y, gravity = false, collide = false, owner = worm,
-    as_object = true, on = {
+    x = m.x, y = m.y, vx = m.vx, vy = m.vy, owner = worm,
+    drown = false, body = { physics = "mine" }, on = {
       frame = function(actor) frame(m, actor) end,
       hit = function(actor, event) hit(m, actor, event) end,
     },
   })
   m.a, m.team = a, worm.team
+  if a:collision_ignore(worm, true) then m.planter, m.planter_id = worm, worm.id end
+  clear_spawn(a)
+  m.x, m.y = a.x, a.y
   m.field = wa.magnetism.field({ source = a, range = 170,
     strength = 14000, max_force = 12, softening = pol < 0 and 10 or 5,
     polarity = pol < 0 and "attract" or "repel" })

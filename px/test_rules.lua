@@ -646,8 +646,15 @@ local function new_match(opts)
                     shape = spec.shape, spec = spec }
         a.solid = spec.solid ~= false
         if spec.body then
-          a.shape, a.as_object = "sprite", true
+          a.shape = spec.body.shape or (spec.body.physics == "mine" and "missile" or "worm")
+          if a.shape ~= "worm" and a.shape ~= "missile" then a.shape = "sprite" end
+          a.as_object = true
           a.hits, a.hit_by = deep_copy(spec.body.hits), deep_copy(spec.body.hit_by or "all")
+        end
+        function a:warp(v)
+          self.x, self.y = v.x, v.y
+          self.vx, self.vy = v.vx or self.vx, v.vy or self.vy
+          return true
         end
         if a.shape == "sprite" then
           -- Test-side native physics: the pack receives a body that WA has
@@ -1345,6 +1352,67 @@ do
   check("four owner turns discharge both magnets", mine.dx == 0)
 end
 
+print("Electromagnet: planter passage lasts at least 250 ms and until clear")
+do
+  local function place(vx, vy)
+    new_match()
+    local w = worm(16)
+    w.x, w.y, w.vx, w.vy = 100, 100, vx or 0, vy or 0
+    require("lib/shared").fires.electromagnet({ worm = w })
+    return w, M.spawned[#M.spawned]
+  end
+  -- Ground placement and flight in either direction use the same grace.
+  for _, speed in ipairs({ {0, 0}, {3, -2}, {-4, 2} }) do
+    local w, magnet = place(speed[1], speed[2])
+    check("only the planter receives passage immediately", magnet.ignored_worms[w.id]
+      and not magnet.ignored_worms[worm(17).id] and #magnet.ignore_calls == 1)
+    w.x = 1000 -- separation alone must not shorten the timed grace
+    for _ = 1, 12 do magnet.on(magnet) end
+    check("a separated planter still has passage at 240 ms", magnet.ignored_worms[w.id])
+    magnet.on(magnet)
+    check("collision returns at 260 ms once clear", not magnet.ignored_worms[w.id]
+      and #magnet.ignore_calls == 2 and not magnet.ignore_calls[2].enabled)
+  end
+  local w, magnet = place()
+  for _ = 1, 20 do magnet.on(magnet) end
+  check("overlap extends passage beyond the minimum time", magnet.ignored_worms[w.id])
+  w.x = 1000
+  magnet.on(magnet)
+  check("clearing the magnet ends extended passage", not magnet.ignored_worms[w.id])
+  w.x, w.y = magnet.x, magnet.y
+  magnet.on(magnet)
+  check("returning to the magnet never grants passage again", #magnet.ignore_calls == 2)
+  w, magnet = place()
+  w.hp = 0
+  magnet.on(magnet)
+  check("a dead planter loses passage immediately", not magnet.ignored_worms[w.id])
+  w, magnet = place()
+  remove(w.id)
+  magnet.on(magnet)
+  check("a vanished planter leaves no lingering passage", not magnet.ignored_worms[w.id])
+end
+
+print("Electromagnet: native mine motion, pushes and hit impulses")
+do
+  new_match()
+  local owner = worm(16)
+  owner.x, owner.y, owner.vx, owner.vy = 100, 150, 3, -2
+  require("lib/shared").fires.electromagnet({ worm = owner })
+  local magnet = M.spawned[#M.spawned]
+  check("the magnet inherits mine physics with the worm's launch momentum",
+    magnet.spec.body.physics == "mine" and near(magnet.vx, 3.3) and near(magnet.vy, -2.15))
+  check("native body pushes need no second Lua contact impulse", magnet.contact == nil)
+  -- WA has moved/pushed this body before its brain runs.
+  magnet:warp { x = 140, y = 160, vx = -4, vy = -2 }
+  magnet.on(magnet)
+  check("the brain retains WA's position and collision velocity",
+    magnet.x == 140 and magnet.y == 160 and magnet.vx == -4 and magnet.vy == -2)
+  magnet.hit(magnet, { damage = 0, vx = 2, vy = -1 })
+  check("a hit adds its impulse to native motion exactly once", magnet.vx == -2 and magnet.vy == -3)
+  magnet.on(magnet)
+  check("later frames do not replay or clear the hit impulse", magnet.vx == -2 and magnet.vy == -3)
+end
+
 print("Bowling Balls: shared magnetic fields, quarter response and sleep/wake")
 do
   new_match()
@@ -1380,59 +1448,32 @@ do
   check("discharge wakes a sleeper without a magnetic shove", not b.asleep and release_x==0 and release_y==0)
 end
 
-print("Electromagnet: it lands and rests on the land, and sinks in the water")
+print("Electromagnet: native rest, water lifetime and placement clearance")
 do
   new_match()
-  local w = worm(16)
-  w.x, w.y, w.facing = 100, 150, 1
-  local shot = assert((function()
-    for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
-  end)())
-  M.gravity, M.solid = 0.25, function(_, y) return y >= 200 end
-  shot({ worm = w })
+  local owner = worm(16)
+  owner.x, owner.y = 100, 150
+  require("lib/shared").fires.electromagnet({ worm = owner })
   local magnet = M.spawned[#M.spawned]
-  for _ = 1, 200 do magnet.on(magnet) end
-  local y = magnet.y
-  for _ = 1, 20 do magnet.on(magnet) end
-  check("it falls onto the floor and rests on it, its body above the land",
-    magnet.y == y and y > 185 and y < 200 and magnet.x > w.x, magnet.y)
-  check("the engine is told where, and moves nothing itself", magnet.vx == 0 and magnet.vy == 0)
+  magnet:warp { x = 110, y = 192, vx = 0, vy = 0 } -- native settled pose
+  for _ = 1, 100 do magnet.on(magnet) end
+  check("Lua leaves a settled native body untouched", magnet.x == 110 and magnet.y == 192
+    and magnet.vx == 0 and magnet.vy == 0 and #(M.actor_sounds or {}) == 0)
   M.water = 190
+  magnet.on(magnet)
+  check("entering water disables terrain collision and sinks at the existing rate",
+    magnet.y == 192.5 and next(magnet.hits) == nil)
   for _ = 1, 600 do if not magnet.dead then magnet.on(magnet) end end
-  check("in the water it sinks out of sight and is gone", magnet.dead)
-  M.water, M.gravity, M.solid = nil, nil, nil
-end
-
-print("Electromagnet: placed under a ceiling, it drops into the tunnel, never up through the rock")
-do
+  check("the sinking body and field are removed", magnet.dead and M.magnetic_fields[1].removed)
   new_match()
-  local w = worm(16)
-  w.x, w.y, w.facing = 100, 150, 1
-  local shot = assert((function()
-    for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
-  end)())
-  -- A tunnel: rock above y 146 (the magnet's circle, 8 pixels round the
-  -- worm's centre, overlaps it) and a floor at 200.
-  M.gravity, M.solid = 0.25, function(_, y) return y < 146 or y >= 200 end
-  shot({ worm = w })
-  local magnet = M.spawned[#M.spawned]
-  local highest = magnet.y
-  for _ = 1, 200 do
-    magnet.on(magnet)
-    highest = math.min(highest, magnet.y)
-  end
-  check("it never rises into the rock above", highest >= 150, highest)
-  check("it comes to rest on the tunnel's floor", magnet.y > 185 and magnet.y < 200, magnet.y)
-  -- Buried, with nothing free within reach: it stays where it is.
-  new_match()
-  w = worm(16)
-  w.x, w.y = 100, 150
-  M.solid = function() return true end
-  shot({ worm = w })
+  owner = worm(16)
+  owner.x, owner.y = 100, 140
+  M.solid = function(_, y) return y < 146 end
+  require("lib/shared").fires.electromagnet({ worm = owner })
   magnet = M.spawned[#M.spawned]
-  for _ = 1, 50 do magnet.on(magnet) end
-  check("buried, it stays put rather than tunnel", magnet.y == 150 and magnet.x == 100, magnet.y)
-  M.gravity, M.solid = nil, nil
+  check("placement uses the inherited shape to clear rock down into the tunnel",
+    magnet.y >= 149 and magnet.y <= 164 and magnet:fits(magnet.x, magnet.y))
+  M.water, M.gravity, M.solid = nil, nil, nil
 end
 
 print("Reinforcement: in a dead worm's place, it is dealt a fresh hand")
