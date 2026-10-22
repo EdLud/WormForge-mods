@@ -2927,16 +2927,30 @@ do
       and spec.clusters.count == 7)
 end
 
-print("old woman launcher: launch the Old Woman from a clear point")
+print("fire jump: named native punch knockback")
 do
   new_match()
   local spec
   for _, r in ipairs(replaced) do
+    if r.weapon == "fire_punch" then spec = r end
+  end
+  check("Fire Jump keeps its native 8 pixels/frame hit strength without an offset",
+    spec and spec.fire_punch.knockback == 8 and spec.raw[0x040] == nil)
+end
+
+print("old woman launcher: launch the Old Woman from a clear point")
+do
+  new_match()
+  local spec, cow
+  for _, r in ipairs(replaced) do
     if r.weapon == "old_woman" then spec = r end
+    if r.weapon == "mad_cow" then cow = r end
   end
   check("stock Old Woman supplies the animal and Lua handles its projectile",
     spec and spec.copy_from == "stock.old_woman" and type(spec.on_fire) == "function"
       and spec.fires.type == 1 and spec.fires.method == 3)
+  check("fixed launch power matches Cow Launcher, rather than the stock 5% hop",
+    spec.fires.launch_power_pct == 50 and cow.fires.launch_power_pct == 50)
   local w = worm(17)
   w.x, w.y = 100, 100
   M.solid = function(x) return x <= 91 end
@@ -2948,6 +2962,8 @@ do
   spec.on_fire({ worm = w, x = 114, y = w.y, vx = 12, vy = 0 })
   check("a clear muzzle keeps WA's original launch point",
     #M.launched == 2 and M.launched[2].x == 114)
+  check("the launch retains WA's full velocity in either direction without scaling it twice",
+    M.launched[1].vx == -12 and M.launched[1].vy == 0 and M.launched[2].vx == 12 and M.launched[2].vy == 0)
   -- A thin wall (105-108) between the worm and a clear muzzle beyond it:
   -- the worm can't see the muzzle, so she starts on the worm's side.
   M.solid = function(x) return x >= 105 and x < 109 end

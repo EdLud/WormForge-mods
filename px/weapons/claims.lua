@@ -15,6 +15,8 @@ local OLD_WOMAN_LAUNCHER = {
   fires = {
     subtype = 3, -- bazooka aim sheet, not the Sheep Launcher hold
     type = 1,
+    -- Match Cow Launcher; stock Old Woman only supplies a 5% hop.
+    launch_power_pct = 50,
     method = 3, -- CreateWeaponProjectile, intercepted by on_fire
   },
 }
