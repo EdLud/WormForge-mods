@@ -571,22 +571,25 @@ local PX_ART = {
     params = { gpu_prefix = "sprites/px_hold/" },
   },
   { -- Sticky Bomb: PX's record leaves the bomb's sprite 0 and PX's script
-    -- draws the bomb at run time. Here the bomb is the stock grenade sprite
+    -- draws the bomb at run time. Here the record has the stock grenade
     -- again -- a grenade-type slot picks the worm's throw sheet from it, and
-    -- 0 has none -- which the override draws as PX's bomb. The bits too.
+    -- 0 has none -- hidden in flight with PX's bomb drawn in its place
+    -- (PX_WEAP_SPRITES), as for the Electric Grenade. Overriding the stock
+    -- grenade instead drew every WA Grenade in the match as a sticky bomb.
     id = "px.sticky_bomb", base = "stock.grenade",
     panel_icon = "sprites/sticky_bomb/sbico.png",
     sprite = "grenade",
     cluster = { sprite = "sprites/sticky_bomb/bomb.png" },
     -- Stuck, the bits draw with the frames at +0x178..+0x184, which the
-    -- record points at the Salvation Army's 467; PX overrides that too.
+    -- record points at 467 (wsvclnku, a worm in a crowned cap that WA
+    -- doesn't draw, as PX's other wsv* overrides); PX overrides that too.
     sprite_overrides = {
-      grenade = "sprites/sticky_bomb/bomb.png",                                -- 50
       wsvclnku = "sprites/sticky_bomb/bomb.png",                               -- 467
     },
     worm_sprites = PX_POSTURE,
-    sprites = { "sprites/px_hold/sticky_bomb.png" },
-    params = { gpu_prefix = "sprites/px_hold/" },
+    -- The hold, and the bomb drawn in flight: GPU sheets, both under the prefix.
+    sprites = { "sprites/px_hold/sticky_bomb.png", "sprites/sticky_bomb/bomb.png" },
+    params = { gpu_prefix = "sprites/" },
   },
   { -- Fire Jump: a fire punch, then a jump and a glide (below).
     id = "px.fire_jump", base = "stock.fire_punch",

@@ -47,6 +47,17 @@ local PX_WEAP_SPRITES = {
     spin = true, spin_speed = 0.35,
     hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
   },
+  ["px.sticky_bomb"] = { -- Sticky Bomb (sb_script: SBB, sb.png, on every missile it fires)
+    sheet = "sprites/sticky_bomb/bomb.png", frames = 1,
+    spin = true, -- its record's WAT_Rotation
+    -- PX's record has sprite 0; the pack's stock grenade is only for the
+    -- worm's throw sheet, as the Electric Grenade's.
+    hide = true,
+    -- Only the bomb thrown, which WA would draw as its grenade (stock 50):
+    -- the bit it bursts into flies, and sticks, with the bomb as its own
+    -- cluster sheet.
+    first_sprite = 50,
+  },
   ["px.electric_grenade"] = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
     sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
@@ -57,6 +68,9 @@ local PX_WEAP_SPRITES = {
 }
 
 flying = {} -- missile id -> { actor, phase, seen }
+-- Missiles of a `first_sprite` weapon that showed it when first seen:
+-- missile id -> true. Hidden, their sprite reads 0 from then on.
+local matched = {}
 
 -- The actor goes when its missile stops reporting: WA has freed it.
 local function follow_missile(id)
@@ -68,6 +82,7 @@ local function follow_missile(id)
     end
     if f and f.actor == a then
       flying[id] = nil
+      matched[id] = nil
     end
     a:despawn()
   end
@@ -90,8 +105,7 @@ end
 -- died since, and WA frees a dead worm: it is kept by id and looked up
 -- among the living, and if it is gone any living worm owns the sprite.
 -- Left undrawn instead, the missile would show WA's own sprite, which
--- another weapon may have taken over (the Electric Grenade's is the stock
--- grenade, which the Sticky Bomb redraws as its bomb).
+-- another weapon may have taken over.
 local last_turn_id
 wa.on.turn_start(function(event)
   last_turn_id = event.worm and event.worm.id
@@ -111,6 +125,13 @@ end
 
 wa.on.missile_frame(function(m)
   local p = shared.owns(m.weapon) and PX_WEAP_SPRITES[m.weapon]
+  if p and p.first_sprite and not matched[m.id] then
+    if m.phase == "pre" and m.sprite == p.first_sprite then
+      matched[m.id] = true
+    else
+      p = nil
+    end
+  end
   -- WA's sprite is hidden only where PX's is drawn in its place: with no
   -- owner for ours, WA's stays.
   if p and p.hide and m.phase == "pre" and (flying[m.id] or sprite_owner()) then

@@ -4925,6 +4925,39 @@ do
   M.crates = {}
 end
 
+print("sticky bomb: PX's bomb drawn over WA's hidden grenade, WA's Grenade left alone")
+do
+  new_match()
+  local spec
+  for _, r in ipairs(replaced) do if r.weapon == "grenade" then spec = r end end
+  check("the stock grenade for the worm's throw sheet, not overridden for the match",
+    spec.sprite == "grenade" and (spec.sprite_overrides or {}).grenade == nil
+      and (spec.sprite_overrides or {}).wsvclnku == "sprites/sticky_bomb/bomb.png",
+    tostring((spec.sprite_overrides or {}).grenade))
+  local owner = worm(16)
+  owner.turn = true
+  M.spawned = {}
+  local m = { id = 601, phase = "pre", weapon = "grenade", x = 10, y = 20, vx = 1, vy = 0, sprite = 50 }
+  M.missile(m)
+  m.phase = "post"
+  M.missile(m)
+  check("thrown: WA's grenade hidden, PX's bomb follows it", m.sprite == 0
+    and M.spawned[1] and M.spawned[1].sprite == "sprites/sticky_bomb/bomb.png")
+  -- Its next frame: hidden already, it is still the bomb thrown.
+  m.phase = "pre"
+  M.missile(m)
+  m.phase = "post"
+  M.missile(m)
+  check("its next frame keeps the one bomb", m.sprite == 0 and #M.spawned == 1)
+  -- The bit it bursts into flies with its own cluster sheet, drawn by WA.
+  local bit = { id = 602, phase = "pre", weapon = "grenade", x = 10, y = 20, vx = 0, vy = 0, sprite = 900 }
+  M.missile(bit)
+  bit.phase = "post"
+  M.missile(bit)
+  check("the bit keeps its own sheet, nothing drawn over it", bit.sprite == 900 and #M.spawned == 1)
+  owner.turn = false
+end
+
 print("electric grenade: seek, delayed zap, and target kinds")
 do
   local function setup()
@@ -4979,7 +5012,7 @@ do
   -- Its sprite's owner when no worm holds the turn: the last turn's worm;
   -- if that one died since (WA frees a dead worm, its handle dangles), a
   -- living worm, never the dead one, so PX's grenade is still drawn (WA's
-  -- own sprite is the stock grenade, which the Sticky Bomb redraws).
+  -- own sprite is the stock grenade).
   do
     local before = M.spawned
     owner.turn = false
