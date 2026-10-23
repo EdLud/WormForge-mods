@@ -62,6 +62,8 @@ colour shows ownership. Both types display a small translucent health number
 above the head, green at full health, yellow at half and red near zero. The
 number stays at a fixed height above the head and barrel as they turn.
 Sentry Gun still holds fire during its own coalition's turns.
+Both sentry types take explosion damage while airborne and during placement.
+Passage for an overlapping planter does not protect them from blasts.
 
 Profiles store these under `[options."<weapon id>"]`, for example
 `[options."px.helicopter"]` followed by `fuel = 300`. Helicopter fuel is

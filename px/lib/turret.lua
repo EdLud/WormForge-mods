@@ -450,7 +450,7 @@ function turret.new(cfg)
       if not s.landed_once then
         s.landed_once = true
         s.phase = s.planter and 2 or 3
-        a.hit_by = s.phase == 3 and "all" or { arrows = true, melee = true, fire = true, dragon_ball = true }
+        a.hit_by = s.phase == 3 and "all" or { arrows = true, melee = true, fire = true, dragon_ball = true, blasts = true }
       end
       wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
         t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
@@ -628,7 +628,8 @@ function turret.new(cfg)
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
       gravity = true, drown = false,
       body = { shape = t.art.mask, hits = { land = true, objects = true },
-        hit_by = { fire = true, dragon_ball = true } },
+        -- Planter passage narrows body collisions, never explosion damage.
+        hit_by = { fire = true, dragon_ball = true, blasts = true } },
       on = { frame = brain, hit = hit, contact = touched },
     })
     local s = {

@@ -1813,6 +1813,47 @@ do
   M.solid, M.gravity = nil, nil
 end
 
+print("Sentries: blasts damage falling, planting and airborne bodies")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    new_match()
+    local t, owner = require("lib/shared")[kind], worm(16)
+    for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+    owner.x, owner.y = 100, 100
+    local floor = 110
+    M.solid = function(_, y) return y >= floor end
+    M.gravity = 0.25
+    local body, s = t.place({ worm = owner })
+    local hp = s.health
+    local function blast(damage, vx, vy)
+      -- Mirror the engine's incoming blast filter before delivering on.hit.
+      local accepts = body.hit_by == "all" or body.hit_by.blasts
+      if accepts then body.hit(body, { kind = "blast", damage = damage, vx = vx or 0, vy = vy or 0 }) end
+      return accepts
+    end
+    check(kind .. ": first fall accepts blast damage before planting",
+      s.phase == 1 and not s.planted and blast(3) and s.health == hp - 3 and s.disabled)
+    body.on(body, { damage = 3 })
+    check(kind .. ": the same frame's damage accumulator is not counted again", s.health == hp - 3)
+    for _ = 1, 40 do body.on(body) end
+    check(kind .. ": planter passage still allows blast damage after planting",
+      s.phase == 2 and s.planter == owner and s.planted and blast(2) and s.health == hp - 5
+      and not body.hit_by.worms)
+    owner.x = 5000
+    body.on(body)
+    check(kind .. ": clearing the planter retains full damage reception", s.phase == 3 and body.hit_by == "all")
+    blast(4, 2, -3)
+    body.on(body, { damage = 4 })
+    check(kind .. ": a rising sentry takes another blast exactly once",
+      not s.planted and body.vy < 0 and blast(5) and s.health == hp - 14)
+    floor, body.vy = 300, 3
+    body.on(body)
+    check(kind .. ": a falling sentry takes lethal blast damage",
+      not s.planted and body.vy > 0 and blast(s.health) and body.dead and t.state[body.id] == nil)
+    M.solid, M.gravity = nil, nil
+  end
+end
+
 print("Sentries: movable feet, damage, lights and coalition capture")
 do
   for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
@@ -2048,7 +2089,7 @@ do
       for _ = 1, 40 do body.on(body) end
       check(kind .. ": first plant enables the normal mask without ending planter passage",
         s.planted and s.landed_once and s.phase == 2 and body.hit_by.arrows and body.hit_by.melee
-        and body.hit_by.fire and body.hit_by.dragon_ball and not body.hit_by.worms and not body.hit_by.blasts)
+        and body.hit_by.fire and body.hit_by.dragon_ball and not body.hit_by.worms and body.hit_by.blasts)
       body.contact(body, { other = owner, vx = 8, vy = -4 })
       check(kind .. ": planter still cannot push its own sentry while overlapping", s.vx == 0 and s.vy == 0)
       local looks = body.look_calls or 0
@@ -2118,11 +2159,11 @@ do
     owner.x, owner.y = 100, 100
     M.gravity, M.solid = 0.25, function(_, y) return y >= 110 end
     local body, s = t.place({ worm = owner })
-    check(kind .. ": phase 1 only fire and Dragon Ball", body.hit_by.fire and body.hit_by.dragon_ball
-      and not body.hit_by.arrows and not body.hit_by.blasts and body.hits.objects and body.hits.land)
+    check(kind .. ": phase 1 accepts fire, Dragon Ball and blasts", body.hit_by.fire and body.hit_by.dragon_ball
+      and not body.hit_by.arrows and body.hit_by.blasts and body.hits.objects and body.hits.land)
     for _ = 1, 40 do body.on(body) end
-    check(kind .. ": first plant opens arrows and melee, keeps bullets and blasts out", s.phase == 2
-      and body.hit_by.arrows and body.hit_by.melee and not body.hit_by.bullets and not body.hit_by.blasts)
+    check(kind .. ": first plant opens arrows and melee, keeps blasts enabled and bullets out", s.phase == 2
+      and body.hit_by.arrows and body.hit_by.melee and not body.hit_by.bullets and body.hit_by.blasts)
     body.contact(body, { other = enemy, vx = 8, vy = -4 })
     check(kind .. ": another worm also cannot push during phase 2", s.vx == 0 and s.vy == 0)
     M.turn_end({ worm = enemy })
