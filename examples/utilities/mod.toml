@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.4.2"
+version = "0.4.3"
 author = "WormForge"
 api_version = 4
 format_version = 2
