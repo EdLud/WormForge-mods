@@ -127,8 +127,10 @@ storage in the parent record. The exporter checks the original values before
 omitting that storage, so changed source data requires an explicit update.
 Old Woman Launcher uses the stock-based record in `claims.lua`; its unused
 PX record is omitted from the generated data, while its display name is kept.
-Native animation padding is also omitted; it has no effect on the sprite,
-trail or animation.
+Underwater trail rates use `trail.bubbles_per_second`, including the separate
+homing trail. These values are retained from PX's records.
+Native AI selection and trajectory metadata is omitted from the port tables
+and inherited from the stock base; CPU support is outside this pack's scope.
 
 ### Electrical weapons
 

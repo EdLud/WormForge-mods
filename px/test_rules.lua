@@ -3543,7 +3543,8 @@ do
       return #l == 5
     end)())
   check("the parent keeps its payload off without staging raw fire parameters",
-    spec.missile.burst == "nothing" and spec.raw[0xFC] == nil and spec.raw[0x100] == nil)
+    spec.missile.burst == "nothing"
+    and (not spec.raw or (spec.raw[0xFC] == nil and spec.raw[0x100] == nil)))
   local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
   local was_turn = w.turn
   w.turn = true -- thrown in its turn
@@ -3612,7 +3613,7 @@ do
   check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.missile.bounce.terrain_keep_pct == 11)
   check("only the nuke stage receives its original cluster power and variation",
     l.clusters.launch_power_pct == 33 and l.clusters.power_variation_pct == 33
-    and spec.raw[0xFC] == nil and spec.raw[0x100] == nil)
+    and (not spec.raw or (spec.raw[0xFC] == nil and spec.raw[0x100] == nil)))
   local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 }
   local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110, y = 45, vx = 1, vy = 0 }
   local climb_ok, jitter = true, 0

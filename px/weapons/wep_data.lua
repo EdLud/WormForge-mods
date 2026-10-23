@@ -9,7 +9,7 @@ local shared = require("lib/shared")
 -- parameters and bytes for inactive action layouts. Stage-only payload
 -- settings live with the scripted launches in chilli_bomb.lua/nuke_rocket.lua.
 -- Old Woman Launcher's active record is declared in claims.lua.
--- Native animation padding is omitted; sprite/trail settings are retained.
+-- Native AI-only metadata is inherited from the stock base.
 local WEP_NAME = {
   ["px.3_girder_pack"] = "3 Girder Pack",
   ["px.banana_express"] = "Banana Express",
@@ -90,6 +90,7 @@ local WEP_FIELDS = {
         push_pct = 80,
       },
       trail = {
+        bubbles_per_second = 12.5,
         power = 0,
         speed = 100,
         sprite = 131,
@@ -121,6 +122,7 @@ local WEP_FIELDS = {
           push_pct = 80,
         },
         trail = {
+          bubbles_per_second = 12.5,
           speed = 100,
           sprite = 131,
         },
@@ -130,9 +132,6 @@ local WEP_FIELDS = {
       munition_speed = 1.5,
       plane_sound = 52,
       spacing = 30,
-    },
-    raw = {
-      [0x1C8] = 50,
     },
   },
   ["px.blaster_worm"] = {
@@ -146,11 +145,13 @@ local WEP_FIELDS = {
       burst = "clusters",
       flight_sound = 157,
       fuse = 9000,
+      launch_sound = 0,
       explosion = {
         bias = 0,
         power = 50,
       },
       trail = {
+        bubbles_per_second = 0.0,
         speed = 0,
       },
     },
@@ -193,7 +194,6 @@ local WEP_FIELDS = {
       [0x0C4] = 0,
       [0x0C8] = 0,
       [0x0CC] = 0,
-      [0x0F4] = 0,
     },
   },
   ["px.burning_sheep_launcher"] = {
@@ -230,6 +230,7 @@ local WEP_FIELDS = {
         spread_generations = 20,
       },
       trail = {
+        bubbles_per_second = 0.0,
         power = 20,
         speed = 50,
       },
@@ -294,10 +295,6 @@ local WEP_FIELDS = {
         },
       },
     },
-    raw = {
-      [0x1C8] = 25,
-      [0x1CC] = 70,
-    },
   },
   ["px.cluster_bomb"] = {
     fires = {
@@ -361,15 +358,12 @@ local WEP_FIELDS = {
           push_pct = 100,
         },
         trail = {
+          bubbles_per_second = 12.5,
           power = 20,
           speed = 100,
           sprite = 131,
         },
       },
-    },
-    raw = {
-      [0x1C8] = 25,
-      [0x1CC] = 70,
     },
   },
   ["px.cow_launcher"] = {
@@ -408,7 +402,6 @@ local WEP_FIELDS = {
     raw = {
       [0x1C0] = 7536640,
       [0x1C4] = 1874124,
-      [0x1C8] = 2090598400,
     },
   },
   ["px.ghost_sheep"] = {
@@ -427,6 +420,9 @@ local WEP_FIELDS = {
       roam = {
         explode_flags = 0,
         movement_flags = 137342,
+      },
+      trail = {
+        bubbles_per_second = 12.5,
       },
     },
   },
@@ -478,7 +474,6 @@ local WEP_FIELDS = {
     raw = {
       [0x0A8] = 50,
       [0x0AC] = 50,
-      [0x1CC] = 100,
     },
   },
   ["px.gravler_strike"] = {
@@ -630,12 +625,10 @@ local WEP_FIELDS = {
         push_pct = 100,
       },
       trail = {
+        bubbles_per_second = 12.5,
         speed = 100,
         sprite = 131,
       },
-    },
-    raw = {
-      [0x1CC] = 70,
     },
   },
   ["px.mole_bomb"] = {
@@ -678,6 +671,7 @@ local WEP_FIELDS = {
         },
       },
       trail = {
+        bubbles_per_second = 12.5,
         speed = 100,
         sprite = 131,
       },
@@ -707,6 +701,7 @@ local WEP_FIELDS = {
           push_pct = 110,
         },
         trail = {
+          bubbles_per_second = 12.5,
           power = 50,
           speed = 50,
           sprite = 80,
@@ -763,6 +758,7 @@ local WEP_FIELDS = {
           push_pct = 100,
         },
         trail = {
+          bubbles_per_second = 12.5,
           power = 15,
           speed = 160,
           sprite = 260,
@@ -802,6 +798,7 @@ local WEP_FIELDS = {
         push_pct = 70,
       },
       trail = {
+        bubbles_per_second = 12.5,
         speed = 100,
         sprite = 131,
       },
@@ -827,13 +824,11 @@ local WEP_FIELDS = {
           push_pct = 25,
         },
         trail = {
+          bubbles_per_second = 12.5,
           speed = 100,
           sprite = 131,
         },
       },
-    },
-    raw = {
-      [0x1CC] = 100,
     },
   },
   ["px.pigeon_strike"] = {
@@ -866,6 +861,7 @@ local WEP_FIELDS = {
         sprite = 175,
         time = 1000,
         trail = {
+          bubbles_per_second = 12.5,
           power = 25,
           speed = 40,
           sprite = 134,
@@ -898,6 +894,9 @@ local WEP_FIELDS = {
           max_bounces = 1,
           terrain_keep_pct = 20,
         },
+        trail = {
+          bubbles_per_second = 12.5,
+        },
       },
     },
     strike = {
@@ -905,9 +904,6 @@ local WEP_FIELDS = {
       munition_speed = 12.0,
       plane = 86,
       spacing = 45,
-    },
-    raw = {
-      [0x1C8] = 50,
     },
   },
   ["px.pogo_sheep"] = {
@@ -952,6 +948,7 @@ local WEP_FIELDS = {
           terrain_keep_pct = 10,
         },
         trail = {
+          bubbles_per_second = 12.5,
           power = 1,
           speed = 20,
           sprite = 249,
@@ -1037,6 +1034,7 @@ local WEP_FIELDS = {
           push_pct = 0,
         },
         trail = {
+          bubbles_per_second = 0.0,
           speed = 0,
           sprite = 0,
         },
@@ -1054,7 +1052,6 @@ local WEP_FIELDS = {
       [0x198] = 0,
       [0x19C] = 0,
       [0x1A0] = 0,
-      [0x1CC] = 70,
     },
   },
   ["px.s_m_a_r_t_bomb"] = {
@@ -1097,6 +1094,7 @@ local WEP_FIELDS = {
           },
         },
         trail = {
+          bubbles_per_second = 0.0,
           power = 2,
           speed = 600,
           sprite = 0,
@@ -1132,6 +1130,7 @@ local WEP_FIELDS = {
         push_pct = 250,
       },
       trail = {
+        bubbles_per_second = 12.5,
         power = 40,
         speed = 180,
         sprite = 453,
@@ -1175,6 +1174,7 @@ local WEP_FIELDS = {
         },
       },
       trail = {
+        bubbles_per_second = 12.5,
         speed = 100,
         sprite = 131,
       },
@@ -1212,6 +1212,7 @@ local WEP_FIELDS = {
           },
         },
         trail = {
+          bubbles_per_second = 12.5,
           speed = 100,
           sprite = 131,
         },
@@ -1236,9 +1237,6 @@ local WEP_FIELDS = {
         push_pct = 100,
         variation = 50,
       },
-    },
-    raw = {
-      [0x1CC] = 20,
     },
   },
   ["px.sticky_bomb"] = {
@@ -1286,6 +1284,7 @@ local WEP_FIELDS = {
           enabled = true,
         },
         trail = {
+          bubbles_per_second = 12.5,
           power = 50,
           speed = 50,
           sprite = 80,
@@ -1298,7 +1297,6 @@ local WEP_FIELDS = {
       [0x0C4] = 2,
       [0x0C8] = 1,
       [0x0CC] = 20000,
-      [0x1C8] = 25,
     },
   },
   ["px.super_drill"] = {
@@ -1356,6 +1354,7 @@ local WEP_FIELDS = {
           power = 18,
         },
         trail = {
+          bubbles_per_second = 0.0,
           speed = 0,
           sprite = 0,
         },
@@ -1368,8 +1367,6 @@ local WEP_FIELDS = {
       [0x0B4] = 126,
       [0x0C8] = 50,
       [0x0D0] = 1,
-      [0x1C8] = 50,
-      [0x1CC] = 0,
     },
   },
   ["px.swim_suit"] = {
@@ -1408,6 +1405,7 @@ local WEP_FIELDS = {
         push_pct = 100,
       },
       trail = {
+        bubbles_per_second = 12.5,
         power = 40,
         speed = 150,
         sprite = 251,
@@ -1442,9 +1440,6 @@ local WEP_FIELDS = {
           sprite = 252,
         },
       },
-    },
-    raw = {
-      [0x1CC] = 70,
     },
   },
   ["px.thumper_nade_strike"] = {
@@ -1506,9 +1501,6 @@ local WEP_FIELDS = {
       count = 3,
       plane = 87,
       spacing = 30,
-    },
-    raw = {
-      [0x1C8] = 50,
     },
   },
   ["px.wind_changer"] = {
