@@ -2976,7 +2976,7 @@ do
     if r.weapon == "fire_punch" then spec = r end
   end
   check("Fire Jump keeps its native 8 pixels/frame hit strength without an offset",
-    spec and spec.fire_punch.knockback == 8 and spec.raw[0x040] == nil)
+    spec and spec.fire_punch.knockback == 8 and spec.raw == nil)
 end
 
 print("old woman launcher: launch the Old Woman from a clear point")

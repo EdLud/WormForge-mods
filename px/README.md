@@ -131,6 +131,13 @@ Underwater trail rates use `trail.bubbles_per_second`, including the separate
 homing trail. These values are retained from PX's records.
 Native AI selection and trajectory metadata is omitted from the port tables
 and inherited from the stock base; CPU support is outside this pack's scope.
+Inactive action storage and unused digging parameters are also omitted.
+The shared flag for particles after impact is preserved whenever it differs
+from the base, even on a projectile with no selected action.
+Wind Changer and Gravity Control use `utility.effect = "scripted"` to
+complete native utility use while their Lua callbacks supply the effect.
+The generated `wep_data.lua` now uses named fields throughout. Confirmed
+unused Jet Pack storage and Fire Punch tail data are omitted too.
 
 ### Electrical weapons
 
