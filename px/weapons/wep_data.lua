@@ -64,7 +64,6 @@ local WEP_FIELDS = {
   ["px.banana_express"] = {
     fires = {
       aims = false,
-      subtype = 0,
     },
     handling = {
       retreat = 3000,
@@ -1007,9 +1006,6 @@ local WEP_FIELDS = {
     },
   },
   ["px.pigeon_strike"] = {
-    fires = {
-      subtype = 0,
-    },
     handling = {
       retreat = 3000,
     },
