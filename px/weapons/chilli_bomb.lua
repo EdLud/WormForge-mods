@@ -17,7 +17,8 @@ do
 -- writes the five's changes into the weapon's own launch data, so every
 -- later Chilli Bomb flies with them; the port changes the five only.
 
-local CHILLI_CHILD = { count = 5, damage = 30, fuse = 8000 }
+local CHILLI_CHILD = { count = 5, damage = 30, fuse = 8000,
+  fire = { spread_delay_ms = 30, burn_time_ms = 1500 } }
 
 local chilli_child = {}   -- missile id -> true: one of the five, which ends it
 local chilli_pending = {} -- where the five burst out, once the blast is over
@@ -51,6 +52,8 @@ wa.on.worm_message(function(worm, msg)
           missile = {
             explosion = { power = CHILLI_CHILD.damage }, fuse = CHILLI_CHILD.fuse, countdown = 0,
             explode_on_space = true, burst = "fire",
+            -- Only these children produce fire; the parent's payload is off.
+            fire = CHILLI_CHILD.fire,
             sprite = 0, -- PX leaves them WA's sprite 0; the chilli is drawn instead
           },
         })

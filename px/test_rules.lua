@@ -3535,6 +3535,15 @@ do
     c.missile.explosion.power == 30 and c.missile.fuse == 8000 and c.missile.countdown == 0
     and c.missile.explode_on_space == true and c.missile.burst == "fire")
   check("and WA's sprite 0: only the chilli is drawn", c.missile.sprite == 0)
+  check("all five children carry the original fire timing in their own launch",
+    (function()
+      for _, child in ipairs(l) do
+        if child.missile.fire.spread_delay_ms ~= 30 or child.missile.fire.burn_time_ms ~= 1500 then return false end
+      end
+      return #l == 5
+    end)())
+  check("the parent keeps its payload off without staging raw fire parameters",
+    spec.missile.burst == "nothing" and spec.raw[0xFC] == nil and spec.raw[0x100] == nil)
   local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
   local was_turn = w.turn
   w.turn = true -- thrown in its turn
@@ -3601,6 +3610,9 @@ do
   check("silent, a 1.6 s fuse, bursting into clustlets", l.missile.fuse == 1600 and l.missile.flight_sound == 0
     and l.missile.burst == "clusters")
   check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.missile.bounce.terrain_keep_pct == 11)
+  check("only the nuke stage receives its original cluster power and variation",
+    l.clusters.launch_power_pct == 33 and l.clusters.power_variation_pct == 33
+    and spec.raw[0xFC] == nil and spec.raw[0x100] == nil)
   local nuke = { id = 9001, phase = "pre", weapon = "mine", x = 100, y = 50, vx = 0, vy = 0 }
   local other = { id = 700, phase = "pre", weapon = "bazooka", x = 110, y = 45, vx = 1, vy = 0 }
   local climb_ok, jitter = true, 0

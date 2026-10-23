@@ -120,6 +120,16 @@ scheme changed on it, as Lua API 4's tables (`WEP_FIELDS` in
 Electric Grenade use the scheme's full `.wep` records, extracted with
 `tools/px_scheme_weps.py` from `HL - 0rang3 - 1.1.pxs`.
 
+Chilli Bomb's child fire timing and Nuke Rocket's second-stage cluster power
+are named settings in their scripted launches. Their first-stage records have
+no payload; keeping those settings with the stage that uses them avoids raw
+storage in the parent record. The exporter checks the original values before
+omitting that storage, so changed source data requires an explicit update.
+Old Woman Launcher uses the stock-based record in `claims.lua`; its unused
+PX record is omitted from the generated data, while its display name is kept.
+Native animation padding is also omitted; it has no effect on the sprite,
+trail or animation.
+
 ### Electrical weapons
 
 | Slot | Weapon | Behavior |
