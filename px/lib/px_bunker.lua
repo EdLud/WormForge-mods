@@ -404,11 +404,11 @@ function M.install(ctx)
   if super_buster then sprites[#sprites + 1] = ART .. "glow.png" end
 
   -- The registration. Built in a local first: the `handling` line below then
-  -- reads as the Highlander's own claims do (`weapons/claims.lua:69-89`).
+  -- reads as the Highlander's own claims do (`the weapon module's record.handling.ends_turn`).
   local spec = {
     -- The slot is the profile's. The record is PX's own for this weapon (name
     -- "Bunker Buster", a native air-strike record): as the Lightning Strike does
-    -- with PX's `napalm_strike.wep` (weapons/catalog.lua:319-336), the click-only
+    -- with PX's `napalm_strike.wep` (weapons/lightning_strike.lua), the click-only
     -- shape below means the worm never fires the record and the engine runs no
     -- stock plane from it. One record per slot, as PX's own pack does
     -- (`weps/<slot>.wep`), so neither weapon needs the other placed: the Super
@@ -443,9 +443,9 @@ function M.install(ctx)
   }
   -- Whether a weapon ends the turn is a profile's setting, and PX's records
   -- carry it off ("PX's records have it off on almost every weapon; each claim
-  -- puts back the weapon's own instead", `weapons/claims.lua:46-51`), so a
+  -- puts back the weapon's own instead", `the weapon module's record.handling.ends_turn`), so a
   -- weapon built on one says so itself: this click ends the turn, as WA's
-  -- strikes do (`weapons/claims.lua:85`; `Profiles/Highlander.toml:105-109`
+  -- strikes do (`the weapon module's record.handling.ends_turn`; `Profiles/Highlander.toml:105-109`
   -- documents the same setting for the weapons that do not). `wfcheck`'s
   -- SPEC_KEYS has no `handling` and reads an unknown literal key as a no-op --
   -- as it has no `missile`, where the pack's use and a match test outrank the

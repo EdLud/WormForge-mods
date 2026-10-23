@@ -16,7 +16,7 @@
 -- turned onto the target in `wa.on.missile_frame` (the Double Bazooka pattern),
 -- and the blast-damage absorption (`TakeExplosionDamage`, :175-191) is the
 -- actor's `hit` event. The strike itself is the Lightning Strike's shape
--- (Highlander weapons/catalog.lua:319-337): a click-only strike --
+-- (Highlander weapons/lightning_strike.lua): a click-only strike --
 -- `on_select = { cursor = true }` keeps WA's cursor and turn handling, and
 -- `on_click(ev)` gets the coordinate and `ev.worm`. The side it enters from is
 -- the worm's facing, as PX's own strike reads it (`ev.worm.facing`,
@@ -335,7 +335,7 @@ return {
       -- bullet's `GravityFactor` for the whole flight (:386, "Stable
       -- direction"), so the bullet flies the straight line PX aims along and
       -- nothing has to be compensated for. The `missile` keys are the `.wep`
-      -- field names (`weapons/wep_data.lua`), which is why `gravity_pct` and
+      -- field names (`docs/weapon-records.md`), which is why `gravity_pct` and
       -- `wind_pct` take (verified in match, REPORT.md 11.8).
       -- A `missile` override on PX's own bullet record crashed WA on launch
       -- (Access Violation, null read; REPORT.md 11.8), so what the slot builds
@@ -473,7 +473,7 @@ return {
       params = { gpu_prefix = "sprites/" }, -- route the sheets into the GPU atlas for a:gfx
       sounds = { SND .. "hks1.wav", SND .. "hks2.wav", SND .. "hks3.wav", SND .. "loop.wav" },
       -- Click-only dispatch keeps the strike's cursor and turn handling, exactly
-      -- as the Lightning Strike / Reinforcement (weapons/catalog.lua:46-52,
+      -- as the Lightning Strike / Reinforcement (weapons/reinforcement.lua,
       -- :319-337): the worm never fires the record, and the click only picks the
       -- target. `on_select.cursor` overrides the record's own aim mode, so the
       -- cursor does not depend on the record being a strike. No on_fire, no

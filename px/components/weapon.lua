@@ -1,10 +1,8 @@
--- A Highlander weapon as a component: every one of the bundle's weapon
--- components runs this file, and ctx.id says which weapon it is. Its
--- defaults are its own (weapons/defaults.lua); its ammo, delay and crate
--- odds are the profile's, and under Highlander's rules they deal the ammo.
+-- Common component entry; each weapon owns its declaration and runtime code.
 return {
-  defaults = function(id) return require("weapons/defaults")[id] end,
-  install = function(ctx)
-    require("components/loader").install(ctx)
+  defaults = function(id)
+    local path = require("weapons/index")[id]
+    return path and require(path).defaults
   end,
+  install = function(ctx) require("components/loader").install(ctx) end,
 }

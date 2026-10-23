@@ -25,47 +25,7 @@ do
 -- speed (type 3, as a grenade), which `spin` asks for.
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
-local PX_WEAP_SPRITES = {
-  ["px.javelin"] = {
-    sheet = "sprites/javelin/flight.png", hide = true,
-    animate = true, anim_speed = 1.90, frames = 12,
-  },
-  ["px.shadow_bolt"] = { -- Shadow-Bolt
-    sheet = "sprites/shadow_bolt/bolt.png", animate = true, anim_speed = 1.30, frames = 6,
-  },
-  ["px.chilli_bomb"] = { -- Chilli Bomb (chilli_bomb_anim) and the five it bursts into
-    sheet = "sprites/px_hold/chilli_bomb.png", frames = 1,
-    spin = true, -- its record's WAT_Rotation
-    -- WA's own sprite 0, as PX's record has it: nothing under the chilli.
-    hide = true,
-  },
-  ["px.igniter"] = { -- Igniter (igniter_anim: igniter_bullet, 16 frames)
-    sheet = "sprites/igniter/flight.png", animate = true, anim_speed = 1.0, frames = 16,
-  },
-  ["px.valyrian_fire"] = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
-    sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,
-    spin = true, spin_speed = 0.35,
-    hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
-  },
-  ["px.sticky_bomb"] = { -- Sticky Bomb (sb_script: SBB, sb.png, on every missile it fires)
-    sheet = "sprites/sticky_bomb/bomb.png", frames = 1,
-    spin = true, -- its record's WAT_Rotation
-    -- PX's record has sprite 0; the pack's stock grenade is only for the
-    -- worm's throw sheet, as the Electric Grenade's.
-    hide = true,
-    -- Only the bomb thrown, which WA would draw as its grenade (stock 50):
-    -- the bit it bursts into flies, and sticks, with the bomb as its own
-    -- cluster sheet.
-    first_sprite = 50,
-  },
-  ["px.electric_grenade"] = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
-    sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
-    spin = true, -- its record's WAT_Rotation
-    -- PX's record has sprite 0; the pack's stock grenade is only for the
-    -- worm's throw sheet.
-    hide = true,
-  },
-}
+local PX_WEAP_SPRITES = shared.missile_sprites
 
 flying = {} -- missile id -> { actor, phase, seen }
 -- Missiles of a `first_sprite` weapon that showed it when first seen:

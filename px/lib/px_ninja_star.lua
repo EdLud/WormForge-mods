@@ -204,7 +204,7 @@ function M.install(ctx)
   end
 
   -- The registration, in a local first so the `handling` line reads as the
-  -- Highlander's claims do (`weapons/claims.lua:69-89`).
+  -- Highlander's claims do (`the weapon module's record.handling.ends_turn`).
   local spec = {
     -- The slot is the profile's. The record is PX's own for this weapon, whose
     -- flight is the whole of the weapon's physics: a type-4 record, the Javelin's
@@ -233,8 +233,8 @@ function M.install(ctx)
     hold = hold,
     sounds = { SND .. "ninjasimpact.wav" },
     -- Whether a weapon ends the turn is a profile's setting, and PX's records
-    -- carry it off (`weapons/claims.lua:46-51`), so a weapon built on one says so
-    -- itself: the throw ends the turn, as WA's do (`weapons/claims.lua:85`).
+    -- carry it off (`the weapon module's record.handling.ends_turn`), so a weapon built on one says so
+    -- itself: the throw ends the turn, as WA's do (`the weapon module's record.handling.ends_turn`).
     -- `wfcheck`'s SPEC_KEYS has no `handling` and reads an unknown literal key as
     -- a no-op -- as it has no `missile`, where the pack's use and a match test
     -- outrank the definition (REPORT.md 4.1); a key on a local spec is how the

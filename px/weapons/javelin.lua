@@ -1,72 +1,119 @@
--- Highlander: Javelin. Split from rules.lua by tools/split_highlander.py.
-local shared = require("lib/shared")
-local current_worm = shared.current_worm
-local fires = shared.fires
-local trunc = shared.trunc
-local turrets = require("lib/turret")
+-- Javelin: record, art and behaviour.
+local weapon = {}
 
--- ---------------------------------------------------------------- Javelin
+-- Native record settings. Edit this weapon here; imported records are review drafts.
+weapon.record = {
+  fires = {
+    aims = true,
+  },
+  handling = {
+    ends_turn = true,
+  },
+}
 
-do
-  local speed = {}
-  -- Pre keeps the incoming speed even when this frame's stock collision
-  -- destroys the missile. Post keeps acceleration for the following frame.
-  wa.on.missile_frame(function(m)
-    if m.weapon == "px.javelin" then speed[m.id] = { m.vx, m.vy, uid = m.uid } end
-  end)
+weapon.missile_sprite = {
+    sheet = "sprites/javelin/flight.png", hide = true,
+    animate = true, anim_speed = 1.90, frames = 12,
+  }
 
-  -- How the part of the stamp inside the land fades: over 3 pixels from the
-  -- spear's outline, its colour mixed with the earth's. Tuned by eye in game.
-  local JAVELIN_BURIED = { soften = 3, blend = "mix" }
+function weapon.definition()
+  local shared = require("lib/shared")
+  local fires = shared.fires
+  local sdk = require("wf-lib/holds")
+  local PX_POSTURE = sdk.PX_POSTURE
+  return require("lib/weapon").merge(weapon.record, {
+    wep = "weps/prod.wep",
+    panel_icon = "sprites/javelin/icon.png",
+    sprite = "missile",
+    worm_sprites = PX_POSTURE,
+    sprites = { "sprites/javelin/hold.png", "sprites/javelin/flight.png", "sprites/javelin/stamp.png" },
+    sounds = { "sounds/javelin_impact.wav" },
+    params = { gpu_prefix = "sprites/javelin/" },
+    on_explode = function(ev) fires.javelin(ev) end,
+    hold = {
+        keep_while_firing = true,
+        sheet = "sprites/javelin/hold.png", draw_hand = false,
+        hand_radius = 0, hand_rotation = 0, hand_radial_rotation = 0,
+        weap_radial_rotation = 0, weap_rotation = 1, weap_radius = -11.8,
+        animate = true, anim_speed = 1.25, frames = 12,
+      },
+  })
+end
 
-  local function trunc(n) return n < 0 and math.ceil(n) or math.floor(n) end
-  local function orientation(vx, vy)
-    if vx == 0 then return vy > 0 and 16 or 0 end
-    if vy == 0 then return vx > 0 and 8 or 24 end
-    -- PX uses ratio bins, not evenly spaced atan2 angles.
-    if vx > 0 and vy < 0 then return math.min(trunc(3 * vx / -vy), 7) end
-    if vx > 0 then return math.min(trunc(8 + 3 * vy / vx), 15) end
-    if vy > 0 then return math.min(trunc(16 + 3 * -vx / vy), 23) end
-    return math.min(trunc(24 + 3 * -vy / -vx), 31)
-  end
-  local function within(o, x, y, r)
-    return o and math.abs(x - o.x) < r and math.abs(y - o.y) < r
-  end
-  fires.javelin = function(ev)
-    local v = ev.missile and speed[ev.missile]
-    if ev.missile then speed[ev.missile] = nil end
-    local vx, vy = v and v[1] or 0, v and v[2] or 0
-    local target
-    -- The circle encloses PX's strict 20px square. Keep native traversal
-    -- order, including the shooter; PX stops at the first eligible object.
-    for _, o in ipairs(wa.world.electrical_nearby(ev.x, ev.y, 29, false)) do
-      if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
-        and within(o, ev.x, ev.y, 20) then target = o; break end
+weapon.requires = { "weapons/helicopter" }
+
+function weapon.setup()
+  local shared = require("lib/shared")
+  local current_worm = shared.current_worm
+  local fires = shared.fires
+  local trunc = shared.trunc
+  local turrets = require("lib/turret")
+
+  -- ---------------------------------------------------------------- Javelin
+
+  do
+    local speed = {}
+    -- Pre keeps the incoming speed even when this frame's stock collision
+    -- destroys the missile. Post keeps acceleration for the following frame.
+    wa.on.missile_frame(function(m)
+      if m.weapon == "px.javelin" then speed[m.id] = { m.vx, m.vy, uid = m.uid } end
+    end)
+
+    -- How the part of the stamp inside the land fades: over 3 pixels from the
+    -- spear's outline, its colour mixed with the earth's. Tuned by eye in game.
+    local JAVELIN_BURIED = { soften = 3, blend = "mix" }
+
+    local function trunc(n) return n < 0 and math.ceil(n) or math.floor(n) end
+    local function orientation(vx, vy)
+      if vx == 0 then return vy > 0 and 16 or 0 end
+      if vy == 0 then return vx > 0 and 8 or 24 end
+      -- PX uses ratio bins, not evenly spaced atan2 angles.
+      if vx > 0 and vy < 0 then return math.min(trunc(3 * vx / -vy), 7) end
+      if vx > 0 then return math.min(trunc(8 + 3 * vy / vx), 15) end
+      if vy > 0 then return math.min(trunc(16 + 3 * -vx / vy), 23) end
+      return math.min(trunc(24 + 3 * -vy / -vx), 31)
     end
-    if not target then
-      local sentry = turrets.projectile_target(ev.x, ev.y)
-      if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.uid) then return end
+    local function within(o, x, y, r)
+      return o and math.abs(x - o.x) < r and math.abs(y - o.y) < r
     end
-    if not target then
-      local active = current_worm()
-      if within(active, ev.x, ev.y, 25) then target = active end
+    fires.javelin = function(ev)
+      local v = ev.missile and speed[ev.missile]
+      if ev.missile then speed[ev.missile] = nil end
+      local vx, vy = v and v[1] or 0, v and v[2] or 0
+      local target
+      -- The circle encloses PX's strict 20px square. Keep native traversal
+      -- order, including the shooter; PX stops at the first eligible object.
+      for _, o in ipairs(wa.world.electrical_nearby(ev.x, ev.y, 29, false)) do
+        if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
+          and within(o, ev.x, ev.y, 20) then target = o; break end
+      end
+      if not target then
+        local sentry = turrets.projectile_target(ev.x, ev.y)
+        if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.uid) then return end
+      end
+      if not target then
+        local active = current_worm()
+        if within(active, ev.x, ev.y, 25) then target = active end
+      end
+      if target then
+        target.vx, target.vy = vx / 4, vy / 4
+        if target.kind == "worm" then target:hurt(20)
+        else target:hit(20, vx / 2, vy / 2, "projectile") end
+        return
+      end
+      -- Centred on the impact, as PX's, so its front half lies in the land:
+      -- that half fades into the earth (the engine's buried stamp) instead of
+      -- being drawn over it, and the javelin looks stuck.
+      wa.land.stamp{
+        sprite = "sprites/javelin/stamp.png", frame = orientation(vx, vy), x = ev.x, y = ev.y,
+        buried = JAVELIN_BURIED,
+      }
+      -- PX plays it unplaced. On the turn's worm: an explosion's ev.worm is the
+      -- missile's owner, which need not be a worm and has no sound of its own.
+      local shooter = current_worm()
+      if shooter then wa.sound.play(shooter, "sounds/javelin_impact.wav") end
     end
-    if target then
-      target.vx, target.vy = vx / 4, vy / 4
-      if target.kind == "worm" then target:hurt(20)
-      else target:hit(20, vx / 2, vy / 2, "projectile") end
-      return
-    end
-    -- Centred on the impact, as PX's, so its front half lies in the land:
-    -- that half fades into the earth (the engine's buried stamp) instead of
-    -- being drawn over it, and the javelin looks stuck.
-    wa.land.stamp{
-      sprite = "sprites/javelin/stamp.png", frame = orientation(vx, vy), x = ev.x, y = ev.y,
-      buried = JAVELIN_BURIED,
-    }
-    -- PX plays it unplaced. On the turn's worm: an explosion's ev.worm is the
-    -- missile's owner, which need not be a worm and has no sound of its own.
-    local shooter = current_worm()
-    if shooter then wa.sound.play(shooter, "sounds/javelin_impact.wav") end
   end
 end
+
+return weapon

@@ -18,7 +18,7 @@ local function run(live_first)
     local env = setmetatable({ require = function(name)
       assert(name == "lib/shared"); return {}
     end }, { __index = _G })
-    assert(loadfile(mods .. "px/weapons/ice_arrow.lua", "t", env))()
+    assert(loadfile(mods .. "px/weapons/ice_arrow.lua", "t", env))().setup()
   end
   if live_first then load_live(); load_ice() else load_ice(); load_live() end
   local function emit(hit) for _, fn in ipairs(hurt) do fn(hit) end end

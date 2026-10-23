@@ -3535,15 +3535,18 @@ do
     c.missile.explosion.power == 30 and c.missile.fuse == 8000 and c.missile.countdown == 0
     and c.missile.explode_on_space == true and c.missile.burst == "fire")
   check("and WA's sprite 0: only the chilli is drawn", c.missile.sprite == 0)
-  check("all five children carry the original fire timing in their own launch",
+  check("all five children carry their complete original fire settings",
     (function()
       for _, child in ipairs(l) do
-        if child.missile.fire.spread_delay_ms ~= 30 or child.missile.fire.burn_time_ms ~= 1500 then return false end
+        local fire = child.missile.fire
+        if fire.spread_delay_ms ~= 30 or fire.burn_time_ms ~= 1500
+          or fire.spread_generations ~= 10 or fire.decay_mode ~= "resting" then return false end
+        if child.clusters ~= nil then return false end
       end
       return #l == 5
     end)())
-  check("the parent keeps its payload off without staging raw fire parameters",
-    spec.missile.burst == "nothing"
+  check("the parent has no cluster parameters and cannot be set off with Space",
+    spec.missile.burst == "nothing" and spec.missile.explode_on_space == false and spec.clusters == nil
     and (not spec.raw or (spec.raw[0xFC] == nil and spec.raw[0x100] == nil)))
   local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
   local was_turn = w.turn
@@ -3573,6 +3576,32 @@ do
   spec.on_explode({ x = 1, y = 1, slot = 42 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("no missile id: nothing", #M.launched == 5)
+
+  -- Profile configuration must change the installed copy, including nested
+  -- tables, without changing this weapon's declaration or shared artwork.
+  local module = require("weapons/chilli_bomb")
+  local loader = require("components/loader")
+  local original_configure = module.configure
+  module.configure = function(_, settings)
+    settings.missile.explosion.power = 80
+    settings.hold.hand_radius = 20
+    settings.worm_sprites.weaponlnk = "profile-test.png"
+  end
+  HIGHLANDER_CLAIMING = "px.chilli_bomb"
+  loader.install({ id = "px.chilli_bomb" })
+  module.configure = original_configure
+  local configured = replaced[#replaced]
+  check("profile configuration edits the installed copy without changing declared defaults",
+    configured.missile.explosion.power == 80 and configured.hold.hand_radius == 20
+    and configured.worm_sprites.weaponlnk == "profile-test.png"
+    and module.definition.missile.explosion.power == 50 and module.definition.hold.hand_radius == 13
+    and require("wf-lib/holds").PX_POSTURE.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png")
+  loader.install({ id = "px.chilli_bomb" })
+  HIGHLANDER_CLAIMING = nil
+  local fresh = replaced[#replaced]
+  check("a subsequent install starts from the declared defaults",
+    fresh.missile.explosion.power == 50 and fresh.hold.hand_radius == 13
+    and fresh.worm_sprites.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png")
 end
 
 print("nuke rocket: a nuke climbs out of the fusing rocket")
@@ -5556,7 +5585,8 @@ do
   check("a Highlander weapon claims by its id", shared.owns("px.super_tele") and shared.owns("px.nuke_rocket"))
   check("WA's own weapons are never Highlander's", not shared.owns("stock.teleport")
     and not shared.owns("stock.mine") and not shared.owns(nil))
-  check("only a Highlander weapon has a claim", not shared.claim("stock.mine") and not shared.claim("px.double_jump"))
+  local index = require("weapons/index")
+  check("only a Highlander weapon has a claim", index["stock.mine"] == nil and index["px.double_jump"] == nil)
 end
 
 print("")

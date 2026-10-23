@@ -117,7 +117,7 @@ assert(custom:move(custom_body) and strategy_calls==1 and custom_body.x==600 and
 -- Gun: Space while airborne uses PX's direction keys at full power,
 -- retains worm momentum, and captures owner/team/colour per bolt.
 local shared=require("lib/shared"); shared.fires={}; shared.current_worm=function() return worms[1] end
-require("weapons/portal_gun")
+require("weapons/portal_gun").setup()
 worm=body("worm",17,100,100,4,-6)
 worm.team,worm.alliance,worm.weapon,worm.turn,worm.aim=0,0,"px.portal_gun",true,.5
 worm.stock=3

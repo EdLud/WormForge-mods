@@ -238,7 +238,7 @@ function M.install(ctx)
       ZONES.place(ev.x, ev.y, { healing = healing, turns = turns, owner = shooter })
     end,
   }
-  -- PX's records carry "ends the turn" off (`weapons/claims.lua:46-51`), so a
+  -- PX's records carry "ends the turn" off (`the weapon module's record.handling.ends_turn`), so a
   -- weapon built on one says so itself: the throw ends the turn, as WA's
   -- projectiles do.
   spec.handling = { ends_turn = true }
