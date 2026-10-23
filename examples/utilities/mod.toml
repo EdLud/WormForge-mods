@@ -1,6 +1,6 @@
 # Core utilities (format_version 2): one feature with the match settings the
 # lobby scheme doesn't have and some players' favourite packs as switches, and
-# an instant utility of our own (+10 Seconds).
+# an instant utility of our own (+N Seconds).
 # Nothing runs until a profile selects it (the mod loader's Profile tab).
 # See README.md.
 id = "core.utilities"
@@ -77,14 +77,39 @@ default = "alternate"
 label = "Damage number side"
 description = "alternate starts on the worm's facing side, then flips left/right per worm so hits stay readable; facing always follows the worm; random is a local coin."
 
-# An instant utility of our own: ten more seconds of turn, in utility crates.
+# An instant utility of our own: configurable extra time, in utility crates.
 # Auto-Use is configured by the profile's compatible on_collect use/keep choice.
 [[components]]
 
 id = "utilities.plus_ten"
 type = "weapon"
-name = "+10 Seconds"
-description = "Adds ten seconds to the turn. Auto-Use spends one at turn start or on pickup if unused this turn, keeping extras. Manual use does not end the turn."
-entry = "weapons/plus_ten.lua"
-icon = "sprites/plus_ten.png"
+name = "+N Seconds"
+description = "Adds configurable turn time. Choose whether bonuses stack and how automatic pickups behave during retreat. Manual use does not end the turn."
+entry = "weapons/plus_n.lua"
+icon = "sprites/plus_n.png"
 default_position = { row = "utility", column = 6 }
+
+[[components.options]]
+key = "seconds"
+type = "int"
+default = 10
+min = 1
+max = 500
+label = "Seconds added"
+description = "Time added by each activated unit."
+
+[[components.options]]
+key = "bonus_mode"
+type = "choice"
+choices = ["stack", "once_keep", "once_discard"]
+default = "once_keep"
+label = "Time bonus mode"
+description = "stack: every activated unit adds time. once_keep: one bonus per turn, banking extra pickups. once_discard: one bonus per turn, discarding surplus pickups. With Auto-Use off, all pickups stay in inventory."
+
+[[components.options]]
+key = "retreat_collect"
+type = "choice"
+choices = ["activate", "keep", "nothing"]
+default = "keep"
+label = "On collect during retreat"
+description = "With Auto-Use on: activate adds retreat time; keep saves for the next turn; nothing discards the pickup. With Auto-Use off, every pickup goes into inventory."

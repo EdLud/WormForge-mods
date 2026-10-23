@@ -45,25 +45,50 @@ HP changes are covered by the next simulation frame too. Run
 `lua mods/examples/utilities/test_instant_death.lua` from the repository root
 to check both switches independently and together.
 
-## +10 Seconds
+## +N Seconds
 
-A weapon (`utilities.plus_ten`): an instant utility of our own, in place of
-Double Time. It adds ten seconds to the turn going on, through
-`wa.world.set_turn_clock`, and comes in utility crates (`crate.type`, a
-40% weight by default). With **Auto-Use=true** (`on_collect = "use"`, the
-default), it spends one at turn start or on pickup if unused this turn,
-keeping extra copies for later turns. Infinite ammo remains infinite.
-**Auto-Use=false** (`on_collect = "keep"`) stocks every pickup for manual
-use. Firing adds ten seconds without ending the turn. Place it on a profile's
-panel and set it on the Weapons tab like any weapon:
+An instant utility that adds configurable time. Its stable ID remains
+`utilities.plus_ten`, so existing profiles keep their weapon and ammo settings.
+
+| Option | Values | Default |
+|---|---|---|
+| Seconds added (`seconds`) | 1–500 | 10 |
+| Time bonus mode (`bonus_mode`) | `stack`, `once_keep`, `once_discard` | `once_keep` |
+| On collect during retreat (`retreat_collect`) | `activate`, `keep`, `nothing` | `keep` |
+
+With **Auto-Use on**, pickups activate immediately during normal turn time.
+`stack` gives a bonus for every activated unit and activates finite inventory
+at turn start. Infinite inventory uses one unit at turn start, plus each newly
+collected unit, without becoming finite. `once_keep` permits one bonus per turn
+and keeps extra pickups for later. `once_discard` permits one bonus per turn
+and discards surplus from that pickup and all later pickups during normal turn
+time. Previously held inventory and infinite ammo are preserved; turn start
+consumes just one held unit in either once mode.
+
+During retreat, `activate` extends the retreat countdown; `keep` saves the
+pickup for the next turn; `nothing` discards only the pickup. These choices
+apply only with Auto-Use on. **Auto-Use off** always keeps pickups in inventory,
+including during retreat, for manual use. The retreat collection setting takes
+precedence over the bonus mode: `keep` banks the whole pickup even in
+`once_discard`; `activate` follows the selected bonus mode. Manual use obeys
+the per-turn limit too; a second use in either once mode refunds the unit.
+Using this utility does not end the turn. Each countdown is capped at one hour.
 
 ```toml
 [weapons]
 "utilities.plus_ten" = { row = "utility", column = 6 }
 
 [weapon_settings]
-"utilities.plus_ten" = { crate = 60, on_collect = "keep" }
+"utilities.plus_ten" = { crate = 60, on_collect = "use" }
+
+[options."utilities.plus_ten"]
+seconds = 15
+bonus_mode = "stack"
+retreat_collect = "keep"
 ```
+
+The Lua lives in `weapons/plus_n.lua`; the icon is `sprites/plus_n.png`.
+Run `lua mods/examples/utilities/test_auto_use.lua` to check these rules.
 
 A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
 a utility. The switches are those mods' own code, in `features/`, loaded only
