@@ -1157,6 +1157,24 @@ default = 6
 label = "Ammo per turn"
 description = "Shots the turret fires each turn."
 
+[[components.options]]
+key = "fire_rate"
+type = "int"
+min = 20
+max = 10000
+default = 400
+label = "Fire rate (ms)"
+description = "Milliseconds between the turret’s first two shots each turn."
+
+[[components.options]]
+key = "fire_increase_pct"
+type = "int"
+min = 0
+max = 100
+default = 12
+label = "Fire increase (%)"
+description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+
 [[components]]
 id = "px.flame_turret"
 type = "weapon"
@@ -1184,6 +1202,24 @@ max = 100
 default = 18
 label = "Ammo per turn"
 description = "Shots the turret fires each turn."
+
+[[components.options]]
+key = "fire_rate"
+type = "int"
+min = 20
+max = 10000
+default = 400
+label = "Fire rate (ms)"
+description = "Milliseconds between the turret’s first two shots each turn."
+
+[[components.options]]
+key = "fire_increase_pct"
+type = "int"
+min = 0
+max = 100
+default = 12
+label = "Fire increase (%)"
+description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
 
 [[components]]
 id = "px.mine_turret"
@@ -1213,6 +1249,24 @@ default = 6
 label = "Ammo per turn"
 description = "Shots the turret fires each turn."
 
+[[components.options]]
+key = "fire_rate"
+type = "int"
+min = 20
+max = 10000
+default = 400
+label = "Fire rate (ms)"
+description = "Milliseconds between the turret’s first two shots each turn."
+
+[[components.options]]
+key = "fire_increase_pct"
+type = "int"
+min = 0
+max = 100
+default = 12
+label = "Fire increase (%)"
+description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+
 [[components]]
 id = "px.auto_ballista"
 type = "weapon"
@@ -1240,6 +1294,24 @@ max = 100
 default = 8
 label = "Ammo per turn"
 description = "Shots the turret fires each turn."
+
+[[components.options]]
+key = "fire_rate"
+type = "int"
+min = 20
+max = 10000
+default = 400
+label = "Fire rate (ms)"
+description = "Milliseconds between the turret’s first two shots each turn."
+
+[[components.options]]
+key = "fire_increase_pct"
+type = "int"
+min = 0
+max = 100
+default = 12
+label = "Fire increase (%)"
+description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
 
 [[components]]
 id = "px.nuke_rocket"

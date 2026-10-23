@@ -54,8 +54,7 @@ function weapon.setup()
 end
 
 function weapon.configure(ctx)
-  local t = require("lib/shared").auto_ballista
-  t.health, t.ammo = ctx.option("health"), ctx.option("ammo")
+  require("lib/pyro_turret").configure(require("lib/shared").auto_ballista, ctx)
 end
 
 return weapon

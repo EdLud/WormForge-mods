@@ -135,7 +135,7 @@ do
   frames(a, 60)
   check("no ammo until a turn begins", s.ammo == 0 and #M.mines == 0, s.ammo)
   start_turn(M.worms[2])
-  check("each turn gives its ammo and PX's first reload", s.ammo == 6 and s.reload_time == 20, s.reload_time)
+  check("each turn gives its ammo and its first 400 ms", s.ammo == 6 and s.reload_time == 400, s.reload_time)
 end
 
 print("PyroMan's turrets: targets, the running clock and the lobbed aim")
@@ -174,7 +174,7 @@ do
   check("the head turns 0.08 rad a frame toward it", near(s.ta, 1.57 - 0.08) or near(s.ta, 1.57 + 0.08), s.ta)
 end
 
-print("PyroMan's turrets: the Mine Turret fires WA's mines, reload x1.12 a shot")
+print("PyroMan's turrets: the Mine Turret fires WA's mines, 12% slower each shot")
 do
   local t, a, s, red = planted("mine_turret")
   enemy(150)
@@ -190,9 +190,13 @@ do
     check("at the solved speed less 0.1 (the RNG's 0)",
       near(math.sqrt(m.vx * m.vx + m.vy * m.vy), s.power - 0.1))
   end
-  check("the first reload is 20, the next x1.12", s.reload == 20 and s.reload_time == 22, s.reload_time)
+  check("400 ms to the next shot, then 440", s.reload == 400 and s.reload_time == 440, s.reload_time)
+  local first = M.frame
   until_shot(a, M.mines)
-  check("and so on", s.reload_time == math.floor(22 * 1.12), s.reload_time)
+  check("no sooner than 20 frames (400 ms) later", M.frame - first >= 20, M.frame - first)
+  check("and so on", s.reload_time == 480, s.reload_time)
+  until_shot(a, M.mines); until_shot(a, M.mines)
+  check("PX's frames: 20, 22, 24, 26, 29", s.reload == 520 and s.reload_time == 580, s.reload_time)
   frames(a, 2000)
   check("six a turn, then it waits", #M.mines == 6 and s.ammo == 0, #M.mines)
   local aims = 0
@@ -202,7 +206,23 @@ do
   check("the aim sound plays at most once per 180 frames", aims >= 1 and aims <= 2200 // 180 + 1, aims)
   check("the setup sound as it plants", a.sounds[1] == "sounds/pyro_turrets/turret_setup.wav")
   start_turn(M.worms[2])
-  check("the next turn reloads it", s.ammo == 6 and s.reload_time == 20)
+  check("the next turn reloads it", s.ammo == 6 and s.reload_time == 400)
+end
+
+print("PyroMan's turrets: Health, Ammo per turn, Fire rate and Fire increase are options")
+do
+  local t, a, s = planted("mine_turret")
+  local options = { health = 80, ammo = 3, fire_rate = 800, fire_increase_pct = 50 }
+  require("weapons/mine_turret").configure({ option = function(key) return assert(options[key], key) end })
+  enemy(150)
+  start_turn(M.worms[2])
+  check("its ammo and fire rate", s.ammo == 3 and s.reload_time == 800, s.reload_time)
+  until_shot(a, M.mines)
+  check("800 ms to the next shot, then 50% longer", s.reload == 800 and s.reload_time == 1200, s.reload_time)
+  frames(a, 2000)
+  check("three a turn", #M.mines == 3, #M.mines)
+  t.place({ worm = M.worms[1] })
+  check("a turret placed after takes its health", t.state[M.actors[#M.actors].id].health == 80)
 end
 
 print("PyroMan's turrets: land in the arc keeps it from firing")

@@ -9,8 +9,9 @@
 -- reloaded, it traces that arc with a 3-pixel circle against the land; when
 -- blocked it keeps the worm (65%) with another flight time, or drops it.
 -- Otherwise it fires its weapon's `shoot` at the solved speed plus a random
--- 0 to 63/96. Flight times cycle (+10, x1.1, back to 16 past 100); the reload
--- grows x1.12 a shot from 20, and ammo is per turn. Angles are PX's: radians
+-- 0 to 63/96. Flight times cycle (+10, x1.1, back to 16 past 100); the time
+-- between shots starts at `fire_rate_ms` (PX's 20 frames) and grows by
+-- `fire_increase_pct` a shot (PX's x1.12), and ammo is per turn. Angles are PX's: radians
 -- from straight up, toward the side it faces (`dir`).
 --
 -- Differences: PX's turret is an oil drum's shape dropped 50 pixels above
@@ -54,6 +55,8 @@ pyro.feet = mask.build(rows, 2 * R, -R, R, 0)
 -- and the aiming reticle, all in front of the worms (13).
 local Z_AMMO, Z_HEAD, Z_BASE = 0xA0000, 0xB0000, 0xC0000
 
+local FRAME_MS = 20 -- WA's 50 frames a second
+
 -- PX tints by the team's colour, each channel at least 128: the sentries'
 -- colours (red to cyan, worm.alliance + 1), so lifted.
 local TINTS = { 0xFF8080, 0x8080FF, 0x80FF80, 0xE6E680, 0xE680E6, 0x80E6E6 }
@@ -65,7 +68,8 @@ local BASE = {
   thinking = 15,      -- frames between finding a worm and aiming
   min_px = 40, sensor_px = 350, lost_px = 450,
   speed = 0.08,       -- radians a frame the head turns
-  reload_first = 20, reload_step = 1.12,
+  fire_rate_ms = 400,     -- between its first two shots a turn (PX's 20 frames)
+  fire_increase_pct = 12, -- how much longer each next wait is
   aim_sound_gap = 180,
   health = 50, explode_damage = 50,
 }
@@ -187,7 +191,7 @@ end
 
 local function think(t, a, s)
   note_motion(s)
-  if s.reload > 0 then s.reload = s.reload - 1 end
+  if s.reload > 0 then s.reload = math.max(0, s.reload - FRAME_MS) end
   local target = s.tid and worm_by_id(s.tid)
   if s.tid and not target then s.tid = nil end
   -- The reticle glides toward the worm it fired at, 4 pixels a frame.
@@ -208,7 +212,7 @@ local function think(t, a, s)
     return
   end
   if s.wait > 0 then s.wait = s.wait - 1; return end
-  if not aim(t, a, s, target) or s.reload ~= 0 then return end
+  if not aim(t, a, s, target) or s.reload > 0 then return end
   if blocked(t, a, s) then
     if wa.random(0, 99) < 65 then
       next_flight(s)
@@ -229,7 +233,8 @@ local function think(t, a, s)
   if t.shoot(t, a, s, shot) then
     s.draw_aim = true
     s.reload = s.reload_time
-    s.reload_time = math.floor(s.reload_time * t.reload_step)
+    -- PX's int(reloadTime * 1.12) frames: the increase in whole frames.
+    s.reload_time = s.reload_time + s.reload_time * t.fire_increase_pct // 100 // FRAME_MS * FRAME_MS
     s.ammo = s.ammo - 1
     if s.aim_sound <= 0 then
       a:sound(AIM_SOUND)
@@ -244,14 +249,14 @@ end
 local function init(t, a, s)
   local cx, cy = centre(a)
   s.ammo, s.ta, s.dir, s.want, s.power = 0, 1.57, 1, 1.57, 0
-  s.reload, s.reload_time, s.flight, s.wait = 0, 30, 32, 0
+  s.reload, s.reload_time, s.flight, s.wait = 0, t.fire_rate_ms, 32, 0
   s.aim_sound, s.draw_aim, s.aim_x, s.aim_y = 0, false, cx, cy
   s.lrx, s.lry = 0, 0
 end
 
 local function turn_begin(t, s)
   s.draw_aim, s.aim_x, s.aim_y = false, s.x, s.y - R
-  s.reload_time = t.reload_first
+  s.reload_time = t.fire_rate_ms
 end
 
 -- PX ignores hits from its own side's arrows (the Auto Ballista's). By
@@ -297,6 +302,13 @@ local function draw(t, s)
   local py = cy - t.tower_offset
   quad(pyro.SHEET, cx, py, frame, rot, head, Z_HEAD)
   health_label.draw(s.health, s.max_health, cx, py - 10, Z_AMMO - 1)
+end
+
+-- A turret's component options: Health, Ammo per turn, Fire rate (ms) and
+-- Fire increase (%), as `t` reads them at the next placing and the next turn.
+function pyro.configure(t, ctx)
+  t.health, t.ammo = ctx.option("health"), ctx.option("ammo")
+  t.fire_rate_ms, t.fire_increase_pct = ctx.option("fire_rate"), ctx.option("fire_increase_pct")
 end
 
 -- `cfg`: `kind`, `weapon`, `frames` (pyro.FRAMES'), `shoot(t, a, s, shot)`
