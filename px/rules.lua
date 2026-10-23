@@ -38,8 +38,10 @@ local settings = {}
 -- `header`: a table header naming the weapon (the profile's); else the
 -- weapon is the last `id =` seen (mod.toml's components).
 -- Highlander's weapons: mod.toml's components that enter through
--- components/weapon.lua (the others, reddaz's, have their own files).
-local highlander, own_options = {}, {}
+-- components/weapon.lua (the others, reddaz's, have their own files) and
+-- that Highlander's profile places (not PyroMan's turrets: the bundle's,
+-- not Highlander's).
+local highlander, own_options, in_profile = {}, {}, {}
 local function read(path, header)
   local text = path == "profiles/Highlander.toml" and HIGHLANDER_PROFILE
   if not text then
@@ -65,6 +67,8 @@ local function read(path, header)
         own_options[id][option_key] = tonumber(default)
       end
     end
+    local placed_id = path == "profiles/Highlander.toml" and line:match('^"([%w_%.]+)" = { row = ')
+    if placed_id then in_profile[placed_id] = true end
     local pool = line:match('^pool = "([%w ]+)"')
     local cavern = line:match("^cavern = (%a+)")
     if id and (pool or cavern) then
@@ -76,6 +80,9 @@ local function read(path, header)
 end
 read("mod.toml")
 read("profiles/Highlander.toml", '^%[weapon_options%."hl%.rules"%."([%w_%.]+)"%]')
+for id in pairs(highlander) do
+  if not in_profile[id] then highlander[id] = nil end
+end
 
 -- The match's weapons in slot order: WA's own with a pool on their own
 -- slots, then Highlander's past WA's 70, in id order.

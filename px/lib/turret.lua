@@ -4,7 +4,10 @@
 -- picks the nearest moving enemy in sight beyond its barrel sweep, turns and fires, reloads
 -- each turn, and is disabled for the turn by positive damage and explodes at 0
 -- health. What it aims at and what it fires are the weapon's: `targets` (by
--- default the worms) and `fire(t, a, s, target)`.
+-- default the worms) and `fire(t, a, s, target)`. Another turret keeps the
+-- body (planting, passage, health, capture, the death blast) and brings its
+-- own brain and look: `think`, `draw`, `feet` and the hooks below (PyroMan's,
+-- lib/pyro_turret.lua).
 --
 -- From the standalone sentry_gun port (mods/examples/sentry_gun_old), with
 -- its numbers as the defaults. Angles: 0 down, 90 right, 180 up, 270 left.
@@ -91,6 +94,11 @@ local DEFAULTS = {
   contact_worm = 0.5,    -- fraction of incoming worm velocity transferred
   contact_projectile = 0.25, -- PX Javelin transfers a quarter of its velocity
   boom = { damage = 50, id = 100, below = false },
+  boom_up = 20 - feet.burial, -- pixels from the anchor up to the death blast
+  disable_on_damage = true, -- positive damage disables the sentry for the turn
+  hit_by = "all",       -- what hits it once planted (`body.hit_by`)
+  -- and while its planter passes: no worm contact
+  passage_hit_by = { arrows = true, melee = true, fire = true, dragon_ball = true, blasts = true },
   -- Occlusion band for the head: in front of terrain (0x180000), so the
   -- landscape never buries it.
   head_depth = wa.depth.FRONT,
@@ -161,6 +169,13 @@ end
 -- { key, x, y, alliance, moving }, in an order the same on every machine.
 -- Returns `t`, whose `place(fire_ev)` drops a turret for the firing worm.
 --
+-- A turret with its own brain passes `think(t, a, s)` (each planted frame,
+-- instead of the sentry's sweep, aim and fire), `draw(t, s)` (each rendered
+-- frame, instead of the sentry's sheets), `feet` (its footprint, from
+-- lib/sentry_mask's `build`), and as it needs them `init(t, a, s)` (once
+-- placed), `turn_begin(t, s)` (after each turn's reload) and
+-- `ignore_hit(t, a, s, hit)` (true: the hit does nothing).
+--
 -- The head: `gun`, team-tinted, its frames the firing poses; with a
 -- `barrel`, the barrel is its own untinted layer behind it, its frames the
 -- poses, and the gun's two frames are its art and its mirror image, for a
@@ -170,6 +185,8 @@ function turret.new(cfg)
   local t = {}
   for k, v in pairs(DEFAULTS) do t[k] = v end
   for k, v in pairs(cfg) do t[k] = v end
+  local feet = t.feet or feet
+  t.feet = feet
   local state = {}
   -- The colour taking its turn: its turrets hold fire. Alliance, not team:
   -- it is WA's colour index (0 red .. 5 cyan), shared by allied teams.
@@ -384,7 +401,7 @@ function turret.new(cfg)
       local owner = t.owner(a, s)
       if owner ~= a then
         local e = wa.actors.spawn({ sprite = false, owner = owner,
-          x = a.x, y = a.y + feet.burial - 20, gravity = false, collide = false,
+          x = a.x, y = a.y - t.boom_up, gravity = false, collide = false,
           explode = { damage = t.boom.damage, id = t.boom.id, now = true } })
         e:despawn()
       else
@@ -397,10 +414,11 @@ function turret.new(cfg)
   local function hit(a, ev)
     local s = state[a.id]
     if not s then return end
+    if t.ignore_hit and t.ignore_hit(t, a, s, ev) then return end
     local damage = math.max(0, ev.damage or 0)
     if damage > 0 then
       s.health = s.health - damage
-      disable(a, s)
+      if t.disable_on_damage then disable(a, s) end
       if s.health <= 0 then destroy(a, s, true); return end
     end
     t.push(a, s, ev.vx or 0, ev.vy or 0)
@@ -450,7 +468,7 @@ function turret.new(cfg)
       if not s.landed_once then
         s.landed_once = true
         s.phase = s.planter and 2 or 3
-        a.hit_by = s.phase == 3 and "all" or { arrows = true, melee = true, fire = true, dragon_ball = true, blasts = true }
+        a.hit_by = s.phase == 3 and t.hit_by or t.passage_hit_by
       end
       wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
         t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
@@ -466,6 +484,9 @@ function turret.new(cfg)
     if a:in_water() then destroy(a, s, false); return false end
     return true
   end
+
+  local brain_think = think
+  if cfg.think then brain_think = function(a, s) cfg.think(t, a, s) end end
 
   local function brain(a)
     local s = state[a.id]
@@ -490,14 +511,14 @@ function turret.new(cfg)
       -- clear, including a fast fall past the planter in this tick.
       if not planter or (not feet.overlaps_worm(s.x, s.y, planter)
         and not feet.overlaps_worm(previous_x, previous_y, planter)) then
-        s.phase, a.hit_by = 3, "all"
+        s.phase, a.hit_by = 3, t.hit_by
         wa.log(string.format("Sentry passage ended %s id=%d planter=%d (%s)",
           t.kind, a.id, s.planter_id, planter and "clear" or "gone"))
         s.planter, s.planter_id = nil, nil
       end
     end
     s.active = not s.disabled and s.ammo > 0
-    if s.planted then think(a, s) end
+    if s.planted then brain_think(a, s) end
   end
 
   local function status(s)
@@ -526,27 +547,30 @@ function turret.new(cfg)
     wa.draw.quad({ sprite = path, points = points, frame = frame,
       color = 0xFF000000 | rgb, depth = depth, blend = blend or "alpha" })
   end
+  local function draw_sentry(s)
+    sheet(t.art.base, s.x + 1, s.y - 9, 0, 0, 0xFFFFFF, wa.depth.BEHIND_TERRAIN, "alpha", 64)
+    local x, y, angle = s.x, s.y - t.muzzle_up, (90 - s.angle) % 360
+    local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
+    if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
+    local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
+    sheet(t.art.gun, x, y, look, angle, t.tints[s.alliance + 1] or t.tints[1], t.head_depth)
+    if t.art.flare then
+      sheet(t.art.flare, x, y, pose == 1 and 1 or 0, angle, 0xFFFFFF, t.head_depth, "add")
+    end
+    local rgb, flash = status(s)
+    if flash and (s.tick % 30) >= 15 then rgb = (rgb & 0xFEFEFE) >> 1 end
+    local r = math.rad(angle)
+    local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
+    sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
+    health_label.draw(s.health, s.max_health, x,
+      y - label_clearance + 20, t.head_depth - 2)
+  end
   if wa.on.draw then
     wa.on.draw(function()
       for _, id in ipairs(wa.sorted(state)) do
         local s = state[id]
         if s.body.id == id then
-          sheet(t.art.base, s.x + 1, s.y - 9, 0, 0, 0xFFFFFF, wa.depth.BEHIND_TERRAIN, "alpha", 64)
-          local x, y, angle = s.x, s.y - t.muzzle_up, (90 - s.angle) % 360
-          local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
-          if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
-          local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
-          sheet(t.art.gun, x, y, look, angle, t.tints[s.alliance + 1] or t.tints[1], t.head_depth)
-          if t.art.flare then
-            sheet(t.art.flare, x, y, pose == 1 and 1 or 0, angle, 0xFFFFFF, t.head_depth, "add")
-          end
-          local rgb, flash = status(s)
-          if flash and (s.tick % 30) >= 15 then rgb = (rgb & 0xFEFEFE) >> 1 end
-          local r = math.rad(angle)
-          local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
-          sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
-          health_label.draw(s.health, s.max_health, x,
-            y - label_clearance + 20, t.head_depth - 2)
+          if cfg.draw then cfg.draw(t, s) else draw_sentry(s) end
         end
       end
     end)
@@ -577,7 +601,7 @@ function turret.new(cfg)
       for _, id in ipairs(wa.sorted(other_t.state)) do
         local other = other_t.state[id]
         if (other.landed_once or other.phase == 3) and other.body.id == id then
-          obstacles[#obstacles + 1] = { x = other.body.x, y = other.body.y }
+          obstacles[#obstacles + 1] = { x = other.body.x, y = other.body.y, feet = other_t.feet }
         end
       end
     end
@@ -596,7 +620,7 @@ function turret.new(cfg)
         local ty = y + radius * wa.math.sin(angle)
         local blocked = false
         for _, other in ipairs(obstacles) do
-          if feet.intersects(tx, ty, other.x, other.y) then blocked = true; break end
+          if feet.intersects(tx, ty, other.x, other.y, other.feet) then blocked = true; break end
         end
         if not blocked and feet.clear(tx, ty, worms, planter_id, 0, solid) then
           local hit = wa.land.trace(wx, wy - 8, tx, ty - feet.top / 2)
@@ -645,6 +669,7 @@ function turret.new(cfg)
     }
     state[body.id] = s
     s.body = body
+    if t.init then t.init(t, body, s) end
     wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) passage=on",
       t.kind, body.id, worm.id, x, y))
     return body, s
@@ -672,6 +697,7 @@ function turret.new(cfg)
     for id, s in pairs(state) do
       if s.body.id ~= id then state[id] = nil else
         s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}
+        if t.turn_begin then t.turn_begin(t, s) end
       end
     end
   end, { msgs = { wa.msg.START_TURN } })

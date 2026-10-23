@@ -1,6 +1,7 @@
 -- Weapon IDs and their owning modules. No weapon settings or match state.
 return {
   ["px.3_girder_pack"] = "weapons/3_girder_pack",
+  ["px.auto_ballista"] = "weapons/auto_ballista",
   ["px.banana_express"] = "weapons/banana_express",
   ["px.blaster_worm"] = "weapons/blaster_worm",
   ["px.blowtorch"] = "weapons/blowtorch",
@@ -16,6 +17,7 @@ return {
   ["px.electromagnet"] = "weapons/electromagnet",
   ["px.ferret"] = "weapons/ferret",
   ["px.fire_jump"] = "weapons/fire_jump",
+  ["px.flame_turret"] = "weapons/flame_turret",
   ["px.ghost_sheep"] = "weapons/ghost_sheep",
   ["px.gravity_control"] = "weapons/gravity_control",
   ["px.gravler"] = "weapons/gravler",
@@ -31,10 +33,12 @@ return {
   ["px.kamikaze_rocket"] = "weapons/kamikaze_rocket",
   ["px.laser_gun"] = "weapons/laser_gun",
   ["px.lightning_strike"] = "weapons/lightning_strike",
+  ["px.mine_turret"] = "weapons/mine_turret",
   ["px.mole_bomb"] = "weapons/mole_bomb",
   ["px.mortar_strike"] = "weapons/mortar_strike",
   ["px.nuke_rocket"] = "weapons/nuke_rocket",
   ["px.old_woman_launcher"] = "weapons/old_woman_launcher",
+  ["px.petrol_turret"] = "weapons/petrol_turret",
   ["px.pigeon_strike"] = "weapons/pigeon_strike",
   ["px.pogo_sheep"] = "weapons/pogo_sheep",
   ["px.portal_gun"] = "weapons/portal_gun",

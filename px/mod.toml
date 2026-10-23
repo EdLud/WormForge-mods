@@ -493,6 +493,21 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/pyro_turrets/turrets.png"]
+frames = 28
+fps = 1
+play = "loop"
+
+[sprites."sprites/pyro_turrets/ammo_petrol.png"]
+frames = 1
+fps = 1
+play = "loop"
+
+[sprites."sprites/pyro_turrets/ammo_flame.png"]
+frames = 1
+fps = 1
+play = "loop"
+
 [sprites."sprites/sentry_gun/casing.png"]
 fps = 15
 play = "loop"
@@ -1113,6 +1128,118 @@ default_position = { row = "F4", column = 5 }
 
 [components.suggests."hl.rules"]
 pool = "second"
+
+[[components]]
+id = "px.petrol_turret"
+type = "weapon"
+name = "Petrol Turret"
+authors = ["PyroMan"]
+description = "A turret that lobs Petrol Bombs at moving enemies, over the land in their way."
+entry = "components/weapon.lua"
+icon = "sprites/pyro_turrets/petrol_icon.png"
+default_position = { row = "F4", column = 6 }
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 50
+label = "Health"
+description = "Damage the turret takes before it’s destroyed."
+
+[[components.options]]
+key = "ammo"
+type = "int"
+min = 1
+max = 100
+default = 6
+label = "Ammo per turn"
+description = "Shots the turret fires each turn."
+
+[[components]]
+id = "px.flame_turret"
+type = "weapon"
+name = "Flame Turret"
+authors = ["PyroMan"]
+description = "A turret that lobs fire at moving enemies, over the land in their way."
+entry = "components/weapon.lua"
+icon = "sprites/pyro_turrets/flame_icon.png"
+default_position = { row = "F4", column = 7 }
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 50
+label = "Health"
+description = "Damage the turret takes before it’s destroyed."
+
+[[components.options]]
+key = "ammo"
+type = "int"
+min = 1
+max = 100
+default = 18
+label = "Ammo per turn"
+description = "Shots the turret fires each turn."
+
+[[components]]
+id = "px.mine_turret"
+type = "weapon"
+name = "Mine Turret"
+authors = ["PyroMan"]
+description = "A turret that lobs armed mines at moving enemies, over the land in their way."
+entry = "components/weapon.lua"
+icon = "sprites/pyro_turrets/mine_icon.png"
+default_position = { row = "F4", column = 8 }
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 50
+label = "Health"
+description = "Damage the turret takes before it’s destroyed."
+
+[[components.options]]
+key = "ammo"
+type = "int"
+min = 1
+max = 100
+default = 6
+label = "Ammo per turn"
+description = "Shots the turret fires each turn."
+
+[[components]]
+id = "px.auto_ballista"
+type = "weapon"
+name = "Auto Ballista"
+authors = ["PyroMan"]
+description = "A turret that shoots arrows at moving enemies."
+entry = "components/weapon.lua"
+icon = "sprites/pyro_turrets/ballista_icon.png"
+default_position = { row = "F4", column = 9 }
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 1
+max = 500
+default = 50
+label = "Health"
+description = "Damage the turret takes before it’s destroyed."
+
+[[components.options]]
+key = "ammo"
+type = "int"
+min = 1
+max = 100
+default = 8
+label = "Ammo per turn"
+description = "Shots the turret fires each turn."
 
 [[components]]
 id = "px.nuke_rocket"

@@ -231,6 +231,38 @@ frames put in WA's airmisl order (`sprites/homing_air_strike/flight.png`),
 homing or not: the record's homing frame names the bomb's sprite, and the
 engine moves it to the pack sheet with the bomb.
 
+### PyroMan's turrets
+
+`px.petrol_turret`, `px.flame_turret`, `px.mine_turret` and
+`px.auto_ballista`, PyroMan's, from Project X's `p_turrets` library (the
+28.09.2026 build), each a component of its own, not in Highlander's pools.
+They place as the Sentry Gun does and share its body (`lib/turret.lua`:
+planting, the planter's passage, capture, the death blast), on an oil drum's
+radius-9 circle, PX's turret shape. Their brain is PyroMan's
+(`lib/pyro_turret.lua`, from `turretbase.txt`): while the turn clock runs, a
+turret takes a moving enemy worm 40 to 350 pixels from its head (each with a
+30% chance a frame, from WA's RNG), waits 15 frames, turns its head toward a
+lobbed shot (PX's ballistic solve for a flight time that cycles from 32
+frames), traces that arc against the land with a 3-pixel circle and fires
+only over it, at the solved speed plus a random 0 to 63/96. Its reload grows
+x1.12 a shot from 20 frames; ammo is per turn, and a turret placed this turn
+waits for the next. Damage never disables it; at 0 health it explodes.
+
+| Turret | Fires | Ammo per turn | Its blast |
+|---|---|---|---|
+| Petrol Turret | WA's Petrol Bomb (`wa.weapons.launch`), blast 15 | 6 | 50 |
+| Flame Turret | WA's fire (`wa.fire.spawn`): PX's `CFireDesc`, 1.5 s, no spreading, hits for 5, thrown four times as fast | 18 | 45 |
+| Mine Turret | WA's mine (`wa.mines.spawn`): armed, fuse 400 ms, damage 50, radius 48, may be a dud | 6 | 50 |
+| Auto Ballista | WA's arrow (`wa.arrows.spawn`): damage 10, a quarter of gravity, aimed a frame per 10 pixels; arrows pass through it and its side's never hurt it | 8 | 50 |
+
+Each has the options Health (50) and Ammo per turn. The art is PyroMan's
+sheet (`sprites/pyro_turrets/turrets.png`, its 14 frames and their mirror
+images for a head facing left), tinted in the owner's colour and the head
+darker as it is hurt, with the sentries' health digits; the Petrol and Flame
+Turrets show WA's bottle and flame in front, as PX draws them. Sounds: PX's
+`turret_setup.wav` as it plants, `turret_aim.wav` as it fires (at most every
+180 frames), WA's own launch (44) and flamethrower (22) as PX plays them.
+
 ### Double Jump
 
 `px.double_jump`, its own component (`weapons/double_jump.lua`, PX's

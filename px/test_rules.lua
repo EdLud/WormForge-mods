@@ -5368,8 +5368,10 @@ do
     end
     local found = 0
     -- The ports with files of their own (reddaz's) register their sounds
-    -- in them, outside Highlander's entries.
-    local OWN_FILES = { "sounds/attack_helicopter/", "sounds/bunker_buster/", "sounds/ninja_star/" }
+    -- in them, outside Highlander's entries, as PyroMan's turrets do theirs
+    -- (lib/pyro_turret.lua, test_turrets.lua).
+    local OWN_FILES = { "sounds/attack_helicopter/", "sounds/bunker_buster/", "sounds/ninja_star/",
+      "sounds/pyro_turrets/" }
     local function own(rel)
       for _, dir in ipairs(OWN_FILES) do
         if rel:sub(1, #dir) == dir then return true end
