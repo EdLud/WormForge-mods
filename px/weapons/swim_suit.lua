@@ -115,6 +115,13 @@ function weapon.setup()
     worm.collision_mask = worm.collision_mask | SWIM_WATER
   end
 
+  -- PX's icy oil drum takes a suited worm's Swim Suit off before it freezes
+  -- it (icybarrel_logic.txt fires the Swim Suit, which toggles it).
+  shared.swim_suit_off = function(worm)
+    local s = swimmers[worm.id]
+    if s and s.suit then suit_off(worm, s, false) end
+  end
+
   local function swim_blocked(x, y)
     return wa.land.solid(x - SWIM_HALF_W, y) or wa.land.solid(x + SWIM_HALF_W, y)
       or wa.land.solid(x, y - SWIM_HALF_H) or wa.land.solid(x, y + SWIM_HALF_H)

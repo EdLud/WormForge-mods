@@ -149,6 +149,7 @@ function weapon.setup()
   local nr_climbing = {} -- nuke id -> { x, y, vx, vy }, while it climbs
   local nr_pending = {}  -- nukes to launch once the rocket's blast is over
   local nr_shooter       -- the worm that fired (PX's ClWT / ClWN)
+  local nr_owner = {}    -- missile id -> its worm, for a rocket nobody fired (an oil drum's)
   local nr_expect        -- fired: the next mine-slot missile is the rocket
 
   local function near(ax, ay, bx, by)
@@ -194,8 +195,9 @@ function weapon.setup()
         nr_speed[m.id] = { m.vx, m.vy }
         local n = (nr_first[m.id] or 0) + 1
         nr_first[m.id] = n
-        if n % 10 == 0 and nr_shooter then
-          wa.sound.play(nr_shooter, NR_HISS)
+        local owner = nr_owner[m.id] or nr_shooter
+        if n % 10 == 0 and owner then
+          wa.sound.play(owner, NR_HISS)
         end
       end
       return
@@ -210,6 +212,18 @@ function weapon.setup()
     end
   end)
 
+  -- PX's nuke oil drum (oildrums.txt): a first rocket, as the weapon's own
+  -- shot but fired for `owner` from (x, y), climbing into a nuke when its
+  -- fuse runs out. The weapon's record is PX's first rocket. Its id, nil
+  -- when WA made none.
+  shared.nuke_rocket_first = function(owner, x, y, vx, vy)
+    local id = wa.weapons.launch({ weapon = "px.nuke_rocket", owner = owner, x = x, y = y, vx = vx, vy = vy })
+    if id then
+      nr_first[id], nr_owner[id] = 0, owner
+    end
+    return id
+  end
+
   shared.nuke_rocket_explode = function(ev)
     local id = ev.missile
     if not id then
@@ -217,7 +231,8 @@ function weapon.setup()
     end
     if nr_nuke[id] then
       nr_nuke[id], nr_climbing[id] = nil, nil
-      local owner = nr_shooter
+      local owner = nr_owner[id] or nr_shooter
+      nr_owner[id] = nil
       if owner then
         wa.sound.play(owner, 85)
         wa.sound.play(owner, 70) -- "louder please :D"
@@ -233,11 +248,13 @@ function weapon.setup()
     if nr_first[id] then
       local speed = nr_speed[id] or { 0, 0 }
       nr_first[id], nr_speed[id] = nil, nil
-      if nr_shooter then
-        wa.sound.play(nr_shooter, "sounds/nuke_rocket_launch.wav")
+      local owner = nr_owner[id] or nr_shooter
+      nr_owner[id] = nil
+      if owner then
+        wa.sound.play(owner, "sounds/nuke_rocket_launch.wav")
       end
       -- Launched after the blast, as PX's comes after super.
-      nr_pending[#nr_pending + 1] = { x = ev.x, y = ev.y, vx = speed[1], vy = speed[2] }
+      nr_pending[#nr_pending + 1] = { x = ev.x, y = ev.y, vx = speed[1], vy = speed[2], owner = owner }
     end
   end
 
@@ -245,8 +262,8 @@ function weapon.setup()
     if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.nuke_rocket" then
       nr_shooter, nr_expect = worm, true
     elseif msg == wa.msg.FRAME_FINISH and #nr_pending > 0 then
-      local owner = nr_shooter or worm
       for _, p in ipairs(nr_pending) do
+        local owner = p.owner or nr_shooter or worm
         local id = wa.weapons.launch({
           weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
           missile = {
@@ -257,6 +274,7 @@ function weapon.setup()
           clusters = NUKE.clusters,
         })
         nr_nuke[id] = 0
+        nr_owner[id] = owner
       end
       nr_pending = {}
     end

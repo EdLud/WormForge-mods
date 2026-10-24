@@ -222,7 +222,8 @@ function weapon.setup()
   end
 
   shared.electric_grenade_explode = function(ev)
-    local arc = { x = ev.x, y = ev.y, dx = 0, dy = -1, life = 16, pause = 0,
+    -- `ev.life`: frames the arc searches, PX's TazerLifeTime (the drum's 30).
+    local arc = { x = ev.x, y = ev.y, dx = 0, dy = -1, life = ev.life or 16, pause = 0,
       points = { { ev.x, ev.y } }, ignore = {}, pending = {}, explosion = 0,
       burst_x = ev.x, burst_y = ev.y, sound_age = 0 }
     if thrower then arc.ignore[target_key(thrower)] = true end

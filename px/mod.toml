@@ -854,6 +854,14 @@ label = "Dealt on cavern maps"
 description = "Off for weapons that come from the sky."
 
 [[components]]
+id = "px.oil_drums"
+type = "feature"
+name = "Project X oil drums"
+description = "Every oil drum on the map is one of Project X's: explosive, napalm, nuke, cluster, icy, electric, mine, or on cavern maps teleport, each drawn as its kind and bursting into it. The nuke drum needs the Nuke Rocket placed."
+entry = "components/oil_drums.lua"
+before_weapons = true
+
+[[components]]
 id = "px.double_bazooka"
 type = "weapon"
 name = "Double Bazooka"

@@ -1,6 +1,6 @@
 # WormForge profile "Highlander edit": made in the mod loader; safe to edit by hand.
 description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
-features = ["core.utilities", "hl.rules"]
+features = ["core.utilities", "hl.rules", "px.oil_drums"]
 
 [options."core.utilities"]
 agility = true

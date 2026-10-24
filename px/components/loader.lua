@@ -4,6 +4,15 @@ local shared = require("lib/shared")
 local index = require("weapons/index")
 local loader = {}
 local loaded, placed_ids = false, nil
+-- Modules an add-on needs set up whether or not their weapon is placed.
+local also = {}
+
+-- An add-on that installs before the weapons (before_weapons) asks for a
+-- module's setup here, before anything loads.
+function loader.also(path)
+  assert(not loaded, "loader.also(" .. path .. "): the modules are already set up")
+  also[#also + 1] = path
+end
 
 local ORDER = {
   "lib/holds",
@@ -86,6 +95,7 @@ function loader.load(ids)
   for _, id in ipairs(ids) do
     if index[id] then need(index[id]) end
   end
+  for _, path in ipairs(also) do need(path) end
   for _, path in ipairs(ORDER) do
     if want[path] then
       local module = require(path)
