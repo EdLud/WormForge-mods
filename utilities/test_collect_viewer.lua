@@ -1,5 +1,5 @@
--- Run from the checkout: lua mods/examples/utilities/test_collect_viewer.lua
-local path = 'mods/examples/utilities/features/collect_viewer.lua'
+-- Run from the checkout: lua mods/utilities/test_collect_viewer.lua
+local path = 'mods/utilities/features/collect_viewer.lua'
 local input = assert(io.open(path)):read('*a')
 local function near(a, b) assert(math.abs(a-b) < 1e-6, a .. ' ~= ' .. b) end
 local function setup(source)

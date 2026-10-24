@@ -12,10 +12,12 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.16.4"
+version = "0.17.0"
 author = "Project X authors"
 api_version = 4
 format_version = 2
+# Kill the King was its own pack until 0.17.0: installing this one retires it.
+replaces = ["example.kill_the_king"]
 dependencies = ["wf.sdk"]
 
 # Joined frame folders retain their 15 fps looping playback.
@@ -852,6 +854,13 @@ type = "bool"
 default = true
 label = "Dealt on cavern maps"
 description = "Off for weapons that come from the sky."
+
+[[components]]
+id = "ktk.control"
+type = "feature"
+name = "Kill the King"
+description = "Project X's Kill the King (CKtkControl): the attackers must destroy the defenders' king before the timer runs out."
+entry = "components/kill_the_king.lua"
 
 [[components]]
 id = "px.oil_drums"

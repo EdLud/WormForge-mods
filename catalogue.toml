@@ -3,14 +3,7 @@ schema = 1
 packs = [
   "sdk",
   "px",
-  "examples/utilities",
-  "examples/fog_demo",
-  "examples/cursor_suite",
-  "examples/component_demo",
-  "examples/gif_donkey",
-  "examples/pooz",
-  "examples/wormcraft",
-  "examples/KillTheKing",
+  "utilities",
 ]
 
 # Exact source paths: a profile is published only when listed here.
@@ -18,5 +11,5 @@ profiles = [
   "px/profiles/Full Wormforage.toml",
   "px/profiles/Funny.toml",
   "px/profiles/Highlander Orange 0.1.toml",
-  "examples/cursor_suite/profiles/0.9.3 demo profile.toml",
+  "utilities/profiles/0.9.3 demo profile.toml",
 ]

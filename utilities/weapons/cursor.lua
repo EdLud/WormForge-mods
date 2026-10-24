@@ -46,7 +46,7 @@ return {
 
     cursor.install(ctx, {
       name = "Cursor",
-      icon = "sprites/icon.png",
+      icon = "sprites/cursor.png",
       start = function(a, worm)
         mode = remembered[worm.id] or 1
         plus_held = wa.world.keys().plus_key or false

@@ -1,5 +1,5 @@
 -- Run from the engine checkout or the standalone mods repository.
-local root = (arg[0]:match("^(.*[/\\])") or "") .. "../../examples/cursor_suite/"
+local root = (arg[0]:match("^(.*[/\\])") or "") .. "../../utilities/"
 package.path = root .. "?.lua;" .. package.path
 local messages, hooks, keys = {}, {}, {}
 local selected, actor, frame, in_simulation = nil, nil, 0, false
@@ -45,7 +45,7 @@ local function tick(n)
     if actor and not actor.dead then simulation(actor.on,actor) end
   end
 end
-local weapon=assert(loadfile(root .. "weapon.lua"))()
+local weapon=assert(loadfile(root .. "weapons/cursor.lua"))()
 weapon.install({id="cursors.cursor"})
 local worm={id=17,weapon="cursors.cursor",turn=true,hp=100,alliance=4}
 simulation(selected.on_select.on,{worm=worm,x=10,y=20})

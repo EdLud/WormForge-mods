@@ -1,5 +1,5 @@
--- From the repository root: lua mods/examples/utilities/test_instant_death.lua
-local root = UTILITIES_ROOT or "mods/examples/utilities/"
+-- From the repository root: lua mods/utilities/test_instant_death.lua
+local root = UTILITIES_ROOT or "mods/utilities/"
 for _, instant in ipairs({ false, true }) do
   for _, live_hp in ipairs({ false, true }) do
     local frames, hurts, loaded = {}, {}, {}

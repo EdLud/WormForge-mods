@@ -1,5 +1,5 @@
--- Run from the repo root: lua mods/examples/utilities/test_auto_use.lua
-local definition = dofile((UTILITIES_ROOT or "mods/examples/utilities/") .. "weapons/plus_n.lua")
+-- Run from the repo root: lua mods/utilities/test_auto_use.lua
+local definition = dofile((UTILITIES_ROOT or "mods/utilities/") .. "weapons/plus_n.lua")
 local id = "utilities.plus_ten"
 
 local function setup(policy, ammo, options)

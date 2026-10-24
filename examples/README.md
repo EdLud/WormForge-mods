@@ -4,21 +4,13 @@ your own profile. Nothing in a bundle runs until a profile selects it, and a
 weapon goes wherever the profile places it: its code never names a slot, it
 names weapons by id (`labs.cut_lab`, `stock.bazooka`).
 
-Project X's weapons, and Highlander's rules as an add-on, are not examples:
-they are the `px.ports` bundle in `mods/px/`.
+None of these ships to players. The packs that do are `mods/px/` (Project X's
+weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
+of war, +N Seconds and the Cursor) and `mods/sdk/`.
 
 - `component_demo` (`example.components`) — the smallest bundle: two weapons
   built on WA's Bazooka and Mortar, and an add-on with a setting. Its README
   walks through the format; `profiles/Demo.toml` places them.
-- `utilities` (`core.utilities`) — one add-on, Utilities, with match settings
-  (gravity %, wind, heal at turn start) and switches for ExTurnSide, Agility,
-  Live HP and the collect viewer.
-- `fog_demo` (`core.fog`) — Fog of war, a profile add-on with declared vision,
-  terrain memory, lighting, spectator and placement settings. Its supplied
-  profile starts with alliance vision and texture memory.
-- `cursor_suite` (`example.cursor_suite`) — one Cursor weapon: press + to
-  cycle Light, Magnet attract/repel, Revive, Freeze and rainbow Fire modes.
-  Magnetic strength is fixed. Includes Cursor, fog-light and PX magnet profiles.
 - `labs` (`example.labs`) — one small weapon per part of the API, each in its
   own folder or file; `profiles/Labs.toml` places them all.
   - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it
@@ -56,8 +48,6 @@ they are the `px.ports` bundle in `mods/px/`.
 - `wormcraft` (`example.wormcraft`) — aimed as WA's Cluster Bomb; the shot
   plays an anime cut-in (speed lines and portrait) with `cutout.mp3`, then
   writes `WormCraft` letter by letter.
-- `KillTheKing` (`example.kill_the_king`) — Project X's Kill the King game
-  mode, as an add-on.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
   - `tools.perf` — the FPS counter (top right: live fps, the 2 s average, and

@@ -106,6 +106,16 @@ On cavern maps PX draws from the first 21 offensive and the first 16 second
 weapons only. That leaves out the Ferret and the strikes, and Reinforcement,
 Crate Strike and Lightning Strike.
 
+## Kill the King
+
+Project X's Kill the King (CKtkControl), the `ktk.control` add-on: the
+attacking team must destroy the defenders' king, a patch of terrain, before
+the attack timer runs out. A king is lost when enough of its solid pixels are
+gone. Kings, teams, the timer and its kind are set at the top of
+`components/kill_the_king.lua`. It was its own pack (`example.kill_the_king`)
+until 0.17.0; installing this pack from the catalogue moves that one to
+`WormForge/Backups/Packs` (`replaces` in `mod.toml`).
+
 ## Ported weapons
 
 ### Ice Arrow

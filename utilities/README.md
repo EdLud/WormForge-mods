@@ -1,9 +1,14 @@
 # Core utilities
 
-A features bundle (`core.utilities`, `format_version = 2`): one feature,
+WormForge's own add-ons and tools (`core.utilities`, `format_version = 2`):
 **Utilities**, with the match settings the lobby scheme doesn't have and some
-players' favourite mods as switches. It changes nothing until a profile
-selects it: tick "Utilities" on the mod loader's Profile tab and set it up
+players' favourite mods as switches; **Fog of war**; the **+N Seconds**
+utility; and the **Cursor** weapon. Fog of war and the Cursor were their own
+packs (`core.fog`, `example.cursor_suite`) until 0.5.0; installing this pack
+from the catalogue moves those to `WormForge/Backups/Packs`, since their
+components are here now (`replaces` in `mod.toml`).
+
+Utilities changes nothing until a profile selects it: tick "Utilities" on the mod loader's Profile tab and set it up
 below the list, or write it by hand in a profile file in `WormForge/Profiles`:
 
 ```toml
@@ -34,7 +39,7 @@ Arrow can freeze its victim normally. Active worms retain WA's ordinary
 health timing; death timing stays with WA for every worm. Nothing forces
 worms to die in mid-flight.
 Run its regression harness from the repository root with
-`lua mods/examples/utilities/test_live_hp.lua`.
+`lua mods/utilities/test_live_hp.lua`.
 
 Instant Death is independent of Live HP. Enable `instant_death = true` in
 the same Utilities options table, or use the **Instant Death** switch in
@@ -42,7 +47,7 @@ the loader. It requires `worm:allow_death()` in the DLL. WA still owns each
 worm's movement and landing, then its normal death animation, explosion and
 grave. The active worm keeps its ordinary turn/death rules. Falls and direct
 HP changes are covered by the next simulation frame too. Run
-`lua mods/examples/utilities/test_instant_death.lua` from the repository root
+`lua mods/utilities/test_instant_death.lua` from the repository root
 to check both switches independently and together.
 
 ## +N Seconds
@@ -88,7 +93,7 @@ retreat_collect = "keep"
 ```
 
 The Lua lives in `weapons/plus_n.lua`; the icon is `sprites/plus_n.png`.
-Run `lua mods/examples/utilities/test_auto_use.lua` to check these rules.
+Run `lua mods/utilities/test_auto_use.lua` to check these rules.
 
 A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
 a utility. The switches are those mods' own code, in `features/`, loaded only
@@ -100,3 +105,64 @@ and in replays: the selection, options included, is frozen with the bundles.
 
 WA rolls a turn's wind after it starts the turn, so the wind is set at the
 first frame after `turn_start` rather than in it.
+
+## Fog of war
+
+`core.fog`, an add-on: wkFOW's renderer with declared vision. Select it in a
+profile to darken what no worm of yours can see; it needs WA's D3D9 shader
+renderer. Its settings: worms' awareness circle and aim cone, terrain shadow
+casting, terrain memory (off, stale, live or premapped), whose vision lights
+the map (your alliance, the active worm or everyone), the same circle and cone
+for animals and projectiles, light after explosions and around crates, the
+whole map for spectators and during placement, and a minimum brightness.
+The Lua lives in `features/fog.lua`; the pack's `[fog]` lets it drive the
+renderer.
+
+## Cursor
+
+One **Cursor** weapon (`cursors.cursor`), with infinite ammo and no turn end
+or teleport on click. Select it, then press **+** (top row or keypad) to cycle:
+
+| Mode | Action |
+|---|---|
+| Light | Cast a 300 px terrain-blocked light, visible to its owner; requires fog for the lighting effect |
+| Magnet attract | Attract magnetic objects within 300 px at fixed strength |
+| Magnet repel | Repel magnetic objects within 300 px at fixed strength |
+| Revive | Click near a linked gravestone to revive its original worm with 100 HP |
+| Freeze | Click near a living worm to apply WA's native freeze |
+| Fire | Hold the left mouse button to spray rainbow petrol flames at 25 flames/second |
+| Hurt | Click near a living worm to deal 10 HP damage through `worm:hurt(10)` |
+
+A native top banner names the mode for the worm's coalition when selected,
+reselected or changed. Holding + advances once; release and press
+again to advance another mode. Each worm starts in Light and remembers its
+own mode across selections and turns. Number keys do not change magnet power.
+Switching modes removes the previous light or magnetic field immediately.
+Switching weapons, dying or ending the turn removes the cursor and its effect;
+a remembered selection restores it next turn.
+
+Revive, Freeze and Hurt choose the nearest eligible target within 24 px. Revive
+leaves unlinked graves and any revival WA refuses alone. Freeze can target
+either team, including the caster. WA owns revival placement, turn effects
+and freeze/thaw behavior.
+
+Hurt can target either team, including the caster, and can kill. Each click
+sends one ordinary `worm:hurt(10)` with no knockback; health display, loss of
+control and death timing follow the engine and the profile's settings.
+
+Fire uses WA's fire physics and damage. Its rainbow petrol flames do not
+spread into untinted fires, but still burn worms. On selection or entering
+Fire mode, it waits 60 ms (three simulation frames, rounding up 50 ms) and
+requires releasing any held click before a new press can spray. Leaving Fire
+mode stops emission; existing flames burn out naturally. The rainbow tint
+requires WA's D3D9 shader renderer. Simulation callbacks own mode changes
+and actions, including the mode announcement.
+
+The **0.9.3 demo profile** places Cursor and PX's Bowling Ball Strike, with
+fog, Live HP and Instant Death enabled. Select Cursor and press + to try the
+other modes. The demo needs the Utilities (Fog of war is in it) and Project X ports
+bundles; the Cursor itself has no PX dependency.
+
+The Lua lives in `weapons/cursor.lua` and `lib/cursor.lua`; the icon is
+`sprites/cursor.png`. Run `lua mods/tests/utilities/test_cursor.lua` from the
+repository root.

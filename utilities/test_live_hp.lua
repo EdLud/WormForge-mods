@@ -1,4 +1,4 @@
--- From the repository root: lua mods/examples/utilities/test_live_hp.lua
+-- From the repository root: lua mods/utilities/test_live_hp.lua
 local mods = WORMFORGE_MODS or "mods/"
 local function run(live_first)
   local hurt, frame = {}, {}
@@ -13,7 +13,7 @@ local function run(live_first)
     },
     actors = { spawn = function() error("Live HP must not need a polling actor") end },
   }
-  local function load_live() dofile(mods .. "examples/utilities/features/live_hp.lua") end
+  local function load_live() dofile(mods .. "utilities/features/live_hp.lua") end
   local function load_ice()
     local env = setmetatable({ require = function(name)
       assert(name == "lib/shared"); return {}
