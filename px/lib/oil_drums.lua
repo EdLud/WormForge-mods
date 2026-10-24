@@ -54,6 +54,10 @@ local KINDS = {
   teleport = { scale = 1.0, extras = {
     { "wteltlk", 1, 0, 15, 0.6, 230, phase } } },
 }
+-- Sheets a kind draws when it bursts: the icy drum's 400 specks (PX's
+-- particle sprite 611), which show how far its freeze reaches.
+local BURST_SHEETS = { icy = { "smklt75" } }
+
 -- PX's deal, 0..6 in its order, then its cavern-only teleport drum.
 local DEAL = { "explosive", "napalm", "nuke", "cluster", "icy", "electric", "mine" }
 
@@ -62,10 +66,13 @@ function M.sprites()
   for kind, k in pairs(KINDS) do
     for i = 1, 4 do out[#out + 1] = SHEETS .. kind .. i .. ".png" end
     local seen = {}
-    for _, e in ipairs(k.extras) do
-      if not seen[e[1]] then
-        seen[e[1]] = true
-        out[#out + 1] = SHEETS .. kind .. "_" .. e[1] .. ".png"
+    local names = {}
+    for _, e in ipairs(k.extras) do names[#names + 1] = e[1] end
+    for _, name in ipairs(BURST_SHEETS[kind] or {}) do names[#names + 1] = name end
+    for _, name in ipairs(names) do
+      if not seen[name] then
+        seen[name] = true
+        out[#out + 1] = SHEETS .. kind .. "_" .. name .. ".png"
       end
     end
   end

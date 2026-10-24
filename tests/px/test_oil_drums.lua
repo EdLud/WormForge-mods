@@ -213,5 +213,36 @@ do
     and extra.depth == 14 * 0x10000 and (extra.color >> 24) == 160)
 end
 
+print("oil drums: every sheet drawn is loaded")
+do
+  -- A quad naming a sheet the add-on never loaded errors in the engine,
+  -- and the rest of that frame's draw, every drum, is lost with it.
+  local loaded = {}
+  for _, s in ipairs(require("lib/oil_drums").sprites()) do loaded[s] = true end
+  local missing = {}
+  for kind in pairs(DEAL) do
+    local d = drum_of(kind, { cavern = true })
+    for dent = 0, 50, 15 do
+      d.damage = dent
+      M.quads = {}
+      M.draw()
+      for _, q in ipairs(M.quads) do
+        if not loaded[q.sprite] then missing[q.sprite] = true end
+      end
+    end
+    burst(d)
+    for _ = 1, 3 do frame() end
+    M.quads = {}
+    M.draw()
+    for _, q in ipairs(M.quads) do
+      if not loaded[q.sprite] then missing[q.sprite] = true end
+    end
+  end
+  local names = {}
+  for s in pairs(missing) do names[#names + 1] = s end
+  table.sort(names)
+  check("drums, extras and bursts draw only loaded sheets", #names == 0, table.concat(names, ", "))
+end
+
 if failed > 0 then error(failed .. " FAILED") end
 print("Project X's oil drums: the deal, each kind's burst and drawing: ALL PASS")
