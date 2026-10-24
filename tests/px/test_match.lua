@@ -1558,7 +1558,7 @@ do
   local bullet = M.bullets[1]
   local dx, dy = bullet.x - body.x, bullet.y - (body.y - turret.muzzle_up)
   check("2 damage, muzzle origin, unit direction, only its own feet excluded",
-    bullet.damage == 2 and bullet.ignore[1] == body and #bullet.ignore == 1
+    bullet.damage == 2 and bullet.push_pct == 100 and bullet.ignore[1] == body and #bullet.ignore == 1
     and math.abs(dx * dx + dy * dy - 121) < 0.02
     and math.abs(bullet.dx * bullet.dx + bullet.dy * bullet.dy - 1) < 0.001)
   check("rounds create no explosion actors", #M.actor_booms == 0)
@@ -1571,8 +1571,9 @@ do
   check("its head is drawn in its coalition colour", head and (head.color & 0xFFFFFF) == 0xFF6447 and head.depth == wa.depth.FRONT)
   M.message(owner, wa.msg.START_TURN)
   local before = impacts()
-  run(60)
-  check("it holds fire on its owner's colour's turns", impacts() == before)
+  run(61) -- first frame establishes positions, then acquisition starts its delay
+  check("it fires on its owner's colour's turns", impacts() > before,
+    "shots=" .. (impacts() - before) .. " activation=" .. state.activate .. " target=" .. tostring(state.tid))
   M.message(enemy, wa.msg.START_TURN)
   enemy.x = 300  -- back in range: it has walked on meanwhile
   run(100)
@@ -1604,6 +1605,52 @@ do
   body.hit(body, { kind = "hit", damage = 40 })
   check("at 0 of its 50 health it explodes, damage 50, blast 100, and its head goes",
     #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and M.actor_booms[1].opts.id == 100 and body.dead and turret.state[body.id] == nil)
+  M.solid, M.gravity = nil, nil
+end
+
+print("Sentry Gun: plant and push an enemy during the owner's turn")
+do
+  new_match()
+  local owner, ally, enemy = worm(16), worm(17), worm(32)
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y, owner.facing = 100, 100, 1
+  ally.x, ally.y, ally.vx = 200, 90, 1
+  enemy.x, enemy.y = 300, 90
+  M.solid = function(_, y) return y >= 110 end
+  M.gravity = 0.25
+  turn(owner.id) -- the turn is already active when the sentry is placed
+  local turret = require("lib/shared").sentry_gun
+  local body, state = turret.place({ worm = owner })
+  local function run(n) for _ = 1, n do body.on(body) end end
+  local function shots() return #(M.bullets or {}) end
+  run(120)
+  check("planting alone does not acquire a stationary enemy or a moving ally",
+    state.planted and state.tid == nil and shots() == 0)
+  -- Knockback is movement even though the enemy is not taking its turn.
+  enemy.x, enemy.vx, enemy.state = enemy.x + 2, 2, "tumbling"
+  run(1)
+  enemy.vx = 0
+  run(49)
+  check("a pushed enemy is acquired on the planting turn, with the usual delay",
+    state.tid == enemy.id and shots() == 0)
+  run(40)
+  check("the sentry shoots that enemy before the planter's turn ends",
+    shots() > 0 and M.bullets[1].owner == owner and state.tid ~= ally.id)
+  run(200)
+  check("own-turn firing still stops at its 20-round allowance",
+    shots() == 20 and state.ammo == 0 and not state.active)
+  turn(ally.id)
+  enemy.vx = 1
+  run(1)
+  enemy.vx = 0
+  run(90)
+  check("an allied turn reloads it and also permits shooting enemies",
+    shots() > 20 and M.bullets[#M.bullets].owner.alliance == owner.alliance)
+  body.hit(body, { kind = "blast", damage = 1, vy = 0 })
+  local before = shots()
+  run(100)
+  check("damage still disables own-turn firing until the next turn",
+    state.disabled and not state.active and shots() == before)
   M.solid, M.gravity = nil, nil
 end
 
@@ -1923,7 +1970,7 @@ do
     check(kind .. ": captured housing follows new coalition colour", (head.color & 0xFFFFFF) == t.tints[enemy.alliance + 1])
     M.message(ally, wa.msg.START_TURN); body.on(body)
     check(kind .. ": capture lockout ends on the next turn", not s.disabled)
-    check(kind .. ": gun holds allied turns; laser remains active", select(3, t.status(s)) == "ready")
+    check(kind .. ": captured sentry is ready regardless of whose turn it is", select(3, t.status(s)) == "ready")
     M.message(enemy, wa.msg.START_TURN); body.on(body)
     local _, blinking, mode = t.status(s)
     check(kind .. ": active light still blinks on its own coalition turn", blinking and mode == "ready")
@@ -5490,12 +5537,35 @@ do
     local id, health = "px." .. kind, 123
     HIGHLANDER_CLAIMING = id
     require("components/loader").install({ id = id, option = function(key)
-      assert(key == "health"); return health
+      local options = { health = health, ammo = 20, damage = 2, push_pct = 100 }
+      assert(options[key] ~= nil); return options[key]
     end })
     HIGHLANDER_CLAIMING = nil
     local t = require("lib/shared")[kind]
     local body = t.place({ worm = worm(16) })
     check(kind .. ": configured health copied to each placement", t.state[body.id].health == health)
+  end
+  for _, options in ipairs({
+    { ammo = 1, damage = 0, push_pct = 0 },
+    { ammo = 37, damage = 17, push_pct = 250 },
+    { ammo = 1000, damage = 1000, push_pct = 1000 },
+  }) do
+    new_match()
+    HIGHLANDER_CLAIMING = "px.sentry_gun"
+    require("components/loader").install({ id = "px.sentry_gun", option = function(key)
+      if key == "health" then return 50 end
+      assert(options[key] ~= nil); return options[key]
+    end })
+    HIGHLANDER_CLAIMING = nil
+    local t = require("lib/shared").sentry_gun
+    local body, s = t.place({ worm = worm(16) })
+    check("sentry: configured ammo at placement (" .. options.ammo .. ")", s.ammo == options.ammo)
+    t.fire(t, body, s)
+    local shot = M.bullets[#M.bullets]
+    check("sentry: configured damage and push reach each native round",
+      shot.damage == options.damage and shot.push_pct == options.push_pct and s.ammo == options.ammo - 1)
+    M.message(worm(32), wa.msg.START_TURN)
+    check("sentry: each turn refills its configured ammo", s.ammo == options.ammo and s.active)
   end
   for _, fuel in ipairs({ 1, 255, 300, 999 }) do
     new_match()

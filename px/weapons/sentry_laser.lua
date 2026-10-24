@@ -247,7 +247,7 @@ function weapon.setup()
     kind = "sentry_laser", weapon = "px.sentry_laser",
     muzzle_out = MUZZLE_OUT,
     sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
-    rot_active = 5.0, aim_tolerance = 5.0, health = 35, hold_own_turn = false,
+    rot_active = 5.0, aim_tolerance = 5.0, health = 35,
     art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_body.png", barrel = ART .. "turret_barrel.png", light = ART .. "turret_light.png" },
     sounds = {
       place = SND .. "sentrylaserplace.wav", beep = SND .. "sentrylaserbeep.wav",

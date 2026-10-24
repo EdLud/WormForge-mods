@@ -79,7 +79,6 @@ local DEFAULTS = {
   sweep = 10,           -- PX idle sweep amplitude, degrees
   aim_tolerance = 1.5,  -- PX fires only after rotation reaches the target
   require_motion = true, -- PX only acquires walking/jumping/moving worms
-  hold_own_turn = true, -- the Sentry Gun holds fire on its colour's turns
   settle_px = 4,        -- mask may overlap real terrain by this depth (placing, sliding)
   sink_px = 0,          -- how deep the mask's feet rest in the land once planted
   foot_offsets = { -6, 7 }, -- support beside the buried mask, never inside it
@@ -188,9 +187,6 @@ function turret.new(cfg)
   local feet = t.feet or feet
   t.feet = feet
   local state = {}
-  -- The colour taking its turn: its turrets hold fire. Alliance, not team:
-  -- it is WA's colour index (0 red .. 5 cyan), shared by allied teams.
-  local active_alliance = nil
 
   local function note_motion(s, w)
     local p = s.seen[w.id]
@@ -353,11 +349,11 @@ function turret.new(cfg)
     -- PX's long-rotation sound: a turn left of at least twice its speed.
     update_servo(a, s, target ~= nil and angle_gap(s.angle, want) >= 2 * t.rot_active)
 
-    -- PX latches firing once on target, until it loses it, runs dry or is
-    -- disabled.
-    local hold_fire = t.hold_own_turn and active_alliance == s.alliance
+    -- Enemy movement can trigger a shot on any turn, including the planter's.
+    -- Firing stays latched until the target is lost, ammo runs out or damage
+    -- disables the sentry.
     local muzzle_clear = false
-    if target and not hold_fire and s.activate <= 0 and (s.firing or aligned) then
+    if target and s.activate <= 0 and (s.firing or aligned) then
       local mx, my = turret.muzzle(t, a, s.angle)
       muzzle_clear = not turret.trace(a, mx, my, mx, my)
     end
@@ -691,9 +687,8 @@ function turret.new(cfg)
 
   -- Each turn reloads and reactivates every turret, and forgets what moved
   -- and what it aimed at. Order-independent: each entry gets the same reset.
-  wa.on.worm_message(function(worm, msg)
+  wa.on.worm_message(function(_, msg)
     if msg ~= wa.msg.START_TURN then return end
-    active_alliance = worm.alliance
     for id, s in pairs(state) do
       if s.body.id ~= id then state[id] = nil else
         s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}

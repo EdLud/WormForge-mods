@@ -918,10 +918,11 @@ fall off ledges and stop at other feet, walls and ceilings. Javelin explicitly
 includes sentries in its impact selection (20 damage, quarter incoming velocity),
 with no duplicate contact impulse. Contact alone deals no damage. Damage
 is counted once and disables the sentry until the next turn. The original
-health (Gun 50, Laser 35), ammo and targeting rules remain.
+health defaults are Gun 50 and Laser 35. Moving enemies can trigger the Gun
+during any turn, including the planter's; friendly worms are not acquired.
 
 The Gun fires one native stock Uzi round per firing tick through
-`wa.weapons.fire_bullet`, with 2 damage and the sentry's existing spread.
+`wa.weapons.fire_bullet`, with 2 damage by default and the sentry's existing spread.
 WA supplies the Uzi's small impact graphics, terrain hits, directional push
 and nearby damage. It traces intervening worms and objects, including allies.
 Only the firing sentry's body/feet are excluded from the trace; real terrain
@@ -932,6 +933,17 @@ Hits also affect jumping and flying worms: WA applies the Uzi push and hit
 state, which cancels Helicopter steering and restores the worm's body.
 If its coalition has no living worm, the Gun retains its colour and ammo but
 cannot fire native rounds until a living parent exists (revival or capture).
+
+Sentry Gun component options, also saved in profiles:
+
+| Option | Default | Range | Meaning |
+|---|---:|---:|---|
+| Ammo per turn (`ammo`) | 20 | 1–1000 | Rounds in each sentry, refilled every turn. |
+| Damage per shot (`damage`) | 2 | 0–1000 | Damage from each round; zero permits push without damage. |
+| Push (%) (`push_pct`) | 100 | 0–1000 | Normal Uzi knockback at 100, none at 0, twice normal at 200. |
+
+For example, under `[options."px.sentry_gun"]`, set `ammo = 30`,
+`damage = 3` and `push_pct = 150`. The separate Health option remains available.
 
 The added light flashes green while ready, red while tracking or firing, and
 grey when empty. It is dark while falling, damaged or holding fire. The head,

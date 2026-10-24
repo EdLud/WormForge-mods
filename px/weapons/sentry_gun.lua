@@ -64,7 +64,6 @@ function weapon.setup()
   local turret = require("lib/turret")
   local ART = "sprites/sentry_gun/"
   local SND = "sounds/sentry_gun/"
-  local DAMAGE = 2           -- per round
   local MUZZLE_OUT = 11      -- pixels from the pivot along the bore
   -- PX rolls a barrel deviation for each round and keeps every 5th one
   -- pin-point: tenths of a degree, from WA's shared RNG.
@@ -122,7 +121,8 @@ function weapon.setup()
     casing(t, a, s, rad)
     wa.weapons.fire_bullet {
       weapon = "stock.uzi", owner = owner,
-      x = mx, y = my, dx = dx, dy = dy, damage = DAMAGE, ignore = { a },
+      x = mx, y = my, dx = dx, dy = dy,
+      damage = t.damage, push_pct = t.push_pct, ignore = { a },
     }
     s.ammo = s.ammo - 1
     if s.ammo <= 0 then
@@ -133,6 +133,7 @@ function weapon.setup()
 
   local gun = turret.new({
     kind = "sentry", weapon = "px.sentry_gun",
+    damage = 2, push_pct = 100,
     muzzle_out = MUZZLE_OUT,
     art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun.png", flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
     sounds = {
@@ -150,7 +151,11 @@ function weapon.setup()
 end
 
 function weapon.configure(ctx)
-  require("lib/shared").sentry_gun.health = ctx.option("health")
+  local gun = require("lib/shared").sentry_gun
+  gun.health = ctx.option("health")
+  gun.ammo = ctx.option("ammo")
+  gun.damage = ctx.option("damage")
+  gun.push_pct = ctx.option("push_pct")
 end
 
 return weapon

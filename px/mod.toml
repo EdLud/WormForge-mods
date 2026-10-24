@@ -1105,6 +1105,33 @@ default = 50
 label = "Health"
 description = "Damage the sentry takes before it’s destroyed."
 
+[[components.options]]
+key = "ammo"
+type = "int"
+min = 1
+max = 1000
+default = 20
+label = "Ammo per turn"
+description = "Rounds available to each sentry, refilled at the start of every turn."
+
+[[components.options]]
+key = "damage"
+type = "int"
+min = 0
+max = 1000
+default = 2
+label = "Damage per shot"
+description = "Damage dealt by each sentry round. Zero allows push without damage."
+
+[[components.options]]
+key = "push_pct"
+type = "int"
+min = 0
+max = 1000
+default = 100
+label = "Push (%)"
+description = "Bullet knockback relative to normal sentry rounds. 100 keeps normal push; 0 disables it."
+
 [[components]]
 id = "px.kamikaze_rocket"
 type = "weapon"
