@@ -4,7 +4,6 @@ local weapon = {}
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
-    aims = true,
     creates_projectile = true,
     launch_power_pct = 5,
     method = 2,
@@ -12,6 +11,7 @@ weapon.record = {
     type = 2,
   },
   handling = {
+    remember_selection = true,
     ends_turn = true,
     shots = 0,
   },
@@ -26,7 +26,6 @@ weapon.record = {
     },
     flight_sound = 65578,
     gravity_pct = 100,
-    impact_particles = false,
     roam = {
       flight_hits = {
         crates = true,
@@ -76,7 +75,6 @@ weapon.record = {
       flight_sound = 65577,
       fuse = 10000,
       gravity_pct = 100,
-      impact_particles = false,
       roam = {
         gas = {
           animal_sprite = 174,

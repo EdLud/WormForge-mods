@@ -3,11 +3,8 @@ local weapon = {}
 
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
-  fires = {
-    aims = true,
-  },
   handling = {
-    ends_turn = true,
+    remember_selection = true,
     shots = 3,
   },
 }

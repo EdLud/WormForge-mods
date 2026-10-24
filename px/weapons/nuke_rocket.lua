@@ -4,12 +4,8 @@ local weapon = {}
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
-    aims = true,
     launch_power_pct = 5,
     method = 2,
-  },
-  handling = {
-    ends_turn = true,
   },
   missile = {
     action = "bounce",
@@ -40,7 +36,6 @@ weapon.record = {
     flight_sound = 65602,
     fuse = 3000,
     gravity_pct = 100,
-    impact_particles = false,
     speed_pct = 100,
     trail = {
       bubbles_per_second = 12.5,
@@ -144,7 +139,7 @@ function weapon.setup()
   local NR_HISS = 66    -- the fusing rocket's hiss, every 10 frames
   local NR_CLIMB = 53   -- frames the nuke climbs (PX: "1.1-1.2 second")
   local NR_CARRY = 17   -- pixels: what the climbing nuke carries along
-  local NUKE = { fuse = 1600, sound = 0, burst = "clusters", terrain_keep_pct = 11,
+  local NUKE = { fuse = 1600, sound = 0, burst = "clusters", terrain_keep_speed_pct = 11,
     clusters = { launch_power_pct = 33, power_variation_pct = 33 } }
   local NUKE_BLAST = { damage = 40, id = 40 } -- PX's DoExplosion(x, y, 40, 40), twice
 
@@ -256,7 +251,7 @@ function weapon.setup()
           weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
           missile = {
             fuse = NUKE.fuse, flight_sound = NUKE.sound, burst = NUKE.burst,
-            bounce = { terrain_keep_pct = NUKE.terrain_keep_pct },
+            bounce = { terrain_keep_speed_pct = NUKE.terrain_keep_speed_pct },
           },
           -- The first rocket has no payload; only this stage ejects clusters.
           clusters = NUKE.clusters,

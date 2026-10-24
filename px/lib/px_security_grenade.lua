@@ -172,14 +172,6 @@ function M.install(ctx)
       pending[#pending + 1] = { x = ev.x, y = ev.y }
     end,
   }
-  -- Whether a weapon ends the turn is a profile's setting, and PX's records carry
-  -- it off (`the weapon module's record.handling.ends_turn`), so a weapon built on one says so itself:
-  -- the throw ends the turn, as WA's grenades do (`the weapon module's record.handling.ends_turn`).
-  -- `wfcheck`'s SPEC_KEYS has no `handling` and reads an unknown literal key as a
-  -- no-op -- as it has no `missile`, where the pack's use and a match test outrank
-  -- the definition (REPORT.md 4.1); a key on a local spec is how the pack sets it
-  -- too.
-  spec.handling = { ends_turn = true }
   wa.weapons.replace(spec)
 end
 

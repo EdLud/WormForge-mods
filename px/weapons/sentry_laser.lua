@@ -2,14 +2,7 @@
 local weapon = {}
 
 -- Native record settings. Edit this weapon here; imported records are review drafts.
-weapon.record = {
-  fires = {
-    aims = true,
-  },
-  handling = {
-    ends_turn = true,
-  },
-}
+weapon.record = {}
 
 function weapon.definition()
   local shared = require("lib/shared")

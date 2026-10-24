@@ -441,17 +441,6 @@ function M.install(ctx)
       drop(ev.worm, ev.x, ev.y)
     end,
   }
-  -- Whether a weapon ends the turn is a profile's setting, and PX's records
-  -- carry it off ("PX's records have it off on almost every weapon; each claim
-  -- puts back the weapon's own instead", `the weapon module's record.handling.ends_turn`), so a
-  -- weapon built on one says so itself: this click ends the turn, as WA's
-  -- strikes do (`the weapon module's record.handling.ends_turn`; `Profiles/Highlander.toml:105-109`
-  -- documents the same setting for the weapons that do not). `wfcheck`'s
-  -- SPEC_KEYS has no `handling` and reads an unknown literal key as a no-op --
-  -- as it has no `missile`, where the pack's use and a match test outrank the
-  -- definition (REPORT.md 4.1). Setting it on a local spec is how the pack sets
-  -- it too, and what keeps that literal-key note off this file.
-  spec.handling = { ends_turn = true }
   wa.weapons.replace(spec)
 end
 

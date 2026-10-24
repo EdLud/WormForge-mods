@@ -3,11 +3,7 @@ local weapon = {}
 
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
-  fires = {
-    aims = true,
-  },
   handling = {
-    ends_turn = true,
     retreat = 5000,
   },
   missile = {
@@ -16,7 +12,6 @@ weapon.record = {
       power = 90,
     },
     fuse = 8000,
-    impact_particles = false,
     roam = {
       flight_hits = {},
       hits = {

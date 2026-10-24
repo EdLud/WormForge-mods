@@ -8,7 +8,7 @@
 -- `weapons/blast_zone_WEAP.wep`.
 --
 -- The weapon is the Health Zone's round: the same WA standard missile (PX's two
--- records differ in two fields only -- `fires.aims` and the name -- both fire
+-- records differ in two fields only -- `handling.remember_selection` and the name -- both fire
 -- type 1, method 3, animation 2: a tracking bazooka shell) with PX's
 -- `blast_zone_bullet.png` drawn over it. On impact it leaves a 45x45 zone
 -- (:374) that, once every five frames while it is awake, explodes once if

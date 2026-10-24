@@ -29,12 +29,11 @@ function M.install(ctx, spec)
   wa.weapons.replace{
     copy_from = "stock.teleport",
     name = spec.name,
-    fires = { aims = true },
     panel_icon = spec.icon or "teleport",
     is_weapon = true,
     eat_fire = true,
     click_finish = false,
-    handling = { ends_turn = false },
+    handling = { ends_turn = false, remember_selection = true },
     on_select = {
       cursor = true,
       on = function(sel) start(sel.worm, sel.x, sel.y) end,

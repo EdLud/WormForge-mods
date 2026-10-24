@@ -23,11 +23,7 @@ weapon.definition = {
   panel_icon = "sprites/chilli_bomb/chilli_ico.png",
   sprite = "banana",
   on_explode = on_explode,
-  fires = {
-    aims = true,
-  },
   handling = {
-    ends_turn = true,
     retreat = 3000,
   },
   missile = {
@@ -53,7 +49,6 @@ weapon.definition = {
       push_pct = 75,
     },
     fuse = 0,
-    impact_particles = false,
   },
   worm_sprites = holds.PX_POSTURE,
   sprites = { "sprites/px_hold/chilli_bomb.png" },

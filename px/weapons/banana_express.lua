@@ -3,11 +3,8 @@ local weapon = {}
 
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
-  fires = {
-    aims = false,
-  },
   handling = {
-    ends_turn = true,
+    remember_selection = false,
     retreat = 3000,
   },
   missile = {
@@ -27,7 +24,7 @@ weapon.record = {
         worms_frozen = true,
       },
       sound = 111,
-      terrain_keep_pct = 100,
+      terrain_keep_speed_pct = 100,
     },
     burst = "clusters",
     countdown = 3000,
@@ -38,7 +35,6 @@ weapon.record = {
       push_pct = 80,
     },
     fuse = 10000,
-    impact_particles = false,
     random_motion = 0,
     speed_pct = 100,
     sprite = 51,
@@ -69,7 +65,7 @@ weapon.record = {
           worms_frozen = true,
         },
         sound = 111,
-        terrain_keep_pct = 100,
+        terrain_keep_speed_pct = 100,
       },
       ends_on_contact = {
         crates = true,
@@ -86,7 +82,6 @@ weapon.record = {
       },
       fuse = 9000,
       gravity_pct = 100,
-      impact_particles = false,
       speed_pct = 100,
       sprite = 51,
       sprite_count = 1,

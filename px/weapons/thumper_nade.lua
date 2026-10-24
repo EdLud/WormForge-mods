@@ -4,13 +4,9 @@ local weapon = {}
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
-    aims = true,
     method = 3,
     subtype = 2,
     type = 1,
-  },
-  handling = {
-    ends_turn = true,
   },
   missile = {
     action = "bounce",
@@ -35,7 +31,7 @@ weapon.record = {
       },
       max_bounces = 2,
       sound = 30,
-      terrain_keep_pct = 50,
+      terrain_keep_speed_pct = 50,
     },
     burst = "clusters",
     collision_shape = 2,
@@ -49,7 +45,6 @@ weapon.record = {
     },
     fuse = 9000,
     gravity_pct = 120,
-    impact_particles = false,
     speed_pct = 100,
     trail = {
       bubbles_per_second = 12.5,
@@ -71,7 +66,7 @@ weapon.record = {
         },
         max_bounces = 3,
         sound = 113,
-        terrain_keep_pct = 100,
+        terrain_keep_speed_pct = 100,
       },
       ends_on_contact = {
         arrows = true,
@@ -87,7 +82,6 @@ weapon.record = {
       },
       fuse = 9000,
       gravity_pct = 100,
-      impact_particles = false,
       speed_pct = 100,
       sprite_count = 1,
       trail = {

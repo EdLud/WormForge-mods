@@ -37,7 +37,6 @@ local function install(ctx)
     wep = "weps/double_jump.wep",
     panel_icon = "sprites/double_jump/icon.png",
     -- A utility: using it leaves the turn going, as PX's record has it.
-    handling = { ends_turn = false },
   })
 
   local on, armed = false, false

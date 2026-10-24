@@ -3,11 +3,7 @@ local weapon = {}
 
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
-  fires = {
-    aims = false,
-  },
   handling = {
-    ends_turn = true,
     retreat = 3000,
   },
   missile = {
@@ -34,7 +30,7 @@ weapon.record = {
       },
       max_bounces = 2,
       sound = 30,
-      terrain_keep_pct = 50,
+      terrain_keep_speed_pct = 50,
     },
     burst = "clusters",
     explosion = {
@@ -42,7 +38,6 @@ weapon.record = {
       power = 40,
     },
     gravity_pct = 120,
-    impact_particles = false,
     random_motion = 10,
     trail = {
       power = 35,

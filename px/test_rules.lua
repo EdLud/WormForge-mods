@@ -3680,7 +3680,7 @@ do
     and l.owner == w and l.x == 100 and l.y == 50 and l.vx == 0 and l.vy == 0)
   check("silent, a 1.6 s fuse, bursting into clustlets", l.missile.fuse == 1600 and l.missile.flight_sound == 0
     and l.missile.burst == "clusters")
-  check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.missile.bounce.terrain_keep_pct == 11)
+  check("keeping 11% of its speed on terrain, as reddaz's 0.11 restitution", l.missile.bounce.terrain_keep_speed_pct == 11)
   check("only the nuke stage receives its original cluster power and variation",
     l.clusters.launch_power_pct == 33 and l.clusters.power_variation_pct == 33
     and (not spec.raw or (spec.raw[0xFC] == nil and spec.raw[0x100] == nil)))
@@ -4466,8 +4466,12 @@ do
   require("weapons/double_jump").install({ id = "px.double_jump" })
   HIGHLANDER_CLAIMING = claiming
   local spec = replaced[#replaced]
+  local source = assert(io.open((HIGHLANDER_ROOT or "mods/px/") .. spec.wep, "rb"))
+  source:seek("set", 4 + 0x18)
+  local inherited_ends_turn = string.unpack("<i4", source:read(4)) ~= 0
+  source:close()
   check("PX's record and icon, leaving the turn going", spec.wep == "weps/double_jump.wep"
-    and spec.panel_icon == "sprites/double_jump/icon.png" and spec.handling.ends_turn == false)
+    and spec.panel_icon == "sprites/double_jump/icon.png" and not inherited_ends_turn)
   local w = worm(16)
   for _, o in ipairs(worms) do o.turn = false end
   w.turn, w.weapon, w.state_id, w.facing, w.team = true, "px.double_jump", 0x67, 1, 1

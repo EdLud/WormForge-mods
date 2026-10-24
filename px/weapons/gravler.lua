@@ -4,14 +4,12 @@ local weapon = {}
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
-    aims = true,
     launch_power_pct = "charged",
     method = 3,
     subtype = 3,
     type = 1,
   },
   handling = {
-    ends_turn = true,
     retreat = 3000,
   },
   missile = {
