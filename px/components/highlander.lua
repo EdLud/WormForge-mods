@@ -1,6 +1,6 @@
 -- Highlander's rules, the hl.rules add-on: each worm is dealt one weapon
 -- from each pool, may use each once a turn, and takes everything a worm it
--- kills carried (scheme/pools, scheme/state, scheme/rules), wherever the
+-- kills carried (scheme/pools, scheme/state, scheme/highland_rules), wherever the
 -- profile put the weapons. It installs before the weapons (before_weapons),
 -- so its hooks run first.
 --
@@ -42,6 +42,6 @@ return {
     shared.pools = pools
     require("scheme/pools")
     require("scheme/state")
-    require("scheme/rules")
+    require("scheme/highland_rules")
   end,
 }

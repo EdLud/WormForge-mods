@@ -747,15 +747,30 @@ nested tables, so options cannot mutate the declared defaults.
 Common animation, beam rendering, input dispatch and claim mechanics remain
 in `lib/`. Weapon-specific actions and values belong in their weapon files.
 The other PX ports already using dedicated component entries keep that entry
-style. `rules.lua` remains the Lua test harness for a full Highlander match.
+style.
+
+For modding, start with these files:
+
+- `weapons/<weapon>.lua`: one weapon's settings and behavior.
+- `scheme/highland_rules.lua`: Highlander's dealing, turn ammo and loot rules.
+- `components/highlander.lua`: connects the Highlander add-on to the profile's weapon pools.
+- `mod.toml`: declares components and their exposed options.
+
+Development tests live outside this pack in [`../tests/px/`](../tests/px/).
+They are not installed, published with PX, or included in its replay archive.
 
 ## Tests
 
 ```sh
-lua mods/px/test_rules.lua     # from the repo root
+lua mods/tests/px/test_match.lua     # from the engine repo root
+# Or, from the standalone mods repository:
+lua tests/px/test_match.lua
 ```
 
-These run the Highlander profile's match (`rules.lua`, the components and the modules they load) against a mocked WA, which translates between WA's slots and the engine's weapon ids as the engine does. Ammo is stored per alliance, and
+The test-only `tests/px/setup_match.lua` builds a match from its Highlander
+fixture. The tests run the real pack components and modules against a mocked
+WA, which translates between WA's slots and the engine's weapon ids as the
+engine does. Ammo is stored per ammo group, and
 the mock scheme has an infinite bazooka. Which row a team's writes land in is
 the engine's job, and the mock can't test it. They cover:
 - every Highlander weapon's claim, including the Lightning Strike, Electric Grenade,
@@ -866,7 +881,7 @@ Added engine surface:
   reuse; the old `object.id` stays compatible. `wa.arrows.all()` enumerates
   live stock arrows. `ctrl`, `minus_key`, `alt`, `pause_key` join synchronized keys.
 
-Tests: `lua mods/px/test_portals.lua`, `lua mods/px/test_pools.lua` (the
+Tests: `lua mods/tests/px/test_portals.lua`, `lua mods/tests/px/test_pools.lua` (the
 pools from each weapon's settings), plus the existing
 scheme mock and native Windows engine/Lua tests. The port was playtested in
 WA, including endpoint visibility and effects. Replay/network playback is

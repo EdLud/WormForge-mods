@@ -1,7 +1,7 @@
 -- Highlander rules as the hl.rules add-on: its pools come from each placed
 -- weapon's settings, in slot order. From the repo root:
--- lua mods/px/test_pools.lua
-local root = HIGHLANDER_ROOT or "mods/px/"
+-- lua mods/tests/px/test_pools.lua
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
 local logs, hooks, dealt_from = {}, {}, {}
 local cavern = false

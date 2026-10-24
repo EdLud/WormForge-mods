@@ -47,6 +47,20 @@ mods commit in a parent that other people need to clone.
 Run engine integration tests from an engine checkout using the same mods
 commit. Existing `mods/px` and `mods/examples` paths remain valid there.
 
+## PX tests
+
+Installable PX code and assets live in `px/`; its development tests, baseline
+and profile fixture live separately in [`tests/px/`](tests/px/). From this
+repository's root, with Lua installed:
+
+```sh
+for test in tests/px/test_*.lua; do lua "$test" || exit; done
+```
+
+From the engine checkout, use `mods/tests/px/test_*.lua` instead. The engine's
+Rust tests also load these same scripts and fixture. See [the PX guide](px/README.md)
+for the runtime files to edit when making weapons or Highlander rules.
+
 ## Catalogue checks and builds
 
 Requires Python 3.11+ and `python3 -m pip install -r requirements.txt`.

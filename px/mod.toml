@@ -9,7 +9,7 @@
 # uses WA's own weapon unchanged (Teleport, Fast Walk, Crate Spy, Crate
 # Shower, Flame Thrower) they place the stock one.
 #
-# rules.lua is the Highlander pack in one piece, as the Lua tests load it.
+# Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
 version = "0.16.4"

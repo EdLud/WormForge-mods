@@ -10,8 +10,9 @@
 -- A port of Project X's `scheme_hl_0rang3` (Highlander 0rang3 1.1): every
 -- worm is dealt one weapon from each of three pools at the start of the
 -- match, may use each once a turn, and takes everything a worm it kills
--- carried (scheme/rules.lua).
-local root = HIGHLANDER_ROOT or "mods/px/"
+-- carried (scheme/highland_rules.lua).
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
+local tests = root .. "../tests/px/"
 
 -- WA's 71 slots in order: where each weapon sits decides the deal's order.
 local STOCK = {
@@ -46,7 +47,7 @@ local function read(path, header)
   local text = path == "profiles/Highlander.toml" and HIGHLANDER_PROFILE
   if not text then
     local location = path == "profiles/Highlander.toml"
-      and "crates/lua-host/tests/fixtures/highlander.toml" or root .. path
+      and tests .. "fixtures/Highlander.toml" or root .. path
     local f = assert(io.open(location, "r"))
     text = f:read("a")
     f:close()

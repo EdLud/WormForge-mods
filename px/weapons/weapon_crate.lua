@@ -34,7 +34,7 @@ function weapon.setup()
   -- places a mine (its take-out, placing and ammo), and the turn goes on. What
   -- it places is one of WA's weapon crates, its contents WA's pick, teleported
   -- in 40 px in front of the worm, for the worm to go and collect. Every worm
-  -- gets one each turn (scheme/rules.lua).
+  -- gets one each turn (scheme/highland_rules.lua).
   local shared = require("lib/shared")
   local AHEAD = 40 -- px in front of the worm
 

@@ -1,12 +1,15 @@
--- Drives mods/px/rules.lua against a mocked WA.
+-- Drives setup_match.lua against a mocked WA; all pack code stays in px/.
 --
---   lua mods/px/test_rules.lua              (from the repo root)
---   lua mods/px/test_rules.lua --baseline   (rewrites baseline.txt)
+--   lua mods/tests/px/test_match.lua              (from the engine repo root)
+--   lua mods/tests/px/test_match.lua --baseline   (rewrites baseline.txt)
 --
 -- baseline.txt is the pack's observable shape: every slot it claims and what
 -- with, the hooks it registers, the globals it defines, and what each hand can
 -- be dealt. Every run compares against it, so a refactor that changes any of
 -- it fails until baseline.txt is rewritten on purpose.
+
+local PACK_ROOT = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
+local TEST_ROOT = PACK_ROOT .. "../tests/px/"
 
 -- The globals Lua itself defines, before this file or the pack adds any.
 local PRISTINE = {}
@@ -14,7 +17,7 @@ for k in pairs(_G) do
   PRISTINE[k] = true
 end
 --
--- The pack is data, not a crate, so this is not part of `cargo test`. Ammo
+-- This suite runs standalone and through lua-host's Rust tests. Ammo
 -- is modelled per ammo group, as WA stores it, and `{ set = n }` is
 -- absolute, infinite included, as the engine implements it. Which row a team
 -- writes to is the engine's job (`world::ammo_row`), not the pack's, so it is
@@ -771,7 +774,7 @@ local function new_match(opts)
         M.bullets = M.bullets or {}
         M.bullets[#M.bullets + 1] = spec
       end,
-      -- A weapon component claims the slot rules.lua is installing it on.
+      -- A weapon component claims the slot setup_match.lua is installing it on.
       replace = function(spec)
         spec.weapon = SLOT(spec.weapon) or SLOT(HIGHLANDER_CLAIMING)
         assert(IS_STOCK[spec.weapon], "replace of a slot that does not exist: " .. tostring(spec.weapon))
@@ -951,7 +954,7 @@ local function new_match(opts)
   local function load_module(name, sdk)
     local key = (sdk and "sdk:" or "px:") .. name
     if modules[key] ~= nil then return modules[key] end
-    local root = HIGHLANDER_ROOT or "mods/px/"
+    local root = PACK_ROOT
     if name:sub(1, 7) == "wf-lib/" then
       name, sdk = name:sub(8), true
       key = "sdk:" .. name
@@ -966,7 +969,7 @@ local function new_match(opts)
     return result
   end
   function require(name) return load_module(name, false) end
-  dofile("mods/px/rules.lua")
+  dofile(TEST_ROOT .. "setup_match.lua")
 end
 
 local function worm(id)
@@ -1074,7 +1077,7 @@ do
   -- weapon component at that slot's panel position, and the Highlander
   -- profile places each. (Checked where the suite can read the
   -- pack's files: run from the repo, not inside the engine's loader test.)
-  local toml = io and io.open("mods/px/mod.toml")
+  local toml = io and io.open(PACK_ROOT .. "mod.toml")
   if toml then
     local manifest = toml:read("a")
     toml:close()
@@ -1119,7 +1122,7 @@ do
     -- The Highlander profile's weapon set: its [weapons] table.
     local profile = HIGHLANDER_PROFILE
     if not profile then
-      local file = assert(io.open("crates/lua-host/tests/fixtures/highlander.toml"))
+      local file = assert(io.open(TEST_ROOT .. "fixtures/Highlander.toml"))
       profile = file:read("a")
       file:close()
     end
@@ -4399,7 +4402,7 @@ print("reddaz's ports: each claims PX's record, px's worm library and its own st
 do
   local function exists(path)
     -- HIGHLANDER_ROOT is px's folder when the engine's loader test runs the suite.
-    local root = HIGHLANDER_ROOT or "mods/px/"
+    local root = PACK_ROOT
     if path:sub(1, 10) == "wf-lib/px/" then
       root, path = root:gsub("px/$", "sdk/"), path:sub(11)
     end
@@ -4433,7 +4436,7 @@ end
 print("homing air strike: PX's record, its missiles' art, the turn ends")
 do
   local function exists(path)
-    local root = HIGHLANDER_ROOT or "mods/px/"
+    local root = PACK_ROOT
     if path:sub(1, 10) == "wf-lib/px/" then
       root, path = root:gsub("px/$", "sdk/"), path:sub(11)
     end
@@ -4466,7 +4469,7 @@ do
   require("weapons/double_jump").install({ id = "px.double_jump" })
   HIGHLANDER_CLAIMING = claiming
   local spec = replaced[#replaced]
-  local source = assert(io.open((HIGHLANDER_ROOT or "mods/px/") .. spec.wep, "rb"))
+  local source = assert(io.open((PACK_ROOT) .. spec.wep, "rb"))
   source:seek("set", 4 + 0x18)
   local inherited_ends_turn = string.unpack("<i4", source:read(4)) ~= 0
   source:close()
@@ -5445,8 +5448,11 @@ do
   for name in pairs(unregistered_sounds) do missing[#missing + 1] = name end
   table.sort(missing)
   check("every pack sound the rules played is registered", #missing == 0, table.concat(missing, ", "))
-  -- And every WAV in the pack, where the suite can list its folder.
-  local ls = io and io.popen and io.popen("find mods/px/sounds -name '*.wav' 2>/dev/null")
+  -- And every WAV in the pack on POSIX hosts, where find lists its folder.
+  -- Windows' unrelated find command cannot perform this filesystem scan.
+  local sounds = "'" .. (PACK_ROOT .. "sounds"):gsub("'", "'\\''") .. "'"
+  local ls = package.config:sub(1, 1) == "/" and io and io.popen
+    and io.popen("find " .. sounds .. " -name '*.wav' 2>/dev/null")
   if ls then
     new_match()
     local registered, unlisted = {}, {}
@@ -5465,7 +5471,7 @@ do
       end
     end
     for line in ls:lines() do
-      local rel = line:match("mods/px/(.*)")
+      local rel = line:sub(#PACK_ROOT + 1)
       found = found + 1
       if rel and not registered[rel] and not own(rel) then unlisted[#unlisted + 1] = rel end
     end
@@ -5649,7 +5655,7 @@ local function baseline()
   return table.concat(out, "\n") .. "\n"
 end
 
-local BASELINE = "mods/px/baseline.txt"
+local BASELINE = TEST_ROOT .. "baseline.txt"
 print("worm_message: every handler names its messages")
 do
   new_match()
@@ -5701,8 +5707,8 @@ end
 print("components: weapons by id, from loading to claiming")
 do
   new_match()
-  -- A fresh loader: the match's own has placed rules.lua's whole layout.
-  local root = HIGHLANDER_ROOT or "mods/px/"
+  -- A fresh loader: the match's own has placed setup_match.lua's whole layout.
+  local root = PACK_ROOT
   local loader = assert(loadfile(root .. "components/loader.lua", "t", setmetatable({}, { __index = _G })))()
   local shared = require("lib/shared")
   local ids = loader.place({ weapons = {

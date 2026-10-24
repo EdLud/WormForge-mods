@@ -1,4 +1,4 @@
--- Highlander: the rules. Split from rules.lua by tools/split_highlander.py.
+-- Highlander gameplay: deal hands, refresh turn ammo, and transfer loot on death.
 --
 -- A port of Project X's `scheme_hl_0rang3` (Highlander 0rang3 1.1).
 -- The source (`highlander.txt`) does all of this with four calls:

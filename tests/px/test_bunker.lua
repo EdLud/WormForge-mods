@@ -1,6 +1,6 @@
 -- Movement regressions for both Bunker Busters. The engine field calculation
 -- and opt-in contract are tested through real bindings in lua-host.
-local root = HIGHLANDER_ROOT or "mods/px/"
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 local bunker = assert(loadfile(root .. "lib/px_bunker.lua"))()
 local actors, claim, fx, fy, inside, terrain, blasts, cuts, flames, probes
 local function reset(super, force_x, force_y, active)

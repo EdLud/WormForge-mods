@@ -1,8 +1,8 @@
 -- PyroMan's turrets (lib/pyro_turret.lua on lib/turret.lua's body) against a
 -- mocked WA: what each fires and with what, when, and how it takes damage.
 --
---   lua mods/px/test_turrets.lua        (from the repo root)
-local root = HIGHLANDER_ROOT or "mods/px/"
+--   lua mods/tests/px/test_turrets.lua        (from the engine repo root)
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
 
 local failed = 0

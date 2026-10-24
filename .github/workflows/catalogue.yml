@@ -18,5 +18,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt
+      - name: Install Lua for PX tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+      - name: Test PX runtime code
+        run: |
+          for test in tests/px/test_*.lua; do lua5.4 "$test"; done
       - run: python tools/test_catalogue.py
       - run: python tools/publish-packs.py --check

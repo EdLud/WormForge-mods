@@ -1,5 +1,5 @@
--- lua mods/px/test_zones.lua (or the embedded Lua-host test).
-local root = HIGHLANDER_ROOT or "mods/px/"
+-- lua mods/tests/px/test_zones.lua (or the embedded Lua-host test).
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
 package.preload["wf-lib/px_sprite_builder"] = function()
   local sdk = root:gsub("px/$", "sdk/")
