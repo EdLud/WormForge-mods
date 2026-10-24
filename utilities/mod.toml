@@ -50,6 +50,13 @@ label = "Agility"
 description = "The arrow keys steer the worm a little in the air. By Zed and 0rang3, port by red."
 
 [[components.options]]
+key = "parkour"
+type = "bool"
+default = false
+label = "Parkour"
+description = "In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X."
+
+[[components.options]]
 key = "live_hp"
 type = "bool"
 default = false

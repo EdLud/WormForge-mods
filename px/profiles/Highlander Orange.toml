@@ -7,6 +7,7 @@ agility = true
 collect_viewer = true
 instant_death = true
 live_hp = true
+parkour = true
 
 [scheme]
 automatic_end_of_turn_retreat = true

@@ -24,6 +24,7 @@ live_hp = true
 | Heal at turn start | number, 0–50 | Health the worm whose turn starts gets. |
 | ExTurnSide | switch | Left and right turn the worm during rope swings and other actions. By red. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by red. |
+| Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels (wall jump) and Backspace hops it off the land within 30 pixels below (bunny hop). Project X's parkour script. |
 | Live HP | switch | Non-active worms' health bars follow damage immediately, down to zero, preserving freeze and momentum. Originally by reddaz. |
 | Instant Death | switch, off by default | Zero-HP non-active worms start their native death sequence once their own motion settles, without waiting for the rest of the battlefield. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
