@@ -54,6 +54,7 @@ function weapon.definition()
         -- worm lit by the muzzle), so it does not flicker between the three.
         -- Not PX's: PX hides it until the worm aims again.
         keep_while_firing = true,
+        put_away = true,
         -- A muzzle flash on each shot. Not PX's: its rifle and snipefire poses
         -- have none. The sentry gun's flare, smaller, at the barrel's tip (30
         -- pixels out, on the barrel 2 to the side, as the laser leaves it).
