@@ -162,6 +162,9 @@ after_use = "continue"
 [weapon_settings."px.sticky_bomb"]
 after_use = "continue"
 
+[weapon_settings."px.submarine_attack"]
+after_use = "continue"
+
 [weapon_settings."px.super_drill"]
 after_use = "continue"
 
@@ -404,6 +407,10 @@ row = "F3"
 [weapons."px.sticky_bomb"]
 column = 1
 row = "F2"
+
+[weapons."px.submarine_attack"]
+column = 6
+row = "F6"
 
 [weapons."px.super_bunker_buster"]
 column = 5

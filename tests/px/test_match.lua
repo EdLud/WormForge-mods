@@ -100,6 +100,7 @@ local HOME = {
   ["px.cow_launcher"] = "mad_cow",
   ["px.old_woman_launcher"] = "old_woman",
   ["px.crate_strike"] = "donkey",
+  ["px.submarine_attack"] = "mine_strike",
   ["px.reinforcement"] = "nuclear_test",
   ["px.ice_arrow"] = "armageddon",
   ["px.skip_go_surrender"] = "skip_go",
@@ -1154,7 +1155,8 @@ do
     if slot == "earthquake" or slot == "napalm_strike" or slot == "teleport" or slot == "uzi"
       or slot == "prod" or slot == "armageddon" or slot == "petrol_bomb" or slot == "nuclear_test"
       or slot == "sheep_strike" or slot == "salvation_army" or slot == "baseball_bat" or slot == "donkey"
-      or slot == "suicide_bomber" or slot == "scales_of_justice" or slot == "freeze" then
+      or slot == "suicide_bomber" or slot == "scales_of_justice" or slot == "freeze"
+      or slot == "mine_strike" then
       if spec.wep ~= "weps/" .. slot .. ".wep" or spec.copy_from then own_file = false end
     elseif slot == "kamikaze" or slot == "dragon_ball" then
       -- The Sentry Gun and the Sentry Laser are placed as WA places a mine.
@@ -3594,6 +3596,68 @@ do
   end
   wa.crates.spawn = spawn
   check("a refused weapon crate drops as a health crate, still three", healths > 0)
+end
+
+print("submarine attack: PX's submarine fires twenty missiles up out of the water")
+do
+  new_match()
+  local spec
+  for _, r in ipairs(replaced) do
+    if r.weapon == "mine_strike" then spec = r end
+  end
+  check("the strike takes the scheme's record, its icon and a click", spec
+    and spec.wep == "weps/mine_strike.wep" and spec.panel_icon == "sprites/submarine_attack/icon.png"
+    and type(spec.on_click) == "function" and spec.on_select and spec.on_select.cursor)
+  local SHEET = "sprites/submarine_attack/submarine.png"
+  local function attack(vx)
+    M.water, M.launched, M.sounds, M.quads = 600, {}, {}, {}
+    local before = #(M.spawned or {})
+    spec.on_click({ worm = worm(16), x = 1000, y = 400, vx = vx, sky = wa.world.sky })
+    local a = M.spawned[#M.spawned]
+    local r = { actor = #M.spawned == before + 1 and a, at = {}, sounds = M.sounds }
+    M.draw()
+    r.first_quad = M.quads[1]
+    -- Until the invisible plane leaves the map, or long past it.
+    for f = 1, 400 do
+      if a.dead then break end
+      local n = #M.launched
+      a.on(a)
+      if #M.launched > n then r.at[#r.at + 1] = f end
+      r.frames = f
+    end
+    M.quads = {}
+    return r
+  end
+  local r = attack(1)
+  check("one actor runs the strike, the submarine's sound plays at the click",
+    r.actor and r.sounds[1] == "sounds/submarine_attack/substrike.wav")
+  -- PxAirstrike: 20 bombs, 3 frames apart, after 120 frames; the plane starts
+  -- 12 bomb slots before the click (x 1000 on a 2000-wide map).
+  local even = #r.at == 20
+  for i = 2, #r.at do even = even and r.at[i] - r.at[i - 1] == 3 end
+  check("twenty missiles, one every three frames, from frame 132", even and r.at[1] == 132 and r.at[20] == 189,
+    table.concat(r.at, ","))
+  local ok = true
+  for _, l in ipairs(M.launched) do
+    ok = ok and l.weapon == "bazooka" and l.y == 598 and l.vx == 10 and l.vy == -15
+      and l.x >= 970 and l.x <= 1000 and l.missile.explosion.power == 20
+      and l.missile.sprite == "airmisl" and l.missile.ends_on_contact.water
+  end
+  check("each WA's air-strike missile, fired as the Bazooka, up out of the water under the click", ok)
+  local bombs = 0
+  for _, s in ipairs(r.sounds) do
+    if s == "sounds/submarine_attack/substrikem.wav" then bombs = bombs + 1 end
+  end
+  check("each missile its sound", bombs == 20)
+  check("over when the plane leaves the map, at frame 332", r.frames == 332 and r.actor.dead, tostring(r.frames))
+  local q = r.first_quad
+  check("the submarine drawn in front of the water, tinted, opaque at first", q and q.sprite == SHEET
+    and q.depth == 0x20000 and q.color == 0xFF7878FF and q.points[1][1] < q.points[2][1])
+  local left = attack(-1)
+  ok = #M.launched == 20
+  for _, l in ipairs(M.launched) do ok = ok and l.vx == -10 and l.x >= 1000 and l.x <= 1030 end
+  check("from the right: the missiles go left, the submarine is mirrored", ok
+    and left.first_quad.points[1][1] > left.first_quad.points[2][1])
 end
 
 print("chilli bomb: five more Chillis burst out")

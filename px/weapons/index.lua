@@ -54,6 +54,7 @@ return {
   ["px.skunk"] = "weapons/skunk",
   ["px.sniper_rifle"] = "weapons/sniper_rifle",
   ["px.sticky_bomb"] = "weapons/sticky_bomb",
+  ["px.submarine_attack"] = "weapons/submarine_attack",
   ["px.super_drill"] = "weapons/super_drill",
   ["px.super_gravedigger"] = "weapons/super_gravedigger",
   ["px.super_tele"] = "weapons/super_tele",

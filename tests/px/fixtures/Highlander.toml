@@ -1,7 +1,7 @@
 # Project X's Highlander (Highlander 0rang3 1.1): every PX weapon where PX's
 # layout puts it, dealt by the Highlander rules. Each PX weapon's pool is its
-# own suggestion (px/mod.toml); WA's Dynamite, Flame Thrower and Mine Strike
-# stand in for PX's.
+# own suggestion (px/mod.toml); WA's Dynamite and Flame Thrower stand in for
+# PX's.
 description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
 features = ["hl.rules"]
 
@@ -35,7 +35,7 @@ features = ["hl.rules"]
 "px.mortar_strike" = { row = "F6", column = 1 }
 "px.lightning_strike" = { row = "F6", column = 2 }
 "px.pigeon_strike" = { row = "F6", column = 3 }
-"stock.mine_strike" = { row = "F6", column = 4 }
+"px.submarine_attack" = { row = "F6", column = 4 }
 "px.gravler_strike" = { row = "F6", column = 5 }
 "px.blowtorch" = { row = "F7", column = 1 }
 "px.super_drill" = { row = "F7", column = 2 }
@@ -76,10 +76,6 @@ features = ["hl.rules"]
 "stock.crate_spy" = { row = "utility", column = 7 }
 "px.mole_bomb" = { row = "utility", column = 8 }
 "stock.crate_shower" = { row = "utility", column = 9 }
-
-[weapon_options."hl.rules"."stock.mine_strike"]
-pool = "offensive"
-cavern = false
 
 [weapon_options."hl.rules"."stock.flame_thrower"]
 pool = "second"

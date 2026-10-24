@@ -1414,6 +1414,20 @@ icon = "sprites/homing_air_strike/ico_hairstrike.png"
 default_position = { row = "F6", column = 6 }
 
 [[components]]
+id = "px.submarine_attack"
+type = "weapon"
+name = "Submarine Attack"
+authors = ["rafa``2"]
+description = "Highlander's Submarine Attack: click a target; a submarine rises under it and fires twenty missiles up out of the water."
+entry = "components/weapon.lua"
+icon = "sprites/submarine_attack/icon.png"
+default_position = { row = "F6", column = 4 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+cavern = false
+
+[[components]]
 id = "px.lightning_strike"
 type = "weapon"
 name = "Lightning Strike"

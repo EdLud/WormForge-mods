@@ -37,6 +37,7 @@ local ORDER = {
   "weapons/ferret",
   "weapons/electromagnet",
   "weapons/crate_strike",
+  "weapons/submarine_attack",
   "weapons/sentry_gun",
   "weapons/sentry_laser",
   "weapons/petrol_turret",
