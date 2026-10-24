@@ -43,8 +43,8 @@ function weapon.setup()
         or f < 6 and "sounds/wind_changer/calm_wind.wav" or "sounds/wind_changer/strong_wind.wav")
       wa.world.set_wind((f * WIND_STEP) * worm.facing)
     end,
-    hud = function()
-      wa.hud.line(string.format("Wind Changer: force %d (keys 0-9), then Space", wind_force))
+    hint = function()
+      return string.format("Wind Changer: force %d (keys 0-9), then Space", wind_force)
     end,
   })
 end

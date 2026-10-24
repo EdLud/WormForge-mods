@@ -194,24 +194,10 @@ function M.install(ctx)
     digit_held = digit
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 
-  -- The worm whose turn it is -- PX's `GetCurrentWorm()`.
-  local function current_worm()
-    for _, w in ipairs(wa.worms.all()) do
-      if w.turn then return w end
-    end
-  end
-
-  if wa.on.hud then
-    wa.on.hud(function()
-      local worm = current_worm()
-      if worm and worm.weapon == "px.blast_zone" then
-        -- PX's own team message says one less than he sets -- "Activity: 1
-        -- turn" for 2, "// +1, for balance" (:431-432). This counts what the
-        -- zone really gets.
-        wa.hud.line("Blast Zone: explodes for " .. turns .. " turns  (1-5 turns)")
-      end
-    end)
-  end
+  require("lib/weapon_hint").register("px.blast_zone", function()
+    -- Report the duration the zone actually receives.
+    return "Blast Zone: explodes for " .. turns .. " turns  (1-5 turns)"
+  end)
 
   -- **The round in flight, drawn and turned by hand.** PX's `WeapSprite` with an
   -- empty `WeapSpriteParams` (`blast_zone_anim.txt:36-49`) leaves WA's sprite 0

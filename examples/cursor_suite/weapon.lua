@@ -13,9 +13,10 @@ local RAINBOW = { 0xFF2A2A, 0xFF8C1A, 0xFFE81A, 0x3CFF4A, 0x2E8CFF, 0x8A3CFF, 0x
 return {
   defaults = { ammo = { round_start = -1 }, delay = 0 },
   install = function(ctx)
-    local source, field, owner
+    local field
     local remembered = {} -- Stable worm IDs; each worm keeps its own mode.
     local mode, plus_held = 1, false
+    local hint_dirty = false
     local next_fire, colour, ready_at, waiting_release = 0, 0, 0, true
 
     local function clear(a)
@@ -40,20 +41,20 @@ return {
         -- any click held while selecting the weapon or entering Fire mode.
         next_fire, ready_at, waiting_release = 0, wa.world.frame() + 3, true
       end
+      hint_dirty = true
     end
 
     cursor.install(ctx, {
       name = "Cursor",
       icon = "sprites/icon.png",
       start = function(a, worm)
-        source, owner = a, worm
         mode = remembered[worm.id] or 1
         plus_held = wa.world.keys().plus_key or false
         apply(a)
       end,
       stop = function(a)
         clear(a)
-        source, owner = nil, nil
+        hint_dirty = false
       end,
       frame = function(a, worm)
         local plus = wa.world.keys().plus_key or false
@@ -63,6 +64,11 @@ return {
           apply(a)
         end
         plus_held = plus
+        if hint_dirty then
+          wa.hud.message_top(("Cursor: %s | %s | + next mode"):format(MODES[mode].name, MODES[mode].hint),
+            {to = "coalition", alliance = worm.alliance})
+          hint_dirty = false
+        end
         if mode ~= 6 then return end
         if not wa.world.pointer().down then
           next_fire, waiting_release = 0, false
@@ -98,10 +104,9 @@ return {
         end
       end,
     })
-    wa.on.hud(function()
-      if source and not source.dead and owner and owner.turn and owner.hp > 0 and owner.weapon == ctx.id then
-        wa.hud.line(("Cursor: %s | %s | + next mode"):format(MODES[mode].name, MODES[mode].hint))
-      end
-    end)
+    -- WA's SelectWeapon message also fires when reselecting the same mode.
+    wa.on.worm_message(function(worm)
+      if worm.turn and worm.weapon == ctx.id then hint_dirty = true end
+    end, {msgs = {51}})
   end,
 }

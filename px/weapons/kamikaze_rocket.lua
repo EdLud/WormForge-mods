@@ -38,7 +38,6 @@ function weapon.setup()
   local LIFE = 4000           -- ms, less 20 a frame: 200 frames
   local HOLE = 8              -- MakeHole(8) each frame
   local BOOM = { damage = 30, id = 100 }
-  local HINT_FRAMES = 150
   local STALE = 200           -- other worms' frames without one of its own
   local FLY = "sprites/kamikaze_rocket/fly.png"
   local FLY_FRAMES, FLY_HALF_W, FLY_HALF_H = 5, 30, 40
@@ -46,7 +45,6 @@ function weapon.setup()
 
   local rockets = {} -- worm id -> its rocket
   local armed = {}   -- worm id -> fired with Ctrl, its flight not yet begun
-  local hint = 0     -- frames left of the "hold Ctrl" line
 
   -- PX's FireFinal: from the worm, at its aim (FireAngle, 0 down to 1 up)
   -- on its side.
@@ -95,14 +93,14 @@ function weapon.setup()
     if msg == wa.msg.FIRE_WEAPON then
       if worm.weapon ~= "px.kamikaze_rocket" then return end
       if not wa.world.keys().ctrl then
-        hint = HINT_FRAMES
+        wa.hud.message_top("Hold Ctrl and press Space to use the Kamikaze Rocket.",
+          {to = "coalition", alliance = worm.alliance})
         return "eat"
       end
       armed[worm.id] = true
       return
     end
     -- FRAME_FINISH
-    if worm.turn and hint > 0 then hint = hint - 1 end
     -- Leaving the map sideways, WA's Kamikaze blows the worm up and frees it:
     -- its frames stop, so its rocket goes once the other worms have had a few.
     for id, other in pairs(rockets) do
@@ -137,9 +135,6 @@ function weapon.setup()
         if not r.done then
           wa.hud.line(string.format("Kamikaze Rocket: %.2f", math.max(0, r.life) / 1000))
         end
-      end
-      if hint > 0 then
-        wa.hud.line("Hold Ctrl and press Space to use the Kamikaze Rocket.")
       end
     end)
   end

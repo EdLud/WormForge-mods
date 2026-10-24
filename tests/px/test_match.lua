@@ -368,7 +368,17 @@ local function new_match(opts)
     end,
     log = function(s) logs[#logs + 1] = s end,
     assets = { load = function() end },
-    hud = { line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end },
+    hud = {
+      line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end,
+      message_top = function(text, options)
+        assert(not M.in_hud, "native messages must run in simulation callbacks")
+        assert(#text > 0 and #text <= 127)
+        assert(options.to == "coalition" and options.alliance ~= nil)
+        M.top_messages = M.top_messages or {}
+        M.top_messages[#M.top_messages + 1] = {text = text, to = options.to, alliance = options.alliance}
+        return true
+      end,
+    },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24,
       JUMP_UP = 0x25, RELEASE_WEAPON = 0x27 },
     world = {
@@ -863,7 +873,9 @@ local function new_match(opts)
         M.hud_handlers = M.hud_handlers or {}
         M.hud_handlers[#M.hud_handlers + 1] = f
         M.hud = function()
+          M.in_hud = true
           for _, h in ipairs(M.hud_handlers) do h() end
+          M.in_hud = false
         end
       end,
       draw = function(f)
@@ -1272,8 +1284,11 @@ do
   local missile = { id = 102, x = 50, y = 100 }
   function missile:impulse(dx, dy) self.dx, self.dy = dx, dy; return true end
   M.mines, M.missiles = { mine, timed }, { missile }
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FRAME_FINISH)
   M.hud()
-  check("the HUD names the mode", M.hud_lines and M.hud_lines[#M.hud_lines]:find("REPEL") ~= nil)
+  check("the top banner names the mode for its coalition", M.top_messages[#M.top_messages].text:find("REPEL") ~= nil
+    and M.top_messages[#M.top_messages].alliance == w.alliance)
   shot({ worm = w })
   local repel = M.spawned[#M.spawned]
   magnet_frame(repel)
@@ -1299,7 +1314,7 @@ do
   M.plus_key = false
   M.message(w, wa.msg.FRAME_FINISH)
   M.hud()
-  check("the HUD follows the switch", M.hud_lines[#M.hud_lines]:find("ATTRACT") ~= nil)
+  check("the top banner follows the switch", M.top_messages[#M.top_messages].text:find("ATTRACT") ~= nil)
   -- Test the new magnet in isolation; automatic force now sums every source.
   for _, field in ipairs(M.magnetic_fields) do field.enabled = false end
   shot({ worm = w })
@@ -2493,7 +2508,8 @@ do
   check("without Ctrl the fire is eaten: nothing is used", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
   M.hud_lines = {}
   M.hud()
-  check("and the HUD says to hold Ctrl", M.hud_lines[#M.hud_lines] ~= nil and M.hud_lines[#M.hud_lines]:find("Ctrl") ~= nil)
+  check("and the top banner says to hold Ctrl", M.top_messages[#M.top_messages].text:find("Ctrl") ~= nil
+    and M.top_messages[#M.top_messages].alliance == w.alliance)
   M.ctrl = true
   check("with Ctrl it fires", M.message(w, wa.msg.FIRE_WEAPON) == nil)
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4608,7 +4624,8 @@ do
   M.hud_lines = {}
   check("using it switches it on, eating WA's fire", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
   M.hud()
-  check("the HUD says it is on", M.hud_lines[#M.hud_lines] == "Double Jump: ON")
+  check("the top banner says it is on", M.top_messages[#M.top_messages].text == "Double Jump: ON"
+    and M.top_messages[#M.top_messages].alliance == w.alliance)
   -- Enter in a jump: WA's take-off at once, with the jump it last made.
   in_air()
   check("Enter in a jump: WA's take-off at once, the worm's own jump", M.message(w, wa.msg.JUMP) == "eat"
@@ -4638,6 +4655,7 @@ do
   M.hud()
   in_air()
   check("using it again switches it off, spending nothing", spent == -1 and #M.hud_lines == 0
+    and M.top_messages[#M.top_messages].text == "Double Jump: OFF"
     and M.message(w, wa.msg.JUMP) == nil)
   -- The next turn starts it off.
   w.weapon, w.state_id = "px.double_jump", 0x67
@@ -4662,8 +4680,9 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("a digit counts once, when it goes down", #M.sounds == 1 and M.sounds[1] == 107)
   M.hud_lines = {}
+  M.message(w, wa.msg.FRAME_FINISH)
   M.hud()
-  check("the HUD says the force and the keys", M.hud_lines[1] and M.hud_lines[1]:find("force 7"))
+  check("the top banner says the force and the keys", M.top_messages[#M.top_messages].text:find("force 7") ~= nil)
   M.digit = nil
   check("firing it goes on to WA's no-op utility", M.message(w, wa.msg.FIRE_WEAPON) == nil)
   check("wind 7 x 0.0317 towards where the worm faces, a strong wind (6 and up)",
@@ -5685,6 +5704,60 @@ do
         (shot_frames[1000] - shot_frames[1]) / 50 .. " seconds from first to last round")
     end
   end
+end
+
+print("weapon hints: coalition messages on selection and changes, never each render")
+do
+  new_match()
+  frame()
+  local w = worm(16)
+  for _, other in ipairs(worms) do other.turn = false end
+  w.turn, w.alliance = true, 4 -- colour deliberately differs from its ammo row
+  M.top_messages = {}
+  local function tick(n)
+    for _ = 1, n or 3 do M.message(w, wa.msg.FRAME_FINISH) end
+  end
+  for _, case in ipairs({
+    {"baseball_bat", "Electromagnet:"}, {"surrender", "Wind Changer:"},
+    {"low_gravity", "Gravity Control:"}, {"scales_of_justice", "Portal Gun:"},
+  }) do
+    local before = #M.top_messages
+    w.weapon = case[1]
+    M.message(w, 51)
+    tick()
+    local note = M.top_messages[#M.top_messages]
+    check(case[2] .. " one coalition tooltip after selection", #M.top_messages == before + 1
+      and note.text:find(case[2], 1, true) == 1 and note.to == "coalition" and note.alliance == 4)
+    tick(20)
+    M.hud(); M.hud()
+    check(case[2] .. " idle frames and rendering do not restart it", #M.top_messages == before + 1)
+    M.message(w, 51)
+    tick()
+    check(case[2] .. " reselecting the same weapon restores its tooltip", #M.top_messages == before + 2)
+  end
+  w.weapon = "surrender"
+  M.message(w, 51)
+  tick()
+  local before = #M.top_messages
+  M.digit = 8
+  tick()
+  check("digit change announces the updated force once", #M.top_messages == before + 1
+    and M.top_messages[#M.top_messages].text:find("force 8", 1, true) ~= nil)
+  tick(10)
+  check("a held digit does not repeat its message", #M.top_messages == before + 1)
+  M.digit = nil
+  w.weapon = "bazooka"
+  tick()
+  check("switching to an ordinary weapon adds no tooltip", #M.top_messages == before + 1)
+  w.weapon = "surrender"
+  tick()
+  check("returning to a weapon restores its tooltip", #M.top_messages == before + 2)
+  M.turn_start({worm=w,active=w})
+  tick()
+  check("a fresh turn restores the selected weapon's tooltip", #M.top_messages == before + 3)
+  w.turn = false
+  tick(10)
+  check("an inactive worm cannot publish tooltips", #M.top_messages == before + 3)
 end
 
 -- ------------------------------------------------------------ baseline

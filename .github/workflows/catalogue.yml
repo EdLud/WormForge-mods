@@ -22,8 +22,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y lua5.4
-      - name: Test PX runtime code
+      - name: Test Lua runtime code
         run: |
-          for test in tests/px/test_*.lua; do lua5.4 "$test"; done
+          for test in tests/*/test_*.lua; do lua5.4 "$test"; done
       - run: python tools/test_catalogue.py
       - run: python tools/publish-packs.py --check

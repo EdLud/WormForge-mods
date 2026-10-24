@@ -6,11 +6,11 @@ function controls.register(id, callbacks)
   assert(not actions[id], "duplicate turn control: " .. id)
   actions[id] = callbacks
   order[#order + 1] = callbacks
+  if callbacks.hint then require("lib/weapon_hint").register(id, callbacks.hint) end
 end
 function controls.setup()
   if installed then return end
   installed = true
-  local current_worm = require("lib/shared").current_worm
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
       for _, callbacks in ipairs(order) do
@@ -33,12 +33,5 @@ function controls.setup()
       if callbacks.finish then callbacks.finish() end
     end
   end)
-  if wa.on.hud then
-    wa.on.hud(function()
-      local worm = current_worm()
-      local callbacks = worm and actions[worm.weapon]
-      if callbacks and callbacks.hud then callbacks.hud(worm) end
-    end)
-  end
 end
 return controls

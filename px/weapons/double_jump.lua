@@ -62,6 +62,8 @@ local function install(ctx)
         on, armed = true, true
         worm:ammo(id, -1)
       end
+      wa.hud.message_top(on and "Double Jump: ON" or "Double Jump: OFF",
+        {to = "coalition", alliance = worm.alliance})
       return "eat"
     elseif msg == wa.msg.JUMP or msg == wa.msg.JUMP_UP then
       if not (armed and worm.turn and not worm.taken and in_jump(worm)) then
@@ -79,19 +81,6 @@ local function install(ctx)
     on, armed = false, false
   end)
 
-  if wa.on.hud then
-    wa.on.hud(function()
-      if not on then
-        return
-      end
-      for _, worm in ipairs(wa.worms.all()) do
-        if worm.turn then
-          wa.hud.line("Double Jump: ON")
-          return
-        end
-      end
-    end)
-  end
 end
 
 return { install = install }

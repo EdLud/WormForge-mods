@@ -316,12 +316,12 @@ function weapon.setup()
     wa.on.hud(function()
       local worm = shared.current_worm()
       show_mode_icon(worm)
-      if worm and worm.weapon == "px.electromagnet" then
-        wa.hud.line((polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
-          or "Electromagnet: REPEL mode (+ to attract)")
-      end
     end)
   end
+  require("lib/weapon_hint").register("px.electromagnet", function(worm)
+    return (polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
+      or "Electromagnet: REPEL mode (+ to attract)"
+  end)
 
   if wa.on.draw and wa.draw.quad then
     -- Refill one spec; the engine copies it before the next submission.

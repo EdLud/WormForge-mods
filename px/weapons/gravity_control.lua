@@ -82,9 +82,9 @@ function weapon.setup()
       if gravity_factor then gravity_back() end
       gravity_choice = nil
     end,
-    hud = function()
-      wa.hud.line("Gravity Control: " .. (gravity_choice and GRAVITY_NAMES[gravity_choice]
-        or "choose 1-5") .. ", then Space")
+    hint = function()
+      return "Gravity Control: " .. (gravity_choice and GRAVITY_NAMES[gravity_choice]
+        or "choose 1-5") .. ", then Space"
     end,
   })
 end

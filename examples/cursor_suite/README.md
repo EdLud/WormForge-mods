@@ -13,7 +13,8 @@ or teleport on click. Select it, then press **+** (top row or keypad) to cycle:
 | Fire | Hold the left mouse button to spray rainbow petrol flames at 25 flames/second |
 | Hurt | Click near a living worm to deal 10 HP damage through `worm:hurt(10)` |
 
-The HUD names the current mode. Holding + advances once; release and press
+A native top banner names the mode for the worm's coalition when selected,
+reselected or changed. Holding + advances once; release and press
 again to advance another mode. Each worm starts in Light and remembers its
 own mode across selections and turns. Number keys do not change magnet power.
 Switching modes removes the previous light or magnetic field immediately.
@@ -35,7 +36,7 @@ Fire mode, it waits 60 ms (three simulation frames, rounding up 50 ms) and
 requires releasing any held click before a new press can spray. Leaving Fire
 mode stops emission; existing flames burn out naturally. The rainbow tint
 requires WA's D3D9 shader renderer. Simulation callbacks own mode changes
-and actions; HUD drawing only reads the applied mode.
+and actions, including the mode announcement.
 
 The **0.9.3 demo profile** places Cursor and PX's Bowling Ball Strike, with
 fog, Live HP and Instant Death enabled. Select Cursor and press + to try the

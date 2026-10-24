@@ -159,22 +159,10 @@ function M.install(ctx)
     minus_held = keys ~= nil and keys.minus_key or false
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 
-  -- The worm whose turn it is -- PX's `GetCurrentWorm()`.
-  local function current_worm()
-    for _, w in ipairs(wa.worms.all()) do
-      if w.turn then return w end
-    end
-  end
-
-  if wa.on.hud then
-    wa.on.hud(function()
-      local worm = current_worm()
-      if worm and worm.weapon == "px.health_zone" then
-        wa.hud.line((healing and "Health Zone: HEALING" or "Health Zone: DAMAGING")
-          .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ heals, - damages)")
-      end
-    end)
-  end
+  require("lib/weapon_hint").register("px.health_zone", function()
+    return (healing and "Health Zone: HEALING" or "Health Zone: DAMAGING")
+      .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ heals, - damages)"
+  end)
 
   -- **The round in flight, drawn and turned by hand.** PX's `WeapSprite` with an
   -- empty `WeapSpriteParams` (`health_zone_anim.txt:37-47`) leaves WA's sprite 0

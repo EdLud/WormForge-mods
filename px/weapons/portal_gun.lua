@@ -204,13 +204,10 @@ function weapon.setup()
   wa.on.turn_start(function() network:turn_start(); held = {} end)
   wa.on.turn_end(function() network:turn_end() end)
 
-  if wa.on.hud then wa.on.hud(function()
-    local worm = shared.current_worm()
-    if worm and worm.weapon == ID then
-      wa.hud.line("Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
-        .. " (- orange, + blue; Ctrl/Alt other colour; Pause toggle)")
-    end
-  end) end
+  require("lib/weapon_hint").register(ID, function(worm)
+    return "Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
+      .. " (- orange, + blue; Ctrl/Alt other colour; Pause toggle)"
+  end)
 
   if wa.on.draw then
     local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame)

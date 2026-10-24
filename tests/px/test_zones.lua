@@ -10,7 +10,7 @@ package.preload["wf-lib/px_sprite_builder"] = function()
   return assert(loadfile(sdk .. "px_sprite_builder.lua", "t", env))()
 end
 local hooks, actors, claims, draws, nearby, worms, keys, assets
-local blasts, sim_random, asset_loads
+local blasts, sim_random, asset_loads, top_messages
 local function event(name, ...)
   for _, f in ipairs(hooks[name] or {}) do f(...) end
 end
@@ -30,13 +30,19 @@ local function draw()
   draws = {}; event("draw"); return draws
 end
 local function reset(rate, turns, both)
-  for _, name in ipairs({"lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
+  for _, name in ipairs({"lib/weapon_hint", "lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
     "weapons/health_zone", "weapons/blast_zone"}) do package.loaded[name] = nil end
   hooks, actors, claims, draws, nearby, worms, keys, assets = {}, {}, {}, {}, {}, {}, {}, {}
-  blasts, sim_random, asset_loads = 0, 0, 0
+  blasts, sim_random, asset_loads, top_messages = 0, 0, 0, {}
   wa = {
     depth = { EFFECTS = 12, WORMS = 16, OBJECTS = 20 },
     math = { sin = math.sin, cos = math.cos, atan = math.atan },
+    hud = {message_top = function(text, options)
+      assert(options.to == "coalition" and options.alliance == 2)
+      assert(#text <= 127)
+      top_messages[#top_messages+1] = text
+      return true
+    end},
     msg = { FIRE_WEAPON = 1, FRAME_FINISH = 2 }, on = {},
     world = { wind = function() return 0 end, gravity = function() return 1/8 end,
       water = function() return 1000 end, keys = function() return keys end,
@@ -168,3 +174,21 @@ for _, weapon in ipairs({"px.health_zone","px.blast_zone"}) do
   end
 end
 print("Zones: subsequent-turn lifetime, HP/min accumulation, original art, particles and gameplay regression checks passed")
+
+-- Tooltips follow the selected mode once, with the planting worm's coalition.
+reset(60,3,true)
+local hint_worm = worm()
+local function hint_frames(n)
+  for _=1,n do event("worm_message",hint_worm,wa.msg.FRAME_FINISH) end
+end
+hint_frames(3)
+assert(#top_messages==1 and top_messages[1]:find("HEALING",1,true))
+hint_frames(10); assert(#top_messages==1)
+keys.minus_key=true; hint_frames(3)
+assert(#top_messages==2 and top_messages[2]:find("DAMAGING",1,true))
+keys.minus_key=false; hint_worm.weapon="px.blast_zone"; hint_frames(3)
+assert(#top_messages==3 and top_messages[3]:find("Blast Zone:",1,true))
+keys.digit=5; hint_frames(3)
+assert(#top_messages==4 and top_messages[4]:find("6 turns",1,true))
+hint_frames(10); assert(#top_messages==4)
+print("Zone tooltips: coalition, selection, mode/duration changes and no repeated messages passed")

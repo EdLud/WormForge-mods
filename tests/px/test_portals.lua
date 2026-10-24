@@ -28,6 +28,10 @@ wa = {
     actors[#actors+1]=a; return a
   end },
   on = {}, msg = { FRAME_FINISH = 2 },
+  hud = {message_top = function(text, target)
+    assert(#text <= 127 and target.to == "coalition" and target.alliance == 0)
+    return true
+  end},
   draw = { quad = function(q)
     assert(#q.points==4)
     for _, p in ipairs(q.points) do assert(math.abs(p[1])<32000 and math.abs(p[2])<32000) end
@@ -36,7 +40,27 @@ wa = {
 }
 for _, name in ipairs({ "missiles", "mines", "crates", "oil", "graves", "arrows" }) do wa[name]={all=function() return {} end} end
 for _, name in ipairs({"body_move", "worm_message", "turn_start", "turn_end", "draw"}) do
-  wa.on[name] = function(f, opts) hooks[name] = f; hooks[name .. "_opts"] = opts end
+  local listeners = {}
+  wa.on[name] = function(f, opts)
+    listeners[#listeners+1] = {f=f,opts=opts}
+    hooks[name .. "_opts"] = opts
+    if name == "worm_message" then
+      hooks[name] = function(worm, msg)
+        msg = msg or wa.msg.FRAME_FINISH
+        for _, listener in ipairs(listeners) do
+          local accepted = not listener.opts or not listener.opts.msgs
+          for _, wanted in ipairs(listener.opts and listener.opts.msgs or {}) do
+            if wanted == msg then accepted = true end
+          end
+          if accepted then listener.f(worm, msg) end
+        end
+      end
+    else
+      hooks[name] = function(...)
+        for _, listener in ipairs(listeners) do listener.f(...) end
+      end
+    end
+  end
 end
 local function body(kind, uid, x, y, vx, vy)
   local b = { kind=kind, uid=uid, id=uid, x=x, y=y, vx=vx or 0, vy=vy or 0, facing=1, hp=100 }
