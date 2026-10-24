@@ -30,8 +30,6 @@ its machine).
     python3 tools/publish-packs.py --new-key
 
     python3 tools/publish-packs.py --site ../WormForge-site
-    # our staging copy of the site (EdLud's fork):
-    python3 tools/publish-packs.py --site ../WormForge-site --base-url https://edlud.github.io/WormForge/downloads/packs/
 """
 import argparse
 import datetime
@@ -49,8 +47,8 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-# The catalogue the DLL reads by default (weapons::PUBLIC_INDEX_URL): the
-# public front, ropahektic/WormForge. Another copy of it takes --base-url.
+# The catalogue the DLL reads (weapons::PUBLIC_INDEX_URL): ropahektic/WormForge,
+# the only one.
 BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
 INDEX_SCHEMA = 3
 SOURCE_URL = "https://github.com/EdLud/WormForge-mods"
@@ -494,10 +492,6 @@ def publish(site, base_url=BASE_URL, key=None, source_commit=None, source_time=N
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--site", type=Path, help="the site repo's checkout (its downloads/ is written)")
-    target = parser.add_mutually_exclusive_group()
-    target.add_argument("--channel", choices=("staging", "production"),
-                        help="select EdLud's staging site or ropahektic's production site (default)")
-    target.add_argument("--base-url", help="custom HTTPS downloads/packs/ address")
     parser.add_argument("--key", type=Path, default=KEY_FILE,
                         help=f"the catalogue key's private half (default {KEY_FILE})")
     parser.add_argument("--new-key", action="store_true",
@@ -516,10 +510,7 @@ def main():
         return
     if args.site is None:
         parser.error("--site is required")
-    base_url = args.base_url or ("https://edlud.github.io/WormForge/downloads/packs/"
-                                if args.channel == "staging" else BASE_URL)
-    if not base_url.startswith("https://") or not base_url.endswith("/"):
-        raise SystemExit("--base-url must be an https address ending in /")
+    base_url = BASE_URL
     # Before anything is written: no key, no publish.
     key = load_key(args.key)
     if args.verify:

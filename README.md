@@ -88,14 +88,15 @@ that exact commit, excluding ignored or untracked files. The signed index record
 the source repository and commit. With the same retained store and base URL,
 building the same commit produces the same catalogue bytes.
 
-Build for the staging fork:
+Build in the website checkout (ropahektic/WormForge, served at
+`https://ropahektic.github.io/WormForge/`, the only catalogue address):
 
 ```sh
-python3 catalogue/tools/publish-packs.py --site . --channel staging
+python3 catalogue/tools/publish-packs.py --site .
 ```
 
 The signing seed stays outside Git, by default at
-`~/.config/wormforge/catalogue-signing.key`. Both catalogues need a key trusted by
+`~/.config/wormforge/catalogue-signing.key`. The catalogue needs a key trusted by
 the DLL. The public key is safe to share; the seed must not enter source, logs,
 release archives or website files. Building locally uses the existing key.
 
@@ -105,28 +106,16 @@ A failure preserves the previous downloads. Review and commit the website's
 submodule pointer and generated files together, then deploy that snapshot.
 Building does not commit, push or deploy anything.
 
-For loader testing, point the test installation's `WormForge/online.toml` at:
-
-```toml
-index_url = "https://edlud.github.io/WormForge/downloads/packs/index.toml"
-```
-
-The DLL's default remains the production catalogue. Test staging with a separate
-installation or backed-up settings; leave ordinary players on production.
-
-## Promoting to production
+## Publishing
 
 Shared-library catalogues use schema 3. Publish a compatible engine DLL before
-promoting them; older DLLs refuse schema 3 without installing any packs. Current
-DLLs continue to accept older schema 2 catalogues.
+publishing them; older DLLs refuse schema 3 without installing any packs.
+Current DLLs continue to accept older schema 2 catalogues.
 
-1. Test the staging catalogue through the loader and in game.
-2. Pin the **same mods commit** in the production website checkout.
-3. Rebuild there with `--channel production`.
-4. Verify and review the complete generated downloads, then commit and deploy.
-
-Staging and production indexes differ because they name different hosting URLs;
-the mod archives come from the same committed source. Retain historical version
+1. Test the packs in game from the mods commit you will publish.
+2. Pin that mods commit in the website checkout and build there.
+3. Verify (`--verify`) and review the complete generated downloads, then commit
+   and deploy. Retain historical version
 manifests and blobs so old replays remain reconstructible. Roll back by restoring
 a previously tested mods pointer and rebuilding against the retained store.
 
