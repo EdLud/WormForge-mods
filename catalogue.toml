@@ -9,6 +9,6 @@ packs = [
 # Exact source paths: a profile is published only when listed here.
 profiles = [
   "px/profiles/Full Wormforage.toml",
-  "px/profiles/Highlander Orange 0.1.toml",
+  "px/profiles/Highlander Orange.toml",
   "utilities/profiles/0.9.3 demo profile.toml",
 ]

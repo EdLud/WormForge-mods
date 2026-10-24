@@ -1,4 +1,4 @@
-# WormForge profile "Highlander edit": made in the mod loader; safe to edit by hand.
+# WormForge profile "Highlander Orange": made in the mod loader; safe to edit by hand.
 description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
 features = ["core.utilities", "hl.rules", "px.oil_drums"]
 
@@ -11,26 +11,6 @@ live_hp = true
 [scheme]
 automatic_end_of_turn_retreat = true
 weapon_use_doesn_t_end_turn = true
-
-[weapon_options."hl.rules"."px.attack_helicopter"]
-cavern = false
-pool = "second"
-
-[weapon_options."hl.rules"."px.double_jump"]
-pool = "movement"
-
-[weapon_options."hl.rules"."px.gravler"]
-pool = "offensive"
-
-[weapon_options."hl.rules"."px.homing_air_strike"]
-cavern = false
-pool = "second"
-
-[weapon_options."hl.rules"."px.security_grenade"]
-pool = "offensive"
-
-[weapon_options."hl.rules"."px.super_bunker_buster"]
-pool = "offensive"
 
 [weapon_options."hl.rules"."stock.baseball_bat"]
 pool = "second"
@@ -90,6 +70,7 @@ after_use = "continue"
 after_use = "continue"
 
 [weapon_settings."px.gravler"]
+ammo = 0
 after_use = "continue"
 
 [weapon_settings."px.gravler_strike"]
@@ -115,6 +96,7 @@ after_use = "continue"
 after_use = "continue"
 
 [weapon_settings."px.kamikaze_rocket"]
+ammo = 1
 after_use = "continue"
 
 [weapon_settings."px.laser_gun"]
@@ -204,13 +186,18 @@ after_use = "continue"
 [weapon_settings."stock.fast_walk"]
 ammo = -1
 
+[weapon_settings."stock.crate_shower"]
+ammo = 0
+
+[weapon_settings."stock.crate_spy"]
+ammo = 0
+
+[weapon_settings."stock.teleport"]
+ammo = 0
+
 [weapons."px.3_girder_pack"]
 column = 5
 row = "F7"
-
-[weapons."px.attack_helicopter"]
-column = 4
-row = "F8"
 
 [weapons."px.banana_express"]
 column = 5
@@ -252,10 +239,6 @@ row = "F11"
 column = 1
 row = "F1"
 
-[weapons."px.double_jump"]
-column = 5
-row = "utility"
-
 [weapons."px.electric_grenade"]
 column = 5
 row = "F2"
@@ -273,7 +256,7 @@ column = 1
 row = "F4"
 
 [weapons."px.ghost_sheep"]
-column = 4
+column = 5
 row = "F5"
 
 [weapons."px.gravity_control"]
@@ -281,7 +264,7 @@ column = 2
 row = "utility"
 
 [weapons."px.gravler"]
-column = 5
+column = 6
 row = "F5"
 
 [weapons."px.gravler_strike"]
@@ -299,10 +282,6 @@ row = "utility"
 [weapons."px.hellish_hand_grenade"]
 column = 2
 row = "F9"
-
-[weapons."px.homing_air_strike"]
-column = 4
-row = "F6"
 
 [weapons."px.hot_air_balloon"]
 column = 2
@@ -380,10 +359,6 @@ row = "F10"
 column = 3
 row = "F1"
 
-[weapons."px.security_grenade"]
-column = 3
-row = "F12"
-
 [weapons."px.sentry_gun"]
 column = 3
 row = "F4"
@@ -409,12 +384,8 @@ column = 1
 row = "F2"
 
 [weapons."px.submarine_attack"]
-column = 6
+column = 4
 row = "F6"
-
-[weapons."px.super_bunker_buster"]
-column = 5
-row = "F12"
 
 [weapons."px.super_drill"]
 column = 2
@@ -423,6 +394,10 @@ row = "F7"
 [weapons."px.super_gravedigger"]
 column = 3
 row = "F2"
+
+[weapons."px.super_tele"]
+column = 4
+row = "F8"
 
 [weapons."px.swim_suit"]
 column = 4
@@ -456,6 +431,14 @@ row = "F2"
 column = 3
 row = "F7"
 
+[weapons."stock.crate_shower"]
+column = 9
+row = "utility"
+
+[weapons."stock.crate_spy"]
+column = 7
+row = "utility"
+
 [weapons."stock.dynamite"]
 column = 1
 row = "F5"
@@ -467,3 +450,7 @@ row = "utility"
 [weapons."stock.flame_thrower"]
 column = 3
 row = "F9"
+
+[weapons."stock.teleport"]
+column = 5
+row = "utility"
