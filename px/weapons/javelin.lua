@@ -27,9 +27,10 @@ function weapon.definition()
     sprites = { "sprites/javelin/hold.png", "sprites/javelin/flight.png", "sprites/javelin/stamp.png" },
     sounds = { "sounds/javelin_impact.wav" },
     params = { gpu_prefix = "sprites/javelin/" },
+    on_fire = function(ev) fires.javelin_launch(ev) end,
     on_explode = function(ev) fires.javelin(ev) end,
     hold = {
-        keep_while_firing = true,
+        thrown = true,
         sheet = "sprites/javelin/hold.png", draw_hand = false,
         hand_radius = 0, hand_rotation = 0, hand_radial_rotation = 0,
         weap_radial_rotation = 0, weap_rotation = 1, weap_radius = -11.8,
@@ -51,10 +52,34 @@ function weapon.setup()
 
   do
     local speed = {}
+    local launching
+    fires.javelin_launch = function(ev)
+      -- A point-blank missile can explode inside launch(), before either
+      -- its returned ID or its first frame exists. Keep this shot's speed
+      -- and thrower available throughout that synchronous impact callback.
+      local flight = { ev.vx, ev.vy, shooter = ev.worm.id }
+      local previous = launching
+      launching = flight
+      local ok, id = pcall(wa.weapons.launch, {
+        weapon = "px.javelin", owner = ev.worm,
+        x = ev.x, y = ev.y, vx = ev.vx, vy = ev.vy,
+      })
+      launching = previous
+      if not ok then error(id) end
+      if id and not flight.exploded then speed[id] = flight end
+    end
     -- Pre keeps the incoming speed even when this frame's stock collision
     -- destroys the missile. Post keeps acceleration for the following frame.
     wa.on.missile_frame(function(m)
-      if m.weapon == "px.javelin" then speed[m.id] = { m.vx, m.vy, uid = m.uid } end
+      if m.weapon == "px.javelin" then
+        local flight = speed[m.id]
+        if not flight then
+          local shooter = current_worm()
+          flight = { shooter = shooter and shooter.id }
+          speed[m.id] = flight
+        end
+        flight[1], flight[2], flight.uid = m.vx, m.vy, m.uid
+      end
     end)
 
     -- How the part of the stamp inside the land fades: over 3 pixels from the
@@ -75,23 +100,24 @@ function weapon.setup()
       return o and math.abs(x - o.x) < r and math.abs(y - o.y) < r
     end
     fires.javelin = function(ev)
-      local v = ev.missile and speed[ev.missile]
+      local v = (ev.missile and speed[ev.missile]) or launching
       if ev.missile then speed[ev.missile] = nil end
+      if v then v.exploded = true end
       local vx, vy = v and v[1] or 0, v and v[2] or 0
+      local active = current_worm()
+      local shooter_id = v and v.shooter or (active and active.id)
       local target
-      -- The circle encloses PX's strict 20px square. Keep native traversal
-      -- order, including the shooter; PX stops at the first eligible object.
+      -- Keep PX's strict impact square and traversal order, excluding the
+      -- thrower even when another handle represents that same worm. Capture
+      -- its identity in flight so a control/turn change cannot reassign it.
       for _, o in ipairs(wa.world.electrical_nearby(ev.x, ev.y, 29, false)) do
         if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
+          and (o.kind ~= "worm" or o.id ~= shooter_id)
           and within(o, ev.x, ev.y, 20) then target = o; break end
       end
       if not target then
         local sentry = turrets.projectile_target(ev.x, ev.y)
         if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.uid) then return end
-      end
-      if not target then
-        local active = current_worm()
-        if within(active, ev.x, ev.y, 25) then target = active end
       end
       if target then
         target.vx, target.vy = vx / 4, vy / 4

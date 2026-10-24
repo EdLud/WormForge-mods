@@ -5268,7 +5268,7 @@ do
   check("an explosion without a worm: the turn's worm owns the arc", M.spawned[1] and M.spawned[1].owner == owner)
 end
 
-print("Javelin: ordered thrusts and terrain stamps")
+print("Javelin: ordered thrusts, thrower immunity and terrain stamps")
 do
   new_match()
   local spec
@@ -5283,9 +5283,10 @@ do
     return nearby
   end
   local id = 0
-  local function impact(vx, vy)
+  local function impact(vx, vy, before_explode)
     id = id + 1
     M.missile({ weapon = "prod", id = id, uid = id + 1000, phase = "pre", vx = vx, vy = vy })
+    if before_explode then before_explode(id) end
     -- WA's explosion reports the missile's owner, which is not a worm.
     spec.on_explode({ x = 100, y = 100, missile = id, worm = { owner_object = true } })
   end
@@ -5296,6 +5297,31 @@ do
   check("first target wins, including square corners outside a 20px circle", a.hp == 80 and b.hp == 100)
   check("worm thrust uses quarter incoming velocity", a.vx == 2 and a.vy == -1)
   check("hitting an object never stamps", M.stamps == nil)
+  -- Two close worms: the thrower may appear first in native traversal.
+  local enemy = worms[4]
+  owner.x, owner.y, enemy.x, enemy.y = 98, 100, 108, 100
+  local owner_hp, enemy_hp = owner.hp, enemy.hp
+  nearby = { owner, enemy }
+  impact(8, -4)
+  check("point-blank enemy is hit even when the thrower is first", owner.hp == owner_hp and enemy.hp == enemy_hp - 20)
+  check("thrower receives neither thrust nor damage", owner.vx == 0 and owner.vy == 0)
+  -- Handles are not table identities: native queries can wrap the same worm again.
+  local owner_alias = { id = owner.id, kind = "worm", x = owner.x, y = owner.y }
+  function owner_alias:hurt() error("Javelin selected another handle for its thrower") end
+  nearby = { owner_alias, enemy }
+  impact(8, -4)
+  check("thrower exclusion uses stable worm identity", owner.hp == owner_hp and enemy.hp == enemy_hp - 40)
+  nearby = { enemy, owner }
+  impact(8, -4)
+  check("reversing traversal order preserves the intended hit", owner.hp == owner_hp and enemy.hp == enemy_hp - 60)
+  nearby = { owner, enemy }
+  impact(8, -4, function(missile)
+    owner.turn, enemy.turn = false, true
+    M.missile({ weapon = "prod", id = missile, uid = missile + 1000, phase = "post", vx = 8, vy = -4 })
+  end)
+  check("the thrower's identity survives a control/turn change", owner.hp == owner_hp and enemy.hp == enemy_hp - 80)
+  owner.turn, enemy.turn = true, false
+  owner.x, owner.y = 1000, 1000
   a.x, a.y = 120, 100
   nearby = { a }
   impact(1, 0)
@@ -5303,11 +5329,11 @@ do
   nearby = {}
   owner.x, owner.y = 124, 124
   impact(-7, 7)
-  check("active worm has PX's 25px fallback and retains fractional thrust", owner.hp == 80
-    and owner.vx == -1.75 and owner.vy == 1.75 and #M.stamps == 1)
+  check("terrain beside the thrower never invokes PX's self-hit fallback", owner.hp == 100
+    and owner.vx == 0 and owner.vy == 0 and #M.stamps == 2)
   owner.x, owner.y = 125, 100
   impact(0, 0)
-  check("25px fallback boundary is excluded; zero speed points up", owner.hp == 80 and M.stamps[2].frame == 0)
+  check("an empty impact still stamps; zero speed points up", owner.hp == 100 and M.stamps[3].frame == 0)
   owner.x, owner.y = 1000, 1000
   for _, kind in ipairs({"mine", "crate", "oil"}) do
     local o = { kind = kind, x = 100, y = 100 }
@@ -5316,7 +5342,7 @@ do
     impact(-8, 4)
     check(kind .. " receives 20 projectile damage and thrust", o.hit_args[1] == 20
       and o.hit_args[2] == -4 and o.hit_args[3] == 2 and o.hit_args[4] == "projectile"
-      and o.vx == -2 and o.vy == 1 and #M.stamps == 2)
+      and o.vx == -2 and o.vy == 1 and #M.stamps == 3)
   end
   nearby = {}
   local cases = { {0,-1,0}, {1,0,8}, {0,1,16}, {-1,0,24}, {1,-1,3}, {1,1,11},
@@ -5337,6 +5363,63 @@ do
   local n = #M.stamps
   M.draw()
   check("drawing never writes terrain", #M.stamps == n)
+  owner.x, owner.y = 100, 100
+  nearby = { owner_alias }
+  local stamps_before = #M.stamps
+  impact(-8, 4)
+  check("a returning Javelin cannot hurt or push its thrower", owner.hp == 100
+    and owner.vx == 0 and owner.vy == 0 and #M.stamps == stamps_before + 1)
+  enemy.hp = 100
+  nearby = { owner, enemy }
+  spec.on_explode({ x = 100, y = 100, worm = { owner_object = true } })
+  check("an impact without a cached flight still excludes the active thrower", owner.hp == 100 and enemy.hp == 80)
+  -- Native creation can burst synchronously: no missile frame has run yet.
+  local launch = wa.weapons.launch
+  owner.x, owner.y, enemy.x, enemy.y = 100, 100, 100, 100
+  enemy.hp, enemy.vx, enemy.vy = 100, 0, 0
+  nearby = { owner_alias, enemy }
+  wa.weapons.launch = function(shot)
+    check("Javelin relaunch preserves owner, muzzle and charged velocity",
+      shot.weapon == "px.javelin" and shot.owner == owner and shot.x == 100
+      and shot.y == 100 and shot.vx == -12 and shot.vy == 4)
+    spec.on_explode({ x = shot.x, y = shot.y, missile = 8001 })
+    return 8001
+  end
+  spec.on_fire({ worm = owner, x = 100, y = 100, vx = -12, vy = 4 })
+  check("overlapping impact before the first frame damages and pushes the victim",
+    enemy.hp == 80 and enemy.vx == -3 and enemy.vy == 1)
+  check("immediate impact still leaves the thrower unharmed",
+    owner.hp == 100 and owner.vx == 0 and owner.vy == 0)
+  enemy.vx, enemy.vy = 0, 0
+  spec.on_explode({ x = 100, y = 100, missile = 8001 })
+  check("a synchronous impact leaves no stale flight or launch velocity",
+    enemy.vx == 0 and enemy.vy == 0)
+  wa.weapons.launch = function() return 8002 end
+  spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
+  owner.turn, enemy.turn = false, true
+  nearby = { owner_alias }
+  local before = #M.stamps
+  spec.on_explode({ x = 100, y = 100, missile = 8002 })
+  check("launch captures the thrower even if control changes before its first frame",
+    owner.hp == 100 and #M.stamps == before + 1 and M.stamps[#M.stamps].frame == 7)
+  owner.turn, enemy.turn = true, false
+  wa.weapons.launch = function() return 8003 end
+  spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
+  M.missile({ weapon = "prod", id = 8003, uid = 9003, phase = "pre", vx = 8, vy = 4 })
+  nearby = { enemy }
+  spec.on_explode({ x = 100, y = 100, missile = 8003 })
+  check("later impacts use incoming flight velocity rather than initial launch speed",
+    enemy.vx == 2 and enemy.vy == 1)
+  wa.weapons.launch = function() error("test launch failure") end
+  local ok = pcall(spec.on_fire, { worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
+  spec.on_explode({ x = 100, y = 100, missile = 8004 })
+  check("failed launches propagate errors and clear the temporary velocity",
+    not ok and enemy.vx == 0 and enemy.vy == 0)
+  wa.weapons.launch = function() return nil end
+  spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
+  spec.on_explode({ x = 100, y = 100, missile = 8005 })
+  check("refused launches leave no temporary velocity", enemy.vx == 0 and enemy.vy == 0)
+  wa.weapons.launch = launch
   -- Sentries are absent from the native electrical object list.
   nearby = {}
   for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
