@@ -2,6 +2,9 @@
 description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried."
 features = ["core.utilities", "hl.rules", "px.oil_drums"]
 
+[options."px.3_girder_pack"]
+placement_range = 300
+
 [options."core.utilities"]
 agility = true
 collect_viewer = true

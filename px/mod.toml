@@ -1531,6 +1531,18 @@ entry = "components/weapon.lua"
 icon = "girder_pack"
 default_position = { row = "F7", column = 5 }
 
+# Project X's girder restrictor (script_girder_restrictor): the cursor kept
+# within this many pixels of the worm while placing. 0: anywhere.
+[[components.options]]
+key = "placement_range"
+type = "int"
+default = 0
+min = 0
+max = 65535
+label = "Placement range (px)"
+description = "How far from the worm its girders may be placed: the cursor is held to this circle. 0 places anywhere. Highlander uses 300."
+data = true
+
 [components.suggests."hl.rules"]
 pool = "movement"
 
