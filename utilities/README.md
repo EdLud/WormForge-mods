@@ -4,7 +4,7 @@ WormForge's own add-ons and tools (`core.utilities`, `format_version = 2`):
 **Utilities**, with the match settings the lobby scheme doesn't have and some
 players' favourite mods as switches; **Fog of war**; the **+N Seconds**
 utility; and the **Cursor** weapon. Fog of war and the Cursor were their own
-packs (`core.fog`, `example.cursor_suite`) until 0.5.0; installing this pack
+packs (`core.fog`, `example.cursor_suite`) until 0.6.0; installing this pack
 from the catalogue moves those to `WormForge/Backups/Packs`, since their
 components are here now (`replaces` in `mod.toml`).
 

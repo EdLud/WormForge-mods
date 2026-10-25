@@ -31,6 +31,9 @@ function weapon.definition()
     sprites = {
           "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_body.png",
           "sprites/sentry_laser/turret_barrel.png", "sprites/sentry_laser/turret_light.png",
+          -- The Laser Gun's beam (lib/laser.lua), its own here: a match
+          -- without the Laser Gun would not have it.
+          "sprites/laser_gun/laser_beam.png", "sprites/laser_gun/laser_glow.png",
         },
     sounds = {
           "sounds/sentry_laser/sentrylaserplace.wav", "sounds/sentry_laser/sentrylaserbeep.wav",
