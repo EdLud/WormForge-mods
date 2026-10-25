@@ -75,16 +75,22 @@ function M.install(ctx)
   local MIN_HP = 1                  -- `minHP`: a damaging zone never kills (:89)
   local RADIUS = 20                 -- `CWZone(x, y, 40, 30, ...)`: a 40x30 box (:382)
   local HALF_HEIGHT = 15
-  local ROTATION = math.pi          -- `ZoneParams->rot = 180` (:103)
+  -- PX's `ZoneParams->rot = 180` (:103) is in PX's own frame; the quad here
+  -- draws the sheet as stored at 0, and at pi the fallout skull stood on its
+  -- head (the medkit, near symmetric, hid it).
+  local ROTATION = 0
   local ZONE_SIZE = 60              -- scale 1 of the PX editor's padded 60px frame
   local ZONE_DEPTH = wa.depth.WORMS + 1 -- PX's `ZPlane = 16` (:106): behind worms
 
   local HEAL_TINT = 0x4164DC64   -- ARGB(65, 100, 220, 100), green (:111)
   local DAMAGE_TINT = 0x41D26464 -- ARGB(65, 210, 100, 100), red  (:112)
 
-  -- Duration comes from the profile; +/- retain PX's mode controls.
+  -- Duration comes from the profile; + switches between healing and damaging.
   local healing = true
-  local plus_held, minus_held
+  -- Per worm, as the Electromagnet's: this hook runs for every worm each
+  -- frame, and a flag shared by all of them was cleared by the others, so a
+  -- held + read as a new press every frame and flipped the mode on and on.
+  local plus_held = {}
 
   -- The thrower, PX's `ClWT`/`ClWN` (:529-530): the flight actor's owner.
   local shooter
@@ -141,7 +147,7 @@ function M.install(ctx)
     end,
   })
 
-  -- +/- change mode; the component's duration is frozen with the profile.
+  -- + switches the mode; the component's duration is frozen with the profile.
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FIRE_WEAPON then
       if worm.weapon == "px.health_zone" then shooter = worm end
@@ -149,19 +155,22 @@ function M.install(ctx)
     end
     local keys = worm.turn and worm.weapon == "px.health_zone" and wa.world.keys() or nil
     if keys then
-      if keys.plus_key and not plus_held then healing = true end
-      if keys.minus_key and not minus_held then healing = false end
+      if keys.plus_key and not plus_held[worm.id] then
+        healing = not healing
+        -- At once, as the Electromagnet's switch: the old mode's aim
+        -- particles go, so the new colour is all that shows.
+        fx.clear_aim()
+      end
       if worm.aiming then fx.aim(worm, healing) end
     end
     -- Held past the weapon's deselect, re-select and press would read as no
     -- edge: the flags track the key even while another weapon is out.
-    plus_held = keys ~= nil and keys.plus_key or false
-    minus_held = keys ~= nil and keys.minus_key or false
+    plus_held[worm.id] = keys ~= nil and keys.plus_key or false
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 
   require("lib/weapon_hint").register("px.health_zone", function()
     return (healing and "Health Zone: HEALING" or "Health Zone: DAMAGING")
-      .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ heals, - damages)"
+      .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ switches)"
   end)
 
   -- **The round in flight, drawn and turned by hand.** PX's `WeapSprite` with an

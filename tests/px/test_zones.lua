@@ -125,7 +125,7 @@ frames(50); assert(w.hp==101)
 
 -- Mode, resurrection and nonlethal damage keep their existing gameplay.
 health = reset(60000); w = worm()
-keys.minus_key=true; event("worm_message",w,wa.msg.FRAME_FINISH)
+keys.plus_key=true; event("worm_message",w,wa.msg.FRAME_FINISH)
 health.on_explode({x=100,y=100}); w.hp=2
 frames(50); assert(w.hp==1); frames(50); assert(w.hp==1)
 assert(draw()[1].sprite:match("fallout"), "damage mode uses PX's fallout strip")
@@ -143,6 +143,8 @@ health.on_explode({x=100,y=100})
 frames(25); local q=draw()[1]
 assert(q.sprite:match("mcrate0") and q.frame==30 and q.depth==17)
 assert(math.abs(q.points[2][1]-q.points[1][1])==60)
+-- Upright, as the sheet is stored: its first corner is the top left.
+assert(q.points[1][1] < q.points[2][1] and q.points[1][2] < q.points[4][2], "the zone art is upright")
 blast.on_explode({x=300,y=100}); frames(5)
 local exp = {}
 for _, item in ipairs(draw()) do if item.sprite:match("blast_zone/exp") then exp[#exp+1]=item end end
@@ -184,11 +186,19 @@ end
 hint_frames(3)
 assert(#top_messages==1 and top_messages[1]:find("HEALING",1,true))
 hint_frames(10); assert(#top_messages==1)
-keys.minus_key=true; hint_frames(3)
-assert(#top_messages==2 and top_messages[2]:find("DAMAGING",1,true))
-keys.minus_key=false; hint_worm.weapon="px.blast_zone"; hint_frames(3)
-assert(#top_messages==3 and top_messages[3]:find("Blast Zone:",1,true))
+-- + switches the mode once per press, however long it is held, though
+-- every other worm gets its frame too.
+keys.plus_key=true
+local other = { kind="worm", id=2, x=300, y=100, hp=100, weapon="px.health_zone", turn=false,
+  aiming=false, aim=0.5, facing=1, alliance=2 }
+for _=1,5 do event("worm_message",other,wa.msg.FRAME_FINISH); hint_frames(1) end
+assert(#top_messages==2 and top_messages[2]:find("DAMAGING",1,true), "held + switches once")
+keys.plus_key=false; hint_frames(3); assert(#top_messages==2)
+keys.plus_key=true; hint_frames(3)
+assert(#top_messages==3 and top_messages[3]:find("HEALING",1,true))
+keys.plus_key=false; hint_worm.weapon="px.blast_zone"; hint_frames(3)
+assert(#top_messages==4 and top_messages[4]:find("Blast Zone:",1,true))
 keys.digit=5; hint_frames(3)
-assert(#top_messages==4 and top_messages[4]:find("6 turns",1,true))
-hint_frames(10); assert(#top_messages==4)
+assert(#top_messages==5 and top_messages[5]:find("6 turns",1,true))
+hint_frames(10); assert(#top_messages==5)
 print("Zone tooltips: coalition, selection, mode/duration changes and no repeated messages passed")
