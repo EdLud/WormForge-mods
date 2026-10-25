@@ -39,6 +39,7 @@ return {
   ["px.kamikaze_rocket"] = "weapons/kamikaze_rocket",
   ["px.laser_gun"] = "weapons/laser_gun",
   ["px.lightning_strike"] = "weapons/lightning_strike",
+  ["px.mines_gun"] = "weapons/mines_gun",
   ["px.mine_turret"] = "weapons/mine_turret",
   ["px.mole_bomb"] = "weapons/mole_bomb",
   ["px.mortar_strike"] = "weapons/mortar_strike",

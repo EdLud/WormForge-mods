@@ -349,3 +349,13 @@ crate_pct = 0
 [weapons."px.parkour"]
 row = "F1"
 column = 6
+
+[weapon_settings."px.mines_gun"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.mines_gun"]
+row = "F1"
+column = 5

@@ -1,0 +1,60 @@
+description = "Specialists: Mines Gun and existing Mine Turret regression test."
+features = ["core.utilities"]
+[options."core.utilities"]
+live_hp = true
+[scheme]
+worm_energy = 255
+turn_time = 60
+weapon_use_doesn_t_end_turn = true
+loss_of_control_doesn_t_end_turn = true
+hazards = 0
+
+[weapon_settings."px.mines_gun"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.mines_gun"]
+row = "F1"
+column = 1
+
+[weapon_settings."px.mine_turret"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.mine_turret"]
+row = "F2"
+column = 1
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.ninja_rope"]
+row = "F3"
+column = 1
+
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.jet_pack"]
+row = "F4"
+column = 1
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.skip_go"]
+row = "F5"
+column = 1
