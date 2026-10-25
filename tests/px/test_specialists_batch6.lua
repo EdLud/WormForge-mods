@@ -17,7 +17,10 @@ wa={
     collides=function()return collides end,cavern=function()return false end},
   land={cut=function(c)log.cuts[#log.cuts+1]=c end},
   worms={all=function()return worms end},
-  mines={all=function()return mines end,spawn=function(s)log.mines[#log.mines+1]=s end},
+  mines={all=function()return mines end,spawn=function(s)
+    local m={uid=500+#log.mines,gravity=1,visible=true}
+    for k,v in pairs(s) do m[k]=v end
+    log.mines[#log.mines+1]=m;return m end},
   crates={all=function()return crates end},
   oil={all=function()return oil end,spawn=function(s)
     local d={uid=100+#log.drums,x=s.x,y=s.y,vx=0,vy=0,snap=s.snap,visible=true,damage=0,max_damage=50}
@@ -183,4 +186,47 @@ check(t.id~=0,"Trampoline: 35 of 40 taken")
 t.spec.on.hit(t,{damage=5})
 check(t.id==0 and #t.booms==1 and t.booms[1].damage==10,"Trampoline: broken at 40, with a blast of 10")
 
-print("Specialists batch 6: Bulldozer, Barrel Launcher and Trampoline: ALL PASS")
+-- Mine Launcher ---------------------------------------------------------------
+log.mines,log.messages,log.sounds={}, {}, {}
+hooks.message={}
+local launcher=require("weapons/mine_launcher")
+launcher.setup()
+check(launcher.definition.wep=="weps/mine_launcher.wep","Mine Launcher: PX's scheme record")
+local gunner=worm(11,40,60);gunner.turn=true;gunner.weapon="px.mine_launcher";gunner.alliance=2
+turn_worm=gunner
+local function key(d)gunner.digit=d;frame=frame+1;each(hooks.message,gunner,2)end
+launcher.definition.on_fire({worm=gunner,vx=4,vy=-5})
+local m=log.mines[#log.mines]
+check(m.x==40 and m.y==60 and m.vx==4 and m.vy==-5 and m.arm==400 and m.fuse==0 and m.damage==50
+  and m.radius==48 and m.terrain_keep_speed_pct==96 and m.visible and not m.on_bump,
+  "Mine Launcher: the instant mine by default, from the worm at the shell's launch")
+key(3);key(3)
+check(#log.messages==1 and log.messages[1]=="Invisible Mine, 3 SEC" and log.sounds[#log.sounds]==92,
+  "Mine Launcher: 3 picks the invisible mine, once a press")
+launcher.definition.on_fire({worm=gunner,vx=0,vy=0})
+m=log.mines[#log.mines]
+check(m.arm==2000 and m.fuse==3000 and m.visible==false,"Mine Launcher: the invisible mine is never drawn")
+each(hooks.message,gunner,51)
+launcher.definition.on_fire({worm=gunner,vx=0,vy=0})
+check(log.mines[#log.mines].fuse==0,"Mine Launcher: selecting the weapon again picks the instant mine")
+key(nil);key(2)
+launcher.definition.on_fire({worm=gunner,vx=6,vy=1})
+m=log.mines[#log.mines]
+check(m.arm==2000 and m.fuse==1500 and type(m.on_bump)=="function" and m.terrain_keep_speed_pct==nil,
+  "Mine Launcher: the sticky mine hears its bumps")
+mines={m}
+m.on_bump(m,{x=70,y=55,other="land"})
+check(m.x==70 and m.y==55 and m.vx==0 and m.vy==0 and m.gravity==0
+  and log.sounds[#log.sounds-1]==107 and log.sounds[#log.sounds]==56,
+  "Mine Launcher: the first touch sticks it where it hit, weightless")
+key(nil)
+check(m.gravity==0,"Mine Launcher: it stays stuck while nothing moves it")
+m.vx=2;key(nil)
+check(m.gravity==1,"Mine Launcher: moved, it falls again")
+local m2=launcher.definition.on_fire({worm=gunner,vx=0,vy=0}) or log.mines[#log.mines]
+m2.on_bump(m2,{x=1,y=1});m2.on_bump(m2,{x=2,y=2})
+check(m2.gravity==1,"Mine Launcher: a second touch lets it fall")
+each(hooks.turn_end);launcher.definition.on_fire({worm=gunner,vx=0,vy=0})
+check(log.mines[#log.mines].fuse==0,"Mine Launcher: a turn's end picks the instant mine again")
+
+print("Specialists batch 6: Bulldozer, Barrel Launcher, Trampoline and Mine Launcher: ALL PASS")

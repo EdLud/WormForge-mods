@@ -37,6 +37,7 @@ local ORDER = {
   "weapons/toxic_grenade",
   "weapons/bulldozer",
   "weapons/trampoline",
+  "weapons/mine_launcher",
   "lib/turn_controls",
   "weapons/jump",
   "weapons/thrown_dynamite",

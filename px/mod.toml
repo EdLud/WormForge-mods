@@ -2175,6 +2175,15 @@ icon = "sprites/trampoline/tramp_ico.png"
 default_position = { row = "utility", column = 8 }
 
 [[components]]
+id = "px.mine_launcher"
+type = "weapon"
+name = "Mine Launcher"
+description = "Specialists: fires an instant, sticky or invisible mine, chosen with keys 1-3."
+entry = "components/weapon.lua"
+icon = "sprites/mine_launcher/minelauncher_ico.png"
+default_position = { row = "F1", column = 9 }
+
+[[components]]
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"
@@ -2232,6 +2241,30 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/trampoline/picku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/mine_launcher/drawu.png"]
 fps = 15
 play = "loop"
 

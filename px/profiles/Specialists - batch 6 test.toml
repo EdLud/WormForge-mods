@@ -82,3 +82,12 @@ crate_pct = 0
 [weapons."stock.skip_go"]
 row = "F8"
 column = 1
+
+[weapon_settings."px.mine_launcher"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+[weapons."px.mine_launcher"]
+row = "F9"
+column = 1
