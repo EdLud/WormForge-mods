@@ -855,6 +855,16 @@ default = true
 label = "Dealt on cavern maps"
 description = "Off for weapons that come from the sky."
 
+[sprites."sprites/specialists/glow.png"]
+frames = 1
+
+[[components]]
+id = "specialists.rules"
+type = "feature"
+name = "Specialists rules"
+description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns and the Medic aura. Use five worms per team and 100 starting HP. The full weapon set and Soldier zombie are still being ported."
+entry = "components/specialists.lua"
+
 [[components]]
 id = "ktk.control"
 type = "feature"

@@ -1,0 +1,320 @@
+# Phase 3 test profile: existing class weapons only. Use five worms per team.
+# Missing weapons and the Soldier zombie belong to the following milestones.
+description = "Specialists class test: five worms per team. Tests class switching, cooldowns and Medic healing. Missing class weapons and Soldier zombie are not included yet. Crate Shower is supplied for pickup tests."
+features = ["core.utilities", "specialists.rules"]
+
+[options."core.utilities"]
+live_hp = true
+ex_turn_side = true
+
+[scheme]
+worm_energy = 100
+turn_time = 35
+worm_select = "on"
+worm_selection_is_never_cancelled = true
+sudden_death_disables_worm_select = false
+retreat_time = 0
+gravity = 0.239990234375
+hazards = 69
+no_crate_probability = 255
+weapon_use_doesn_t_end_turn = false
+loss_of_control_doesn_t_end_turn = false
+
+[weapon_settings."stock.bazooka"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."stock.grenade"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."stock.dynamite"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."px.chilli_bomb"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.prod"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."px.swim_suit"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."px.sentry_gun"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.banana_bomb"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."px.blowtorch"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.girder"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+placement_range = 150
+
+[weapon_settings."px.sentry_laser"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.mine"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."px.electromagnet"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."px.remote_roller"]
+ammo = 0
+after_use = "end"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."px.jump"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.fire_punch"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."px.ninja_star"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+shots = 2
+
+[weapon_settings."stock.petrol_bomb"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."stock.ninja_rope"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 4
+
+[weapon_settings."stock.parachute"]
+ammo = 0
+after_use = "end"
+delay = 0
+crate_pct = 0
+power = 0
+
+[weapon_settings."px.real_shotgun"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+shots = 2
+
+[weapon_settings."stock.teleport"]
+ammo = 0
+after_use = "end"
+delay = 0
+crate_pct = 0
+power = 0
+
+[weapon_settings."stock.holy_grenade"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 2
+
+[weapon_settings."stock.jet_pack"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 100
+power = 0
+
+[weapon_settings."stock.crate_shower"]
+ammo = 3
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.fast_walk"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+power = 0
+on_collect = "use"
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+after_use = "end"
+delay = 0
+crate_pct = 0
+
+[weapon_settings."stock.surrender"]
+ammo = -1
+after_use = "end"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.bazooka"]
+row = "F1"
+column = 1
+
+[weapons."stock.grenade"]
+row = "F1"
+column = 2
+
+[weapons."stock.dynamite"]
+row = "F1"
+column = 3
+
+[weapons."px.chilli_bomb"]
+row = "F1"
+column = 4
+
+[weapons."stock.prod"]
+row = "F2"
+column = 1
+
+[weapons."px.swim_suit"]
+row = "F2"
+column = 2
+
+[weapons."px.sentry_gun"]
+row = "F2"
+column = 3
+
+[weapons."stock.banana_bomb"]
+row = "F2"
+column = 4
+
+[weapons."px.blowtorch"]
+row = "F3"
+column = 1
+
+[weapons."stock.girder"]
+row = "F3"
+column = 2
+
+[weapons."px.sentry_laser"]
+row = "F3"
+column = 3
+
+[weapons."stock.mine"]
+row = "F3"
+column = 4
+
+[weapons."px.electromagnet"]
+row = "F3"
+column = 5
+
+[weapons."px.remote_roller"]
+row = "F3"
+column = 6
+
+[weapons."px.jump"]
+row = "F4"
+column = 1
+
+[weapons."stock.fire_punch"]
+row = "F4"
+column = 2
+
+[weapons."px.ninja_star"]
+row = "F4"
+column = 3
+
+[weapons."stock.petrol_bomb"]
+row = "F4"
+column = 4
+
+[weapons."stock.ninja_rope"]
+row = "F4"
+column = 5
+
+[weapons."stock.parachute"]
+row = "F5"
+column = 1
+
+[weapons."px.real_shotgun"]
+row = "F5"
+column = 2
+
+[weapons."stock.teleport"]
+row = "F5"
+column = 3
+
+[weapons."stock.holy_grenade"]
+row = "F5"
+column = 4
+
+[weapons."stock.jet_pack"]
+row = "F6"
+column = 1
+
+[weapons."stock.crate_shower"]
+row = "F6"
+column = 2
+
+[weapons."stock.fast_walk"]
+row = "F7"
+column = 1
+
+[weapons."stock.skip_go"]
+row = "F7"
+column = 2
+
+[weapons."stock.surrender"]
+row = "F7"
+column = 3
