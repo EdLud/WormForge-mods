@@ -1,0 +1,11 @@
+# One weapon: the FAMAS, on F3 6, with infinite ammo so it can be tested.
+description = "Just the FAMAS: one three-round burst per click; the fourth is two rounds and a dry fire."
+features = []
+
+[weapons]
+"px.famas" = { row = "F3", column = 6 }
+
+[weapon_settings."px.famas"]
+ammo = -1
+delay = 0
+crate = 0

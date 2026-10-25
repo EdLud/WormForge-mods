@@ -1,0 +1,29 @@
+# Project X effect helpers shared by the ported weapons.
+#
+# A library bundle: no components of its own, so it never appears in a panel.
+# Selected bundles pull it in with `dependencies = ["effects.sdk"]` and import
+# the public modules with `require("wf-lib/effects/...")`.
+id = "effects.sdk"
+name = "Project X Effects SDK"
+version = "0.1.0"
+author = "reddaz"
+api_version = 4
+format_version = 2
+
+# Qualified asset namespace. The folder on disk does not matter; the
+# `wf-lib/effects/...` prefix is what consumers resolve.
+asset_namespace = "wf-lib/effects"
+
+[exports]
+"wf-lib/effects/trail" = "libs/trail.lua"
+"wf-lib/effects/px_effects" = "libs/px_effects.lua"
+
+[sprites."sprites/px_effects/beam.png"]
+
+[sprites."sprites/px_effects/beam_glow.png"]
+
+[sprites."sprites/px_effects/spark"]
+
+[sprites."sprites/px_effects/glow.png"]
+
+[sprites."sprites/px_effects/cloud.png"]
