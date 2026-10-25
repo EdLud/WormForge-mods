@@ -1115,7 +1115,7 @@ do
       if row == "utility" then return STOCK[61 + column] end
       return STOCK[F_FIRST[tonumber(row:sub(2))] + column - 1]
     end
-    local component, preset = {}, {}
+    local component, preset, candidates = {}, {}, {}
     local blocks, at = {}, 1
     while true do
       local i = manifest:find("[[components]]", at, true)
@@ -1130,7 +1130,9 @@ do
       -- Highlander's weapons, all through components/weapon.lua: the other
       -- ports in the bundle (reddaz's) have their own files and no part in it.
       local highlander = block:find('entry = "components/weapon.lua"', 1, true)
-      if id and row and highlander then component[slot_at(row, tonumber(column))] = id end
+      if id and row and highlander then
+        candidates[#candidates+1] = {slot=slot_at(row, tonumber(column)),id=id}
+      end
     end
     -- The Highlander profile's weapon set: its [weapons] table.
     local profile = HIGHLANDER_PROFILE
@@ -1142,6 +1144,11 @@ do
     local weapons = profile:match("%[weapons%](.-)\n%[") or ""
     for id, row, column in weapons:gmatch('"([%w_.]+)" = { row = "(%w+)", column = (%d+) }') do
       preset[slot_at(row, tonumber(column))] = id
+    end
+    -- Components outside this fixture (for example Specialists weapons) may
+    -- share default panel hints; only the selected Highlander IDs belong here.
+    for _, candidate in ipairs(candidates) do
+      if preset[candidate.slot] == candidate.id then component[candidate.slot] = candidate.id end
     end
     -- Where PX uses WA's weapon unchanged, the profile places the stock one.
     local AS_STOCK = {
@@ -5588,6 +5595,14 @@ do
     local registered, unlisted = {}, {}
     for _, r in ipairs(replaced) do
       for _, snd in ipairs(r.sounds or {}) do registered[snd] = true end
+    end
+    -- Specialists-only entries are not selected by Highlander's fixture.
+    -- Their pure declarations still register their own sound lists.
+    for _,path in pairs(require("weapons/index")) do
+      local definition=require(path).definition
+      if type(definition)=="table" then
+        for _,snd in ipairs(definition.sounds or {}) do registered[snd]=true end
+      end
     end
     local found = 0
     -- The ports with files of their own (reddaz's) register their sounds

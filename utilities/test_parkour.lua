@@ -8,10 +8,11 @@ local function check(name, ok, detail)
   print("  FAIL " .. name .. (detail ~= nil and ("   [" .. tostring(detail) .. "]") or ""))
 end
 
-local handler, walls, floor, jumps
+local handler, walls, floor, jumps, tick
 local function setup()
-  walls, floor, jumps = {}, nil, 0
+  walls, floor, jumps, tick = {}, nil, 0, 0
   wa = {
+    world = {frame=function()return tick end},
     msg = { FRAME_FINISH = 2, JUMP = 0x24, JUMP_UP = 0x25 },
     on = { worm_message = function(f) handler = f end },
     land = {
@@ -27,6 +28,8 @@ local function setup()
       end,
     },
   }
+  package.loaded["wf-lib/parkour"] = nil
+  package.preload["wf-lib/parkour"] = function() return dofile(root .. "../sdk/parkour.lua") end
   dofile(root .. "features/parkour.lua")
 end
 
@@ -39,9 +42,9 @@ local function worm(state, vx, vy)
   return w
 end
 
-local function frame(w) handler(w, wa.msg.FRAME_FINISH) end
-local function enter(w) handler(w, wa.msg.JUMP) end
-local function backspace(w) handler(w, wa.msg.JUMP_UP) end
+local function frame(w) tick=tick+1;handler(w, wa.msg.FRAME_FINISH) end
+local function enter(w) tick=tick+1;handler(w, wa.msg.JUMP) end
+local function backspace(w) tick=tick+1;handler(w, wa.msg.JUMP_UP) end
 
 -- Wall jump: kicks off the nearer wall, up by 2 + |vx|, away by 3 + |vx|.
 setup()

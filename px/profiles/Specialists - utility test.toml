@@ -1,0 +1,74 @@
+# Second phase-4 batch; timed turns are needed to check Sacrifice.
+description = "Specialists: Girder Launcher, Sacrifice and activatable Parkour."
+features = ["core.utilities"]
+
+[options."core.utilities"]
+live_hp = true
+parkour = false
+
+[scheme]
+worm_energy = 255
+turn_time = 60
+weapon_use_doesn_t_end_turn = true
+loss_of_control_doesn_t_end_turn = true
+hazards = 0
+
+[weapon_settings."px.girder_launcher"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.girder_launcher"]
+row = "F1"
+column = 1
+
+[weapon_settings."px.sacrifice"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.sacrifice"]
+row = "F2"
+column = 1
+
+[weapon_settings."px.parkour"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.parkour"]
+row = "F3"
+column = 1
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.ninja_rope"]
+row = "F4"
+column = 1
+
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.jet_pack"]
+row = "F5"
+column = 1
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.skip_go"]
+row = "F6"
+column = 1

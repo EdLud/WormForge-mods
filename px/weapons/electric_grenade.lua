@@ -221,13 +221,12 @@ function weapon.setup()
     add_point(arc)
   end
 
-  shared.electric_grenade_explode = function(ev)
+  c.start_arc = function(ev)
     -- `ev.life`: frames the arc searches, PX's TazerLifeTime (the drum's 30).
-    local arc = { x = ev.x, y = ev.y, dx = 0, dy = -1, life = ev.life or 16, pause = 0,
+    local arc = { x = ev.x, y = ev.y, dx = ev.dx or 0, dy = ev.dy or -1, life = ev.life or 16, pause = 0,
       points = { { ev.x, ev.y } }, ignore = {}, pending = {}, explosion = 0,
-      burst_x = ev.x, burst_y = ev.y, sound_age = 0 }
-    if thrower then arc.ignore[target_key(thrower)] = true end
-    if ev.worm then arc.ignore[target_key(ev.worm)] = true end
+      burst_x = ev.x, burst_y = ev.y, sound_age = 0, burst = ev.burst ~= false }
+    for _,obj in ipairs(ev.ignore or {}) do arc.ignore[target_key(obj)] = true end
     arcs[#arcs + 1] = arc
     -- An explosion without a worm would leave the driver owned by the exploding
     -- grenade: the turn's worm owns it then, as every other effect's.
@@ -245,6 +244,13 @@ function weapon.setup()
       end
     end)
     wa.sound.play(driver, "sounds/lightning/tazer_loop.wav")
+  end
+
+  shared.electric_grenade_explode = function(ev)
+    local ignore = {}
+    if thrower then ignore[#ignore+1] = thrower end
+    if ev.worm then ignore[#ignore+1] = ev.worm end
+    return c.start_arc({x=ev.x,y=ev.y,worm=ev.worm,life=ev.life,ignore=ignore})
   end
 
   c.find_target = find_target

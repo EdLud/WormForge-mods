@@ -237,7 +237,7 @@ column = 3
 
 [weapons."stock.banana_bomb"]
 row = "F2"
-column = 4
+column = 5
 
 [weapons."px.blowtorch"]
 row = "F3"
@@ -261,7 +261,7 @@ column = 5
 
 [weapons."px.remote_roller"]
 row = "F3"
-column = 6
+column = 7
 
 [weapons."px.jump"]
 row = "F4"
@@ -318,3 +318,34 @@ column = 2
 [weapons."stock.surrender"]
 row = "F7"
 column = 3
+
+[weapon_settings."px.gatling_gun"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.gatling_gun"]
+row = "F2"
+column = 4
+
+[weapon_settings."px.tele_arrow"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.tele_arrow"]
+row = "F3"
+column = 6
+
+# Soldier's last-living-class bonus, now available as a real utility.
+[weapon_settings."px.parkour"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.parkour"]
+row = "F1"
+column = 6

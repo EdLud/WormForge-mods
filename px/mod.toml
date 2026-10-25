@@ -2020,3 +2020,111 @@ description = "Project X's Blast Zone: the Health Zone's round, but the 45x45 zo
 entry = "weapons/blast_zone.lua"
 icon = "sprites/blast_zone/icon.png"
 default_position = { row = "F9", column = 6 }
+
+[sprites."sprites/thrown_dynamite/tdynamite.png"]
+frames = 4
+
+[sprites."sprites/tele_arrow/telea.png"]
+frames = 8
+
+[sprites."sprites/tele_arrow/spb_telea.png"]
+frames = 8
+
+[sprites."sprites/tele_arrow/trail.png"]
+frames = 7
+
+[[components]]
+id = "px.gatling_gun"
+type = "weapon"
+name = "Gatling Gun"
+description = "Project X Specialists: Gatling Gun."
+entry = "components/weapon.lua"
+icon = "sprites/gatling_gun/ico_gatlingg.png"
+default_position = { row = "F3", column = 6 }
+
+[[components]]
+id = "px.thrown_dynamite"
+type = "weapon"
+name = "Thrown Dynamite"
+description = "Project X Specialists: Thrown Dynamite."
+entry = "components/weapon.lua"
+icon = "sprites/thrown_dynamite/ico_tdynamite.png"
+default_position = { row = "F2", column = 8 }
+
+[[components]]
+id = "px.tele_arrow"
+type = "weapon"
+name = "Tele Arrow"
+description = "Project X Specialists: Tele Arrow."
+entry = "components/weapon.lua"
+icon = "sprites/tele_arrow/ico_telea.png"
+default_position = { row = "F8", column = 6 }
+
+[sprites."sprites/thrown_dynamite/spark.png"]
+frames = 7
+
+[sprites."sprites/girder_launcher/mgirder.png"]
+frames = 32
+
+[sprites."sprites/girder_launcher/mgirderspb.png"]
+frames = 8
+
+[sprites."sprites/girder_launcher/spb_girderl.png"]
+frames = 8
+
+[sprites."sprites/girder_launcher/trail.png"]
+frames = 8
+
+[[components]]
+id = "px.girder_launcher"
+type = "weapon"
+name = "Girder Launcher"
+description = "Project X Specialists: Girder Launcher."
+entry = "components/weapon.lua"
+icon = "sprites/girder_launcher/ico_girderl.png"
+default_position = { row = "F7", column = 5 }
+
+[[components]]
+id = "px.sacrifice"
+type = "weapon"
+name = "Sacrifice"
+description = "Project X Specialists: Sacrifice."
+entry = "components/weapon.lua"
+icon = "sprites/sacrifice/sacrifice_ico.png"
+default_position = { row = "F12", column = 4 }
+
+[[components]]
+id = "px.parkour"
+type = "weapon"
+name = "Parkour"
+description = "Project X Specialists: Parkour."
+entry = "components/weapon.lua"
+icon = "sprites/parkour/parkour_ico.png"
+default_position = { row = "F12", column = 5 }
+
+[sprites."sprites/drilling_crew/driller.png"]
+frames = 8
+
+[sprites."sprites/drilling_crew/drillerc.png"]
+frames = 12
+
+[sprites."sprites/drilling_crew/trail.png"]
+frames = 9
+
+[[components]]
+id = "px.tazer"
+type = "weapon"
+name = "Tazer"
+description = "Project X Specialists: Tazer."
+entry = "components/weapon.lua"
+icon = "sprites/tazer/ico_tazer.png"
+default_position = { row = "F3", column = 7 }
+
+[[components]]
+id = "px.drilling_crew"
+type = "weapon"
+name = "Drilling Crew"
+description = "Project X Specialists: Drilling Crew."
+entry = "components/weapon.lua"
+icon = "sprites/drilling_crew/ico_drillingc.png"
+default_position = { row = "F6", column = 7 }

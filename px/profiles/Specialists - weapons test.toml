@@ -1,0 +1,73 @@
+# First phase-4 weapon batch. Use alongside the class profile for cooldown checks.
+description = "Specialists weapons: Gatling Gun, Thrown Dynamite and Tele Arrow. Unlimited ammo and time for firing, animation and collision tests."
+features = ["core.utilities"]
+
+[options."core.utilities"]
+live_hp = true
+
+[scheme]
+worm_energy = 255
+turn_time = "unlimited"
+weapon_use_doesn_t_end_turn = true
+loss_of_control_doesn_t_end_turn = true
+hazards = 0
+
+[weapon_settings."px.gatling_gun"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.gatling_gun"]
+row = "F1"
+column = 1
+
+[weapon_settings."px.thrown_dynamite"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.thrown_dynamite"]
+row = "F2"
+column = 1
+
+[weapon_settings."px.tele_arrow"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.tele_arrow"]
+row = "F3"
+column = 1
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.ninja_rope"]
+row = "F4"
+column = 1
+
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.jet_pack"]
+row = "F5"
+column = 1
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.skip_go"]
+row = "F6"
+column = 1

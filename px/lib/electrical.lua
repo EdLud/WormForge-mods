@@ -224,7 +224,7 @@ function electrical.setup()
         draw_strike(s)
       end
       for _, arc in ipairs(arcs) do
-        if arc.explosion < 10 then
+        if arc.burst ~= false and arc.explosion < 10 then
           local h = 75
           square(burst_sprite, arc.explosion, "add", 0x551E14EB, ELECTRIC_DEPTH, arc.burst_x, arc.burst_y, h, h)
         end

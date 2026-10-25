@@ -24,6 +24,14 @@ The helper also exposes `cyclical_frame`, `track_angle`, `rotation_turn` and
 
 `require("wf-lib/holds")` returns the posture/hand data directly.
 `require("wf-lib/shared")` returns `{ sprites = ..., holds = ... }`.
+`require("wf-lib/parkour").new()` returns a movement callback
+for `wa.on.worm_message` (frame finish, jump and jump-up). It implements the
+shared wall-jump/bunny-hop movement and cooldowns; the caller chooses when it
+is active. The Utilities global option and PX inventory utility both use it.
+`air_input(worm, msg)` identifies its airborne jump inputs. Controllers share
+Parkour cooldowns and deduplicate inputs/frames within the match, so enabling
+both forms cannot apply a movement input twice.
+
 These are public helpers, separate from Highlander's internal match state.
 Module tables and private globals are separate for each consuming bundle.
 

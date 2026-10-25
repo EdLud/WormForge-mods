@@ -10,6 +10,7 @@ asset_namespace = "wf-lib/px"
 "wf-lib/shared" = "shared.lua"
 "wf-lib/px_sprite_builder" = "px_sprite_builder.lua"
 "wf-lib/holds" = "holds.lua"
+"wf-lib/parkour" = "parkour.lua"
 
 [sprites."sprites/px_hold/aim.png"]
 fps = 15
