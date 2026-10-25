@@ -66,7 +66,7 @@ local function mock(opts)
       draw = function(f) M.draw = f end,
     },
   }
-  require("lib/oil_drums").install({ nuke = opts.nuke ~= false })
+  require("lib/oil_drums").install({ deal = true, nuke = opts.nuke ~= false })
 end
 
 local function frame()

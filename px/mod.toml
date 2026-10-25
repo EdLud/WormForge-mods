@@ -2148,6 +2148,33 @@ icon = "sprites/platform/platform_icon.png"
 default_position = { row = "F11", column = 8 }
 
 [[components]]
+id = "px.bulldozer"
+type = "weapon"
+name = "Bulldozer"
+description = "Specialists: a walking digger that tunnels and shoves what it touches."
+entry = "components/weapon.lua"
+icon = "sprites/bulldozer/bdico.png"
+default_position = { row = "F5", column = 8 }
+
+[[components]]
+id = "px.barrel_launcher"
+type = "weapon"
+name = "Barrel Launcher"
+description = "Specialists: launches one of five special oil drums, chosen with keys 1-5."
+entry = "components/weapon.lua"
+icon = "sprites/barrel_launcher/bl_ico.png"
+default_position = { row = "F1", column = 8 }
+
+[[components]]
+id = "px.trampoline"
+type = "weapon"
+name = "Trampoline"
+description = "Specialists: a thrown, breakable trampoline that throws worms, missiles and mines back up."
+entry = "components/weapon.lua"
+icon = "sprites/trampoline/tramp_ico.png"
+default_position = { row = "utility", column = 8 }
+
+[[components]]
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"
@@ -2156,6 +2183,60 @@ entry = "components/weapon.lua"
 icon = "sprites/toxic_grenade/img_toxicgren.png"
 default_position = { row = "F2", column = 8 }
 
+[sprites."sprites/barrel_launcher/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/barrel_launcher/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/barrel_launcher/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/barrel_launcher/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/barrel_launcher/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/barrel_launcher/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/tramp.png"]
+frames = 1
+[sprites."sprites/trampoline/jumptramp.png"]
+frames = 1
+[sprites."sprites/trampoline/hold.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/holdd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/holdu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/pick.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/pickd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/trampoline/picku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bulldozer/bd.png"]
+frames = 20
 [sprites."sprites/platform/platform_sprite.png"]
 frames = 1
 [sprites."sprites/platform/platform_broken.png"]

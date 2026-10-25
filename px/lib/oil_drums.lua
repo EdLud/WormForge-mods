@@ -12,6 +12,10 @@
 -- Not ported: the bee drum (Keeper Bees are not ported) and PX's plane crash
 -- drum. The nuke drum needs the Nuke Rocket placed; without it, it is left
 -- out of the deal. The icy drum's Kamikaze special case is not ported.
+--
+-- The Specialists Barrel Launcher (weapon_barrel_launchers: bl_script.txt)
+-- fires the same drums one at a time (M.launch): its napalm and mine drums
+-- burst with that script's numbers, its other three as these do.
 local M = {}
 
 local SHEETS = "sprites/oil_drums/"
@@ -61,6 +65,17 @@ local BURST_SHEETS = { icy = { "smklt75" } }
 -- PX's deal, 0..6 in its order, then its cavern-only teleport drum.
 local DEAL = { "explosive", "napalm", "nuke", "cluster", "icy", "electric", "mine" }
 
+-- The Electric Grenade's arc, which the electric drum fires: loaded with the
+-- drums whether or not the grenade is placed.
+M.ARC = {
+  sprites = {
+    "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
+    "sprites/electric_grenade/explosion.png", "sprites/electric_grenade/tazed1.png",
+    "sprites/electric_grenade/tazed2.png",
+  },
+  sounds = { "sounds/lightning/tazer_loop.wav" },
+}
+
 function M.sprites()
   local out = {}
   for kind, k in pairs(KINDS) do
@@ -80,10 +95,32 @@ function M.sprites()
   return out
 end
 
+-- Load the drums' sheets and the arc's art once, whichever of the add-on and
+-- the Barrel Launcher asks first.
+local assets_loaded = false
+function M.load_assets()
+  if assets_loaded then return end
+  assets_loaded = true
+  local sprites = M.sprites()
+  for _, path in ipairs(M.ARC.sprites) do sprites[#sprites + 1] = path end
+  wa.assets.load({ sprites = sprites, sounds = M.ARC.sounds })
+end
+
+-- Set up once, by the px.oil_drums add-on (opts.deal: every map drum is
+-- dealt a kind) and/or the Barrel Launcher (its drums only). A second call
+-- only adds what it asks for.
+local installed, settings = false, { deal = false, nuke = false }
+
 function M.install(opts)
+  opts = opts or {}
+  if opts.deal then settings.deal = true end
+  if opts.nuke then settings.nuke = true end
+  if installed then return end
+  installed = true
   local shared = require("lib/shared")
   local current_worm = shared.current_worm
   local kinds = {}     -- drum uid -> its kind
+  local launched = {}  -- drum uid -> true: a Barrel Launcher's
   local particles = {} -- the icy drums' bursts, drawn only
   local seed = 1       -- their own generator: they never touch wa.random
   local last_frame
@@ -91,7 +128,7 @@ function M.install(opts)
   local function deal()
     local pool = {}
     for _, kind in ipairs(DEAL) do
-      if kind ~= "nuke" or opts.nuke then pool[#pool + 1] = kind end
+      if kind ~= "nuke" or settings.nuke then pool[#pool + 1] = kind end
     end
     if wa.world.cavern() then pool[#pool + 1] = "teleport" end
     return pool[wa.random(1, #pool)]
@@ -103,9 +140,11 @@ function M.install(opts)
     return all
   end
 
-  -- Each new drum its kind, WA's draw of it off.
+  -- Each new drum its kind, WA's draw of it off. Without the add-on's deal a
+  -- map drum stays WA's own.
   local function take(drum)
     if kinds[drum.uid] then return kinds[drum.uid] end
+    if not settings.deal then return nil end
     local kind = deal()
     kinds[drum.uid] = kind
     drum.visible = false
@@ -258,9 +297,45 @@ function M.install(opts)
     end
   end
 
+  -- bl_script.txt's NapalmDrum and MinesDrum: three fires and a blast of 30;
+  -- five of WA's mines (40 damage) and a blast of 10.
+  local LAUNCHED = {}
+
+  LAUNCHED.napalm = function(ev, owner)
+    fires(owner, ev.x, ev.y, 15, 8300, { { -8, -8, -1 }, { 8, -8, 1 }, { 0, -8, -2 } })
+    blast(owner, ev.x, ev.y, 30)
+  end
+
+  LAUNCHED.mine = function(ev, owner)
+    local layer = wa.actors.spawn({ sprite = false, gravity = false, collide = false,
+      owner = owner, x = ev.x, y = ev.y, on = function(a) a:despawn() end })
+    for _ = 1, 5 do
+      local vx = between(-7, 7)
+      local vy = between(-7, -4)
+      wa.mines.spawn({ owner = layer, x = ev.x, y = ev.y, vx = vx, vy = vy,
+        fuse = 3000, arm = 3000, damage = 40, radius = 48 })
+    end
+    blast(owner, ev.x, ev.y, 10)
+  end
+
+  -- A drum of `kind` (napalm, mine, electric, icy, teleport) at x, y moving
+  -- vx, vy, as bl_script's drums are built (Snap false). Nil when WA builds
+  -- none.
+  M.launch = function(kind, x, y, vx, vy)
+    assert(KINDS[kind], "oil drums: no kind " .. tostring(kind))
+    local drum = wa.oil.spawn({ x = x, y = y, snap = false })
+    if not drum then return nil end
+    kinds[drum.uid] = kind
+    launched[drum.uid] = true
+    drum.visible = false
+    drum.vx, drum.vy = vx, vy
+    wa.log(("oil drums: launched drum %d is %s"):format(drum.uid, kind))
+    return drum
+  end
+
   wa.on.oil_explode(function(ev)
     local kind = take(ev.drum)
-    local burst = BURST[kind]
+    local burst = launched[ev.drum.uid] and LAUNCHED[kind] or BURST[kind]
     if not burst then return end
     ev:replace()
     burst(ev, owner_for(ev.team))
