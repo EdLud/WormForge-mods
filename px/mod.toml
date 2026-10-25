@@ -2137,3 +2137,26 @@ description = "Project X Specialists: six launched mines with delayed triggered 
 entry = "components/weapon.lua"
 icon = "sprites/mines_gun/icon.png"
 default_position = { row = "F3", column = 8 }
+
+[[components]]
+id = "px.platform"
+type = "weapon"
+name = "Platform"
+description = "Specialists: a fixed platform with 40 health."
+entry = "components/weapon.lua"
+icon = "sprites/platform/platform_icon.png"
+default_position = { row = "F11", column = 8 }
+
+[[components]]
+id = "px.toxic_grenade"
+type = "weapon"
+name = "Toxic Grenade"
+description = "Specialists: a grenade that releases a lingering poison cloud."
+entry = "components/weapon.lua"
+icon = "sprites/toxic_grenade/img_toxicgren.png"
+default_position = { row = "F2", column = 8 }
+
+[sprites."sprites/platform/platform_sprite.png"]
+frames = 1
+[sprites."sprites/platform/platform_broken.png"]
+frames = 1

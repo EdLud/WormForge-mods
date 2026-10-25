@@ -33,6 +33,8 @@ local ORDER = {
   "weapons/gravity_control",
   "weapons/sacrifice",
   "weapons/parkour",
+  "weapons/platform",
+  "weapons/toxic_grenade",
   "lib/turn_controls",
   "weapons/jump",
   "weapons/thrown_dynamite",

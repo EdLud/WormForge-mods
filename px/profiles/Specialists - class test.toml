@@ -359,3 +359,12 @@ crate_pct = 0
 [weapons."px.mines_gun"]
 row = "F1"
 column = 5
+
+[weapon_settings."px.platform"]
+ammo = 0
+after_use = "continue"
+delay = 0
+crate_pct = 0
+[weapons."px.platform"]
+row = "F2"
+column = 6
