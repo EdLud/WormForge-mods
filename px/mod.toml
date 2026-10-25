@@ -1738,6 +1738,13 @@ default_position = { row = "F11", column = 1 }
 [components.suggests."hl.rules"]
 pool = "offensive"
 
+[[components.options]]
+key = "charged"
+type = "bool"
+default = false
+label = "Charged"
+description = "Hold fire to set the launch power, as WA's Bazooka. Off: Project X's launch at a fixed half power."
+
 [[components]]
 id = "px.old_woman_launcher"
 type = "weapon"
@@ -1749,6 +1756,13 @@ default_position = { row = "F11", column = 2 }
 
 [components.suggests."hl.rules"]
 pool = "offensive"
+
+[[components.options]]
+key = "charged"
+type = "bool"
+default = false
+label = "Charged"
+description = "Hold fire to set the launch power, as WA's Bazooka. Off: Project X's launch at a fixed half power."
 
 [[components]]
 id = "px.crate_strike"
