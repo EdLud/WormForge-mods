@@ -98,4 +98,10 @@ function weapon.definition()
   })
 end
 
+-- The "launch_power" option: the push a drop gets, in % of full power, on
+-- top of the worm's own speed (fires.launch_power_pct). Project X's is 15.
+function weapon.configure(ctx, spec)
+  spec.fires.launch_power_pct = ctx.option("launch_power")
+end
+
 return weapon

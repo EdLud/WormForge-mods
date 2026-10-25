@@ -1686,6 +1686,15 @@ default_position = { row = "F10", column = 2 }
 [components.suggests."hl.rules"]
 pool = "offensive"
 
+[[components.options]]
+key = "launch_power"
+type = "int"
+min = 0
+max = 100
+default = 15
+label = "Launch power"
+description = "The push it gets when dropped, in % of full power, on top of the worm's own speed. Project X's is 15 (WA's Sheep and Skunk: 5); 0 just drops it."
+
 [[components]]
 id = "px.priceless_ming_vase"
 type = "weapon"
