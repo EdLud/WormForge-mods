@@ -96,3 +96,34 @@ description = "Throw a three-second bomb that releases 33 gravity-free, penetrat
 entry = "weapons/i_bomb.lua"
 icon = "sprites/i_bomb/icon.png"
 default_position = { row = "F2", column = 1 }
+
+[sprites."sprites/golden_grenade/hold.png"]
+frames = 1
+[sprites."sprites/golden_grenade/pixel.png"]
+frames = 1
+[sprites."sprites/precipitator/body.png"]
+frames = 20
+[sprites."sprites/precipitator/fragment.png"]
+frames = 1
+[sprites."sprites/precipitator/snow.png"]
+frames = 7
+[sprites."sprites/precipitator/stone.png"]
+frames = 7
+
+[[components]]
+id = "px.golden_grenade"
+type = "weapon"
+name = "Golden Grenade"
+description = "A charged grenade with a wide blast and four explosive secondary grenades."
+entry = "weapons/golden_grenade.lua"
+icon = "sprites/golden_grenade/icon.png"
+default_position = { row = "F1", column = 1 }
+
+[[components]]
+id = "px.precipitator"
+type = "weapon"
+name = "Precipitator"
+description = "Fire 25 clouds that release falling explosive stones."
+entry = "weapons/precipitator.lua"
+icon = "sprites/precipitator/icon.png"
+default_position = { row = "F2", column = 1 }

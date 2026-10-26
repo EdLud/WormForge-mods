@@ -91,7 +91,7 @@ spec.on_click{worm = owner, x = 500.5, y = 300.25}
 assert(ammo == 1 and spent == 1)
 local marker = actors[2]
 assert(marker.spec.sprite == false and not marker.spec.collide and not marker.spec.gravity)
-assert(marker.spec.persist and not marker.spec.drown)
+assert(marker.spec.persist and not marker.spec.drown and marker.spec.solid == false)
 assert(marker.spec.x == 500.5 and marker.spec.y == 300.25)
 assert(marker.light.circle == 155 and marker.light.seen_by == "owner" and marker.light.shadow_cast)
 assert(sounds[1][1] == marker and sounds[1][2] == "sounds/far_sight/reveal.wav")
