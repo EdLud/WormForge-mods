@@ -1,6 +1,6 @@
-# Phase 3 test profile: existing class weapons only. Use five worms per team.
-# Missing weapons and the Soldier zombie belong to the following milestones.
-description = "Specialists class test: five worms per team. Tests class switching, cooldowns and Medic healing. Missing class weapons and Soldier zombie are not included yet. Crate Shower is supplied for pickup tests."
+# Test profile: every class weapon, one class per F-row. Use five worms per team.
+# The full game is the "Specialists 2.3" profile; the Soldier zombie isn't ported.
+description = "Specialists class test: five worms per team, each class's weapons on its own F-row. Tests class switching, cooldowns and Medic healing. Crate Shower is supplied for pickup tests. The Soldier zombie is not ported yet."
 features = ["core.utilities", "specialists.rules"]
 
 [options."core.utilities"]

@@ -10,5 +10,6 @@ packs = [
 profiles = [
   "px/profiles/Full Wormforage.toml",
   "px/profiles/Highlander Orange.toml",
+  "px/profiles/Specialists 2.3.toml",
   "utilities/profiles/0.9.3 demo profile.toml",
 ]

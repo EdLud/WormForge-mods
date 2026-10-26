@@ -862,7 +862,7 @@ frames = 1
 id = "specialists.rules"
 type = "feature"
 name = "Specialists rules"
-description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns and the Medic aura. Use five worms per team and 100 starting HP. The full weapon set and Soldier zombie are still being ported."
+description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns and the Medic aura. Use five worms per team and 100 starting HP; the Specialists 2.3 profile places the full weapon set. The Soldier zombie is not ported yet."
 entry = "components/specialists.lua"
 
 [[components]]
