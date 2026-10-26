@@ -8,6 +8,12 @@ None of these ships to players. The packs that do are `mods/px/` (Project X's
 weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
 of war, +N Seconds and the Cursor) and `mods/sdk/`.
 
+- `starting_guide` (`example.starting_guide`) — the example of the
+  [WormForge starting guide](https://github.com/ropahektic/WormForge/blob/main/docs/starting-guide-1-your-first-mod.md),
+  growing part by part. Part 1: `guide.moon_grenade`, WA's Grenade with about
+  a third of the gravity, one burst in four digging a crater (`on_explode`,
+  `wa.random`, `wa.land.cut`, a HUD line); `profiles/Moon Grenade.toml`
+  places it beside WA's Grenade.
 - `component_demo` (`example.components`) — the smallest bundle: two weapons
   built on WA's Bazooka and Mortar, and an add-on with a setting. Its README
   walks through the format; `profiles/Demo.toml` places them.

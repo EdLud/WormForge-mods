@@ -1,0 +1,10 @@
+description = "The starting guide's Moon Grenade, with WA's Grenade beside it to compare, a Ninja Rope and Skip Go."
+
+[weapons]
+"guide.moon_grenade" = true
+"stock.grenade" = true
+"stock.ninja_rope" = true
+"stock.skip_go" = true
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1

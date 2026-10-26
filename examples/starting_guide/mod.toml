@@ -1,0 +1,15 @@
+id = "example.starting_guide"
+name = "Starting guide"
+version = "0.1.0"
+author = "WormForge"
+api_version = 4
+format_version = 2
+
+[[components]]
+id = "guide.moon_grenade"
+type = "weapon"
+name = "Moon Grenade"
+description = "WA's Grenade with about a third of the gravity. One burst in four also digs a crater."
+entry = "weapons/moon_grenade.lua"
+icon = "grenade"
+default_position = { row = "F2", column = 6 }
