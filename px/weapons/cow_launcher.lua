@@ -19,4 +19,12 @@ function weapon.definition()
   })
 end
 
+-- The "charged" option: held fire sets the launch power, as WA's Bazooka.
+-- Off keeps Project X's fixed launch at half power.
+function weapon.configure(ctx, spec)
+  if ctx.option("charged") then
+    spec.fires.launch_power_pct = "charged"
+  end
+end
+
 return weapon

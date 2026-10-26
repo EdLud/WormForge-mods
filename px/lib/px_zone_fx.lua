@@ -68,7 +68,7 @@ local function emit(sheet, x, y, aim, glow, owner)
   local speed, heading = -3 - random() * 4, random() * 2 * math.pi
   local damaging_aim = aim and sheet == M.AIM_DAMAGE
   particles[#particles + 1] = {
-    sheet = sheet, x = x, y = y, age = 0,
+    sheet = sheet, x = x, y = y, age = 0, aim = aim,
     vx = glow and 0 or speed * wa.math.cos(heading),
     vy = glow and 0 or speed * wa.math.sin(heading),
     angle = random() * 2.31,
@@ -123,6 +123,13 @@ function M.flight(weapon, healing)
 end
 
 -- health_zone_anim::OverrideDefaultWeapAnims, only while aiming/charging.
+-- Drop the aim particles still in the air (a mode switch's old colour).
+function M.clear_aim()
+  for i = #particles, 1, -1 do
+    if particles[i].aim then table.remove(particles, i) end
+  end
+end
+
 function M.aim(worm, healing)
   local angle = worm.aim * math.pi * -worm.facing
   emit(healing and M.HEAL or M.AIM_DAMAGE,

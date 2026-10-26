@@ -119,7 +119,7 @@ attacking team must destroy the defenders' king, a patch of terrain, before
 the attack timer runs out. A king is lost when enough of its solid pixels are
 gone. Kings, teams, the timer and its kind are set at the top of
 `components/kill_the_king.lua`. It was its own pack (`example.kill_the_king`)
-until 0.17.0; installing this pack from the catalogue moves that one to
+until 0.18.0; installing this pack from the catalogue moves that one to
 `WormForge/Backups/Packs` (`replaces` in `mod.toml`).
 
 ## Ported weapons

@@ -63,9 +63,14 @@ local function read(path, header)
     if in_options then
       option_key = line:match('^key = "([%w_]+)"') or option_key
       local default = line:match("^default = (%d+)$")
-      if id and option_key and default then
+      local flag = line:match("^default = (%a+)$")
+      if id and option_key and (default or flag == "true" or flag == "false") then
         own_options[id] = own_options[id] or {}
-        own_options[id][option_key] = tonumber(default)
+        if default then
+          own_options[id][option_key] = tonumber(default)
+        else
+          own_options[id][option_key] = flag == "true"
+        end
       end
     end
     local placed_id = path == "profiles/Highlander.toml" and line:match('^"([%w_%.]+)" = { row = ')
