@@ -12,7 +12,8 @@ wa = {
   worms={all=function() return {a,b,c} end},
   weapons={replace=function(v) claim=v end},
   on={hurt=function(f)hurt=f end, worm_message=function(f,options)
-    message=f;assert(#options.msgs==2)
+    -- The suit's own hook; the tooltip's (frame finish only) is not under test.
+    if #options.msgs==2 then message=f end
   end,death=function(f)death=f end,draw=function(f)draw=f end},
   sound={play=function(w,s)sounds[#sounds+1]={w,s} end},
   draw={quad=function(t)quads[#quads+1]=t end},
@@ -20,6 +21,7 @@ wa = {
   fire={repel=function(t)pushes[#pushes+1]=t;return hits end},
   sorted=function(t)local out={};for k in pairs(t)do out[#out+1]=k end;table.sort(out);return out end,
 }
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 require("weapons/antifire_suit").install()
 assert(claim.utility.effect=="scripted" and not claim.handling.ends_turn)
 local function hit(w,kind,phase) return hurt{worm=w,kind=kind,phase=phase or "pre",amount=10} end

@@ -40,8 +40,7 @@ return {
         local worm = ev.worm
         if not worm or worm.hp <= 0 or worm:ammo(ctx.id) == 0 then return end
         if terrain_blocking and wa.land.solid(ev.x, ev.y) then
-          wa.hud.message_top("Far Sight cannot be placed inside terrain.",
-            {to = "coalition", alliance = worm.alliance})
+          require("wf-lib/tooltip").notice(worm, "Far Sight cannot be placed\ninside terrain.")
           return
         end
         local actor = wa.actors.spawn{

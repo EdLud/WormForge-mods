@@ -41,6 +41,7 @@ wa = {
   on = {turn_start = function() end, turn_end = function() end, draw = function(fn) hooks[#hooks + 1] = fn end,
     missile_frame = function(fn) hooks.missile = fn end},
 }
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 
 lantern.install()
 local spec = claims[1]

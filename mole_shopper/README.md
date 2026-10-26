@@ -4,10 +4,9 @@ Ported from `FOW - Mole Shopper - popka+0rang3.pxs` in Orange's
 28 September 2026 Project X build. This bundle adds the scheme's missing
 components; its full profile also reuses existing PX ports.
 
-The first test profile contains Lantern, Far Sight and launched Mole Bombs;
-the second contains j-bomb, i-bomb, Power Shotgun and Thrown Ming Vase.
-Both have unlimited ammo/time for checking these components, rather than the
-finished scheme's inventory or crate distribution.
+Its test profiles (unlimited ammo and time, for checking components rather
+than the finished scheme) live in the repository's `tests/mole_shopper/fixtures/`
+and don't ship with the pack.
 
 - **Lantern:** throw a persistent physical light, visible to its coalition.
   It uses native mine movement without a mine's fuse or trigger, and drowns.
@@ -43,7 +42,7 @@ survives other teams' turns and ends when the wearer's team next gets a turn.
 The shield stays faintly visible and flashes red when it blocks a flame hit;
 it follows the wearer's Invisibility presentation.
 
-**Mole Shopper** is the full scheme profile: 58 selectable weapons, 199 HP,
+**FOW Mole Shopper** is the full scheme profile: 58 selectable weapons, 199 HP,
 40-second turns and coalition fog. Its starting inventory, panel layout,
 weapon handling, crate counts/types/chances and per-weapon cave restrictions
 come from the PX records. Turn options and initial delays use the attached

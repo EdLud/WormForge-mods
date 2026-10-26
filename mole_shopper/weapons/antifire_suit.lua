@@ -29,7 +29,7 @@ function M.install()
       if not alive(w) or suits[w.id] then return end
       suits[w.id] = {team = w.team, alpha = IDLE_ALPHA, refreshed = wa.world.frame()}
       wa.sound.play(w, SOUND)
-      wa.hud.message_top("Antifire Suit ON", {to = "coalition", alliance = w.alliance})
+      require("wf-lib/tooltip").notice(w, "Antifire Suit ON")
     end,
   }
   wa.on.hurt(function(hit)

@@ -5,6 +5,9 @@
 --   dofile(root .. "../tests/tooltip_mock.lua")(root)
 return function(root)
   package.preload["wf-lib/tooltip"] = function() return dofile(root .. "../sdk/tooltip.lua") end
+  wa.msg = wa.msg or {}
+  wa.msg.FRAME_FINISH = wa.msg.FRAME_FINISH or 2
+  wa.on.worm_message = wa.on.worm_message or function() end
   wa.on.turn_start = wa.on.turn_start or function() end
   wa.on.turn_end = wa.on.turn_end or function() end
   local function record(spec)
