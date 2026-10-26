@@ -127,3 +127,18 @@ description = "Fire 25 clouds that release falling explosive stones."
 entry = "weapons/precipitator.lua"
 icon = "sprites/precipitator/icon.png"
 default_position = { row = "F2", column = 1 }
+
+[sprites."sprites/antifire_suit/shield.png"]
+frames = 1
+
+[sprites."sprites/antifire_suit/smoke.png"]
+frames = 28
+
+[[components]]
+id = "px.antifire_suit"
+type = "weapon"
+name = "Antifire Suit"
+description = "Protect the wearer from flames and repel nearby fire until their team's next turn."
+entry = "weapons/antifire_suit.lua"
+icon = "sprites/antifire_suit/icon.png"
+default_position = { row = "F1", column = 1 }

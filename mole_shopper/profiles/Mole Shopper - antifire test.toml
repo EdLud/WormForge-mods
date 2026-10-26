@@ -1,0 +1,72 @@
+description = "F1 Antifire Suit; F2 Petrol Bomb; F3 Flame Thrower / Fire Punch; F4 Grenade; F5 Jet Pack; F6 Teleport; F7 Skip Go. Suit lasts through other teams' turns, until its team's next turn. No fog."
+[scheme]
+worm_energy = 255
+turn_time = 60
+hazards = 0
+weapon_crate_weight = 0
+health_crate_weight = 0
+utility_crate_weight = 0
+
+[weapons."px.antifire_suit"]
+row = "F1"
+column = 1
+[weapon_settings."px.antifire_suit"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.petrol_bomb"]
+row = "F2"
+column = 1
+[weapon_settings."stock.petrol_bomb"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.flame_thrower"]
+row = "F3"
+column = 1
+[weapon_settings."stock.flame_thrower"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.fire_punch"]
+row = "F3"
+column = 2
+[weapon_settings."stock.fire_punch"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.grenade"]
+row = "F4"
+column = 1
+[weapon_settings."stock.grenade"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.jet_pack"]
+row = "F5"
+column = 1
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.teleport"]
+row = "F6"
+column = 1
+[weapon_settings."stock.teleport"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.skip_go"]
+row = "F7"
+column = 1
+[weapon_settings."stock.skip_go"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"

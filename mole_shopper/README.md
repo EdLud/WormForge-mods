@@ -36,5 +36,11 @@ a wide linear blast and four explosive secondary grenades. Precipitator keeps
 native 25-shot gun timing while launching clouds and falling stones. Both need
 this branch's updated DLL.
 
-Antifire Suit, Shift-assisted aiming, final
+The fourth test profile checks **Antifire Suit**: native flames cannot damage
+or knock the wearer, and nearby non-melting flames are repelled. Protection
+survives other teams' turns and ends when the wearer's team next gets a turn.
+The shield stays faintly visible and flashes red when it blocks a flame hit;
+it follows the wearer's Invisibility presentation.
+
+Shift-assisted aiming, final
 inventory/crate tuning and a complete playable scheme remain subsequent work.
