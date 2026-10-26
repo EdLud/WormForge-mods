@@ -9,6 +9,9 @@ weapon.record = {
   },
 }
 
+-- Project X's Personal Invisibility keeps the worm invisible.
+weapon.defaults = { ends_invisibility = false }
+
 function weapon.definition()
   local shared = require("lib/shared")
   local fires = shared.fires

@@ -39,6 +39,7 @@ local ORDER = {
   "weapons/trampoline",
   "weapons/mine_launcher",
   "weapons/gravity_gun",
+  "weapons/personal_invisibility",
   "lib/turn_controls",
   "weapons/jump",
   "weapons/thrown_dynamite",

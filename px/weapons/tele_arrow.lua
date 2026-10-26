@@ -21,6 +21,9 @@ local function teleport(event)
   end
 end
 
+-- Project X's Personal Invisibility keeps the archer invisible.
+weapon.defaults = { ends_invisibility = false }
+
 weapon.definition = {
   copy_from = "stock.bazooka",
   name = "Tele Arrow",

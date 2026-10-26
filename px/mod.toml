@@ -2216,6 +2216,15 @@ icon = "sprites/gravity_gun/gravity_gun_ico.png"
 default_position = { row = "F8", column = 8 }
 
 [[components]]
+id = "px.personal_invisibility"
+type = "weapon"
+name = "Personal Invisibility"
+description = "Specialists: WA's Invisibility for one worm, for three turns or until it attacks."
+entry = "components/weapon.lua"
+icon = "sprites/personal_invisibility/ico_pinvisibility.png"
+default_position = { row = "utility", column = 9 }
+
+[[components]]
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"

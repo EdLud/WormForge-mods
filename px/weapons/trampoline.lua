@@ -117,6 +117,9 @@ local function place(fire)
   trampolines[#trampolines + 1] = s
 end
 
+-- Project X's Personal Invisibility keeps the thrower invisible.
+weapon.defaults = { ends_invisibility = false }
+
 weapon.definition = {
   -- PX's record from the Specialists scheme (the Laser Sight's slot): a
   -- dropped weapon whose firing builds the trampoline instead.

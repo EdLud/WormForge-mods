@@ -1,5 +1,5 @@
 # Second phase-4 batch; timed turns are needed to check Sacrifice.
-description = "Specialists: Girder Launcher, Sacrifice and activatable Parkour."
+description = "Specialists: Girder Launcher, Sacrifice, activatable Parkour and Personal Invisibility."
 features = ["core.utilities"]
 
 [options."core.utilities"]
@@ -71,4 +71,25 @@ crate_pct = 0
 
 [weapons."stock.skip_go"]
 row = "F6"
+column = 1
+
+[weapon_settings."px.personal_invisibility"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.personal_invisibility"]
+row = "F7"
+column = 1
+
+# Personal Invisibility: an attacking weapon ends it.
+[weapon_settings."stock.bazooka"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."stock.bazooka"]
+row = "F8"
 column = 1
