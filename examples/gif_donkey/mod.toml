@@ -1,5 +1,5 @@
 # One weapon written twice: as data flags (flags.lua) and as Lua (lua.lua).
-# profiles/Growth Hormones.toml places both, side by side.
+# Both can be placed side by side.
 id = "example.gif_donkey"
 version = "0.2.2"
 author = "wkLua"

@@ -1,7 +1,7 @@
 # Core utilities (format_version 2): one feature with the match settings the
 # lobby scheme doesn't have and some players' favourite packs as switches,
 # fog of war, an instant utility of our own (+N Seconds) and the Cursor.
-# Nothing runs until a profile selects it (the mod loader's Profile tab).
+# Nothing runs until a profile selects it (its card in the mod loader).
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"

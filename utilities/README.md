@@ -8,8 +8,8 @@ packs (`core.fog`, `example.cursor_suite`) until 0.6.0; installing this pack
 from the catalogue moves those to `WormForge/Backups/Packs`, since their
 components are here now (`replaces` in `mod.toml`).
 
-Utilities changes nothing until a profile selects it: tick "Utilities" on the mod loader's Profile tab and set it up
-below the list, or write it by hand in a profile file in `WormForge/Profiles`:
+Utilities changes nothing until a profile selects it: click the **Core utilities** card in the mod loader, tick
+"Utilities" among its add-ons and set it up there, or write it by hand in a profile file in `WormForge/Profiles`:
 
 ```toml
 features = ["core.utilities"]
@@ -29,7 +29,7 @@ live_hp = true
 | Instant Death | switch, off by default | Zero-HP non-active worms start their native death sequence once their own motion settles, without waiting for the rest of the battlefield. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
 
-Gravity and wind belong to the profile's **Scheme** tab (`[scheme]`),
+Gravity and wind belong to the profile's scheme (**Manage Scheme (.WSC)** in the loader, `[scheme]`),
 including `gravity`, `constant_wind` and `wind`.
 
 Live HP requires a DLL providing `worm:commit_health()`. It commits actual
@@ -96,7 +96,7 @@ retreat_collect = "keep"
 The Lua lives in `weapons/plus_n.lua`; the icon is `sprites/plus_n.png`.
 Run `lua mods/utilities/test_auto_use.lua` to check these rules.
 
-A weapon's ammo, infinite included, is a weapon setting (the Weapons tab), not
+A weapon's ammo, infinite included, is a weapon setting (the loader's **Manage Weapon Panel**), not
 a utility. The switches are those mods' own code, in `features/`, loaded only
 when switched on.
 

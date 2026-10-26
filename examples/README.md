@@ -1,6 +1,7 @@
 Example bundles. Copy a folder to `WormForge/Mods/` next to `WA.exe`, then pick one of
-its profiles in the loader's profile list, or add its weapons and add-ons to
-your own profile. Nothing in a bundle runs until a profile selects it, and a
+its profiles under **Bundled profiles** in the loader's profile line, where it
+has one, or add its weapons (**Manage Weapon Panel**) and add-ons (a click on
+its card) to your own profile. Nothing in a bundle runs until a profile selects it, and a
 weapon goes wherever the profile places it: its code never names a slot, it
 names weapons by id (`labs.cut_lab`, `stock.bazooka`).
 
@@ -16,9 +17,9 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   places it beside WA's Grenade.
 - `component_demo` (`example.components`) — the smallest bundle: two weapons
   built on WA's Bazooka and Mortar, and an add-on with a setting. Its README
-  walks through the format; `profiles/Demo.toml` places them.
+  walks through the format, with a profile to write by hand.
 - `labs` (`example.labs`) — one small weapon per part of the API, each in its
-  own folder or file; `profiles/Labs.toml` places them all.
+  own folder or file.
   - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it
     lands (+ cycles the shape, 1-9 and 0 the size): `wa.land.cut`.
   - `labs.hurt_lab` (Ten) — Space eats WA's punch and `worm:hurt(10)`s every
@@ -33,15 +34,13 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     Space charges and fires it as usual.
   - `labs.shuffle_panel` (add-on, Shuffled panel) — each turn the placed
     weapons swap places on the panel at random, the same for every player
-    (`wa.panel.layout` / `set_layout`). `profiles/Everything shuffled.toml`
-    fills the whole panel with it: all 89 custom weapons of every bundle and
-    41 of WA's own, 130 in all, with infinite ammo.
+    (`wa.panel.layout` / `set_layout`).
   - `labs.rec_*`, the Record Lab — copies of WA's Bazooka and Grenade, each with one field of its weapon record changed raw, to settle what the field does;
-    the HUD names both readings. `profiles/Record Lab.toml` places them beside
-    WA's Bazooka and Grenade, with infinite ammo.
+    the HUD names both readings. Place them beside WA's Bazooka and Grenade
+    to compare.
 - `gif_donkey` (`example.gif_donkey`) — Growth Hormones, written twice: as
   data flags the engine runs (`gif.flags`) and as Lua (`gif.lua`). Both can be
-  placed side by side; `profiles/Growth Hormones.toml` does that.
+  placed side by side.
 - `gravler_strike` (`example.gravler_strike`) — WA's Mole Squadron with PX's
   four Gravler sprites swapped in (`mole_dig_rotation`). PX weapon-data tuning
   is pending comparison.
@@ -74,8 +73,8 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     fires (it needs `mods/px` too).
 
 Profiles own their game scheme too: unset settings take Intermediate. Use the
-loader's **Scheme** tab or a profile's `[scheme]`; gravity and wind have moved
-there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).
+loader's **Manage Scheme (.WSC)** page or a profile's `[scheme]`; gravity and
+wind have moved there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).
 
 - `shared_library_demo` (`example.shared_library`) — an independent weapon using
   `dependencies = ["wf.sdk"]` and `require("wf-lib/px_sprite_builder")`, including

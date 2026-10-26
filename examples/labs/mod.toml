@@ -1,5 +1,5 @@
 # Small weapons and an add-on that each show one part of the API. Nothing
-# runs until a profile selects them; profiles/Labs.toml places them all.
+# runs until a profile selects them.
 id = "example.labs"
 version = "0.2.0"
 author = "wkLua"

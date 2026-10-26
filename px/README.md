@@ -29,7 +29,7 @@ PX's layout puts it and ticks Highlander rules, which deal them by the rules
 below.
 
 Any profile can tick Highlander rules over its own weapon set. Each placed
-weapon then has two more settings in the Weapons tab: its **Highlander pool**
+weapon then has two more settings in the loader's **Manage Weapon Panel**: its **Highlander pool**
 (offensive, second, movement, or not dealt) and whether it is **dealt on
 cavern maps**. A PX weapon suggests PX's choice; WA's own weapons are not
 dealt until a profile says so.
@@ -42,7 +42,7 @@ by default is its `default_position` in `mod.toml` (PX's layout: the Double
 Bazooka where the Bazooka is). Under Highlander
 rules, moved weapons are dealt where they are, and one taken out is not dealt. A profile without the rules can place
 some of them next to WA's own weapons: they then keep the ammo, delay and
-crate odds that profile gives them. Search for them in the Weapons tab.
+crate odds that profile gives them. Search for them in the loader's **Manage Weapon Panel**.
 
 ### Weapon options
 
