@@ -43,7 +43,7 @@ function weapon.setup()
     end
   end,{msgs={wa.msg.TURN_STARTED,wa.msg.FIRE_WEAPON}})
   require("lib/weapon_hint").register("px.tazer",function()
-    return available and "Tazer: Space fires a chaining electric arc" or "Tazer: used this turn"
+    return available and "Tazer\nSpace: a chaining electric arc" or "Tazer\nUsed this turn"
   end)
 end
 return weapon

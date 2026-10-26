@@ -44,7 +44,7 @@ function weapon.setup()
       wa.world.set_wind((f * WIND_STEP) * worm.facing)
     end,
     hint = function()
-      return string.format("Wind Changer: force %d (keys 0-9), then Space", wind_force)
+      return string.format("Wind Changer: force %d\n0-9: force, then Space", wind_force)
     end,
   })
 end

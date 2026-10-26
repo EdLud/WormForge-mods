@@ -5,7 +5,7 @@ package.path=root.."?.lua;"..package.path
 local hooks,ends,draws,messages,cuts,quads={},{},{},{},{},{}
 local fits=true
 local worm={id=1,x=100,y=200,vx=0,vy=0,gravity=1,mass=1,shape="worm",body_visible=true,facing=-1,
-  state="standing",turn=true,weapon="px.small_worm"}
+  state="standing",turn=true,weapon="px.small_worm",alliance=0,hp=100}
 function worm:fits()return fits end
 wa={msg={FRAME_FINISH=2,FIRE_WEAPON=0x26},depth={WORMS=0xD0000},
   world={keys=function()return {} end},
@@ -21,6 +21,7 @@ end
 local function check(ok,what)assert(ok,what);print("  ok   "..what)end
 local function near(a,b)return math.abs(a-b)<1e-9 end
 
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 local sw=require("weapons/small_worm")
 sw.setup()
 require("lib/turn_controls").setup()

@@ -35,6 +35,22 @@ both forms cannot apply a movement input twice.
 These are public helpers, separate from Highlander's internal match state.
 Module tables and private globals are separate for each consuming bundle.
 
+`require("wf-lib/tooltip")` is the weapon tooltip: one window in WA's small font
+at the bottom right, over the wind bar, bordered in the active team's colour
+and seen by that team's coalition. WormForge fades it out while WA's weapon
+panel is open.
+
+```lua
+local tooltip = require("wf-lib/tooltip")
+-- While the turn's worm holds the weapon, every frame: its settings, or nil.
+tooltip.hint("my.weapon", function(worm) return "My Weapon: " .. mode .. "\n+ next mode" end)
+-- Something that just happened, for three seconds (or `seconds`) of the turn.
+tooltip.notice(worm, "No space to launch!")
+```
+
+`\n` breaks lines. Run both from simulation callbacks. With an engine older
+than `wa.hud.window`, the text goes to WA's top banner instead, on one line.
+
 Every selected bundle's dependency closure is frozen for online games and
 replays. Replay imports use the recorded files rather than the installed SDK.
 Relative imports inside a library resolve within that library. A consumer can

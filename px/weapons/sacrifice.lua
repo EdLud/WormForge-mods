@@ -30,19 +30,19 @@ function weapon.setup()
       local steps = math.min(requested, math.floor((worm.hp - 1) / 50))
       if steps < 1 or not worm:reduce_health(50 * steps) then
         wa.sound.play(worm, "sounds/sacrifice/sacrifice_error.wav")
-        wa.hud.message_top("Sacrifice: not enough HP", {to="coalition",alliance=worm.alliance})
+        require("lib/weapon_hint").notice(worm, "Sacrifice: not enough HP")
         return
       end
       wa.world.set_turn_clock(math.min(3600000,wa.world.turn_clock() + 5000 * steps))
       wa.sound.play(worm, "sounds/sacrifice/sacrifice_sound.wav")
       if steps < requested then
-        wa.hud.message_top("Sacrifice: added as much time as your HP allows", {to="coalition",alliance=worm.alliance})
+        require("lib/weapon_hint").notice(worm, "Sacrifice: added as much time\nas your HP allows")
       end
     end,
     finish = function() choice = nil end,
     hint = function()
-      return choice and string.format("Sacrifice: %d HP for %d seconds, then Space", 50*choice, 5*choice)
-        or "Sacrifice: choose 1-5, then Space (50 HP per 5 seconds)"
+      return choice and string.format("Sacrifice: %d HP for %d seconds\nSpace: sacrifice", 50*choice, 5*choice)
+        or "Sacrifice: 50 HP per 5 seconds\n1-5: how much, then Space"
     end,
   })
 end

@@ -206,7 +206,7 @@ function weapon.setup()
 
   require("lib/weapon_hint").register(ID, function(worm)
     return "Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
-      .. " (- orange, + blue; Ctrl/Alt other colour; Pause toggle)"
+      .. "\n- orange, + blue\nCtrl/Alt: the other colour\nPause: toggle"
   end)
 
   if wa.on.draw then

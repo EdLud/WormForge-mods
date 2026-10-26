@@ -196,7 +196,7 @@ function M.install(ctx)
 
   require("lib/weapon_hint").register("px.blast_zone", function()
     -- Report the duration the zone actually receives.
-    return "Blast Zone: explodes for " .. turns .. " turns  (1-5 turns)"
+    return "Blast Zone: explodes for " .. turns .. " turns\n1-5: turns"
   end)
 
   -- **The round in flight, drawn and turned by hand.** PX's `WeapSprite` with an

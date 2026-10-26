@@ -319,8 +319,8 @@ function weapon.setup()
     end)
   end
   require("lib/weapon_hint").register("px.electromagnet", function(worm)
-    return (polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT mode (+ to repel)"
-      or "Electromagnet: REPEL mode (+ to attract)"
+    return (polarity[worm.id] or 1) < 0 and "Electromagnet: ATTRACT\n+ to repel"
+      or "Electromagnet: REPEL\n+ to attract"
   end)
 
   if wa.on.draw and wa.draw.quad then

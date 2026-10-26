@@ -84,7 +84,7 @@ function weapon.setup()
     end,
     hint = function()
       return "Gravity Control: " .. (gravity_choice and GRAVITY_NAMES[gravity_choice]
-        or "choose 1-5") .. ", then Space"
+        or "choose one") .. "\n1-5: gravity, then Space"
     end,
   })
 end

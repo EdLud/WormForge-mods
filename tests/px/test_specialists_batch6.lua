@@ -51,11 +51,12 @@ local function tramp_quad()
 end
 
 -- Bulldozer ------------------------------------------------------------------
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 local bulldozer=require("weapons/bulldozer")
 bulldozer.setup()
 check(bulldozer.definition.wep=="weps/bulldozer.wep","Bulldozer: PX's scheme record")
 local function worm(id,x,y)
-  local w={id=id,x=x,y=y,hp=100,kind="worm"}
+  local w={id=id,x=x,y=y,hp=100,kind="worm",alliance=0}
   function w:hurt(h)log.hurts[#log.hurts+1]={id=self.id,h=h}end
   return w
 end
@@ -98,10 +99,10 @@ local d=log.drums[1]
 check(d and d.x==60 and d.y==40 and d.snap==false and d.vx==5 and d.vy==-6 and d.visible==false,
   "Barrel Launcher: the drum is built at the shell's start with its launch, WA's draw off")
 press(3);press(3);press(3)
-check(#log.messages==1 and log.messages[1]=="Electric Barrel" and log.sounds[#log.sounds]:find("tazsnd"),
+check(#log.messages==1 and log.messages[1]:find("Barrel Launcher: Electric Barrel",1,true) and log.sounds[#log.sounds]:find("tazsnd"),
   "Barrel Launcher: 3 picks the electric drum once, however long it is held")
 press(nil);press(5)
-check(log.messages[2]=="Teleport Barrel" and log.sounds[#log.sounds]==67,"Barrel Launcher: 5 the teleport drum")
+check(log.messages[2]:find("Barrel Launcher: Teleport Barrel",1,true) and log.sounds[#log.sounds]==67,"Barrel Launcher: 5 the teleport drum")
 press(3);barrel.definition.on_fire({worm=shooter,x=0,y=0,vx=0,vy=0})
 local electric=log.drums[2]
 local replaced=false
@@ -189,6 +190,8 @@ check(t.id==0 and #t.booms==1 and t.booms[1].damage==10,"Trampoline: broken at 4
 -- Mine Launcher ---------------------------------------------------------------
 log.mines,log.messages,log.sounds={}, {}, {}
 hooks.message={}
+-- A fresh tooltip, its frame hook among the new ones.
+package.loaded["wf-lib/tooltip"],package.loaded["lib/weapon_hint"]=nil,nil
 local launcher=require("weapons/mine_launcher")
 launcher.setup()
 check(launcher.definition.wep=="weps/mine_launcher.wep","Mine Launcher: PX's scheme record")
@@ -201,7 +204,7 @@ check(m.x==40 and m.y==60 and m.vx==4 and m.vy==-5 and m.arm==400 and m.fuse==0 
   and m.radius==48 and m.terrain_keep_speed_pct==96 and m.visible and not m.on_bump,
   "Mine Launcher: the instant mine by default, from the worm at the shell's launch")
 key(3);key(3)
-check(#log.messages==1 and log.messages[1]=="Invisible Mine, 3 SEC" and log.sounds[#log.sounds]==92,
+check(#log.messages==1 and log.messages[1]:find("Mine Launcher: Invisible Mine, 3 SEC",1,true) and log.sounds[#log.sounds]==92,
   "Mine Launcher: 3 picks the invisible mine, once a press")
 launcher.definition.on_fire({worm=gunner,vx=0,vy=0})
 m=log.mines[#log.mines]

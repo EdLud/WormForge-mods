@@ -19,12 +19,10 @@ function weapon.setup()
     fire = function(worm)
       enabled[worm.id] = not enabled[worm.id]
       if enabled[worm.id] then wa.sound.play(worm, "sounds/parkour/parkour_snd.wav") end
-      wa.hud.message_top("Parkour: " .. (enabled[worm.id] and "ON" or "OFF"),
-        {to="coalition",alliance=worm.alliance})
     end,
     finish = function() enabled = {} end,
     hint = function(worm)
-      return "Parkour: " .. (enabled[worm.id] and "ON" or "OFF") .. "; Space toggles, Enter wall-jumps, Backspace hops"
+      return "Parkour: " .. (enabled[worm.id] and "ON" or "OFF") .. "\nSpace: on/off\nEnter: wall-jump\nBackspace: hop"
     end,
   })
   wa.on.worm_message(function(worm, msg)

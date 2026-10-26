@@ -170,7 +170,7 @@ function M.install(ctx)
 
   require("lib/weapon_hint").register("px.health_zone", function()
     return (healing and "Health Zone: HEALING" or "Health Zone: DAMAGING")
-      .. " for " .. turns .. " turns, " .. healing_per_minute .. " HP/min  (+ switches)"
+      .. " for " .. turns .. " turns\n" .. healing_per_minute .. " HP a minute\n+ switches"
   end)
 
   -- **The round in flight, drawn and turned by hand.** PX's `WeapSprite` with an

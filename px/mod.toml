@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.18.0"
+version = "0.19.0"
 author = "Project X authors"
 api_version = 4
 format_version = 2

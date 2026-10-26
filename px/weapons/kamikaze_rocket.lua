@@ -93,8 +93,7 @@ function weapon.setup()
     if msg == wa.msg.FIRE_WEAPON then
       if worm.weapon ~= "px.kamikaze_rocket" then return end
       if not wa.world.keys().ctrl then
-        wa.hud.message_top("Hold Ctrl and press Space to use the Kamikaze Rocket.",
-          {to = "coalition", alliance = worm.alliance})
+        require("lib/weapon_hint").notice(worm, "Hold Ctrl and press Space\nto use the Kamikaze Rocket.")
         return "eat"
       end
       armed[worm.id] = true

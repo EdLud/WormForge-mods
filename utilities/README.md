@@ -134,8 +134,8 @@ or teleport on click. Select it, then press **+** (top row or keypad) to cycle:
 | Fire | Hold the left mouse button to spray rainbow petrol flames at 25 flames/second |
 | Hurt | Click near a living worm to deal 10 HP damage through `worm:hurt(10)` |
 
-A native top banner names the mode for the worm's coalition when selected,
-reselected or changed. Holding + advances once; release and press
+While the Cursor is held, the weapon tooltip (`wf-lib/tooltip`) names the
+mode for the worm's coalition and follows each change. Holding + advances once; release and press
 again to advance another mode. Each worm starts in Light and remembers its
 own mode across selections and turns. Number keys do not change magnet power.
 Switching modes removes the previous light or magnetic field immediately.

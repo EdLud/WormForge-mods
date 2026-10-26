@@ -378,6 +378,20 @@ local function new_match(opts)
         M.top_messages[#M.top_messages + 1] = {text = text, to = options.to, alliance = options.alliance}
         return true
       end,
+      -- The tooltip's window: each text it opens with or is set to reads as a
+      -- message, with its audience.
+      window = function(spec)
+        local function record(s)
+          if s.text then wa.hud.message_top(s.text, {to = s.to, alliance = s.alliance}) end
+        end
+        record(spec)
+        M.windows = M.windows or {}
+        local w = { open = true, spec = spec }
+        function w:set(s) for k, v in pairs(s) do self.spec[k] = v end; record(s); return self.open end
+        function w:close() local was = self.open; self.open = false; return was end
+        M.windows[#M.windows + 1] = w
+        return w
+      end,
     },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24,
       JUMP_UP = 0x25, RELEASE_WEAPON = 0x27 },
@@ -5748,7 +5762,9 @@ do
     check(case[2] .. " idle frames and rendering do not restart it", #M.top_messages == before + 1)
     M.message(w, 51)
     tick()
-    check(case[2] .. " reselecting the same weapon restores its tooltip", #M.top_messages == before + 2)
+    local open = M.windows[#M.windows]
+    check(case[2] .. " reselecting the same weapon keeps its tooltip up", #M.top_messages == before + 1
+      and open.open and open.spec.align == "bottom_right" and open.spec.font == "small" and open.spec.border == "purple")
   end
   w.weapon = "surrender"
   M.message(w, 51)

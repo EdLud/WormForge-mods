@@ -72,6 +72,7 @@ local function body(kind, uid, x, y, vx, vy)
   end
   return b
 end
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 local Portals = require("lib/portals")
 local velocity = require("lib/portal_velocity")
 local function pair(options)

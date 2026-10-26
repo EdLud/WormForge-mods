@@ -30,7 +30,7 @@ local function draw()
   draws = {}; event("draw"); return draws
 end
 local function reset(rate, turns, both)
-  for _, name in ipairs({"lib/weapon_hint", "lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
+  for _, name in ipairs({"lib/weapon_hint", "wf-lib/tooltip", "lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
     "weapons/health_zone", "weapons/blast_zone"}) do package.loaded[name] = nil end
   hooks, actors, claims, draws, nearby, worms, keys, assets = {}, {}, {}, {}, {}, {}, {}, {}
   blasts, sim_random, asset_loads, top_messages = 0, 0, 0, {}
@@ -77,6 +77,7 @@ local function reset(rate, turns, both)
       hooks[name] = hooks[name] or {}; hooks[name][#hooks[name]+1] = f
     end
   end
+  dofile(root .. "../tests/tooltip_mock.lua")(root)
   require("weapons/health_zone").install({ id = "px.health_zone", option = function(k)
     return ({ turns = turns or 3, healing_per_minute = rate or 60 })[k]
   end })

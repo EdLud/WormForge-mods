@@ -29,7 +29,7 @@ function weapon.setup()
     fire = function(worm)
       worm.invisibility = not worm.invisibility
       if worm.invisibility then
-        wa.hud.message_top("Invisible for " .. (TURNS - 1) .. " turns", { to = "coalition", alliance = worm.alliance })
+        require("lib/weapon_hint").notice(worm, "Invisible for " .. (TURNS - 1) .. " turns")
       end
       wa.sound.play(worm, DING)
     end,

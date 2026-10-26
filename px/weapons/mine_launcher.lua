@@ -94,11 +94,14 @@ function weapon.setup()
     local pressed = digit and digit >= 1 and digit <= #MODES and digit or nil
     if pressed and held[worm.id] ~= pressed then
       mode = pressed
-      wa.hud.message_top(MODES[pressed].name, { to = "coalition", alliance = worm.alliance })
       wa.sound.play(worm, 92)
     end
     held[worm.id] = pressed
   end, { msgs = { wa.msg.FRAME_FINISH, SELECT_WEAPON } })
+  -- After the keys, so a choice shows the frame it is made.
+  require("lib/weapon_hint").hint(ID, function()
+    return "Mine Launcher: " .. MODES[mode].name .. "\n1-" .. #MODES .. ": choose a mine"
+  end)
 end
 
 return weapon

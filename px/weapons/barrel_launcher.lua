@@ -28,7 +28,7 @@ local function launch(fire)
   if wa.world.collides({ x = fire.x, y = fire.y, radius = 9 }) then
     wa.sound.play(worm, 120)
     worm:ammo(ID, 1)
-    wa.hud.message_top("No space to launch!")
+    require("lib/weapon_hint").notice(worm, "No space to launch!")
     return
   end
   require("lib/oil_drums").launch(CHOICES[choice].kind, fire.x, fire.y, fire.vx, fire.vy)
@@ -62,11 +62,14 @@ function weapon.setup()
     local pressed = digit and digit >= 1 and digit <= #CHOICES and digit or nil
     if pressed and held[worm.id] ~= pressed then
       choice = pressed
-      wa.hud.message_top(CHOICES[pressed].name)
       wa.sound.play(worm, CHOICES[pressed].sound)
     end
     held[worm.id] = pressed
   end, { msgs = { wa.msg.FRAME_FINISH } })
+  -- After the keys, so a choice shows the frame it is made.
+  require("lib/weapon_hint").hint(ID, function()
+    return "Barrel Launcher: " .. CHOICES[choice].name .. "\n1-" .. #CHOICES .. ": choose a barrel"
+  end)
 end
 
 return weapon

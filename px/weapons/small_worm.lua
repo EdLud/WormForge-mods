@@ -34,7 +34,7 @@ function weapon.setup()
     worm.gravity = worm.gravity * GRAVITY
     worm.mass = worm.mass * MASS
     worm.body_visible = false
-    wa.hud.message_top("Small worm mode: ON")
+    require("lib/weapon_hint").notice(worm, "Small worm mode: ON")
   end
 
   local function deactivate(worm)
@@ -52,7 +52,7 @@ function weapon.setup()
     worm.gravity = worm.gravity / GRAVITY
     worm.mass = worm.mass / MASS
     worm.body_visible = true
-    wa.hud.message_top("Small worm mode: OFF")
+    require("lib/weapon_hint").notice(worm, "Small worm mode: OFF")
   end
 
   require("lib/turn_controls").register(ID, {

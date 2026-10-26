@@ -12,6 +12,7 @@ wa = {
   hud={message_top=function(text,opts) assert(opts.to=="coalition");banners[#banners+1]=text end},
   world={frame=function()return tick end,turn_clock=function()return clock end,set_turn_clock=function(t)clock=t end},
 }
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 require("weapons/sacrifice").setup()
 local sacrifice=actions["px.sacrifice"]
 local w={id=17,hp=151,turn=true,alliance=0,x=100,y=100,vx=1.5,vy=2,facing=1,state="sliding"}

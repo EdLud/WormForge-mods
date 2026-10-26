@@ -32,6 +32,7 @@ local function fire(worm,id)
   worm.weapon=id;send(worm,wa.msg.FIRE_WEAPON)
 end
 
+dofile(root .. "../tests/tooltip_mock.lua")(root)
 local pi=require("weapons/personal_invisibility")
 pi.setup()
 require("lib/turn_controls").setup()
