@@ -1,0 +1,1419 @@
+# FOW Mole Shopper, popka + 0rang3, September 2026 PX build.
+# Starting ammo, crates, panel and handling come from PX records; WA options/delays from its WSC.
+description = "Mole Shopper by popka and 0rang3: coalition fog, 199 HP, 40-second turns and the original weapon/crate loadout. Shift-assisted aiming is omitted."
+features = ["core.fog"]
+
+[options."core.fog"]
+circle_radius = 110
+cone_width = 45
+cone_length = 0
+shadow_cast = true
+discover = "off"
+view_ownership = "alliance"
+animal_circle_radius = 70
+animal_cone_length = 0
+animal_cone_width = 45
+proj_circle = 150
+proj_cone_length = 0
+proj_cone_width = 45
+proj_shadow_cast = true
+explosion_circle = 40
+crate_circle = 0
+spectator_mode = true
+placement_vision = false
+fog_floor = 0
+
+[options."px.health_zone"]
+healing_per_minute = 60
+turns = 5
+
+[scheme]
+angle_cheat_glitch = true
+anti_lock_aim = false
+anti_lock_power = false
+aqua_sheep = true
+artillery_mode = false
+auto_place_worms_by_ally = false
+automatic_end_of_turn_retreat = false
+batty_rope = false
+block_roofing = "allow"
+blood = true
+blood_level = 255
+circular_aim = false
+conserve_instant_utilities = false
+constant_wind = false
+display_total_round_time = true
+donor_cards = false
+double_time_stack_limit = 1
+dud_mines = false
+editor_marker = 0
+expedite_instant_utilities = false
+explosions_push_all_objects = "default"
+fall_damage = 1
+fall_damage_is_triggered_by_explosions = false
+floating_weapon_glitch = true
+fractional_round_timer = false
+game_engine_speed = 1.0
+girder_radius_assist = false
+glide_glitch = true
+god_worms = false
+gravity = 0.239990234375
+hazards = 66
+health_crate_energy = 25
+health_crate_weight = 0
+health_crates_cure_poison = "team"
+herd_doubling_glitch = "default"
+hot_seat_delay = 10
+indestructible_land = false
+indian_rope_glitch = "default"
+jet_pack_bungee_glitch = true
+keep_control_after_bumping_head = false
+keep_control_after_skimming = "lose_control"
+loss_of_control_doesn_t_end_turn = false
+manual_worm_placement = false
+maximum_crate_count_on_map_at_once = 5
+maximum_flamelet_count = 200
+maximum_jet_pack_speed = 5.0
+maximum_projectile_speed = 32.0
+maximum_rope_speed = 16.0
+mine_delay = 3
+no_crate_probability = 255
+pause_timer_while_firing = true
+petrol_touch_decay = 30
+petrol_turn_decay = 0.199981689453125
+phased_worms_allied = "off"
+phased_worms_enemy = "off"
+pneumatic_drill_imparts_velocity = "default"
+retreat_time = 7
+rope_knocking = 255
+rope_retreat_time = 10
+rope_roll_drops = "disabled"
+round_time = 9
+rubberworm_air_viscosity = 0.0
+rubberworm_air_viscosity_applies_to_worms = false
+rubberworm_anti_lock_aim = false
+rubberworm_anti_sink = false
+rubberworm_bounciness = 0.0
+rubberworm_crate_rate = 0
+rubberworm_crate_shower = false
+rubberworm_extended_fuses_herds = false
+rubberworm_gravity_strength = 1.0
+rubberworm_gravity_type = "unmodified"
+rubberworm_remember_weapons = false
+rubberworm_wind_influence = 0.0
+rubberworm_wind_influence_applies_to_worms = false
+sheep_heaven = false
+sheep_heaven_effects = 7
+skipwalking = "possible"
+stockpiling = "on"
+sudden_death = "nothing"
+sudden_death_disables_worm_select = true
+sudden_death_worm_damage_per_turn = 5
+super_weapons = true
+team_weapons = false
+terrain_friction = 0.959991455078125
+terrain_overlap_phasing_glitch = "default"
+turn_time = 40
+undetermined_crates = "default"
+undetermined_fuses = "default"
+unrestrict_rope = false
+unrestricted_weapon_use = false
+upgraded_clusters = true
+upgraded_grenade = true
+upgraded_longbow = true
+upgraded_shotgun = true
+utility_crate_weight = 0
+water_rise_rate = 2
+weapon_crate_weight = 100
+weapon_use_doesn_t_end_turn = false
+wind = 100
+wind_bias = 15
+wins = 1
+worm_energy = 199
+worm_select = "on"
+worm_selection_doesn_t_end_hot_seat = false
+worm_selection_is_never_cancelled = false
+x_impact_loss_of_control = "lose_control"
+
+# Lantern (PX bazooka)
+[weapons."px.lantern"]
+row = "F1"
+column = 1
+
+[weapon_settings."px.lantern"]
+ammo = 20
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."px.lantern".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 3000
+
+# Double Bazooka (PX homing_missile)
+[weapons."px.double_bazooka"]
+row = "F1"
+column = 2
+
+[weapon_settings."px.double_bazooka"]
+ammo = 0
+delay = 1
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.double_bazooka".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Igniter (PX mortar)
+[weapons."px.igniter"]
+row = "F1"
+column = 3
+
+[weapon_settings."px.igniter"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.igniter".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Homing Pigeon (PX homing_pigeon)
+[weapons."stock.homing_pigeon"]
+row = "F1"
+column = 4
+
+[weapon_settings."stock.homing_pigeon"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."stock.homing_pigeon".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.homing_pigeon".record.missile.explosion]
+power = 80
+
+# Burning Sheep Launcher (PX sheep_launcher)
+[weapons."px.burning_sheep_launcher"]
+row = "F1"
+column = 5
+
+[weapon_settings."px.burning_sheep_launcher"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.burning_sheep_launcher".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."px.burning_sheep_launcher".record.missile]
+impact_particles = false
+
+[weapon_settings."px.burning_sheep_launcher".record.missile.bounce.hits]
+land = true
+worms = true
+worms_frozen = true
+water = true
+
+# Grenade (PX grenade)
+[weapons."stock.grenade"]
+row = "F2"
+column = 1
+
+[weapon_settings."stock.grenade"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."stock.grenade".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.grenade".record.missile.explosion]
+power = 80
+
+# Cluster Bomb (PX cluster_bomb)
+[weapons."px.cluster_bomb"]
+row = "F2"
+column = 2
+
+[weapon_settings."px.cluster_bomb"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.cluster_bomb".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."px.cluster_bomb".record.missile.explosion]
+power = 55
+
+[weapon_settings."px.cluster_bomb".record.clusters]
+count = 6
+
+[weapon_settings."px.cluster_bomb".record.clusters.bit.explosion]
+power = 50
+
+# Banana Bomb (PX banana_bomb)
+[weapons."stock.banana_bomb"]
+row = "F2"
+column = 3
+
+[weapon_settings."stock.banana_bomb"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.banana_bomb".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.banana_bomb".record.missile.explosion]
+power = 80
+
+[weapon_settings."stock.banana_bomb".record.clusters.bit.explosion]
+power = 88
+
+# Super Gravedigger (PX battle_axe)
+[weapons."px.super_gravedigger"]
+row = "F2"
+column = 4
+
+[weapon_settings."px.super_gravedigger"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.super_gravedigger".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."px.super_gravedigger".record.missile]
+speed_pct = 97
+gravity_pct = 100
+fuse = 2000
+explode_on_space = true
+action = "bounce"
+impact_particles = false
+
+[weapon_settings."px.super_gravedigger".record.missile.ends_on_contact]
+worms = true
+worms_frozen = true
+crates = true
+donor_cards = true
+objects = true
+water = true
+
+[weapon_settings."px.super_gravedigger".record.missile.explosion]
+bias = -100
+power = 55
+
+[weapon_settings."px.super_gravedigger".record.missile.bounce]
+bounciness = 7
+terrain_keep_speed_pct = 99
+contact_sides = 0
+
+[weapon_settings."px.super_gravedigger".record.missile.bounce.hits]
+water = true
+
+[weapon_settings."px.super_gravedigger".record.clusters]
+count = 6
+launch_power_pct = 22
+power_variation_pct = 22
+spread = 0
+
+[weapon_settings."px.super_gravedigger".record.clusters.bit]
+speed_pct = 99
+random_motion = 200
+gravity_pct = 280
+fuse = 10000
+action = "dig"
+
+[weapon_settings."px.super_gravedigger".record.clusters.bit.ends_on_contact]
+worms_frozen = true
+crates = true
+donor_cards = true
+objects = true
+water = true
+
+[weapon_settings."px.super_gravedigger".record.clusters.bit.explosion]
+bias = 0
+push_pct = 105
+power = 45
+
+# Sticky Bomb (PX earthquake)
+[weapons."px.sticky_bomb"]
+row = "F2"
+column = 5
+
+[weapon_settings."px.sticky_bomb"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.sticky_bomb".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Power Shotgun (PX shotgun)
+[weapons."px.power_shotgun"]
+row = "F3"
+column = 1
+
+[weapon_settings."px.power_shotgun"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 2
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.power_shotgun".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Laser Gun (PX handgun)
+[weapons."px.laser_gun"]
+row = "F3"
+column = 2
+
+[weapon_settings."px.laser_gun"]
+ammo = 1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.laser_gun".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Minigun (PX uzi)
+[weapons."stock.minigun"]
+row = "F3"
+column = 3
+
+[weapon_settings."stock.minigun"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."stock.minigun".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.minigun".record.gun]
+damage = 7
+
+# Shadow-Bolt (PX minigun)
+[weapons."px.shadow_bolt"]
+row = "F3"
+column = 4
+
+[weapon_settings."px.shadow_bolt"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 2
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.shadow_bolt".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."px.shadow_bolt".record.missile.explosion]
+power = 30
+
+# Longbow (PX longbow)
+[weapons."stock.longbow"]
+row = "F3"
+column = 5
+
+[weapon_settings."stock.longbow"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 2
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."stock.longbow".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.longbow".record.arrow]
+damage = 50
+
+# Baseball Bat (PX fire_punch)
+[weapons."stock.baseball_bat"]
+row = "F4"
+column = 1
+
+[weapon_settings."stock.baseball_bat"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."stock.baseball_bat".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.baseball_bat".record.baseball_bat]
+damage = 75
+knockback_scale = 18.0
+
+# Kamikaze Rocket (PX kamikaze)
+[weapons."px.kamikaze_rocket"]
+row = "F4"
+column = 2
+
+[weapon_settings."px.kamikaze_rocket"]
+ammo = 1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."px.kamikaze_rocket".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 4000
+
+# Mole Bombs (PX dynamite)
+[weapons."px.mole_bombs"]
+row = "F5"
+column = 1
+
+[weapon_settings."px.mole_bombs"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 2
+after_use = "retreat"
+crate_pct = 0.0
+
+[weapon_settings."px.mole_bombs".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = 0
+
+# Gravler (PX mine)
+[weapons."px.gravler"]
+row = "F5"
+column = 2
+
+[weapon_settings."px.gravler"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.gravler".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."px.gravler".record.missile]
+gravity_pct = 100
+
+[weapon_settings."px.gravler".record.missile.ends_on_contact]
+worms = true
+worms_frozen = true
+crates = true
+donor_cards = true
+objects = true
+water = true
+
+[weapon_settings."px.gravler".record.missile.explosion]
+power = 46
+
+# Thrown Dynamite (PX sheep)
+[weapons."px.thrown_dynamite"]
+row = "F5"
+column = 3
+
+[weapon_settings."px.thrown_dynamite"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.thrown_dynamite".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 5000
+
+# j-bomb (PX super_sheep)
+[weapons."px.j_bomb"]
+row = "F5"
+column = 4
+
+[weapon_settings."px.j_bomb"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 0.970873786407767
+
+[weapon_settings."px.j_bomb".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 5000
+
+# Ghost Sheep (PX aqua_sheep)
+[weapons."px.ghost_sheep"]
+row = "F5"
+column = 5
+
+[weapon_settings."px.ghost_sheep"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.ghost_sheep".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 5000
+
+# Sentry Gun (PX air_strike)
+[weapons."px.sentry_gun"]
+row = "F6"
+column = 1
+
+[weapon_settings."px.sentry_gun"]
+ammo = 0
+delay = 5
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.sentry_gun".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 5000
+
+# Sentry Laser (PX napalm_strike)
+[weapons."px.sentry_laser"]
+row = "F6"
+column = 2
+
+[weapon_settings."px.sentry_laser"]
+ammo = 0
+delay = 7
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.sentry_laser".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 5000
+
+# Girder Launcher (PX mail_strike)
+[weapons."px.girder_launcher"]
+row = "F6"
+column = 3
+
+[weapon_settings."px.girder_launcher"]
+ammo = 2
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 4
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."px.girder_launcher".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 3000
+
+# Far Sight (PX mine_strike)
+[weapons."px.far_sight"]
+row = "F6"
+column = 4
+
+[weapon_settings."px.far_sight"]
+ammo = 2
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."px.far_sight".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 3000
+
+# Lightning Strike (PX mole_squadron)
+[weapons."px.lightning_strike"]
+row = "F6"
+column = 5
+
+[weapon_settings."px.lightning_strike"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.lightning_strike".record.handling]
+available_in_caves = false
+remember_selection = false
+ends_turn = false
+retreat = 3000
+
+# BlowTorch (PX blow_torch)
+[weapons."px.blowtorch"]
+row = "F7"
+column = 1
+
+[weapon_settings."px.blowtorch"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 3
+shots = 1
+after_use = "retreat"
+crate_pct = 0.0
+
+[weapon_settings."px.blowtorch".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = 3000
+
+# Drill (PX pneumatic_drill)
+[weapons."stock.pneumatic_drill"]
+row = "F7"
+column = 2
+
+[weapon_settings."stock.pneumatic_drill"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "end"
+crate_pct = 0.0
+
+[weapon_settings."stock.pneumatic_drill".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = -1000
+
+# Girder (PX girder)
+[weapons."stock.girder"]
+row = "F7"
+column = 3
+
+[weapon_settings."stock.girder"]
+ammo = 3
+delay = 0
+crate_type = "weapon"
+crate_collect = 3
+shots = 1
+after_use = "retreat"
+crate_pct = 0.0
+
+[weapon_settings."stock.girder".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Ninja Rope (PX ninja_rope)
+[weapons."stock.ninja_rope"]
+row = "F8"
+column = 1
+
+[weapon_settings."stock.ninja_rope"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+shots = 6
+rope_length = 273
+
+[weapon_settings."stock.ninja_rope".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 0
+
+# Bungee (PX bungee)
+[weapons."stock.bungee"]
+row = "F8"
+column = 2
+
+[weapon_settings."stock.bungee"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."stock.bungee".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 0
+
+# Parachute (PX parachute)
+[weapons."stock.parachute"]
+row = "F8"
+column = 3
+
+[weapon_settings."stock.parachute"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."stock.parachute".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 0
+
+# Super Tele (PX teleport)
+[weapons."px.super_tele"]
+row = "F8"
+column = 4
+
+[weapon_settings."px.super_tele"]
+ammo = 2
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 0.0
+
+[weapon_settings."px.super_tele".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 0
+
+# Holy Hand-Grenade (PX super_banana)
+[weapons."stock.holy_grenade"]
+row = "F9"
+column = 1
+
+[weapon_settings."stock.holy_grenade"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.holy_grenade".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Flame Thrower (PX holy_grenade)
+[weapons."stock.flame_thrower"]
+row = "F9"
+column = 2
+
+[weapon_settings."stock.flame_thrower"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.flame_thrower".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# i-bomb (PX flame_thrower)
+[weapons."px.i_bomb"]
+row = "F9"
+column = 3
+
+[weapon_settings."px.i_bomb"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.i_bomb".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Golden Grenade (PX salvation_army)
+[weapons."px.golden_grenade"]
+row = "F9"
+column = 4
+
+[weapon_settings."px.golden_grenade"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 0.970873786407767
+
+[weapon_settings."px.golden_grenade".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Salvation Army (PX mb_bomb)
+[weapons."stock.salvation_army"]
+row = "F9"
+column = 5
+
+[weapon_settings."stock.salvation_army"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.salvation_army".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.salvation_army".record.missile.explosion]
+power = 80
+
+[weapon_settings."stock.salvation_army".record.clusters.bit.explosion]
+power = 70
+
+# Valyrian Fire (PX petrol_bomb)
+[weapons."px.valyrian_fire"]
+row = "F10"
+column = 1
+
+[weapon_settings."px.valyrian_fire"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.valyrian_fire".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Bulldozer (PX skunk)
+[weapons."px.bulldozer"]
+row = "F10"
+column = 2
+
+[weapon_settings."px.bulldozer"]
+ammo = 0
+delay = 2
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.bulldozer".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Thrown Ming Vase (PX ming_vase)
+[weapons."px.thrown_ming_vase"]
+row = "F10"
+column = 3
+
+[weapon_settings."px.thrown_ming_vase"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.thrown_ming_vase".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# French Sheep Strike (PX sheep_strike)
+[weapons."stock.sheep_strike"]
+row = "F10"
+column = 4
+
+[weapon_settings."stock.sheep_strike"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 0.970873786407767
+
+[weapon_settings."stock.sheep_strike".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 0
+
+[weapon_settings."stock.sheep_strike".record.strike]
+count = 7
+
+# Cow Launcher (PX mad_cow)
+[weapons."px.cow_launcher"]
+row = "F11"
+column = 1
+
+[weapon_settings."px.cow_launcher"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.cow_launcher".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = 3000
+
+# Drilling Crew (PX old_woman)
+[weapons."px.drilling_crew"]
+row = "F11"
+column = 2
+
+[weapon_settings."px.drilling_crew"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 3
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.drilling_crew".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = 3000
+
+# Precipitator (PX donkey)
+[weapons."px.precipitator"]
+row = "F11"
+column = 3
+
+[weapon_settings."px.precipitator"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 3.236245954692557
+
+[weapon_settings."px.precipitator".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+# Patsy's Magic Bullet (PX nuclear_test)
+[weapons."stock.magic_bullet"]
+row = "F11"
+column = 4
+
+[weapon_settings."stock.magic_bullet"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "retreat"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.magic_bullet".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = true
+retreat = 3000
+
+[weapon_settings."stock.magic_bullet".record.missile.explosion]
+power = 120
+
+# Skip Go (PX skip_go)
+[weapons."stock.skip_go"]
+row = "F12"
+column = 1
+
+[weapon_settings."stock.skip_go"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "end"
+crate_pct = 0.0
+
+[weapon_settings."stock.skip_go".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = true
+retreat = -1
+
+# Surrender (PX surrender)
+[weapons."stock.surrender"]
+row = "F12"
+column = 2
+
+[weapon_settings."stock.surrender"]
+ammo = -1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."stock.surrender".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = -1
+
+# Select Worm (PX select_worm)
+[weapons."stock.select_worm"]
+row = "F12"
+column = 3
+
+[weapon_settings."stock.select_worm"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.select_worm".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 0
+
+# Ice Arrow (PX freeze)
+[weapons."px.ice_arrow"]
+row = "F12"
+column = 4
+
+[weapon_settings."px.ice_arrow"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.ice_arrow".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 3000
+
+# Health Zone (PX magic_bullet)
+[weapons."px.health_zone"]
+row = "F12"
+column = 5
+
+[weapon_settings."px.health_zone"]
+ammo = 1
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.health_zone".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 3000
+
+# Antifire Suit (PX jet_pack)
+[weapons."px.antifire_suit"]
+row = "utility"
+column = 1
+
+[weapon_settings."px.antifire_suit"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.antifire_suit".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 3000
+
+# Low Gravity (PX low_gravity)
+[weapons."stock.low_gravity"]
+row = "utility"
+column = 2
+
+[weapon_settings."stock.low_gravity"]
+ammo = 1
+delay = 0
+crate_type = "utility"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 100.0
+
+[weapon_settings."stock.low_gravity".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 0
+
+# Fast Walk (PX fast_walk)
+[weapons."stock.fast_walk"]
+row = "utility"
+column = 3
+
+[weapon_settings."stock.fast_walk"]
+ammo = 3
+delay = 0
+crate_type = "utility"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 0.0
+
+[weapon_settings."stock.fast_walk".record.handling]
+available_in_caves = true
+remember_selection = true
+ends_turn = false
+retreat = 0
+
+# Damage*2 (PX laser_sight)
+[weapons."stock.damage_x2"]
+row = "utility"
+column = 4
+
+[weapon_settings."stock.damage_x2"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.damage_x2".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 0
+
+# Parkour (PX invisibility)
+[weapons."px.parkour"]
+row = "utility"
+column = 5
+
+[weapon_settings."px.parkour"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."px.parkour".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 0
+
+# Crate Shower (PX crate_shower)
+[weapons."stock.crate_shower"]
+row = "utility"
+column = 6
+
+[weapon_settings."stock.crate_shower"]
+ammo = 0
+delay = 0
+crate_type = "weapon"
+crate_collect = 1
+shots = 1
+after_use = "continue"
+crate_pct = 1.6181229773462784
+
+[weapon_settings."stock.crate_shower".record.handling]
+available_in_caves = true
+remember_selection = false
+ends_turn = false
+retreat = 0
