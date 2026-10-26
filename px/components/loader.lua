@@ -40,6 +40,7 @@ local ORDER = {
   "weapons/mine_launcher",
   "weapons/gravity_gun",
   "weapons/personal_invisibility",
+  "weapons/small_worm",
   "lib/turn_controls",
   "weapons/jump",
   "weapons/thrown_dynamite",

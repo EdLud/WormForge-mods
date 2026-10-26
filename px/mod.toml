@@ -2225,6 +2225,15 @@ icon = "sprites/personal_invisibility/ico_pinvisibility.png"
 default_position = { row = "utility", column = 9 }
 
 [[components]]
+id = "px.small_worm"
+type = "weapon"
+name = "Small Worm"
+description = "Specialists: the worm takes a mine's shape, lighter gravity and more mass until the turn is over."
+entry = "components/weapon.lua"
+icon = "sprites/small_worm/small_ico.png"
+default_position = { row = "utility", column = 10 }
+
+[[components]]
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"
@@ -2322,4 +2331,6 @@ frames = 20
 [sprites."sprites/platform/platform_sprite.png"]
 frames = 1
 [sprites."sprites/platform/platform_broken.png"]
+frames = 1
+[sprites."sprites/small_worm/small_worm.png"]
 frames = 1

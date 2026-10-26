@@ -75,6 +75,7 @@ return {
   ["px.mine_launcher"] = "weapons/mine_launcher",
   ["px.gravity_gun"] = "weapons/gravity_gun",
   ["px.personal_invisibility"] = "weapons/personal_invisibility",
+  ["px.small_worm"] = "weapons/small_worm",
   ["px.thrown_dynamite"] = "weapons/thrown_dynamite",
   ["px.tele_arrow"] = "weapons/tele_arrow",
   ["px.thumper_nade_strike"] = "weapons/thumper_nade_strike",

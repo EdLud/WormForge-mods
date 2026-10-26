@@ -1,5 +1,5 @@
 # Second phase-4 batch; timed turns are needed to check Sacrifice.
-description = "Specialists: Girder Launcher, Sacrifice, activatable Parkour and Personal Invisibility."
+description = "Specialists: Girder Launcher, Sacrifice, activatable Parkour, Personal Invisibility and Small Worm."
 features = ["core.utilities"]
 
 [options."core.utilities"]
@@ -92,4 +92,14 @@ crate_pct = 0
 
 [weapons."stock.bazooka"]
 row = "F8"
+column = 1
+
+[weapon_settings."px.small_worm"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+
+[weapons."px.small_worm"]
+row = "F9"
 column = 1
