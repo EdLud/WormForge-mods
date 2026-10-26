@@ -59,6 +59,7 @@ local function mock()
     on = {
       draw = function(fn) M.handlers.draw = fn end,
       turn_end = function(fn) M.handlers.turn_end = fn end,
+      turn_start = function(fn) M.handlers.turn_start = fn end,
       worm_message = function(fn) M.handlers.message = fn end,
     },
     actors = {
@@ -296,6 +297,29 @@ do
   check("head: the mirrored frame, dimmed by health", head.frame == 2 + 14
     and head.color == (0xFF000000 | (math.floor(255 * k) << 16) | (math.floor(128 * k) << 8) | math.floor(128 * k)),
     string.format("%d %x", head.frame, head.color))
+end
+
+print("PyroMan's turrets: the Tazer's arc and Lightning Strike (lib/electrical)")
+do
+  local function registered(a)
+    for _, obj in ipairs(require("lib/electrical").special_targets()) do
+      if obj.id == a.id then return obj end
+    end
+  end
+  for _, case in ipairs({ { "flame_turret", true }, { "petrol_turret", true }, { "auto_ballista", false }, { "mine_turret", false } }) do
+    local name, empties = case[1], case[2]
+    local t, a, s = planted(name)
+    enemy(150)
+    start_turn(M.worms[2])
+    local obj = registered(a)
+    local health, ammo = s.health, s.ammo
+    check(name .. ": an arc target with its body's circle", obj and obj.kind == "turret" and obj.radius == t.capture_radius)
+    obj.provider.zap(obj, 1)
+    check(name .. (empties and ": the arc empties it (a CCustomTurret)" or ": the arc only hits it"),
+      s.health == health - 12 and s.ammo == (empties and 0 or ammo) and not s.stun)
+    obj.provider.strike(obj, 3)
+    check(name .. ": Lightning makes it the striker's and it keeps firing", s.alliance == 3 and not s.disabled)
+  end
 end
 
 if failed > 0 then error(failed .. " FAILED") end

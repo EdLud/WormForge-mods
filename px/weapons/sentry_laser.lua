@@ -248,6 +248,7 @@ function weapon.setup()
 
   local sentry = turret.new({
     kind = "sentry_laser", weapon = "px.sentry_laser",
+    tazer = "stun", -- the Tazer's arc stuns it (PxSentryLaser::Stun(2))
     muzzle_out = MUZZLE_OUT,
     sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
     rot_active = 5.0, aim_tolerance = 5.0, health = 35,

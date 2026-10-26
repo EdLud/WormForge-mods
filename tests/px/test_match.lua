@@ -1384,7 +1384,7 @@ do
   -- Four of its owner's turns discharge it; the last one triggers mines.
   local late = mine_at(104, 140, -1)
   M.mines = { late }
-  for _ = 1, 4 do M.turn_start({ worm = w, active = w }) end
+  for _ = 1, 4 do M.turn_end({ worm = w }); M.turn_start({ worm = w, active = w }) end
   check("the last turn triggers the mines in range, without a push", late.armed ~= nil and late.dx == nil)
   mine.dx = 0
   M.mines = { mine }
@@ -2513,6 +2513,102 @@ do
       M.solid, M.gravity = nil, nil
     end
   end
+end
+
+print("Electricity on PX's objects: the arc stuns sentries and breaks or recharges magnets; Lightning recharges")
+do
+  -- The registered object of `kind` (each match loads lib/electrical anew).
+  local function special(kind)
+    for _, obj in ipairs(require("lib/electrical").special_targets()) do
+      if obj.kind == kind then return obj end
+    end
+  end
+  -- An Electric Grenade going off at (x, y), run until its arc has zapped.
+  local function arc_at(x, y, caster, life)
+    require("lib/shared").electric_grenade_explode({ x = x, y = y, worm = caster, life = life })
+    local effect = M.spawned[#M.spawned]
+    for _ = 1, 60 do if not effect.dead then effect.on(effect) end end
+  end
+
+  -- A sentry: stunned for two of its owner's turns, hit for 12.
+  new_match()
+  local t = require("lib/shared").sentry_gun
+  local owner, caster = worm(16), worm(32)
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y = 100, 100
+  M.solid = function(_, y) return y >= 110 end
+  M.gravity, M.spawned, M.actor_sounds = 0.25, {}, {}
+  local body, s = t.place({ worm = owner })
+  for _ = 1, 40 do body.on(body) end
+  local target = special("turret")
+  check("a placed sentry is an arc target, at its body's centre",
+    target and target.s == s and target.y == s.y - t.capture_up and target.radius == t.capture_radius)
+  local hp = s.health
+  arc_at(target.x, target.y, caster)
+  check("the arc stuns the sentry for two of its owner's turns and hits it for 12",
+    s.stun == 2 and s.disabled and not s.active and s.health == hp - 12)
+  M.message(owner, wa.msg.START_TURN)
+  check("a turn's start does not wake a stunned sentry", s.disabled and not s.active)
+  local function new_turn(w) M.turn_end({ worm = w }); M.turn_start({ worm = w, active = w }) end
+  new_turn(caster)
+  check("another coalition's turn does not count", s.stun == 2)
+  new_turn(owner)
+  M.turn_start({ worm = owner, active = owner }) -- Tab: the same turn again
+  check("Tab in its owner's turn does not count again", s.stun == 1)
+  new_turn(owner)
+  M.message(owner, wa.msg.START_TURN)
+  check("two of its owner's turns run the stun out, still off for that turn", s.stun == 0 and s.disabled)
+  new_turn(caster)
+  M.message(caster, wa.msg.START_TURN)
+  check("the next turn's start reloads and wakes it", s.stun == nil and s.active and not s.disabled and s.ammo == t.ammo)
+  M.solid, M.gravity = nil, nil
+
+  -- A working magnet: the arc breaks it.
+  new_match()
+  owner, caster = worm(16), worm(32)
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y = 100, 150
+  require("lib/shared").fires.electromagnet({ worm = owner })
+  local magnet = M.spawned[#M.spawned]
+  magnet:warp { x = 110, y = 192, vx = 0, vy = 0 }
+  magnet.on(magnet)
+  target = special("magnet")
+  check("a placed magnet is an arc target", target and target.x == 110 and target.y == 192 and target.m.turns == 4)
+  arc_at(target.x, target.y, caster)
+  magnet.on(magnet)
+  check("the arc destroys a working magnet", magnet.dead and special("magnet") == nil)
+
+  -- A spent magnet: the arc recharges it, and so does Lightning.
+  new_match()
+  owner, caster = worm(16), worm(32)
+  for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
+  owner.x, owner.y = 100, 150
+  require("lib/shared").fires.electromagnet({ worm = owner })
+  magnet = M.spawned[#M.spawned]
+  magnet:warp { x = 110, y = 192, vx = 0, vy = 0 }
+  magnet.on(magnet)
+  target = special("magnet")
+  M.turn_end({ worm = owner }); M.turn_start({ worm = owner, active = owner })
+  M.turn_start({ worm = owner, active = owner }) -- Tab: the same turn again
+  check("Tab in its owner's turn spends no extra magnet turn", target.m.turns == 3)
+  for _ = 1, 3 do M.turn_end({ worm = owner }); M.turn_start({ worm = owner, active = owner }) end
+  check("four of its owner's turns spend it", target.m.turns == 0 and M.magnetic_fields[#M.magnetic_fields].enabled == false)
+  arc_at(target.x, target.y, caster)
+  check("the arc recharges a spent magnet, its field back on",
+    not magnet.dead and target.m.turns == 4 and target.m.health == 80 and M.magnetic_fields[#M.magnetic_fields].enabled)
+  for _ = 1, 4 do M.turn_end({ worm = owner }); M.turn_start({ worm = owner, active = owner }) end
+  target.provider.strike(target, caster.alliance)
+  check("Lightning recharges it too", target.m.turns == 4 and M.magnetic_fields[#M.magnetic_fields].enabled)
+  target.m.turns = 2
+  target.provider.strike(target, caster.alliance)
+  check("and gives a working one back its four turns", target.m.turns == 4 and not magnet.dead)
+  local x, y, hit = require("lib/electrical").special_on_beam(target.x - 50, target.y, 1, 0, 1000)
+  -- PX links within 10 / 0.81 pixels: a spent magnet 11.9 off the arc's
+  -- path (as in the user's replay) is still reached.
+  for _ = 1, 4 do M.turn_end({ worm = owner }); M.turn_start({ worm = owner, active = owner }) end
+  arc_at(target.x - 11.9, target.y, caster, 1) -- one step: no closer first
+  check("the arc links within PX's 12.35 pixels", target.m.turns == 4)
+  check("Lightning's beam stops at a magnet", hit and hit.kind == "magnet" and x == target.x - 8 and y == target.y)
 end
 
 print("Kamikaze Rocket: Ctrl + Space, steered, digging, then a blast into the water")

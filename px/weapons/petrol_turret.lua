@@ -38,6 +38,7 @@ function weapon.setup()
 
   local t = pyro.new({
     kind = "petrol_turret", weapon = "px.petrol_turret", frames = pyro.FRAMES.petrol,
+    tazer = "empty", -- a CCustomTurret: the Tazer's arc empties its ammo
     ammo = 6, tower_offset = 20,
     ammo_sprite = pyro.AMMO_PETROL, ammo_size = 60, -- WA's petrolbm, PX's sprNum 55
     shoot = shoot,

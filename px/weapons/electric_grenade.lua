@@ -46,7 +46,8 @@ function weapon.setup()
   local shared = require("lib/shared")
   local turret = require("lib/turret")
   local current_worm, held = shared.current_worm, shared.held
-  local c = require("lib/electrical").context()
+  local electrical = require("lib/electrical")
+  local c = electrical.context()
   local sq = c.sq
   local ELECTRIC_DEPTH = c.ELECTRIC_DEPTH
   local BEAM = c.BEAM
@@ -72,6 +73,8 @@ function weapon.setup()
     if ball then
       return shared.bowling_ball_target and shared.bowling_ball_target(tonumber(ball))
     end
+    local special = electrical.special(key)
+    if special then return special end
     for _, obj in ipairs(electrical_targets(false)) do
       if target_key(obj) == key then return obj end
     end
@@ -94,6 +97,8 @@ function weapon.setup()
     if shared.bowling_ball_targets then
       for _, obj in ipairs(shared.bowling_ball_targets()) do consider(obj) end
     end
+    -- And PX's Electromagnets and turrets (lib/electrical's registry).
+    for _, obj in ipairs(electrical.special_targets()) do consider(obj) end
     return best, distance
   end
 
@@ -139,6 +144,8 @@ function weapon.setup()
       obj:hit(12, pending.side * 1.2, -4)
     elseif obj.kind == "ball" then
       shared.zap_bowling_ball(obj.id)
+    elseif obj.provider then
+      obj.provider.zap(obj, pending.side)
     end
   end
 
@@ -150,6 +157,8 @@ function weapon.setup()
     arc.points[#arc.points + 1] = { arc.x, arc.y }
     if #arc.points > ARC_MAX_POINTS then table.remove(arc.points, 1) end
   end
+
+  local LINK_DISTANCE = 10 / 0.81
 
   local function progress_arc(arc)
     arc.explosion = arc.explosion + 1
@@ -171,7 +180,9 @@ function weapon.setup()
     if target then
       local dx, dy = target.x - arc.x, target.y - arc.y
       local d = math.sqrt(distance)
-      if d <= 10 then
+      -- PX's link (tazer.txt): sqrt(segment / distance) >= 0.9, so within
+      -- 10 / 0.81, about 12.35 pixels, not the 10 of a segment.
+      if d <= LINK_DISTANCE then
         local key = target_key(target)
         arc.ignore[key] = true
         arc.pending[#arc.pending + 1] = { key = key, side = dx < 0 and -1 or 1, time = 24 }

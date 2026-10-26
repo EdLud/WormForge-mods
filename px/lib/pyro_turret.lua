@@ -325,6 +325,8 @@ function pyro.new(cfg)
   c.boom_up = R
   c.boom = { damage = c.explode_damage, id = 100, below = false }
   c.disable_on_damage = false
+  -- Lightning only changes a CTurretBase's team (lightningstrike.txt).
+  c.capture_keeps_firing = true
   c.art = { mask = ART .. "mask.png" }
   c.sounds = { place = SETUP_SOUND }
   c.tints = TINTS

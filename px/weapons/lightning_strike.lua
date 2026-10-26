@@ -34,9 +34,9 @@ weapon.requires = { "weapons/sniper_rifle", "weapons/electric_grenade", "lib/ele
 
 function weapon.setup()
   local shared = require("lib/shared")
-  local turret = require("lib/turret")
   local current_worm, held = shared.current_worm, shared.held
-  local c = require("lib/electrical").context()
+  local electrical = require("lib/electrical")
+  local c = electrical.context()
   local sq = c.sq
   local ELECTRIC_DEPTH = c.ELECTRIC_DEPTH
   local BEAM = c.BEAM
@@ -75,7 +75,6 @@ function weapon.setup()
 
   local function strike_hit(s)
     if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
-    if s.hit then turret.capture_hit(s.sentry, s.ex, s.ey, s.alliance) end
     local length = math.sqrt(sq(s.ex - s.sx) + sq(s.ey - s.sy))
     -- Everything the line and the end can reach, in WA's entity order: within
     -- half the line, its width and the largest body (9) of the middle.
@@ -109,6 +108,11 @@ function weapon.setup()
           obj:hit(100, 0, 0)
         end
       end
+    end
+    -- PX's Electromagnets and turrets (lib/electrical's registry): magnets
+    -- recharged, turrets the striker's.
+    for _, obj in ipairs(electrical.special_targets()) do
+      if struck(s, obj, length) then obj.provider.strike(obj, s.alliance) end
     end
   end
 
@@ -184,9 +188,10 @@ function weapon.setup()
       bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
     end
     if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
-    -- With no stock hit, scripted sentries can still stop the full ray.
+    -- PX's beam stops at its own objects too (CMASK_OTHERWEAPON): the
+    -- Electromagnets and turrets of lib/electrical's registry.
     local reach = hit and math.sqrt(sq(ex - sx) + sq(ey - sy)) or 10000
-    local tx, ty, sentry = turret.on_beam(sx, sy, dirx, diry, reach)
+    local tx, ty = electrical.special_on_beam(sx, sy, dirx, diry, reach)
     if tx then ex, ey, hit = tx, ty, { x = tx, y = ty } end
     local distance = math.sqrt(sq(ex - sx) + sq(ey - sy))
     if hit and distance > 300 then
@@ -194,7 +199,7 @@ function weapon.setup()
     end
     local s = { sx = sx, sy = sy, ex = ex, ey = ey, hit = hit, dirx = dirx, diry = diry,
       delay = 150, life = 16, tail = 60, owner = ev.worm, alliance = ev.worm.alliance,
-      sentry = sentry, ticks = 0,
+      ticks = 0,
       seed = (ex // 1 * 7919 + ey // 1) % 0x80000000, cloud_timer = 0, cloud = {}, sparks = {} }
     strikes[#strikes + 1] = s
     wa.sound.play(ev.worm, "sounds/lightning/thunder.wav")

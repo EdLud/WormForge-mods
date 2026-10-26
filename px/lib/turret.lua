@@ -15,6 +15,64 @@ local turret = {}
 local turrets = {}
 local feet = require("lib/sentry_mask")
 local health_label = require("lib/sentry_health")
+local electrical = require("lib/electrical")
+
+-- PX's Tazer arc and Lightning Strike on its turrets (lib/electrical's
+-- registry): every placed turret, its body's circle as Lightning's.
+local function electrical_targets()
+  local out = {}
+  for _, t in ipairs(turrets) do
+    for _, id in ipairs(wa.sorted(t.state)) do
+      local s = t.state[id]
+      if s.body.id == id then
+        out[#out + 1] = { id = id, x = s.x, y = s.y - t.capture_up, radius = t.capture_radius, t = t, s = s }
+      end
+    end
+  end
+  return out
+end
+
+local stun_hook
+
+local function register_electrical()
+  -- PxSentryGun::OnTurnBegin: each start of its owner's turn takes a stunned
+  -- turn off; the first turn to start after the last is over reloads it.
+  -- One hook for every turret. Tab starts the turn again (wa.on.turn_start
+  -- runs then too): only the first start after a turn's end counts.
+  if not stun_hook then
+    stun_hook = true
+    local turn_open = false
+    wa.on.turn_end(function() turn_open = false end)
+    wa.on.turn_start(function(event)
+      if turn_open then return end
+      turn_open = true
+      local alliance = event and event.worm and event.worm.alliance
+      for _, t in ipairs(turrets) do
+        for _, id in ipairs(wa.sorted(t.state)) do
+          local s = t.state[id]
+          if s.body.id == id and s.stun then
+            if s.stun <= 0 then
+              s.stun = nil
+              t.reload(s)
+            elseif alliance == s.alliance then
+              s.stun = s.stun - 1
+            end
+          end
+        end
+      end
+    end)
+  end
+  electrical.register({
+    kind = "turret",
+    targets = electrical_targets,
+    zap = function(obj, side)
+      if obj.t.state[obj.id] == obj.s then obj.t.electric_zap(obj.s.body, obj.s, side) end
+    end,
+    strike = function(obj, alliance)
+      if obj.t.state[obj.id] == obj.s then obj.t.capture(obj.s.body, obj.s, alliance) end
+    end,
+  })
+end
 
 -- Scripted bodies are not in the stock electrical target list. Include
 -- their whole body circle in Lightning's existing beam selection in Lua.
@@ -572,11 +630,29 @@ function turret.new(cfg)
     end)
   end
 
+  -- Lightning's: the sentries switch sides and off (PxSentryGun's
+  -- `TurretActive = false`); PyroMan's turrets (CTurretBase) only switch
+  -- sides and keep firing (`capture_keeps_firing`).
   function t.capture(a, s, alliance)
     if alliance < 0 or alliance > 5 then return false end
     s.alliance = alliance
-    disable(a, s)
+    if not t.capture_keeps_firing then disable(a, s) end
     return true
+  end
+
+  -- The Tazer arc's zap (tazer.txt's CTazerDamage::Zap): a sentry is stunned
+  -- for two of its owner's turns (`tazer = "stun"`: PxSentryGun::Stun(2)), a
+  -- Flame or Petrol Turret loses its ammo (`tazer = "empty"`: CCustomTurret's
+  -- ammoCurrent = 0), and every turret then takes the arc's hit on objects:
+  -- 12 damage, pushed 1.2 the arc's way and 4 up.
+  function t.electric_zap(a, s, side)
+    if t.tazer == "stun" then
+      s.stun = 2
+      disable(a, s)
+    elseif t.tazer == "empty" then
+      s.ammo = 0
+    end
+    hit(a, { damage = 12, vx = side * 1.2, vy = -4 })
   end
 
   -- Prefer the worm's position, then deterministic 4px rings if blocked.
@@ -685,20 +761,31 @@ function turret.new(cfg)
     end
   end)
 
+  local function reload(s)
+    s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}
+    if t.turn_begin then t.turn_begin(t, s) end
+  end
+
   -- Each turn reloads and reactivates every turret, and forgets what moved
   -- and what it aimed at. Order-independent: each entry gets the same reset.
+  -- A stunned sentry stays off, and forgets.
   wa.on.worm_message(function(_, msg)
     if msg ~= wa.msg.START_TURN then return end
     for id, s in pairs(state) do
-      if s.body.id ~= id then state[id] = nil else
-        s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}
-        if t.turn_begin then t.turn_begin(t, s) end
+      if s.body.id ~= id then state[id] = nil
+      elseif s.stun then
+        s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = false, true, false, nil, false, {}
+      else
+        reload(s)
       end
     end
   end, { msgs = { wa.msg.START_TURN } })
 
+  t.reload = reload
+
   t.state = state -- for the Highlander mock
   turrets[#turrets + 1] = t
+  register_electrical()
   return t
 end
 

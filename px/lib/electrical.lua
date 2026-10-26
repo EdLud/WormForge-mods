@@ -2,6 +2,61 @@
 -- Each weapon owns its simulation callbacks; this module owns their renderer.
 local electrical = {}
 local context, installed
+
+-- PX's electrical special cases (tazer.txt's CTazerShot::IsValidTarget and
+-- CTazerDamage::Zap, lightningstrike.txt's LightningHit): objects a pack owns
+-- that the Tazer's arc (the Tazer, the Electric Grenade, electric drums)
+-- chains through and acts on, and that Lightning Strike stops at and acts on.
+-- A provider, by `kind`: `targets()`, a list of { id, x, y, radius } in an
+-- order the same on every machine; `zap(obj, side)`, the arc's zap (`side`
+-- -1 or 1, the way it pushes); `strike(obj, alliance)`, Lightning's.
+local providers, order = {}, {}
+function electrical.register(provider)
+  if not providers[provider.kind] then order[#order + 1] = provider.kind end
+  providers[provider.kind] = provider
+end
+
+-- Every registered object, each with its `kind` and `provider`.
+function electrical.special_targets()
+  local out = {}
+  for _, kind in ipairs(order) do
+    local provider = providers[kind]
+    for _, obj in ipairs(provider.targets()) do
+      obj.kind, obj.provider = kind, provider
+      out[#out + 1] = obj
+    end
+  end
+  return out
+end
+
+-- The registered object an arc's `kind:id` key names, if it is still there.
+function electrical.special(key)
+  local kind, id = key:match("^([^:]+):(.+)$")
+  if not (kind and providers[kind]) then return nil end
+  for _, obj in ipairs(providers[kind].targets()) do
+    if tostring(obj.id) == id then
+      obj.kind, obj.provider = kind, providers[kind]
+      return obj
+    end
+  end
+end
+
+-- The nearest registered object a ray from (x0, y0) along unit (dx, dy)
+-- meets within `length`: where it meets its circle, and the object.
+function electrical.special_on_beam(x0, y0, dx, dy, length)
+  local best, hit
+  for _, obj in ipairs(electrical.special_targets()) do
+    local cx, cy = obj.x - x0, obj.y - y0
+    local along = cx * dx + cy * dy
+    local miss = cx * cx + cy * cy - along * along
+    local r = obj.radius or 9
+    if miss <= r * r then
+      local at = along - math.sqrt(math.max(0, r * r - miss))
+      if at > 0 and at < length and (not best or at < best) then best, hit = at, obj end
+    end
+  end
+  if best then return x0 + best * dx, y0 + best * dy, hit end
+end
 function electrical.context()
   if context then return context end
   local function sq(v) return v * v end
@@ -33,6 +88,7 @@ function electrical.context()
   end
 
   local function target_radius(obj)
+    if obj.radius then return obj.radius end
     if obj.kind == "worm" then return 6 end
     if obj.kind == "grave" then return 8 end
     if obj.kind == "mine" then return 5 end
@@ -265,10 +321,11 @@ function electrical.setup()
           ribbon(num + 1)
         end
       end
-      -- PX's CTazerDamage glow on a linked Bowling Ball until it is zapped.
+      -- PX's CTazerDamage glow on a linked Bowling Ball, Electromagnet or
+      -- turret until it is zapped.
       for _, arc in ipairs(arcs) do
         for _, p in ipairs(arc.pending) do
-          if p.key:sub(1, 5) == "ball:" then
+          if p.key:sub(1, 5) == "ball:" or electrical.special(p.key) then
             local ball = find_target(p.key)
             if ball then glow(ball.x, ball.y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255)) end
           end

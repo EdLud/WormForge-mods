@@ -133,6 +133,7 @@ function weapon.setup()
 
   local gun = turret.new({
     kind = "sentry", weapon = "px.sentry_gun",
+    tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun(2))
     damage = 2, push_pct = 100,
     muzzle_out = MUZZLE_OUT,
     art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun.png", flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },

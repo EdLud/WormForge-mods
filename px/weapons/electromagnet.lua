@@ -228,6 +228,38 @@ function weapon.setup()
     end
   end
 
+  -- CMagnet::Recharge: a spent magnet works again, its four turns new.
+  local function recharge(m)
+    if not m.alive or m.sinking then return end
+    if m.turns <= 0 then m.field.enabled = true end
+    m.turns = TURNS
+  end
+
+  -- PX's electricity on magnets (lib/electrical's registry). The Tazer's arc
+  -- (tazer.txt) destroys a working magnet, its health set to 1 before the
+  -- arc's 12-damage hit, and recharges a spent one; Lightning Strike
+  -- (lightningstrike.txt) recharges it either way.
+  require("lib/electrical").register({
+    kind = "magnet",
+    targets = function()
+      local out = {}
+      for _, m in ipairs(magnets) do
+        if m.alive and not m.sinking and m.a then
+          out[#out + 1] = { id = m.a.id, x = m.x, y = m.y, radius = RADIUS, m = m }
+        end
+      end
+      return out
+    end,
+    zap = function(obj, side)
+      local m = obj.m
+      if not m.alive then return end
+      if m.turns <= 0 then recharge(m); return end
+      m.health = 1
+      hit(m, m.a, { damage = 12, vx = side * 1.2, vy = -4 })
+    end,
+    strike = function(obj) recharge(obj.m) end,
+  })
+
   -- CWorm::FireFinal's Electromagnet: dropped where it is fired (at the
   -- worm), nudged the way the worm faces (0.3) and up (0.15), in the worm's
   -- mode. A script firing it (wa.weapons.fire, the stress test) may choose
@@ -259,8 +291,13 @@ function weapon.setup()
   end
 
   -- PX's OnTurnBegin: each start of its owner's team's turn uses one up; the
-  -- last wakes and triggers what is in range.
+  -- last wakes and triggers what is in range. WA starts a turn again when Tab
+  -- selects another worm (wa.on.turn_start runs then too): only the first
+  -- start after a turn's end counts.
+  local turn_open = false
   wa.on.turn_start(function(event)
+    if turn_open then return end
+    turn_open = true
     local team = event.worm and event.worm.team
     for _, m in ipairs(magnets) do
       m.ended_at = nil
@@ -272,6 +309,7 @@ function weapon.setup()
   end)
 
   wa.on.turn_end(function()
+    turn_open = false
     for _, m in ipairs(magnets) do m.ended_at = m.age end
   end)
 

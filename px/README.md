@@ -170,8 +170,25 @@ unused Jet Pack storage and Fire Punch tail data are omitted too.
 The beams, glows, and explosion use the GPU atlas. Gameplay runs in simulation
 callbacks; drawing only varies presentation. A grave records its original worm
 ID when WA creates it. On revival, Highlander restores the dead worm's saved
-hand while the active worm keeps the weapons it gained at death. PX's sentry
-ownership transfer is deferred.
+hand while the active worm keeps the weapons it gained at death.
+
+**On Project X's own objects** (`lib/electrical`'s registry, as `tazer.txt`
+and `lightningstrike.txt` treat them). The Tazer's arc (the Tazer, the
+Electric Grenade, the electric drums) chains through Electromagnets, sentries
+and PyroMan's turrets as it does through worms, and Lightning Strike's beam
+stops at them:
+
+| Object | The arc | Lightning Strike |
+|---|---|---|
+| Electromagnet | destroys a working one (health 1, then the 12-damage hit); recharges a spent one | recharges it: four turns again |
+| Sentry Gun, Sentry Laser | stunned (off) for two of its owner's turns, then the 12-damage hit | its side's, and off for the turn |
+| Flame, Petrol Turret | its ammo for the turn gone, then the hit | its side's; it keeps firing |
+| Mine Turret, Auto Ballista | the hit | its side's; it keeps firing |
+
+The arc links to what is within PX's 12.35 pixels (`sqrt(10 / distance) >= 0.9`).
+A magnet's turns and a sentry's stun count each of its owner's turns once:
+Tab, which starts the turn again, does not count. A pack's own object joins
+with `require("lib/electrical").register{ kind, targets, zap, strike }`.
 
 ### Super Tele
 
