@@ -31,5 +31,10 @@ cyan glow) retain their source gameplay, without themed speech or music.
 Their new art is generated, then sized for WA's panel and native projectile
 animation. Power Shotgun and Thrown Ming Vase use their original PX art.
 
-Golden Grenade, Precipitator, Antifire Suit, Shift-assisted aiming, final
+A third test profile adds Golden Grenade and Precipitator. Golden Grenade has
+a wide linear blast and four explosive secondary grenades. Precipitator keeps
+native 25-shot gun timing while launching clouds and falling stones. Both need
+this branch's updated DLL.
+
+Antifire Suit, Shift-assisted aiming, final
 inventory/crate tuning and a complete playable scheme remain subsequent work.

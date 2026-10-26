@@ -46,7 +46,7 @@ return {
         end
         local actor = wa.actors.spawn{
           owner = ev.worm, sprite = false, x = ev.x, y = ev.y,
-          gravity = false, collide = false, drown = false, persist = true,
+          gravity = false, collide = false, drown = false, persist = true, solid = false,
         }
         lights.attach(actor, 155, terrain_blocking)
         -- eat_fire keeps WA from firing or spending ammo; accepted placements
