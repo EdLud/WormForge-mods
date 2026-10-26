@@ -429,6 +429,7 @@ crate_pct = 2.1739
 [weapon_settings."stock.fast_walk"]
 ammo = -1
 crate_pct = 0
+on_collect = "use"
 
 [weapon_settings."stock.crate_shower"]
 ammo = 0
