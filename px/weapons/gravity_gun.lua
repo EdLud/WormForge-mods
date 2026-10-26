@@ -459,6 +459,12 @@ function weapon.setup()
     end
   end)
   wa.on.draw(function() render_gun() end)
+  -- Not PX's (its gun shows nothing): the weapon tooltip, its state first.
+  require("lib/weapon_hint").hint(ID, function(worm)
+    local s = states[worm.id]
+    local now = s and s.hold and s.held and "holding" or s and s.used and "armed" or "ready"
+    return "Gravity Gun: " .. now .. "\nSpace: grab\nShift/Ctrl + Space: push"
+  end)
 end
 
 return weapon

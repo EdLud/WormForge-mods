@@ -35,7 +35,7 @@ both forms cannot apply a movement input twice.
 These are public helpers, separate from Highlander's internal match state.
 Module tables and private globals are separate for each consuming bundle.
 
-`require("wf-lib/tooltip")` is the weapon tooltip: one window in WA's small font
+`require("wf-lib/tooltip")` is the weapon tooltip: one window in WA's medium font
 at the bottom right, over the wind bar, bordered in the active team's colour
 and seen by that team's coalition. WormForge fades it out while WA's weapon
 panel is open.

@@ -1,4 +1,4 @@
--- A bundle's weapon tooltip: one window in WA's small font at the bottom
+-- A bundle's weapon tooltip: one window in WA's medium font at the bottom
 -- right of the screen, just above the wind bar, bordered in the active team's
 -- colour and seen by that team's coalition only. WormForge fades it out
 -- while WA's weapon panel is open.
@@ -36,7 +36,7 @@ local function show(text, alliance)
   if window then
     window:set(spec)
   else
-    spec.x, spec.y, spec.align, spec.font = -10, -30, "bottom_right", "small"
+    spec.x, spec.y, spec.align, spec.font = -10, -30, "bottom_right", "medium"
     window = wa.hud.window(spec)
   end
 end

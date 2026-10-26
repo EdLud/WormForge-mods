@@ -5860,7 +5860,7 @@ do
     tick()
     local open = M.windows[#M.windows]
     check(case[2] .. " reselecting the same weapon keeps its tooltip up", #M.top_messages == before + 1
-      and open.open and open.spec.align == "bottom_right" and open.spec.font == "small" and open.spec.border == "purple")
+      and open.open and open.spec.align == "bottom_right" and open.spec.font == "medium" and open.spec.border == "purple")
   end
   w.weapon = "surrender"
   M.message(w, 51)

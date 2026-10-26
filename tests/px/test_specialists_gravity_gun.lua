@@ -8,7 +8,7 @@ local frame,keys,sounds,ammo,quads,traced,blocked=0,{},{},{},{},nil,false
 local random_calls=0
 local hold_sheet=0
 local worm={id=1,kind="worm",x=100,y=100,vx=0,vy=0,hp=100,aim=0.5,facing=1,aiming=true,turn=true,
-  weapon="px.gravity_gun",state="standing"}
+  weapon="px.gravity_gun",state="standing",alliance=0}
 function worm:ammo(id,n)ammo[#ammo+1]={id,n}end
 local mine={kind="mine",uid=7,x=0,y=0,vx=0,vy=0}
 local mines={mine}
@@ -26,13 +26,16 @@ wa={msg={FRAME_FINISH=2},depth={EFFECTS=0xC0000,WORMS=0xD0000},
   on={worm_message=function(f)hooks.message[#hooks.message+1]=f end,
     turn_end=function(f)hooks.turn_end[#hooks.turn_end+1]=f end,
     draw=function(f)hooks.draw[#hooks.draw+1]=f end},
-  draw={quad=function(q)quads[#quads+1]=q end,random=function()return 0.5 end}}
+  draw={quad=function(q)quads[#quads+1]=q end,random=function()return 0.5 end},
+  hud={message_top=function(t)tips[#tips+1]=t end}}
 local function check(ok,what)assert(ok,what);print("  ok   "..what)end
 local function each(list,...)for _,f in ipairs(list) do f(...) end end
 local function step(k)keys=k or {};frame=frame+1;each(hooks.message,worm,2)end
 local function near(a,b)return math.abs(a-b)<1e-9 end
 local function last(name)return sounds[#sounds]=="sounds/gravity_gun/"..name..".wav" end
 
+tips={}
+dofile(root.."../tests/tooltip_mock.lua")(root)
 local gun=require("weapons/gravity_gun")
 gun.setup()
 check(gun.definition.wep=="weps/gravity_gun.wep","Gravity Gun: PX's scheme record")
@@ -40,10 +43,12 @@ check(gun.definition.wep=="weps/gravity_gun.wep","Gravity Gun: PX's scheme recor
 local function at(x)traced=function()return {hit=true,x=x-9,y=100,obj=mine} end;mine.x,mine.y=x,100 end
 
 for _=1,15 do step() end -- the gun's 15-frame readiness
+check(tips[#tips]=="Gravity Gun: ready\nSpace: grab\nShift/Ctrl + Space: push","the tooltip: ready, then its keys")
 gun.definition.on_fire({worm=worm})
 check(ammo[1][1]=="px.gravity_gun" and ammo[1][2]==1 and last("gg_claws"),"fire arms it for free, with the claws")
 at(400);step({space=true})
 check(near(mine.vx,-5) and near(mine.vy,0),"far (300 px): pulled at 5")
+check(tips[#tips]:find("^Gravity Gun: armed\n"),"the tooltip: armed while it pulls")
 check(hold_sheet==1,"the claws open while the aim has something to take")
 at(200);step({space=true})
 check(near(mine.vx,-12.5) and last("gg_pickup"),"within 125 px: pulled at 12.5, the pickup sound once")
@@ -53,6 +58,7 @@ traced=function()return {hit=true,x=140,y=100,obj=mine} end
 step({space=true});step({})
 check(near(mine.x,140) and near(mine.y,100) and mine.vx==0 and mine.vy==0,
   "within 40 px it is caught and held 40 px in front of the worm along the aim")
+check(tips[#tips]:find("^Gravity Gun: holding\n"),"the tooltip: holding")
 worm.aim=0.6;step({})
 local ex,ey=100+40*math.sin(0.4*math.pi),100-40*math.cos(0.4*math.pi)
 check(math.abs(mine.x-ex)<1e-9 and math.abs(mine.y-ey)<1e-9,"the aim moves: the held mine follows")

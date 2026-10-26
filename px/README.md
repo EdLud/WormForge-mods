@@ -641,7 +641,7 @@ WA fires a utility that does nothing and the script does the work:
   doesn't fire.
 - **Keys:** the digit keys are synced like the other keys.
 - **Hints:** the weapon tooltip (`wf-lib/tooltip`, bottom right, in WA's
-  small font) shows the keys and choice to the selecting worm's coalition
+  medium font) shows the keys and choice to the selecting worm's coalition
   for as long as the weapon is held, following each change; notices (no
   space to launch, not enough HP) show in it for three seconds.
 
