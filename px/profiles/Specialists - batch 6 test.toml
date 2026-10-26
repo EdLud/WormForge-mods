@@ -91,3 +91,12 @@ crate_pct = 0
 [weapons."px.mine_launcher"]
 row = "F9"
 column = 1
+
+[weapon_settings."px.gravity_gun"]
+ammo = -1
+after_use = "continue"
+delay = 0
+crate_pct = 0
+[weapons."px.gravity_gun"]
+row = "F10"
+column = 1

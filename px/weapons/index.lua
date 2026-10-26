@@ -73,6 +73,7 @@ return {
   ["px.barrel_launcher"] = "weapons/barrel_launcher",
   ["px.trampoline"] = "weapons/trampoline",
   ["px.mine_launcher"] = "weapons/mine_launcher",
+  ["px.gravity_gun"] = "weapons/gravity_gun",
   ["px.thrown_dynamite"] = "weapons/thrown_dynamite",
   ["px.tele_arrow"] = "weapons/tele_arrow",
   ["px.thumper_nade_strike"] = "weapons/thumper_nade_strike",

@@ -2184,6 +2184,15 @@ icon = "sprites/mine_launcher/minelauncher_ico.png"
 default_position = { row = "F1", column = 9 }
 
 [[components]]
+id = "px.gravity_gun"
+type = "weapon"
+name = "Gravity Gun"
+description = "Specialists: pulls the object it aims at, holds it in front of the worm, and throws it."
+entry = "components/weapon.lua"
+icon = "sprites/gravity_gun/gravity_gun_ico.png"
+default_position = { row = "F8", column = 8 }
+
+[[components]]
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"
@@ -2268,6 +2277,14 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/gravity_gun/gravity_gun_aiming2_ghost.png"]
+frames = 1
+[sprites."sprites/gravity_gun/portal_gun_glow.png"]
+frames = 1
+[sprites."sprites/gravity_gun/lightning_glow.png"]
+frames = 1
+[sprites."sprites/gravity_gun/gg_beam1.png"]
+frames = 1
 [sprites."sprites/bulldozer/bd.png"]
 frames = 20
 [sprites."sprites/platform/platform_sprite.png"]
