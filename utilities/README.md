@@ -159,8 +159,9 @@ mode stops emission; existing flames burn out naturally. The rainbow tint
 requires WA's D3D9 shader renderer. Simulation callbacks own mode changes
 and actions, including the mode announcement.
 
-The **0.9.3 demo profile** places Cursor and PX's Bowling Ball Strike, with
-fog, Live HP and Instant Death enabled. Select Cursor and press + to try the
+The **0.9.3 demo profile** (in this repository; no longer in the catalogue)
+places Cursor and PX's Bowling Ball Strike, with fog, Live HP and Instant
+Death enabled. Select Cursor and press + to try the
 other modes. The demo needs the Utilities (Fog of war is in it) and Project X ports
 bundles; the Cursor itself has no PX dependency.
 
