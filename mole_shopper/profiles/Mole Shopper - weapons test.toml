@@ -1,0 +1,72 @@
+description = "Mole Shopper weapons: F1 j-bomb, F2 i-bomb, F5 Power Shotgun, F6 Thrown Ming Vase. F3 Grenade and F4 Dynamite for comparison. Unlimited ammo/time; no fog for visual checks."
+
+[scheme]
+worm_energy = 255
+turn_time = "unlimited"
+hazards = 0
+weapon_crate_weight = 0
+health_crate_weight = 0
+utility_crate_weight = 0
+
+[weapons."px.j_bomb"]
+row = "F1"
+column = 1
+[weapon_settings."px.j_bomb"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."px.i_bomb"]
+row = "F2"
+column = 1
+[weapon_settings."px.i_bomb"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.grenade"]
+row = "F3"
+column = 1
+[weapon_settings."stock.grenade"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.dynamite"]
+row = "F4"
+column = 1
+[weapon_settings."stock.dynamite"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."px.power_shotgun"]
+row = "F5"
+column = 1
+[weapon_settings."px.power_shotgun"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."px.thrown_ming_vase"]
+row = "F6"
+column = 1
+[weapon_settings."px.thrown_ming_vase"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.teleport"]
+row = "F7"
+column = 1
+[weapon_settings."stock.teleport"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.skip_go"]
+row = "F8"
+column = 1
+[weapon_settings."stock.skip_go"]
+ammo = -1
+crate_pct = 0

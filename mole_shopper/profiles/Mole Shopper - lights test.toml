@@ -1,0 +1,109 @@
+description = "First Mole Shopper test batch: F1 Lantern, F2 Far Sight, F3 launched Mole Bombs, F4 stock placed Mole Bomb. Unlimited ammo/time; remaining arsenal is not included yet."
+features = ["core.fog"]
+
+[options."core.fog"]
+circle_radius = 110
+cone_width = 45
+cone_length = 700
+shadow_cast = true
+discover = "off"
+view_ownership = "alliance"
+animal_circle_radius = 70
+animal_cone_length = 0
+animal_cone_width = 45
+proj_circle = 150
+proj_cone_length = 0
+proj_cone_width = 45
+proj_shadow_cast = true
+explosion_circle = 40
+crate_circle = 0
+spectator_mode = true
+placement_vision = false
+fog_floor = 0
+
+[scheme]
+worm_energy = 199
+turn_time = "unlimited"
+round_time = 9
+sudden_death = "nothing"
+retreat_time = 7
+rope_retreat_time = 10
+stockpiling = "on"
+worm_select = "on"
+hazards = 66
+mine_delay = 3
+dud_mines = false
+weapon_crate_weight = 0
+health_crate_weight = 0
+utility_crate_weight = 0
+donor_cards = false
+
+[weapons."px.lantern"]
+row = "F1"
+column = 1
+[weapon_settings."px.lantern"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."px.far_sight"]
+row = "F2"
+column = 1
+[weapon_settings."px.far_sight"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."px.mole_bombs"]
+row = "F3"
+column = 1
+[weapon_settings."px.mole_bombs"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.mole_bomb"]
+row = "F4"
+column = 1
+[weapon_settings."stock.mole_bomb"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.teleport"]
+row = "F5"
+column = 1
+[weapon_settings."stock.teleport"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.jet_pack"]
+row = "F6"
+column = 1
+[weapon_settings."stock.jet_pack"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.grenade"]
+row = "F7"
+column = 1
+[weapon_settings."stock.grenade"]
+ammo = -1
+crate_pct = 0
+after_use = "continue"
+
+[weapons."stock.skip_go"]
+row = "F8"
+column = 1
+[weapon_settings."stock.skip_go"]
+ammo = -1
+crate_pct = 0
+
+[weapons."stock.surrender"]
+row = "F8"
+column = 2
+[weapon_settings."stock.surrender"]
+ammo = -1
+crate_pct = 0
