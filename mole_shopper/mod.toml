@@ -1,0 +1,98 @@
+id = "px.mole_shopper"
+name = "Mole Shopper"
+version = "0.1.0"
+author = "popka, 0rang3 and Project X authors; WormForge port"
+api_version = 4
+format_version = 2
+dependencies = ["wf.sdk"]
+
+[sprites."sprites/lantern/body.png"]
+frames = 1
+
+[sprites."sprites/lantern/hold.png"]
+frames = 1
+
+[sprites."sprites/mole_bombs/hold.png"]
+frames = 1
+
+[sprites."sprites/far_sight/reveal.png"]
+frames = 1
+
+[sprites."sprites/power_shotgun/hold.png"]
+frames = 1
+
+[sprites."sprites/power_shotgun/firing.png"]
+frames = 1
+
+[sprites."sprites/thrown_ming_vase/hold.png"]
+frames = 1
+
+[[components]]
+id = "px.lantern"
+type = "weapon"
+name = "Lantern"
+description = "Throw a permanent coalition light. It disappears when drowned."
+entry = "weapons/lantern.lua"
+icon = "sprites/lantern/icon.png"
+default_position = { row = "F1", column = 1 }
+
+[[components]]
+id = "px.far_sight"
+type = "weapon"
+name = "Far Sight"
+description = "Place a stationary coalition light for the rest of the round."
+entry = "weapons/far_sight.lua"
+icon = "sprites/far_sight/icon.png"
+default_position = { row = "F2", column = 1 }
+
+[[components.options]]
+key = "terrain_blocking"
+type = "bool"
+default = true
+label = "Terrain blocking"
+description = "Reject placement inside terrain and let terrain cast shadows. Disable to place and reveal through terrain."
+
+[[components]]
+id = "px.power_shotgun"
+type = "weapon"
+name = "Power Shotgun"
+description = "Five simultaneous shotgun shots with the Mole Shopper damage, spread and push."
+entry = "weapons/power_shotgun.lua"
+icon = "sprites/power_shotgun/icon.png"
+default_position = { row = "F5", column = 1 }
+
+[[components]]
+id = "px.thrown_ming_vase"
+type = "weapon"
+name = "Thrown Ming Vase"
+description = "A charged throw that breaks into explosive fragments."
+entry = "weapons/thrown_ming_vase.lua"
+icon = "sprites/thrown_ming_vase/icon.png"
+default_position = { row = "F6", column = 1 }
+
+[[components]]
+id = "px.mole_bombs"
+type = "weapon"
+name = "Mole Bombs"
+description = "Launch two moles. Space starts the digging stage; hold Shift to accelerate its descent."
+entry = "weapons/mole_bombs.lua"
+icon = "mole_bomb"
+default_position = { row = "F3", column = 1 }
+
+[[components]]
+id = "px.j_bomb"
+type = "weapon"
+name = "j-bomb"
+description = "Place a seven-second bomb that scatters 28 explosive fragments."
+entry = "weapons/j_bomb.lua"
+icon = "sprites/j_bomb/icon.png"
+default_position = { row = "F1", column = 1 }
+
+[[components]]
+id = "px.i_bomb"
+type = "weapon"
+name = "i-bomb"
+description = "Throw a three-second bomb that releases 33 gravity-free, penetrating fragments."
+entry = "weapons/i_bomb.lua"
+icon = "sprites/i_bomb/icon.png"
+default_position = { row = "F2", column = 1 }
