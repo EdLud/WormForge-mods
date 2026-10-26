@@ -852,6 +852,13 @@ local function new_match(opts)
           for _, h in ipairs(M.turn_starts) do h(...) end
         end
       end,
+      turn_retreat = function(f)
+        M.turn_retreats = M.turn_retreats or {}
+        M.turn_retreats[#M.turn_retreats + 1] = f
+        M.turn_retreat = function(...)
+          for _, h in ipairs(M.turn_retreats) do h(...) end
+        end
+      end,
       turn_end = function(f)
         M.turn_ends = M.turn_ends or {}
         M.turn_ends[#M.turn_ends + 1] = f
@@ -4843,6 +4850,26 @@ do
   check("the clock still for 499 frames keeps it", M.gravity == high)
   M.message(w, wa.msg.FRAME_FINISH)
   check("10 s with the clock still puts the gravity back", M.gravity == 0.014373779296875, tostring(M.gravity))
+  M.turn_end({ worm = w, active = w })
+  -- The retreat: the clock stands still, the gravity holds until the turn ends.
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_retreat({ worm = w, active = w })
+  for _ = 1, 700 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("a retreat keeps Gravity Control on, however long, the clock still", M.gravity == high, tostring(M.gravity))
+  M.turn_end({ worm = w, active = w })
+  check("the turn's end, after the retreat, puts it back", M.gravity == 0.014373779296875)
+  -- A worm that dies in its turn (a Kamikaze) takes WA's turn-end messages
+  -- with it: the engine sends the turn's end, without a worm, before the
+  -- next team's turn.
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_end({})
+  check("a turn end without its worm still puts the gravity back", M.gravity == 0.014373779296875)
   M.turn_end({ worm = w, active = w })
   check("turn end after that leaves the match's gravity", M.gravity == 0.014373779296875)
 end
