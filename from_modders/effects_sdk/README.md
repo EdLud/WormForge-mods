@@ -40,3 +40,7 @@ is imported.
 - `libs/px_effects.lua` — PX's effect manager: reach arcs, the electric
   explosion, spark, glow, smoke and crater. Its spark, glow and smoke sheets
   are SDK-owned; a consumer can override them in `fx.install`.
+  `fx.ring`/`fx.thin_spin` widths are full `wa.draw.ribbon` widths: PX's half
+  widths are doubled in the module, and the `core_w`/`glow_w` overrides are
+  full widths too. Small rings floor the core (and thin-spin maximum) at 6.4 px
+  full, about 2 px visible through the beam texture, so tiny saws stay legible.

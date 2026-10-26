@@ -45,16 +45,19 @@
 --   * the weapon registration (`:603-639`) is `install_weapon`, and the
 --     `worm_message` hook (`:644-657`) is `install_swarm`.
 --
---   * the body is WA's own mine motion (`body.physics = "mine"`, commit
---     5d20cab): the engine moves the bee before the brain, rebounds it off land
---     and exchanges momentum, so the brain no longer calls `a:move` and a
---     bonk is read from the velocity change the engine made between frames.
---     If the native spawn is refused (`spawn_actor`), it steps down to the
---     plain-body bee, then to the original no-body bee, and says so in the log.
---     The probes stay rays: they only decide where the bee looks and goes.
+--   * WA moves the bee now (a plain body with `body.hits`), so the brain no
+--     longer calls `a:move`, and a wall is not found by looking for it: the
+--     bee's `on.bump` (engine commit cb8affe) says what its own movement ran
+--     into. A bump into land is a bonk; a bump into a worm or an object is a
+--     touch. The recovery teleport (`checkSpawnPoint`, its trace and `fits`)
+--     is gone from bonks and is only used to place a bee. `SPEED_SCALE` makes
+--     up for the second step `a:move` used to add.
 --   * the spawn clearance is a filled disc (`isClearOfTerrain`), not eight
 --     points, and a spot that does not clear it is refused instead of falling
---     back to the target.
+--     back to the target. A bee buried later (a javelin's `wa.land.stamp`) is
+--     found by its own position and pulled out (`unbury`).
+--   * the mine-physics body (`body.physics = "mine"`) was tried and dropped:
+--     slow, and it ignored a speed multiplier.
 --
 -- Everything else -- the constants, the AI, the spawn geometry, the numbers --
 -- is the original's, line for line.
@@ -66,24 +69,12 @@ local M = {}
 -- always logged.
 M.DEBUG = false
 
--- Logs, for one native bee, the velocity its brain left against how far the
--- engine actually moved it the next frame (`[BEE SPEED]`, every 25 frames).
--- ratio ~1.0: the engine moves it at face value. ~0.5: it takes half the step
--- the old `a:move` bee did (set NATIVE_SPEED_SCALE to 1 / ratio). Well below
--- that and changing: drag or a rest threshold in the mine profile.
-M.DEBUG_SPEED = true
-
 -- The bundle's own files, named once.
 M.SPRITE = "sprites/bee_flight.png"
 -- The engine-side collision shape (`body.shape`), as lib/turret gives its
--- turrets theirs (`art.mask`). nil = the engine's default shape for the body.
+-- turrets theirs (`art.mask`). `on.bump` needs the body to collide with
+-- something, so the body below always carries `hits`.
 M.BODY_MASK = "sprites/bee/bee_mask.png"
--- `body.physics = "mine"`: WA moves the bee with the mine's rebound, mass and
--- friction. false = the plain body, which the brain moves with `a:move`.
--- Off: with it on the bees were slow and ignored a speed multiplier (x3 changed
--- nothing), so the profile seems to clamp or override the velocity written to
--- it. The native code below is kept for when that is understood.
-M.USE_MINE_PHYSICS = false
 M.SOUNDS = {
   "sounds/bzz1.wav",
   "sounds/bzz2.wav",
@@ -106,24 +97,24 @@ M.WORM_SPRITES = {
 -------------------------------------------------------------------------------
 -- Map Auto-Spawn Configuration (:4-8)
 -------------------------------------------------------------------------------
-local BEE_SPAWN_QUANTITY  = 10
-local BEE_SPAWN_TRIES_PER_SLICE = 200
-local SPAWN_TOP_MARGIN_PX = 10  -- don't probe within this far of the map's ceiling
+local BEE_SPAWN_QUANTITY  = 22
+local BEE_SPAWN_TRIES_PER_SLICE = 999
+local SPAWN_TOP_MARGIN_PX = 100  -- don't probe within this far of the map's ceiling
 local swarmPlanted        = false
 
 -- Bee AI Constants (:11-46)
 local SENSOR_RADIUS_PX  = 235
 local CONTACT_RADIUS_PX = 26
 local CHASE_SPEED       = (3.5)
-local CHASE_STRENGTH    = 0.17
-local CHASE_STEER_EVERY = 2
-local ROAM_SPEED        = (0.75)
-local ROAM_SPEED_BASE   = 0.20
+local CHASE_STRENGTH    = 0.14
+local CHASE_STEER_EVERY = 1
+local ROAM_SPEED        = (0.6)
+local ROAM_SPEED_BASE   = 0.12
 local ROAM_COOLDOWN_MIN = 10
 local ROAM_COOLDOWN_MAX = 20
 local ROT_SMOOTH_DEG    = 4
-local ROAM_STRENGTH     = 0.15
-local ROAM_STEER_EVERY  = 2
+local ROAM_STRENGTH     = 0.12
+local ROAM_STEER_EVERY  = 1
 local BONK_LIMIT        = 4
 local SPIN_FRAMES       = 20
 local MAX_HP            = 25
@@ -131,34 +122,32 @@ local ROAM_RANGE_X      = 55
 local ROAM_RANGE_Y      = 110
 local ROAM_ARRIVE_PX    = 20
 local BEE_RADIUS_PX     = 4
-local SPAW_CHECK_RADIUS = 14
-local CORNER_BUFFER_PX  = 1
+local CORNER_BUFFER_PX  = 2
 local HOMING_MAX_DIST_PX = 470
 local HOMING_MAX_DURATION = 160
 local ROAM_MAX_DIST_PX   = 420
 local LOOKOUT_COOLDOWN_GIVEUP  = 150
 local LOOKOUT_COOLDOWN_TIMEOUT = 200
-local BEE_STUCK_LIMIT = 175
 
 local ROAM_FAIL_THRESHOLD  = 10
 local ROAM_FAIL_SCALE      = 0.5
 local CLIP_FRAMES_LIMIT    = 6   -- frames with the centre inside land before it is pulled out
-local UNBURY_MAX_RADIUS_PX = 200  -- how far out the search for a free spot goes
+local UNBURY_MAX_RADIUS_PX = 150  -- how far out the search for a free spot goes
 
 -- A bee is only born where this disc around it is free of land. The body's
 -- real shape is bigger than its 4 px radius, and a bee born inside land cannot
 -- get out. Raise it if bees still spawn touching terrain.
 local SPAWN_CLEAR_RADIUS_PX = 7
--- Mine physics: a velocity change this big (px/frame) that the brain did not
--- make is the engine bouncing the bee off something. Lower it if bonks are
--- missed, raise it if friction alone triggers them.
-local NATIVE_BONK_DV = 0.25
--- Multiplies the bee's chase and roam speed when the engine moves it. 1.0 =
--- the numbers as written; see M.DEBUG_SPEED for how to pick another.
-local NATIVE_SPEED_SCALE = 1.0
+-- WA moves the bee once a frame. The `a:move` call it replaces added a second
+-- step, so every speed here (the numbers below are the ones tuned with it) is
+-- multiplied by this. 1.0 = the numbers as written.
+local SPEED_SCALE = 2.0
+-- After a bump into land drops its target, the bee ignores worms this many
+-- frames. Without it, it picks the same worm straight back and bumps again.
+local BUMP_LOOKOUT_FRAMES = 45
 
 local ROAM_SLOWDOWN_RADIUS_PX = 60
-local ROAM_SLOWDOWN_MIN_FRAC  = 0.8
+local ROAM_SLOWDOWN_MIN_FRAC  = 0.35
 
 local BEE_FRAME_COUNT = 4
 local BEE_FRAME_HOLD  = 5
@@ -194,7 +183,7 @@ local function takeHit(a, s, damage, spin)
     s.spin = true
     s.spinN = (s.spinN or 0) + 8
   end
-  if s.hp <= 0 then s.dead = true end
+  if s.hp <= 0 then s.dead = true; log("[BEE] dead: hp<=0 (damage)") end
 end
 
 local function playBuzz(target)
@@ -260,25 +249,55 @@ local function checkSpawnPoint(obj, x, y, targetX, targetY, maxRadius, clearRadi
   return targetX, targetY
 end
 
+-- Sampled disc test for bigger radii (a filled disc at r=14 is ~600 solid()
+-- calls per candidate): centre, a half-radius ring and the full-radius ring.
+local function roomClear(x, y, r)
+  if wa.land.solid(x, y) then return false end
+  for i = 0, 15 do
+    local ang = i * math.pi / 8
+    local c, sn = wa.math.cos(ang), wa.math.sin(ang)
+    if wa.land.solid(math.floor(x + c * r + 0.5), math.floor(y + sn * r + 0.5)) then return false end
+    if i % 2 == 0 and wa.land.solid(math.floor(x + c * r * 0.5 + 0.5), math.floor(y + sn * r * 0.5 + 0.5)) then return false end
+  end
+  return true
+end
+
+-- A bee that spawns in a slit or a pocket can't steer out. Fire short traces
+-- in 8 directions: at most one may be blocked, so there is always a way out.
+local ESCAPE_TRACE_PX = 18
+local function hasEscapeRoom(x, y)
+  local blockedN = 0
+  for i = 0, 7 do
+    local ang = i * math.pi / 4
+    local hit = wa.land.trace(x, y, math.floor(x + wa.math.cos(ang) * ESCAPE_TRACE_PX + 0.5),
+                                    math.floor(y + wa.math.sin(ang) * ESCAPE_TRACE_PX + 0.5))
+    if hit and hit.hit then blockedN = blockedN + 1 end
+  end
+  return blockedN <= 1
+end
+
 local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx)
   maxRadiusPx = maxRadiusPx or 50
-  clearRadiusPx = clearRadiusPx or (BEE_RADIUS_PX + 1)
+  clearRadiusPx = math.max(clearRadiusPx or 0, SPAWN_CLEAR_RADIUS_PX)
   local r = 0
   while r <= maxRadiusPx do
     local step = (r == 0) and 360 or math.max(15, (360 / (r / 2)))
     local angdeg = 0
     while angdeg < 360 do
       local rad = angdeg * math.pi / 180
-      local tx = x + r * wa.math.cos(rad)
-      local ty = y + r * wa.math.sin(rad)
-      if worm:fits(tx, ty) and isClearOfTerrain(tx, ty, BEE_RADIUS_PX + 1) then
+      local tx = math.floor(x + r * wa.math.cos(rad) + 0.5)
+      local ty = math.floor(y + r * wa.math.sin(rad) + 0.5)
+      if roomClear(tx, ty, clearRadiusPx)
+         and isClearOfTerrain(tx, ty, BEE_RADIUS_PX + 1)
+         and hasEscapeRoom(tx, ty)
+         and (not worm or worm:fits(tx, ty)) then
         return tx, ty
       end
       angdeg = angdeg + step
     end
     r = r + 3
   end
-  return nil, nil   -- changed from `targetX, targetY`
+  return nil, nil
 end
 -- math.floor() rounds toward -inf, not toward zero. Under the old
 -- fixed-point scheme that was invisible (speeds were huge integers, a
@@ -289,29 +308,15 @@ end
 -- not a truncation: velocity can only ever hold still or drift negative,
 -- never cleanly approach a positive target speed. Removed -- interpolate
 -- in plain floats and let a.vx/a.vy hold the fractional result directly.
--- A mine body can settle once it is nearly still, and then a plain `a.vx`
--- write does not wake it (lib/turret's `push` warps for that reason). So a
--- native bee that is all but stopped is woken with `a:warp`; otherwise the
--- field write is enough.
-local function setVel(a, s, vx, vy)
-  if s and s.native and math.abs(a.vx) + math.abs(a.vy) < 0.05 then
-    a:warp({ x = a.x, y = a.y, vx = vx, vy = vy })
-  else
-    a.vx, a.vy = vx, vy
-  end
-end
-
 local function steer(a, tx, ty, speed, strength)
-  local sn = state[a.id]
-  if sn and sn.native then speed = speed * NATIVE_SPEED_SCALE end
+  speed = speed * SPEED_SCALE
   local dx, dy = tx - a.x, ty - a.y
   local dist = math.sqrt(dx * dx + dy * dy)
   if dist > 0 then dx, dy = dx / dist, dy / dist end
   local wantVx = dx * speed
   local wantVy = dy * speed
-  setVel(a, state[a.id],
-    a.vx + (wantVx - a.vx) * strength,
-    a.vy + (wantVy - a.vy) * strength)
+  a.vx = a.vx + (wantVx - a.vx) * strength
+  a.vy = a.vy + (wantVy - a.vy) * strength
 end
 
 local function distPx(a, tx, ty)
@@ -320,27 +325,25 @@ local function distPx(a, tx, ty)
 end
 
 local function isThereLandThere(a, tx, ty)
-  local b = CORNER_BUFFER_PX
-  local tyOff = ty - 2
+ -- local b = CORNER_BUFFER_PX * 0.5
+ -- local tyOff = ty
 
   local function blocked(x0, y0, x1, y1)
     local hit = wa.land.trace(x0, y0, x1, y1)
     return hit and hit.hit
   end
+  
+  return blocked(a.x,a.y,tx,ty) 
 
-  if blocked(a.x, a.y, tx, tyOff) then return true end
-  if blocked(a.x - b, a.y - b, tx - b, tyOff - b) then return true end
-  if blocked(a.x + b, a.y - b, tx + b, tyOff - b) then return true end
-  if blocked(a.x - b, a.y + b, tx - b, tyOff + b) then return true end
-  if blocked(a.x + b, a.y + b, tx + b, tyOff + b) then return true end
-  return false
+  --return false
 end
 
 local function findClosestEnemy(a, s)
   if (s.lookoutCooldown or 0) > 0 then return nil end
   local best, bestDist2
   for _, w in ipairs(wa.worms.all()) do
-    local moving = w.vx ~= 0 or w.vy ~= 0
+    -- A walking worm has no velocity. Probably bresenham-walking along the mask, doing micro teleports.
+    local moving = (w.vx ~= 0 or w.vy ~= 0 or w.state_label == "walking") and (w.state ~= "standing" and w.state_label ~= "standing")
     local isEnemy = s.rogue or (w.team ~= s.team)
     if isEnemy and w.hp > 0 and moving then
       local dx = (w.x - a.x)
@@ -457,52 +460,29 @@ local function findFreeSpot(x, y, maxRadius)
   return nil, nil
 end
 
--- Pull a buried bee out, whichever way it moves: the centre in land for
--- CLIP_FRAMES_LIMIT frames is enough, no bonk needed (a body the engine cannot
--- move does not bounce, so there is nothing for a bonk to count).
+-- Pull a buried bee out: the centre in land for CLIP_FRAMES_LIMIT frames is
+-- enough. A body WA cannot move does not bump either, so there is nothing for
+-- a bonk to count.
 local function unbury(a, s)
   local tx, ty = findFreeSpot(a.x, a.y, UNBURY_MAX_RADIUS_PX)
   if not tx then tx, ty = s.lastSafeX, s.lastSafeY end
-  if s.native then
-    a:warp({ x = tx, y = ty, vx = 0, vy = 0 })
-  else
-    a.x, a.y = tx, ty
-    a.vx, a.vy = 0, 0
-  end
-  s.clipFrames, s.bonk, s.targetId, s.arriveX = 0, 0, nil, nil
+  a.x, a.y = tx, ty
+  a.vx, a.vy = 0, 0
+  s.clipFrames, s.bonk, s.targetId, s.arriveX = 0, 0, nil, nil 
+  s.desiredAngle = 0
+  s.roamCooldown = rand(ROAM_COOLDOWN_MIN, ROAM_COOLDOWN_MAX)
   s.lastSafeX, s.lastSafeY = tx, ty
   log("[BEE] unburied to " .. tostring(tx) .. "," .. tostring(ty))
 end
 
+-- Per-frame upkeep. Walls are not found here: WA moves the bee and `bump`
+-- (below) hears what it ran into. This keeps the bonk count decaying, notes the
+-- last safe spot, and pulls out a bee buried by a stamp.
 local function checkClipping(a, s)
-  local hitTerrain
-  if s.native then
-    -- WA already moved the bee this frame (no second step). The brain left
-    -- the velocity at endVx/endVy; whatever differs now, the engine changed.
-    hitTerrain = math.abs(a.vx - (s.endVx or a.vx)) > NATIVE_BONK_DV
-      or math.abs(a.vy - (s.endVy or a.vy)) > NATIVE_BONK_DV
-  else
-    hitTerrain = a:move({ terrain = true, worms = false }).terrain
-  end
-  local bonkLimit = s.targetId and 1 or BONK_LIMIT
   if s.bonk == 0 and s.clipFrames < 1 and cheapClear(a.x, a.y) then
     s.lastSafeX, s.lastSafeY = a.x, a.y
   end
-  if hitTerrain then
-    s.bonk = (s.bonk or 0) + 1
-    if s.bonk > bonkLimit then
-      s.spin, s.bonk, s.targetId = false, 0, nil
-      local sx, sy = checkSpawnPoint(a, a.x, a.y, s.lastSafeX, s.lastSafeY, 120, 6)
-      if sx then
-        a.x, a.y = sx, sy
-        a.vx, a.vy = 0, 0
-      end
-      if pickRoamPoint(a, s) == false then
-        pickRoamPoint(a, s)
-      end
-      return
-    end
-  elseif s.bonk and s.bonk > 0 and s.ticks % 10 == 0 then
+  if s.bonk > 0 and (s.ticks or 0) % 10 == 0 then
     s.bonk = s.bonk - 1
   end
 
@@ -517,14 +497,10 @@ local function checkClipping(a, s)
   end
 end
 
-local prevPosX = {}
-local prevPosY = {}
-local beeStuck = {}
-
 -------------------------------------------------------------------------------
 -- Bee Actor Brain (:303-480)
 -------------------------------------------------------------------------------
-local function think(a, ev)
+local function brain(a, ev)
   local s = state[a.id]
   if not s then return end
   ev = ev or {}
@@ -545,42 +521,10 @@ local function think(a, ev)
   end
 
   checkClipping(a, s)
-  
-  local prevX = prevPosX[a.id] or 0
-  local prevY = prevPosY[a.id] or 0
-  prevX = math.floor(prevX)
-  prevY = math.floor(prevY)
-  if prevX == math.floor(a.x) and prevY == math.floor(a.y) then
-    beeStuck[a.id] = (beeStuck[a.id] or 0) + 1
-  else
-    beeStuck[a.id] = beeStuck[a.id] or 0
-    if beeStuck[a.id] > 0 then beeStuck[a.id] = beeStuck[a.id]  - 1 end
-  end
-
-  local checkWorm = wa.worms.nearest(a)
-  
-  if not beeStuck[a.id] then beeStuck[a.id] = 0 end
-  if checkWorm and beeStuck[a.id] > BEE_STUCK_LIMIT then
-    local sx, sy = checkSpawnPointNoLOS(checkWorm, wa.random(-2,2) + a.x, wa.random(-2,2) + a.y, 210, 11) -- Avoid deterministic softlock
-    if sx then
-        a.x, a.y = sx, sy
-        a.vx, a.vy = 0, 0
-        beeStuck[a.id] = 0   -- reset so we don't relocate again immediately
-        s.targetId = nil
-        s.homingDuration = 0
-        s.lookoutCooldown = 25
-        s.spin, s.spinN = true, 0
-        s.startX = sx
-        s.startY = sy
-    end
-  end
-
-  prevPosX[a.id] = a.x
-  prevPosY[a.id] = a.y
 
   if s.spin or s.softSpin then
     if s.spinN == 0 then playBuzz(a) end
-    a.vx, a.vy = 0, 0
+    --a.vx, a.vy = 0, 0
     s.rot = (s.rot + (s.dead and 9 or 7)) % 360
     a:angle(s.rot)
     s.spinN = s.spinN + 1
@@ -602,7 +546,7 @@ local function think(a, ev)
   s.ticks = (s.ticks or 0) + 1
 
   if a:in_water() then
-    s.dead = true
+    s.dead = true; log("[BEE] dead: in water")
     return
   end
 
@@ -663,7 +607,7 @@ local function think(a, ev)
     end
 
     if tdist <= CONTACT_RADIUS_PX then
-      s.dead = true
+      s.dead = true; log("[BEE] dead: reached target")
       detonate(a, s)
       return
     end
@@ -730,33 +674,6 @@ local function think(a, ev)
   end
 end
 
--- The frame handler: the thinking above, then remember the velocity it left,
--- so the next frame can tell what the engine changed in between.
-local speedProbe
-local function brain(a, ev)
-  local before = state[a.id]
-  if M.DEBUG_SPEED and before and before.native and before.endX then
-    if not speedProbe or not state[speedProbe] then speedProbe = a.id end
-    if speedProbe == a.id then
-      before.probeN = (before.probeN or 0) + 1
-      local lx, ly = before.endVx or 0, before.endVy or 0
-      if before.probeN % 25 == 0 and (math.abs(lx) > 0.3 or math.abs(ly) > 0.3) then
-        local mx, my = a.x - before.endX, a.y - before.endY
-        local axisL, axisM = lx, mx
-        if math.abs(ly) > math.abs(lx) then axisL, axisM = ly, my end
-        wa.log(("[BEE SPEED] left v=(%.2f,%.2f) moved=(%.2f,%.2f) ratio=%.2f"):format(
-          lx, ly, mx, my, axisM / axisL))
-      end
-    end
-  end
-  think(a, ev)
-  local s = state[a.id]
-  if s and s.native then
-    s.endVx, s.endVy = a.vx, a.vy
-    s.endX, s.endY = a.x, a.y
-  end
-end
-
 -- A blast or a hit landed on the bee. An API 4 brain only *sees* those when it
 -- registers a `hit` function (`actor.rs` `actor_takes_hits`); with one, the
 -- engine leaves WA's knock in the event for the brain to apply instead of
@@ -767,54 +684,52 @@ local function hurt(a, ev)
   if not s then return end
   -- Blasts knock back without spinning (like PX's bowling ball take_hit).
   -- Gun/fire hits still tumble the bee via takeHit's spin.
-  takeHit(a, s, ev and ev.damage, ev.kind ~= "blast")
-  local nvx = a.vx + ((ev and ev.vx) or 0)
-  local nvy = a.vy + ((ev and ev.vy) or 0)
-  setVel(a, s, nvx, nvy)
-  -- The knock is not a bonk: count it as the velocity the brain left.
-  s.endVx, s.endVy = nvx, nvy
+  ev = ev or {}
+  takeHit(a, s, ev.damage, ev.kind ~= "blast")
+  a.vx = a.vx + (ev.vx or 0) * 1.5
+  a.vy = a.vy + (ev.vy or 0) * 1.5
 end
 
--- Native contact callback: a live actor touched the bee. Detonate on contact
--- with anything alive (worms, crates, etc.) so the bee explodes instead of
--- riding through them.
+-- Only an ENEMY, living worm sets a bee off. Owner, teammates, crates, mines,
+-- oil drums and other bees brushing past are ignored (they used to detonate it).
+local function isEnemyWorm(s, other)
+  if type(other) ~= "userdata" then return false end
+  if other.kind ~= "worm" then return false end
+  if not other.hp or other.hp <= 0 then return false end
+  return s.rogue or other.team ~= s.team
+end
+
 local function onContact(a, ev)
   local s = state[a.id]
   if not s or s.dead then return end
   local other = ev and ev.other
-  -- Live actors arrive as userdata; freed ones arrive as a snapshot table
-  -- with alive=false. Only detonate on live contact.
-  if type(other) == "userdata" then
+  if isEnemyWorm(s, other) then
+    log("[BEE] detonate: enemy worm contact id=" .. tostring(a.id))
     detonate(a, s)
   end
 end
 
--------------------------------------------------------------------------------
--- The bee's body, best first
--------------------------------------------------------------------------------
--- hits: land stops it, worms touch it (a touch detonates it). hit_by: only
--- fire and blasts hurt it. The same on every variant; what differs is who
--- moves it.
-local variants
-local variantIdx = 1
+-- WA moved the bee and its own sweep stopped on something: `ev.other` is "land"
+-- or the worm/object it hit. WA's stop or bounce is already in a.vx/a.vy.
+local function bump(a, ev)
+  local s = state[a.id]
+  if not s or s.dead then return end
+  if ev.other ~= "land" then
+    --if isEnemyWorm(s, ev.other) then onContact(a, ev); return end
+    -- anything else (own worm, crate, mine...) counts as a bonk, no blast
 
-local function bodyVariants()
-  if variants then return variants end
-  local function body(mine, shape)
-    return {
-      physics = mine and "mine" or nil,
-      shape   = shape,
-      hits    = { land = true, worms = true },
-      hit_by  = { fire = true, blasts = true },
-    }
+    -- random explosions are silly but can get annoying -red
   end
-  variants = {}
-  if M.USE_MINE_PHYSICS then
-    if M.BODY_MASK then variants[#variants + 1] = { native = true, body = body(true, M.BODY_MASK) } end
-    variants[#variants + 1] = { native = true, body = body(true, nil) }
+  s.bonk = s.bonk + 1
+  local limit = s.targetId and 1 or BONK_LIMIT
+  if s.bonk > limit then
+    s.spin, s.bonk = false, 0
+    if s.targetId then
+      s.targetId = nil
+      s.lookoutCooldown = BUMP_LOOKOUT_FRAMES
+    end
+    s.arriveX = nil   -- a fresh roam point on the next frame
   end
-  variants[#variants + 1] = { native = false, body = M.BODY_MASK and body(false, M.BODY_MASK) or nil }
-  return variants
 end
 
 -------------------------------------------------------------------------------
@@ -830,37 +745,25 @@ function M.spawn_actor(opts)
   if not owner then return nil end
   -- `kind` is not a spawn key in API 4, `a.kind` is "actor" whatever it says
   -- (`spawn.rs` "parse_spawn", `actor.rs:1126`).
-  local def = {
+  local body = wa.actors.spawn({
     sprite  = opts.sprite or M.SPRITE,
     x       = opts.x,
     y       = opts.y,
-    vx      = rand(-4, 4),
-    vy      = rand(-6, -3),
+    vx      = rand(-4, 4) * SPEED_SCALE,
+    vy      = rand(-6, -3) * SPEED_SCALE,
     origin  = opts.origin or "center",
     owner   = owner,
     persist = opts.persist ~= false,
-    -- The brain is a table here, not the single function the original passed:
-    -- `frame` is its per-frame thinking and `hit` is what makes WA hand the
-    -- bee its blasts (`spawn.rs` "parse_brain"); `contact` is a touch.
-    on      = { frame = opts.brain or brain, hit = hurt, contact = onContact },
-  }
-  -- Try the native body first and step down only if the engine refuses it:
-  -- the mine locator is optional, so a WA build it does not match errors the
-  -- spawn. The step-down sticks for the match and is logged once.
-  local body, native
-  local list = bodyVariants()
-  while variantIdx <= #list do
-    local v = list[variantIdx]
-    def.body = v.body
-    def.gravity = false--v.native and false or nil   -- mine physics defaults gravity on
-    local ok, res = pcall(wa.actors.spawn, def)
-    if ok then
-      body, native = res, v.native
-      break
-    end
-    wa.log(("[BEE SPAWN] body variant %d refused (%s); trying the next"):format(variantIdx, tostring(res)))
-    variantIdx = variantIdx + 1
-  end
+    -- WA moves this body, stops it on land and tells it about it (`on.bump`
+    -- needs `hits`). Only fire and blasts hurt it; a worm touching it is a
+    -- touch.
+    body    = { shape = M.BODY_MASK, hits = { land = true, worms = true },
+                hit_by = { fire = true, blasts = true } },
+    -- The brain is a table: `frame` is its per-frame thinking, `hit` is what
+    -- makes WA hand the bee its blasts (`spawn.rs` "parse_brain"), `contact`
+    -- is a touch and `bump` is what its own movement ran into.
+    on      = { frame = opts.brain or brain, hit = hurt, contact = onContact, bump = bump },
+  })
 
   if body then
     log("[ACTOR SPAWN] Successfully spawned actor ID=" .. tostring(body.id) ..
@@ -886,7 +789,6 @@ function M.spawn_actor(opts)
       arriveY         = opts.y,
       lastSafeX       = opts.x,
       lastSafeY       = opts.y,
-      native          = native,
       roamCooldown    = 0,
       roamSpeed       = nil,
       desiredAngle    = 0,

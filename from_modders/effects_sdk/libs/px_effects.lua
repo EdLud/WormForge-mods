@@ -39,7 +39,7 @@ fx.PRESETS = {
 }
 
 local installed, settings, driver
-local emitters, arcs, bursts, sparks, glows, smokes = {}, {}, {}, {}, {}, {}
+local emitters, arcs, bursts, sparks, glows, smokes, rings = {}, {}, {}, {}, {}, {}, {}
 local next_key = -1
 
 local SPARK_KEYS = { "sprite", "cell", "frames", "size", "rate", "pause",
@@ -55,6 +55,8 @@ local BURST_KEYS = { "r", "g", "b", "noise", "duration", "fade", "grow",
   "live", "segments", "thickness", "ellipse", "rebuffer", "smoke", "depth" }
 local SMOKE_KEYS = { "count", "kinds", "r", "g", "b", "spread", "up", "life",
   "drag", "size", "depth", "sprite" }
+local RING_KEYS = { "radius", "segments", "noise", "r", "g", "b", "depth",
+  "speed", "angle", "core_w", "glow_w", "thin", "follow", "owner" }
 local REBUFFER_KEYS = { "at", "noise", "r", "g", "b", "fade", "segments" }
 
 local function merge(dst, src, keys)
@@ -319,7 +321,7 @@ local function burst_state(o)
     fade = o.fade or 0.55, grow = o.grow or 3.0,
     live = o.live or 24, age = 0, timer = 0,
     segments = seg_count(o.segments, radius, 1.2),
-    thickness = o.thickness or radius * 0.90,
+    thickness = o.thickness or 15,
     ellipse = o.ellipse or { 1.25, 0.45 },
     rebuffer = o.rebuffer, depth = o.depth, done = false,
     rng = new_rng(o), noise_vals = {},
@@ -394,6 +396,65 @@ end
 local function update_glow(g)
   g.age = g.age + 1
   if g.life and g.age > g.life then g.done = true end
+end
+
+-- PX's persistent CEffectManager loop (type 0 ring, type 6 thin spin). The
+-- caller owns the lifetime; the saw detaches it when the electric mode ends.
+local function fill_ring_noise(st)
+  local n = st.segments + 1
+  for i = 1, n do st.noise_vals[i] = rand_float(st.rng, -1, 1) end
+  for i = n + 1, #st.noise_vals do st.noise_vals[i] = nil end
+end
+
+local function update_ring(st)
+  if st.done then return end
+  if st.follow then
+    local x, y = st.follow()
+    if x == nil then st.done = true; return end
+    st.x, st.y = x, y
+  end
+  st.age = st.age + 1
+  st.angle = st.angle + st.speed
+  if st.age % 2 == 0 then fill_ring_noise(st) end
+end
+
+local function draw_ring(st)
+  if st.done then return end
+  local n = st.segments
+  local function pass(sprite, width, scale, color, noise_scale)
+    local pts = RIBBON.points
+    for i = 1, n + 1 do pts[i] = POINTS[i] end
+    for i = n + 2, #pts do pts[i] = nil end
+    RIBBON.sprite, RIBBON.depth = sprite, st.depth or settings.depth.ring
+    for i = 1, n + 1 do
+      local j = (st.noise_vals[((i - 1) % #st.noise_vals) + 1] or 0)
+        * st.noise * (noise_scale or 1)
+      local a = st.angle + (i - 1) * (2 * math.pi / n)
+      local rr = (st.radius + j) * (scale or 1)
+      local p = POINTS[i]
+      p.x = st.x + wa.math.cos(a) * rr
+      p.y = st.y + wa.math.sin(a) * rr
+      p.width, p.u = width, (i - 1) / n
+      -- PX's thin spin narrows and dims to the arc ends (:1019-1027).
+      if st.thin then
+        local t = (i - 1) / n
+        local f = 4 * t * (1 - t) + 0.15
+        if f > 1 then f = 1 end
+        p.width = width * f
+        p.color = rgb(st.r, st.g, st.b, f)
+      else
+        p.color = color or rgb(st.r, st.g, st.b, 1)
+      end
+    end
+    wa.draw.ribbon(RIBBON)
+  end
+  local core = rgb(st.r, st.g, st.b, 1)
+  local glow = rgb(st.r * 0.72, st.g * 0.72, st.b * 0.72, 1)
+  -- PX DrawRingFX: a dim under-beam at 0.85 radius, the core, then the wide
+  -- glow. Type 6 (thin spin) is the single tapered core pass only.
+  if not st.thin then pass(settings.beam, st.core_w, 0.85, glow, 0.5) end
+  pass(settings.beam, st.core_w, 1, core)
+  if st.glow_w > 0 and not st.thin then pass(settings.glow, st.glow_w, 1, glow) end
 end
 
 local function update_smoke(sm)
@@ -490,6 +551,7 @@ draw = function()
   for _, b in ipairs(bursts) do safe(draw_burst, b) end
   for _, s in ipairs(sparks) do safe(draw_spark, s) end
   for _, g in ipairs(glows) do safe(draw_glow, g) end
+  for _, r in ipairs(rings) do safe(draw_ring, r) end
 end
 
 ensure_driver = function(owner)
@@ -598,8 +660,12 @@ tick = function(a)
     update_smoke(smokes[i])
     if smokes[i].done then table.remove(smokes, i) end
   end
+  for i = #rings, 1, -1 do
+    update_ring(rings[i])
+    if rings[i].done then table.remove(rings, i) end
+  end
   if #emitters == 0 and #arcs == 0 and #bursts == 0 and #sparks == 0
-      and #glows == 0 and #smokes == 0 then
+      and #glows == 0 and #smokes == 0 and #rings == 0 then
     driver = nil
     a:despawn()
   end
@@ -626,6 +692,7 @@ function fx.install(o)
     glow = d.glow or (wa.depth.OBJECTS + 0x1000),
     trail = d.trail or (wa.depth.OBJECTS + 1),
     smoke = d.smoke or wa.depth.EFFECTS,
+    ring = d.ring or wa.depth.EFFECTS,
   }
   if settings.trail then trail.install() end
   wa.on.draw(draw)
@@ -707,6 +774,60 @@ function fx.emitter(o)
     if self.tracker and self.tracker.release then self.tracker.release() end
   end
   return e
+end
+
+function fx.ring(o)
+  if not installed then wa.log("px_effects: fx.install(ctx) first") return nil end
+  o = o or {}
+  local st = copy({}, o, RING_KEYS)
+  st.radius = o.radius or 0
+  if st.radius <= 0 then return nil end
+  st.x, st.y = o.x or 0, o.y or 0
+  st.segments = math.min(255, math.max(8, math.floor(o.segments or 24)))
+  st.noise = o.noise or 0.67
+  st.r, st.g, st.b = o.r or 130, o.g or 180, o.b or 255
+  st.speed = o.speed or 0
+  st.angle = o.angle or 0
+  -- PX beamThiccness is a half width (TexturedBeamPoint lays at +-dx), and
+  -- wa.draw.ribbon wants the full one, so double it. PX's beam glow is three
+  -- half-widths, not the single-glow radius formula. The beam texture lights
+  -- only about a third of the ribbon, so PX's 2.3 half-width floor reads as
+  -- ~1.4 px; floor the core at 3.2 half (6.4 full) for ~2 px visible even on
+  -- the smallest saw. The glow keeps PX's 3x low-clamped width.
+  local px_core = st.radius / 10
+  if px_core < 2.3 then px_core = 2.3 end
+  local px_glow = px_core * 3
+  if px_core > 5.5 then px_core = 5.5 end
+  local core = px_core
+  if core < 3.2 then core = 3.2 end
+  st.core_w = o.core_w or core * 2
+  st.glow_w = o.glow_w or px_glow * 2
+  st.thin = o.thin and true or false
+  st.age, st.done = 0, false
+  st.rng = new_rng(o)
+  st.noise_vals = {}
+  fill_ring_noise(st)
+  rings[#rings + 1] = st
+  ensure_driver(o.owner)
+  st.remove = function(self)
+    if type(self) == "table" then self.done = true else st.done = true end
+  end
+  st.set_radius = function(self, radius)
+    if type(self) == "number" then self, radius = st, self end
+    self.radius = radius
+  end
+  return st
+end
+
+function fx.thin_spin(o)
+  o = o or {}
+  o.thin = true
+  o.glow_w = o.glow_w or 0
+  -- PX DrawThinSpinFX: half width 6*objectScale, objectScale = 2*radius/100;
+  -- doubled for wa.draw.ribbon. Floor the max at 6.4 full (~2 px visible) so
+  -- a small saw's arc is not a hairline; the dome taper is in draw_ring.
+  o.core_w = o.core_w or math.max(6.4, 0.24 * (o.radius or 0))
+  return fx.ring(o)
 end
 
 function fx.arc(o)

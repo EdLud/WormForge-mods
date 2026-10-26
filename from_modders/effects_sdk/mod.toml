@@ -5,7 +5,7 @@
 # the public modules with `require("wf-lib/effects/...")`.
 id = "effects.sdk"
 name = "Project X Effects SDK"
-version = "0.1.0"
+version = "0.2.1"
 author = "reddaz"
 api_version = 4
 format_version = 2

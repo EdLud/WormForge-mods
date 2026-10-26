@@ -75,10 +75,8 @@ function M.electric(o)
             end
             if obj.kind == "worm" then
               if o.taze ~= false then
-                -- PX lands the hit with no push, then holds the worm and
-                -- hands the push back on release (:112-119): the hold cannot
-                -- eat it. No HP gate: a lethal hit still tazes, and the worm
-                -- still dies once the hold ends.
+                -- Land the damage first. The engine clears WA's static flag,
+                -- so a lethal victim still gets the hold and its push.
                 obj:hurt(dmg)
                 zap.taze(obj, { frames = o.taze_frames or 20,
                   push_x = px, push_y = py })

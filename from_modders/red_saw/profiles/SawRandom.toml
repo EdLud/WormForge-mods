@@ -1,0 +1,28 @@
+# Saw + PX random map saws. The random feature is optional; the normal profile
+# is profiles/Saw.toml.
+description = "Project X's stationary saws with the random map spawner."
+
+features = ["px.saw_random"]
+
+[weapons]
+"px.saw_grenade" = { row = "F8", column = 1 }
+"px.saw_place" = { row = "F8", column = 2 }
+
+[weapon_settings."px.saw_grenade"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."px.saw_place"]
+ammo = -1
+delay = 0
+crate = 0
+
+[options."px.saw_grenade"]
+size = 50
+
+[options."px.saw_place"]
+size = 50
+
+[options."px.saw_random"]
+quantity = 4
