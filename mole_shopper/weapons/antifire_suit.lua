@@ -1,11 +1,20 @@
--- PX Antifire Suit: one worm, until its team's next real turn (Tab is not a turn).
+-- PX Antifire Suit: one worm, until its team's next real turn (Tab is not a
+-- turn), or as the profile sets it: for its team's next N turns, or for N
+-- seconds and no longer than the turn, as WA's utilities.
 local ART = "sprites/antifire_suit/"
 local SOUND = "sounds/antifire_suit/putting_on_suit.wav"
 local RADIUS, POWER = 28, 28
 local IDLE_ALPHA, HIT_ALPHA = 38, 120
 local M = {}
 
-function M.install()
+function M.install(ctx)
+  local function option(key, default)
+    if ctx and ctx.option then return ctx.option(key) end
+    return default
+  end
+  -- 0: turn-based, else this many seconds (50 frames each).
+  local seconds = option("duration", 0)
+  local turns = option("turns", 1)
   local suits, smoke = {}, {}
   local function alive(w)
     return w.id ~= 0 and w.hp > 0 and w.state ~= "dying"
@@ -27,7 +36,9 @@ function M.install()
     on_fire = function(ev)
       local w = ev.worm
       if not alive(w) or suits[w.id] then return end
-      suits[w.id] = {team = w.team, alpha = IDLE_ALPHA, refreshed = wa.world.frame()}
+      local now = wa.world.frame()
+      suits[w.id] = {team = w.team, alpha = IDLE_ALPHA, refreshed = now,
+        turns = turns, ends = seconds > 0 and now + seconds * 50 or nil}
       wa.sound.play(w, SOUND)
       require("wf-lib/tooltip").notice(w, "Antifire Suit ON")
     end,
@@ -62,17 +73,28 @@ function M.install()
   wa.on.worm_message(function(w, msg)
     if msg == wa.msg.TURN_STARTED then
       if not w.turn then return end
+      -- Turn-based: one of the team's turns has passed.
       for _, id in ipairs(wa.sorted(suits)) do
-        if suits[id].team == w.team then suits[id] = nil end
+        local s = suits[id]
+        if s.team == w.team and not s.ends then
+          s.turns = s.turns - 1
+          if s.turns <= 0 then suits[id] = nil end
+        end
       end
       return
     end
     local s = suits[w.id]
     if not s then return end
-    if not alive(w) then suits[w.id] = nil; return end
+    if not alive(w) or (s.ends and wa.world.frame() >= s.ends) then suits[w.id] = nil; return end
     wa.fire.repel{x = w.x, y = w.y, radius = RADIUS, power = POWER}
   end, {msgs = {wa.msg.FRAME_FINISH, wa.msg.TURN_STARTED}})
   wa.on.death(function(ev) suits[ev.victim.id] = nil end)
+  -- Timed suits come off when the turn is cleaned up, as WA's utilities do.
+  wa.on.turn_cleanup(function()
+    for _, id in ipairs(wa.sorted(suits)) do
+      if suits[id].ends then suits[id] = nil end
+    end
+  end)
   wa.on.draw(function()
     local now = wa.world.frame()
     local living = {}

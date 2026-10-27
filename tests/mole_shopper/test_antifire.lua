@@ -1,6 +1,6 @@
 local root = MOLE_SHOPPER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../mole_shopper/")
 package.path = root .. "?.lua;" .. package.path
-local frame, clock, claim, hurt, message, death, draw = 1, 60000
+local frame, clock, claim, hurt, message, death, draw, cleanup = 1, 60000
 local sounds, quads, pushes, hints = {}, {}, {}, {}
 local a = {id=17,team=1,alliance=0,hp=100,state="standing",x=12,y=34,turn=true}
 local b = {id=33,team=2,alliance=0,hp=100,state="standing",x=70,y=34,turn=false}
@@ -14,7 +14,8 @@ wa = {
   on={hurt=function(f)hurt=f end, worm_message=function(f,options)
     -- The suit's own hook; the tooltip's (frame finish only) is not under test.
     if #options.msgs==2 then message=f end
-  end,death=function(f)death=f end,draw=function(f)draw=f end},
+  end,death=function(f)death=f end,draw=function(f)draw=f end,
+  turn_cleanup=function(f)cleanup=f end},
   sound={play=function(w,s)sounds[#sounds+1]={w,s} end},
   draw={quad=function(t)quads[#quads+1]=t end},
   hud={message_top=function(text,to)hints[#hints+1]={text,to} end},
@@ -65,4 +66,29 @@ hits=0;claim.on_fire{worm=a};frame=500;message(a,2);quads={};draw()
 assert(#quads==1 and quads[1].color>>24==38)
 assert(hit(a,"hit")==nil);quads={};draw();assert(quads[1].color>>24==38,"ordinary hits do not flash the shield")
 assert(hit(a,"fire")=="eat","fading shield is only presentation")
+-- The profile's options: a fresh install with them.
+local function install(opts)
+  package.loaded["weapons/antifire_suit"] = nil
+  require("weapons/antifire_suit").install{option = function(k) return opts[k] end}
+end
+local function suited(w) return hit(w,"fire")=="eat" end
+a.hp,a.state,b.hp,b.state,c.hp=100,"standing",100,"standing",100
+
+-- Turn-based, two turns: off when its team's second turn starts.
+install{duration=0, turns=2}
+a.turn,b.turn=true,false;claim.on_fire{worm=a}
+a.turn=false;b.turn=true;message(b,99);assert(suited(a),"another team's turn does not count")
+b.turn=false;a.turn=true;message(a,99);assert(suited(a),"one of two turns passed")
+cleanup();assert(suited(a),"a turn-based suit outlives the cleanup")
+message(a,99);assert(not suited(a),"off at its team's second turn")
+
+-- Timed, 10 seconds: off 500 frames after putting it on.
+install{duration=10, turns=1}
+frame=1000;claim.on_fire{worm=a}
+message(a,99);assert(suited(a),"a team turn does not end a timed suit")
+frame=1499;message(a,2);assert(suited(a),"still on at 499 frames")
+frame=1500;message(a,2);assert(not suited(a),"off at 10 seconds")
+-- ...and at the turn's cleanup, whichever comes first.
+frame=2000;claim.on_fire{worm=a};frame=2100;message(a,2);assert(suited(a))
+cleanup();assert(not suited(a),"off at cleanup, as WA's utilities")
 print("Antifire Suit: all Lua checks passed")
