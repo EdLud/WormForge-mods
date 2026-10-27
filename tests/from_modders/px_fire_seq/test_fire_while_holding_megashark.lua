@@ -1,7 +1,8 @@
 -- Plain Lua harness for the hold-to-fire Megashark's on_fire, ammo write and
 -- Space gate. The real sequencer is covered by test_fire_seq_cancel.lua; this
 -- stubs it so the weapon's choices can be checked without an engine.
---   fengari test_fire_while_holding_megashark.lua
+--   lua tests/from_modders/px_fire_seq/test_fire_while_holding_megashark.lua
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_fire_seq/"
 local frames, cancel = {}, {}
 
 package.loaded["lib/px_sprite_builder"] = { PX_POSTURE = {} }
@@ -41,7 +42,7 @@ _G.wa = {
   world = { keys = function() return keys end },
 }
 
-local M = assert(loadfile("weapons/fire_while_holding_megashark.lua"))()
+local M = assert(loadfile(PACK_ROOT .. "weapons/fire_while_holding_megashark.lua"))()
 M.install({ id = "px.megashark_hold", weapons = { ["px.megashark_hold"] = true } })
 assert(spec and spec.on_fire, "the weapon registers")
 assert(handler, "the Space gate registers")

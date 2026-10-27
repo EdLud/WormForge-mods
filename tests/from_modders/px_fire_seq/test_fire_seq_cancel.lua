@@ -1,5 +1,6 @@
 -- Plain Lua harness for lib/fire_seq.lua's cancel.
---   fengari test_fire_seq_cancel.lua
+--   lua tests/from_modders/px_fire_seq/test_fire_seq_cancel.lua
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_fire_seq/"
 local spawned = {}
 local wa = {
   actors = {
@@ -14,7 +15,7 @@ local wa = {
   log = function() end,
 }
 local env = setmetatable({ wa = wa }, { __index = _G })
-local seq = assert(loadfile("lib/fire_seq.lua", "t", env))()
+local seq = assert(loadfile(PACK_ROOT .. "lib/fire_seq.lua", "t", env))()
 
 local function worm(id)
   return { id = id, x = 100, y = 200, hp = 100, turn = true,

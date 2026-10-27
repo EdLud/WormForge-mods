@@ -5,6 +5,11 @@ packs = [
   "px",
   "utilities",
   "mole_shopper",
+  "from_modders/effects_sdk",
+  "from_modders/px_electric",
+  "from_modders/px_fire_seq",
+  "from_modders/red_saw",
+  "from_modders/roaming_bees",
 ]
 
 # Exact source paths: a profile is published only when listed here.

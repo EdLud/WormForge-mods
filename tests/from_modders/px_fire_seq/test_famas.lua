@@ -1,5 +1,6 @@
--- Plain Lua harness for weapons/famas.lua. Run from the bundle root:
---   fengari test_famas.lua
+-- Plain Lua harness for weapons/famas.lua. Run from anywhere:
+--   lua tests/from_modders/px_fire_seq/test_famas.lua
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_fire_seq/"
 local sounds, adds, samples, drops = {}, 0, 0, 0
 local weapon, held, firing_art, fired
 local land_hit
@@ -42,7 +43,7 @@ local fakes = {
 }
 local env = setmetatable({ wa = wa, require = function(name) return fakes[name] end },
   { __index = _G })
-local mod = assert(loadfile("weapons/famas.lua", "t", env))()
+local mod = assert(loadfile(PACK_ROOT .. "weapons/famas.lua", "t", env))()
 mod.install({ id = "px.famas", position = { row = "F3", column = 6 } })
 
 assert(weapon and weapon.on_fire, "installed a weapon with on_fire")

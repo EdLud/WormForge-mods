@@ -1,7 +1,8 @@
--- Plain Lua harness for lib/custom_explosion.lua. Run from the bundle root:
---   fengari test_custom_explosion.lua
+-- Plain Lua harness for lib/custom_explosion.lua. Run from anywhere:
+--   lua tests/from_modders/px_electric/test_custom_explosion.lua
 -- No WA: the fake wa and the fake zap/fx record what the module does.
-local path = arg[1] or "lib/custom_explosion.lua"
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_electric/"
+local path = arg[1] or PACK_ROOT .. "lib/custom_explosion.lua"
 
 local function near(a, b)
   return math.abs(a - b) < 1e-9

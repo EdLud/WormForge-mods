@@ -1,7 +1,8 @@
--- Plain Lua harness for lib/electric_damage.lua. Run from mods/px:
---   fengari test_electric_damage.lua
+-- Plain Lua harness for lib/electric_damage.lua. Run from anywhere:
+--   lua tests/from_modders/px_electric/test_electric_damage.lua
 -- No WA needed; the fake wa records calls the way the engine would.
-local path = arg[1] or "lib/electric_damage.lua"
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_electric/"
+local path = arg[1] or PACK_ROOT .. "lib/electric_damage.lua"
 
 local function setup()
   local frame = 10

@@ -1,5 +1,6 @@
--- Plain Lua harness for weapons/electric_mine.lua. Run from mods/px:
---   fengari test_electric_mine.lua
+-- Plain Lua harness for weapons/electric_mine.lua. Run from anywhere:
+--   lua tests/from_modders/px_electric/test_electric_mine.lua
+local PACK_ROOT = (arg[0]:match("^(.*[/\\])") or "") .. "../../../from_modders/px_electric/"
 local installed, mine_call, blast_call = nil, nil, nil
 local fx = {
   SPARK = "wf-lib/effects/sprites/px_effects/spark",
@@ -29,7 +30,7 @@ local fakes = {
 }
 local env = setmetatable({ wa = wa, require = function(name) return fakes[name] end },
   { __index = _G })
-local mod = assert(loadfile("weapons/electric_mine.lua", "t", env))()
+local mod = assert(loadfile(PACK_ROOT .. "weapons/electric_mine.lua", "t", env))()
 mod.install()
 
 local spec = assert(wa.spec, "installed a weapon")
