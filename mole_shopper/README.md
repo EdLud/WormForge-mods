@@ -21,7 +21,8 @@ and don't ship with the pack.
   Mole Bomb and the stock Mole Bomb remain unchanged.
 
 Vision uses the existing WormForge fog renderer: a 110px worm circle,
-coalition ownership and terrain shadows, without map memory. The full profile
+coalition ownership and terrain shadows. The full profile remembers terrain
+once seen, as it was then (`discover = "texture"`). The full profile
 has no aiming cone; the focused lights test retains the original 700px cone.
 Lanterns reveal 110px and Far Sight 155px. PX's soft light falloff is adapted
 to this renderer; simulation never consults local visibility.
