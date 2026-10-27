@@ -1,0 +1,33 @@
+# Electric Mine -- Project X's weapon_electric_mine, ported to WormForge API 4.
+#
+# The mine keeps its own custom explosion (`lib/custom_explosion.lua`) and taze
+# hold (`lib/electric_damage.lua`) here rather than in the `px` pack, whose
+# upstream updates overwrote them. The effect manager and trail are the shared
+# `effects.sdk` modules (`wf-lib/effects/px_effects` and
+# `wf-lib/effects/trail`).
+id = "px.electric"
+name = "Project X Electric Mine"
+version = "0.2.4"
+author = "reddaz"
+api_version = 4
+format_version = 2
+dependencies = ["effects.sdk"]
+
+# The taze modules are public: other bundles import `wf-lib/electric/damage`
+# without copying the taze sheets or the loop sound, and any electric weapon
+# can mark a mine with `wf-lib/electric/taze_mine`.
+asset_namespace = "wf-lib/electric"
+
+[exports]
+"wf-lib/electric/damage" = "lib/electric_damage.lua"
+"wf-lib/electric/taze_mine" = "lib/taze_mine.lua"
+
+[[components]]
+id = "px.electric_mine"
+type = "weapon"
+name = "Electric Mine"
+credits = "ported by reddaz"
+description = "Project X's Electric Mine: WA's mine, live on the ground -- sparks, two crackling reach bolts and a trail, an electric blast, chain arcs to mines it catches, and a taze on what it hits."
+entry = "weapons/electric_mine.lua"
+icon = "sprites/elemine.png"
+default_position = { row = "F5", column = 2 }

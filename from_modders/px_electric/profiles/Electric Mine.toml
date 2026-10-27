@@ -1,0 +1,11 @@
+# One weapon: PX's Electric Mine on the mine slot, with infinite ammo.
+description = "Just the Electric Mine: PX's sparks, reach bolts, trail, electric blast and chain arcs."
+features = []
+
+[weapons]
+"px.electric_mine" = { row = "F5", column = 2 }
+
+[weapon_settings."px.electric_mine"]
+ammo = -1
+delay = 0
+crate = 0
