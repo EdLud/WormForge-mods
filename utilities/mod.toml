@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.7.2"
+version = "0.8.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -66,10 +66,13 @@ description = "Non-active worms' health bars follow damage immediately, down to 
 
 [[components.options]]
 key = "instant_death"
-type = "bool"
-default = false
+type = "choice"
+choices = ["off", "settled", "in_flight"]
+# Until 0.8.0 a switch: profiles saved with true die when settled.
+from_bool = ["off", "settled"]
+default = "off"
 label = "Instant Death"
-description = "Zero-HP non-active worms begin their normal death sequence once their own motion settles, without waiting for other objects. Works independently of Live HP."
+description = "Zero-HP non-active worms die without waiting for other objects. settled: WA's own death once the worm's own motion stops. in_flight: at once, wherever it is, and it flies on while it dies, as in Project X. Works independently of Live HP."
 
 [[components.options]]
 key = "collect_viewer"

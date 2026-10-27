@@ -3,13 +3,14 @@
 -- this one component, read once at install.
 
 -- The packs, by option: each module installs its hooks when loaded, so only
--- a switched-on one is loaded.
+-- a switched-on one is loaded. A `choice` pack is a function of its choice,
+-- "off" not loading it.
 local PACKS = {
   { "ex_turn_side", "features/ex_turn_side" },
   { "agility", "features/agility" },
   { "parkour", "features/parkour" },
   { "live_hp", "features/live_hp" },
-  { "instant_death", "features/instant_death" },
+  { "instant_death", "features/instant_death", choice = true },
   { "collect_viewer", "features/collect_viewer" },
 }
 
@@ -21,8 +22,10 @@ return function(ctx)
 
   local on = {}
   for _, pack in ipairs(PACKS) do
-    if ctx.option(pack[1]) then
-      require(pack[2])
+    local value = ctx.option(pack[1])
+    if value and value ~= "off" then
+      local pack_module = require(pack[2])
+      if pack.choice then pack_module(value) end
       on[#on + 1] = pack[1]
     end
   end

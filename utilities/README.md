@@ -45,11 +45,13 @@ worms to die in mid-flight.
 Run its regression harness from the repository root with
 `lua mods/utilities/test_live_hp.lua`.
 
-Instant Death is independent of Live HP. Enable `instant_death = true` in
-the same Utilities options table, or use the **Instant Death** switch in
-the loader. It requires `worm:allow_death()` in the DLL. WA still owns each
-worm's movement and landing, then its normal death animation, explosion and
-grave. The active worm keeps its ordinary turn/death rules. Falls and direct
+Instant Death is independent of Live HP. Set `instant_death` in the same
+Utilities options table, or pick it under **Instant Death** in the loader:
+`"settled"` lets a zero-HP worm die once its own movement stops, through
+WA's own death (`worm:allow_death()`); `"in_flight"` starts its death at
+once, wherever it is, and it flies on while it dies, as in Project X
+(`worm:die()`, WormForge 0.9.52). A saved `true` reads as `"settled"`. WA
+still owns the death animation, explosion and grave. The active worm keeps its ordinary turn/death rules. Falls and direct
 HP changes are covered by the next simulation frame too. Run
 `lua mods/utilities/test_instant_death.lua` from the repository root
 to check both switches independently and together.

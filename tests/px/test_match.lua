@@ -177,6 +177,7 @@ function Worm:ammo(name, change)
 end
 function Worm:heal(amount) if self.hp > 0 then self.hp = self.hp + amount end end
 function Worm:hurt(amount)
+  self.reacted = not (type(amount) == "table" and amount.react == false)
   if type(amount) == "table" then
     self.knock = { amount.vx or 0, amount.vy or 0 }
     amount = amount.amount or 0
@@ -4924,6 +4925,7 @@ do
   check("the first trace: 2 to the worm, 4 to the drum, a 4 px cut where it hits land",
     target.hp == 98 and drum.taken == 4 and M.digs[1] and M.digs[1].x == 300 and M.digs[1].radius == 4,
     tostring(target.hp) .. " " .. tostring(drum.taken))
+  check("a burn, not WA's hit: the worm goes on with what it was doing", target.reacted == false)
   tick(39)
   check("every fourth frame: 2 until 10 taken, then 1", target.hp == 85, tostring(target.hp))
   M.quads, M.ribbons = {}, {}

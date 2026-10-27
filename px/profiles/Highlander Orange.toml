@@ -8,7 +8,7 @@ placement_range = 300
 [options."core.utilities"]
 agility = true
 collect_viewer = true
-instant_death = true
+instant_death = "settled"
 live_hp = true
 parkour = true
 

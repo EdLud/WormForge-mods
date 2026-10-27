@@ -6,7 +6,7 @@ features = ["core.fog", "core.utilities"]
 fog_floor = 40
 
 [options."core.utilities"]
-instant_death = true
+instant_death = "settled"
 live_hp = true
 
 [scheme]

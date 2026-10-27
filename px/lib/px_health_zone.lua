@@ -112,7 +112,7 @@ function M.install(ctx)
 
   -- PX's `DamageHealth` (:118-132).
   local function damage_health(obj)
-    if obj.kind == "worm" and obj.hp > MIN_HP then obj:hurt(1) end
+    if obj.kind == "worm" and obj.hp > MIN_HP then obj:hurt({ amount = 1, react = false }) end
   end
 
   -- Whether PX's `start_be_inactive` branch would act on this activator at all:

@@ -149,7 +149,8 @@ function weapon.setup()
             if obj.hp > 0 then
               local taken = r.taken[key] or 0
               local amount = taken >= 45 and 0 or taken >= 10 and 1 or 2
-              if amount > 0 then obj:hurt(amount) end
+              -- A burn, not a hit: the worm goes on with what it was doing.
+              if amount > 0 then obj:hurt({ amount = amount, react = false }) end
               r.taken[key] = taken + amount
             end
           elseif obj.kind == "oil" or obj.kind == "crate" then
