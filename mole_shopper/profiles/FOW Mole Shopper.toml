@@ -1,7 +1,7 @@
 # FOW Mole Shopper, popka + 0rang3, September 2026 PX build.
 # Starting ammo, crates, panel and handling come from PX records; WA options/delays from its WSC.
 description = "Mole Shopper by popka and 0rang3: coalition fog, 199 HP, 40-second turns and the original weapon/crate loadout. Shift-assisted aiming is omitted."
-features = ["core.fog"]
+features = ["core.fog", "core.utilities"]
 
 [options."core.fog"]
 circle_radius = 110
@@ -17,6 +17,7 @@ proj_circle = 150
 proj_cone_length = 0
 proj_cone_width = 45
 proj_shadow_cast = true
+proj_ownership = "active"
 explosion_circle = 40
 explosion_ownership = "active"
 crate_circle = 30
@@ -24,6 +25,10 @@ crate_shadow_cast = true
 spectator_mode = true
 placement_vision = false
 fog_floor = 0
+
+[options."core.utilities"]
+collect_viewer = true
+live_hp = true
 
 [options."px.health_zone"]
 healing_per_minute = 60
