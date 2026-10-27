@@ -70,8 +70,6 @@ function weapon.setup()
     if worm.hp <= 0 then return end
     local y = ev.y
     if wa.world.cavern() and y < 19 then y = 19 end
-    local previous = fires.teleports[worm.id]
-    if previous and previous.marker then previous.marker:despawn() end
     -- Waiting 50 frames there makes an unplaced worm fall and take damage
     -- before the arrival, so it is placed now. It sounds like WA's own
     -- placement.
@@ -82,14 +80,8 @@ function weapon.setup()
       fires.teleports[worm.id] = { placed = true, frames = 0 }
       return
     end
-    -- FireWeapon clears WA's planted X for click-only weapons. Keep a fixed
-    -- stock planted-X marker at the saved target until the worm arrives instead;
-    -- the engine plays it once, as WA plays its own.
-    local marker = wa.actors.spawn({
-      owner = worm, x = ev.x, y = y, sprite = "markerr",
-      gravity = false, collide = false, drown = false,
-    })
-    fires.teleports[worm.id] = { x = ev.x, y = y, frames = 0, pending = true, marker = marker }
+    -- The engine supplies WA's short click confirmation, as for stock Teleport.
+    fires.teleports[worm.id] = { x = ev.x, y = y, frames = 0, pending = true }
     wa.sound.play(worm, SOUND_COMMUNICATOR, TELE_SOUND_PRIORITY) -- PX's M_SETTARGET confirmation
   end
 
@@ -109,7 +101,6 @@ function weapon.setup()
       return
     end
     if worm.hp <= 0 then
-      tele.marker:despawn()
       fires.teleports[worm.id] = nil
       return
     end
@@ -123,7 +114,6 @@ function weapon.setup()
     end
     tele.frames = tele.frames + 1
     if tele.frames < 50 then return end
-    tele.marker:despawn()
     fires.teleports[worm.id] = nil
     super_tele_arrive(worm, tele.x, tele.y)
   end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.FIRE_WEAPON } })

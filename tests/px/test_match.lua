@@ -4973,20 +4973,19 @@ do
   w.x, w.y, w.hp = 40, 70, 100
   local target_x, target_y = 190 + 1234, 100 + 2345
   spec.on_click({ worm = w, x = target_x, y = target_y })
-  local marker = M.spawned[#M.spawned]
-  check("target marker stays at the frozen click position",
-    marker.sprite == "markerr" and marker.x == target_x and marker.y == target_y and not marker.dead)
+  check("native click confirmation has no duplicate Lua marker",
+    not (M.spawned and #M.spawned > 0))
   check("click confirms target with PX's sound at WA's teleport priority",
     w.state ~= "teleporting" and M.sounds[1] == 68 and M.sound_flags[1] == 3)
   M.message(w, wa.msg.FRAME_FINISH)
   check("the next frame enters WA's teleport pose and plays PX's start sound",
     w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 3)
   for _ = 1, 49 do M.message(w, wa.msg.FRAME_FINISH) end
-  check("worm and marker remain in place for 49 frames after starting",
-    w.x == 40 and w.y == 70 and not M.digs and not marker.dead)
+  check("worm remains in place for 49 frames after starting",
+    w.x == 40 and w.y == 70 and not M.digs)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("frame 50 arrives at the saved target and removes its marker",
-    w.x == target_x and w.y == target_y and marker.dead)
+  check("frame 50 arrives at the saved target",
+    w.x == target_x and w.y == target_y)
   local cuts = M.digs or {}
   check("arrival cuts three overlapping holes at and above the destination",
     #cuts == 3 and cuts[1].x == target_x and cuts[1].y == target_y
@@ -5009,11 +5008,10 @@ do
   w = worm(16)
   w.x, w.y = 40, 70
   spec.on_click({ worm = w, x = 200, y = 150 })
-  marker = M.spawned[#M.spawned]
   w.hp = 0
   for _ = 1, 50 do M.message(w, wa.msg.FRAME_FINISH) end
-  check("a dead worm is never moved or carved in and its marker is removed",
-    w.x == 40 and w.y == 70 and not M.digs and marker.dead)
+  check("a dead worm is never moved or carved in",
+    w.x == 40 and w.y == 70 and not M.digs)
 
   new_match()
   spec = nil
