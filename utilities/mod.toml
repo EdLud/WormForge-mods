@@ -268,7 +268,7 @@ type = "choice"
 choices = ["everyone", "active"]
 default = "everyone"
 label = "Explosion vision"
-description = "Who sees an explosion's light and its crater: everyone, or only the alliance whose turn it is."
+description = "Who sees an explosion's light and its crater: everyone, or only the alliance whose turn made it, its retreat included."
 
 [[components.options]]
 key = "crate_circle"
