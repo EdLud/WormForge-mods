@@ -14,7 +14,9 @@ local KEYS = {
   "proj_cone_width",
   "proj_shadow_cast",
   "explosion_circle",
+  "explosion_ownership",
   "crate_circle",
+  "crate_shadow_cast",
   "spectator_mode",
   "placement_vision",
   "fog_floor"

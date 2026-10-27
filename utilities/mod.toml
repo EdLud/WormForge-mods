@@ -260,7 +260,15 @@ default = 40
 min = 0
 max = 700
 label = "Explosion circle"
-description = "Temporary public light radius past a crater's rim after explosions."
+description = "Temporary light radius past a crater's rim after explosions."
+
+[[components.options]]
+key = "explosion_ownership"
+type = "choice"
+choices = ["everyone", "active"]
+default = "everyone"
+label = "Explosion vision"
+description = "Who sees an explosion's light and its crater: everyone, or only the alliance whose turn it is."
 
 [[components.options]]
 key = "crate_circle"
@@ -269,7 +277,14 @@ default = 20
 min = 0
 max = 700
 label = "Crate circle"
-description = "Terrain-blocked awareness circle around supply crates."
+description = "Light around every supply crate, in pixels, seen by everyone. 0 means crates give no light."
+
+[[components.options]]
+key = "crate_shadow_cast"
+type = "bool"
+default = true
+label = "Crate shadow casting"
+description = "Shadow casting for crates' light: terrain blocks it. Off lights the full circle."
 
 [[components.options]]
 key = "spectator_mode"
