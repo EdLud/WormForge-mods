@@ -1,7 +1,7 @@
 -- Live HP, originally by reddaz. Commit WA's pending health display directly;
 -- native hit, movement, freeze and death handling retain their own states.
 
--- `worm:show_health()` (0.9.6 DLLs) shows a health on the label and leaves
+-- `worm:show_health()` (0.9.51 DLLs) shows a health on the label and leaves
 -- WA its pending damage; an older DLL has only the commit.
 local function can_show(worm)
   local ok, show = pcall(function() return worm.show_health end)
