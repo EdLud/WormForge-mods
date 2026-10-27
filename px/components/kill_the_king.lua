@@ -3,7 +3,7 @@
 -- Transpiled and hardened from Project X 3.6.31.0 CKtkControl
 --
 -- Security & Sandbox Compliance (sandbox.rs):
---  - INLINED CONFIG: No require("config") because require/dofile are nil in sandbox.
+--  - COMPONENT OPTIONS: mod.toml declares the settings; the table below is the fallback.
 --  - STABLE FRAME GATE: Evaluates once per frame via worm.id <= lastWormId dispatch boundary.
 --  - STRICT TEAM INDICES: 1-based team numbers (1: Red, 2: Blue, etc.) strictly compared.
 --  - NO INSTANT LOSS: Safe solid pixel detection with fail-safe guard (disables if 0 pixels).
@@ -14,50 +14,68 @@
 -- IN-Game Replay breakst the mod, revives worms for some reason.
 
 -- Inline configuration table (sandbox-compliant: do NOT use require/dofile)
-return function()
+return function(ctx)
+  local function option(key, fallback)
+    if ctx and ctx.option then
+      local value = ctx.option(key)
+      if value ~= nil then return value end
+    end
+    return fallback
+  end
+
+  local TEAM = { red = 1, blue = 2, green = 3, yellow = 4, purple = 5, cyan = 6 }
+
+  -- Fixed values: these were inline before options were added and are not
+  -- user-tunable. King boxes are 10x10 px; checks run every 5 frames.
+  local KING_BOX_SIZE = 10
+  local CHECK_INTERVAL_FRAMES = 5
+
   local CONFIG = {
-    -- King Count: 1 or 2
-    kingsCount = 1,
+    -- King Count: one or two. Both kings belong to the defenders; either loss
+    -- ends the round, as PX's CKtkControl does.
+    kingsCount = option("kings", "one") == "two" and 2 or 1,
 
     -- Time for attack in milliseconds (300,000 ms = 5 minutes)
-    timeForAttackMs = 300000,
+    timeForAttackMs = (option("attack_time_seconds", 300) or 300) * 1000,
 
     -- "AttackOnly" (decreases only on attacker turns)
-    -- "DefendAndCompensate" (defenders turn adds +5ms per tick back to timer)
-    timerType = "AttackOnly",
+    -- "DefendAndCompensate" (defenders' turns add defenderGainMs back)
+    timerType = option("timer_mode", "attack_only") == "defend_and_compensate"
+      and "DefendAndCompensate" or "AttackOnly",
 
     -- Timer HUD caption
     timerCaption = "Remaining attack time:",
 
     -- Teams (1-based indices in WA: 1=Red, 2=Blue, 3=Green, 4=Yellow, 5=Purple, 6=Cyan)
-    attackersTeam = 1, -- Red Team (Attackers)
-    defendersTeam = 2, -- Blue Team (Defenders)
+    attackersTeam = TEAM[option("attackers_team", "red")] or 1,
+    defendersTeam = TEAM[option("defenders_team", "blue")] or 2,
 
     -- Percentage of King solid pixels that must be destroyed to trigger King loss
     destructionPercentage = 75,
 
-    -- Optimization: sample king bounding box every N frames (5 frames = 100ms)
-    checkIntervalFrames = 5,
-
     -- King 1 Configuration (Pixel coordinates on the map)
     king1 = {
       name = "Blue King",
-      x1 = 106,
-      y1 = 829,
-      width = 10,
-      height = 10,
-      destructionPercentage = 70,
+      x1 = option("king1_x", 106) or 106,
+      y1 = option("king1_y", 829) or 829,
+      width = KING_BOX_SIZE,
+      height = KING_BOX_SIZE,
+      destructionPercentage = option("king1_destroy_percent", 70) or 70,
     },
 
     -- King 2 Configuration (Used when kingsCount >= 2)
     king2 = {
       name = "Red King",
-      x1 = 1420,
-      y1 = 300,
-      width = 10,
-      height = 10,
-      destructionPercentage = 70,
+      x1 = option("king2_x", 1420) or 1420,
+      y1 = option("king2_y", 300) or 300,
+      width = KING_BOX_SIZE,
+      height = KING_BOX_SIZE,
+      destructionPercentage = option("king2_destroy_percent", 70) or 70,
     },
+
+    defenderGainMs = option("defender_gain_ms", 5) or 5,
+    showTimer = option("show_timer", true),
+    showKingHp = option("show_king_hp", true),
   }
 
   local MS_PER_FRAME = 20 -- 50 fps lockstep (1000ms / 50 = 20ms per frame)
@@ -72,6 +90,7 @@ return function()
   local timerType = CONFIG.timerType or "AttackOnly"
   local attackersTeam = CONFIG.attackersTeam or 1
   local defendersTeam = CONFIG.defendersTeam or 2
+  local defenderGainMs = CONFIG.defenderGainMs or 5
 
   local kings = {}
   local kingsCount = CONFIG.kingsCount or 1
@@ -79,6 +98,99 @@ return function()
   -- Dispatch ordering tracking for once-per-frame gate
   local lastWormId = 999999
   local frameCheckCounter = 0
+
+  -- ----------------------------------------------------------------------------
+  -- Object cleaner: PX's ObjectCleaner, generalised to map-edge slices.
+  -- The outer quarter on each side, plus 5% toward the centre, starts without
+  -- mines, oil drums or crates. PX removed those within a map object's radius;
+  -- this clears the whole edge slice once per match.
+  -- ----------------------------------------------------------------------------
+  local CLEAN_EDGE_FRACTION = 0.25 + 0.05
+  local CLEAN_KINDS = { mine = true, oil = true, crate = true }
+  local cleanerDone = false
+
+  local function cleanable(obj)
+    return obj and CLEAN_KINDS[obj.kind] == true
+  end
+
+  local function collect_edge_objects(size, x0, x1)
+    local out, seen = {}, {}
+    local function add(obj)
+      if not cleanable(obj) then return end
+      local uid = obj.uid
+      if uid == nil or uid == 0 then uid = obj.id end
+      local key = obj.kind .. ":" .. tostring(uid)
+      if seen[key] then return end
+      seen[key] = true
+      local x = obj.x
+      if x and x >= x0 and x < x1 then
+        out[#out + 1] = obj
+      end
+    end
+
+    if wa.world.electrical_nearby then
+      -- electrical_nearby is a circle capped at 1000 px. Cover the slice with
+      -- a 1000-px grid so a tall or wide map cannot hide an object in a corner.
+      local step = 1000
+      for cx = x0, x1, step do
+        for cy = 0, size.h, step do
+          for _, obj in ipairs(wa.world.electrical_nearby(cx, cy, step, false)) do
+            add(obj)
+          end
+        end
+      end
+    else
+      for _, group in ipairs({ wa.mines, wa.crates, wa.oil }) do
+        for _, obj in ipairs(group.all()) do add(obj) end
+      end
+    end
+    return out
+  end
+
+  local function discard_edge_object(obj, size)
+    -- Mines have object:remove(); crates and oil drums do not, so park those
+    -- just outside the map on the side they came from.
+    if obj.remove then
+      local ok, removed = pcall(obj.remove, obj)
+      if ok and removed then return true end
+    end
+    local out_x = obj.x < size.w / 2 and -16 or (size.w + 16)
+    return obj:warp{ x = out_x, y = obj.y }
+  end
+
+  local function clean_edge_slices()
+    local size = wa.world.size()
+    if not size or size.w <= 0 or size.h <= 0 then return false end
+
+    local edge = math.floor(size.w * CLEAN_EDGE_FRACTION)
+    if edge < 1 then edge = 1 end
+
+    local cleaned = 0
+    for _, zone in ipairs({ { 0, edge }, { size.w - edge, size.w } }) do
+      for _, obj in ipairs(collect_edge_objects(size, zone[1], zone[2])) do
+        local ok, removed = pcall(discard_edge_object, obj, size)
+        if ok and removed then
+          cleaned = cleaned + 1
+        end
+      end
+    end
+
+    if cleaned > 0 then
+      wa.log(string.format("[KTK] Object cleaner cleared %d edge object(s)", cleaned))
+    end
+    return true
+  end
+
+  local function run_cleaner()
+    if cleanerDone then return end
+    local ok, result = pcall(clean_edge_slices)
+    if not ok then
+      cleanerDone = true
+      wa.log("[KTK WARNING] Object cleaner failed: " .. tostring(result))
+    elseif result then
+      cleanerDone = true
+    end
+  end
 
   -- ----------------------------------------------------------------------------
   -- Helper: Initialize King solid pixel area on round start
@@ -92,9 +204,9 @@ return function()
     local x2 = cfg.x1 + cfg.width
     local y2 = cfg.y1 + cfg.height
 
-    -- Scan rectangle for initial solid terrain pixels
-    for x = x1, x2 do
-      for y = y1, y2 do
+    -- PX scans x < KingX2, y < KingY2 (ktk_control.txt), so the box is half-open.
+    for x = x1, x2 - 1 do
+      for y = y1, y2 - 1 do
         if wa.land.solid(x, y) then
           totalSolid = totalSolid + 1
         end
@@ -142,8 +254,8 @@ return function()
     end
 
     local count = 0
-    for x = king.x1, king.x2 do
-      for y = king.y1, king.y2 do
+    for x = king.x1, king.x2 - 1 do
+      for y = king.y1, king.y2 - 1 do
         if wa.land.solid(x, y) then
           count = count + 1
         end
@@ -200,10 +312,9 @@ return function()
   -- ----------------------------------------------------------------------------
   -- Main Lockstep Simulation Hook (FRAME_FINISH)
   -- ----------------------------------------------------------------------------
-  wa.on.worm_message(function(worm, msg)
-    if msg ~= wa.msg.FRAME_FINISH then
-      return
-    end
+  wa.on.worm_message(function(worm)
+    -- Clear the map edges once, before the first king scan.
+    run_cleaner()
 
     -- One-time match initialization
     if not initialized then
@@ -239,14 +350,14 @@ return function()
           return
         end
       elseif timerType == "DefendAndCompensate" and curTeam == defendersTeam then
-        timerMs = timerMs + 5
+        timerMs = timerMs + defenderGainMs
       end
     end
 
     -- Frame-boundary logic: King damage check
     if isNewFrame then
       frameCheckCounter = frameCheckCounter + 1
-      if frameCheckCounter >= CONFIG.checkIntervalFrames then
+      if frameCheckCounter >= CHECK_INTERVAL_FRAMES then
         frameCheckCounter = 0
 
         for i = 1, kingsCount do
@@ -259,7 +370,7 @@ return function()
         end
       end
     end
-  end)
+  end, { msgs = { wa.msg.FRAME_FINISH } })
 
   -- ----------------------------------------------------------------------------
   -- Presentation HUD Overlay (wa.on.hud)
@@ -268,23 +379,27 @@ return function()
     if not initialized then return end
 
     -- Draw Attack Timer
-    local timerStr = string.format("%s %s", CONFIG.timerCaption or "Remaining attack time:", format_time(timerMs))
-    wa.hud.line(timerStr, 14, 40)
+    if CONFIG.showTimer then
+      local timerStr = string.format("%s %s", CONFIG.timerCaption or "Remaining attack time:", format_time(timerMs))
+      wa.hud.line(timerStr, 14, 40)
+    end
 
     -- Draw King HP status
-    for i = 1, kingsCount do
-      local king = kings[i]
-      if king then
-        local statusStr
-        if not king.active then
-          statusStr = string.format("%s: [No solid terrain pixels found - Disabled]", king.name)
-        elseif king.destroyed then
-          statusStr = string.format("%s: DESTROYED (0%%)", king.name)
-        else
-          local healthPercent = math.max(0, 100 - king.currentPercentDestroyed)
-          statusStr = string.format("%s HP: %d%%", king.name, healthPercent)
+    if CONFIG.showKingHp then
+      for i = 1, kingsCount do
+        local king = kings[i]
+        if king then
+          local statusStr
+          if not king.active then
+            statusStr = string.format("%s: [No solid terrain pixels found - Disabled]", king.name)
+          elseif king.destroyed then
+            statusStr = string.format("%s: DESTROYED (0%%)", king.name)
+          else
+            local healthPercent = math.max(0, 100 - king.currentPercentDestroyed)
+            statusStr = string.format("%s HP: %d%%", king.name, healthPercent)
+          end
+          wa.hud.line(statusStr, 14, 80 + (i - 1) * 16)
         end
-        wa.hud.line(statusStr, 14, 80 + (i - 1) * 16)
       end
     end
 
