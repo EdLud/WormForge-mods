@@ -53,9 +53,12 @@ assert(body.spec.x == 100 and body.spec.y == 70)
 assert(body.spec.vx == 1 and body.spec.vy == 1.5)
 assert(body.spec.body.physics == "mine")
 local hits, hit_by = body.spec.body.hits, body.spec.body.hit_by
-assert(hits.land and hits.crates and hits.objects and not hits.worms, "it moves through worms, not land")
-assert(hit_by.worms == false and hit_by.missiles and hit_by.blasts and hit_by.bullets and hit_by.fire,
-  "worms pass through it; shots and blasts still meet it")
+assert(hits.land and not hits.crates and not hits.objects and not hits.worms,
+  "it rests on the land and runs into nothing else")
+assert(hit_by.blasts, "explosions still move it")
+for _, kind in ipairs({"worms", "missiles", "arrows", "mines", "actors", "bullets", "melee", "fire", "dragon_ball"}) do
+  assert(hit_by[kind] == false, kind .. " pass through it")
+end
 assert(body.spec.persist and body.spec.drown and body.spec.owner == owner)
 assert(body.light.circle == 110 and body.light.cone.length == 0)
 assert(body.light.seen_by == "owner" and not body.light.discover)

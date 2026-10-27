@@ -30,14 +30,14 @@ return {
           x = worm.x, y = worm.y - 10,
           vx = 2 * worm.facing + worm.vx, vy = -1.5 + 1.5 * worm.vy,
           persist = true, drown = true,
-          -- Worms pass through it, both ways: it never runs into a worm
-          -- (hits), nor a worm into it (hit_by). Land, crates, objects, shots,
-          -- blasts and fire still meet it.
+          -- Only explosions move it. It rests on the land (hits) and runs
+          -- into nothing else; nothing but a blast hits it (hit_by): worms,
+          -- shots, mines, actors, melee and fire all pass through.
           body = {
             physics = "mine",
-            hits = {land = true, crates = true, objects = true},
-            hit_by = {worms = false, missiles = true, arrows = true, mines = true, actors = true,
-              bullets = true, melee = true, fire = true, dragon_ball = true, blasts = true},
+            hits = {land = true},
+            hit_by = {blasts = true, worms = false, missiles = false, arrows = false, mines = false,
+              actors = false, bullets = false, melee = false, fire = false, dragon_ball = false},
           },
         }
         actor:gfx{scale = 0.48, tint = lights.colour(worm), depth = wa.depth.OBJECTS}
