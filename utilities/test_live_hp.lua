@@ -31,6 +31,11 @@ local function run(live_first)
       self.display_target = self.hp
       return true
     end
+    function w:show_health()
+      self.shows = (self.shows or 0) + 1
+      self.display_target = self.hp
+      return true
+    end
     function w:freeze() self.state = "frozen" end
     return w
   end
@@ -53,8 +58,8 @@ local function run(live_first)
   for _, damage in ipairs({ 3, 12 }) do
     local victim = worm(35, 0, false) -- a 3 HP worm after lethal damage
     emit{ phase = "post", kind = "hit", source_weapon = "stock.bazooka", worm = victim, lost = 3, amount = damage }
-    assert(victim.commits == 1 and victim.display_target == 0 and victim.hp == 0,
-      "exact lethal damage and overkill update the label to zero")
+    assert(victim.shows == 1 and victim.commits == 0 and victim.display_target == 0 and victim.hp == 0,
+      "exact lethal damage and overkill show zero, WA keeping the damage it owes (its damage phase kills)")
     assert(victim.state == "hit" and victim.vx == 6 and victim.vy == -8,
       "the zero-HP victim keeps its normal movement and death sequence")
   end
@@ -64,6 +69,11 @@ local function run(live_first)
   end
   emit{ phase = "post", kind = "hit", worm = w, lost = 0 }
   assert(w.commits == 2, "an eaten or cooldown-blocked hit does not commit")
+  -- An older DLL without show_health: the lethal hit commits, as before.
+  local old = worm(36, 0, false)
+  old.show_health = nil
+  emit{ phase = "post", kind = "hit", worm = old, lost = 3 }
+  assert(old.commits == 1 and old.display_target == 0, "without show_health, a lethal hit still updates the label")
 end
 run(true)
 run(false)

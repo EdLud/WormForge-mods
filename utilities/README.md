@@ -33,9 +33,12 @@ Gravity and wind belong to the profile's scheme (**Manage Scheme (.WSC)** in the
 including `gravity`, `constant_wind` and `wind`.
 
 Live HP requires a DLL providing `worm:commit_health()`. It commits actual
-damage through WA's health-label handler, including for 1 HP survivors
-and zero-HP worms awaiting their death animation,
-without synthetic hits, healing pulses or changing the worm's state. Ice
+damage through WA's health-label handler, including for 1 HP survivors,
+without synthetic hits, healing pulses or changing the worm's state. A worm
+brought to 0 shows 0 at once through `worm:show_health()` (0.9.6 DLLs), which
+leaves WA the damage it owes: WA then kills it once the battlefield settles,
+mid-turn, as without Live HP. (A commit there left WA nothing owed, and the
+worm stood at 0 until the turn ended; an older DLL still behaves so.) Ice
 Arrow can freeze its victim normally. Active worms retain WA's ordinary
 health timing; death timing stays with WA for every worm. Nothing forces
 worms to die in mid-flight.
