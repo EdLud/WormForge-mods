@@ -10,6 +10,7 @@ and don't ship with the pack.
 
 - **Lantern:** throw a persistent physical light, visible to its coalition.
   It uses native mine movement without a mine's fuse or trigger, and drowns.
+  Worms pass through it; land, crates, shots and blasts still meet it.
 - **Far Sight:** click to place a stationary coalition light for the round.
   Terrain blocking rejects solid-terrain clicks without spending ammo and casts
   terrain shadows. Disable it to place and reveal through terrain.
