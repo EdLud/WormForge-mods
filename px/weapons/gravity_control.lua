@@ -31,6 +31,7 @@ function weapon.setup()
   local gravity_factor          -- ModulatedGravity while Gravity Control is on
   local SETTLE_LIMIT = 500      -- frames (10 s) the turn clock may stand still
   local clock_seen = {}         -- worm id -> { clock, frames }: each worm counts the frames itself
+  local retreating = false      -- the turn's retreat: the gravity holds until the turn ends
 
   local function gravity_back()
     gravity_factor, clock_seen = nil, {}
@@ -40,7 +41,8 @@ function weapon.setup()
   -- Every worm sees each frame once, so the first to count SETTLE_LIMIT frames
   -- with the clock where it was marks 10 s, whichever worms are still alive.
   local function watch_clock(worm)
-    if not gravity_factor then
+    -- WA's turn clock stands still through a retreat, which is not settling.
+    if not gravity_factor or retreating then
       return
     end
     local clock = wa.world.turn_clock()
@@ -55,7 +57,11 @@ function weapon.setup()
     end
   end
 
-  -- Reset at turn end; delaying until the next turn can softlock settling.
+  wa.on.turn_retreat(function() retreating = true end)
+
+  -- Reset at turn end, after the retreat; delaying until the next turn can
+  -- softlock settling. A turn whose worm died gets its end (with no worm)
+  -- just before the next team's turn starts.
   require("lib/turn_controls").register("px.gravity_control", {
     frame = function(worm)
       gravity_initial = gravity_initial or wa.world.gravity()
@@ -79,6 +85,7 @@ function weapon.setup()
       wa.world.set_gravity(gravity_initial * gravity_factor)
     end,
     finish = function()
+      retreating = false
       if gravity_factor then gravity_back() end
       gravity_choice = nil
     end,
