@@ -1,0 +1,22 @@
+# Saw -- both PX weapon records at the fired 50% size.
+description = "Project X's stationary saw blade (two weapons)."
+
+[weapons]
+"px.saw_grenade" = { row = "F8", column = 1 }
+"px.saw_place" = { row = "F8", column = 2 }
+
+[weapon_settings."px.saw_grenade"]
+ammo = -1
+delay = 0
+crate = 0
+
+[weapon_settings."px.saw_place"]
+ammo = -1
+delay = 0
+crate = 0
+
+[options."px.saw_grenade"]
+size = 50
+
+[options."px.saw_place"]
+size = 50

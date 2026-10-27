@@ -1,0 +1,21 @@
+# The Megashark on its own, with infinite ammo and no weapon delay, so it can
+# be tested at once. Load it from the mod loader's Profile tab once the loader
+# has copied it into WormForge/Profiles, or copy this file there by hand. Move
+# it anywhere on the panel; any weapon may go any place.
+#
+# Aim, fire once, and twelve bullets leave the gun four frames apart. Past 90
+# pixels from you they turn on their own, and the gun follows your aim through
+# the burst.
+#
+# A component in no panel slot registers nothing (REPORT.md 11.13), so removing
+# the weapon from a profile leaves the match working.
+description = "PX's Megashark: twelve homing chlorophyte bullets in one burst, four to a target, with the record's own blast on impact."
+features = []
+
+[weapons]
+"px.megashark" = { row = "F10", column = 2 }
+
+[weapon_settings."px.megashark"]
+ammo = -1
+delay = 0
+crate = 0

@@ -11,6 +11,9 @@ The packs players receive, selected by `catalogue.toml` with their profiles:
 - `utilities/` — WormForge's own add-ons and tools: Utilities, Fog of war,
   +N Seconds and the Cursor.
 - `sdk/` — the shared helpers other packs build on.
+- `from_modders/` — community packs, packs only (their profiles stay out of the
+  catalogue): reddaz's Effects SDK, Electric Mine, Sequential Fire (Megashark,
+  FAMAS, Ripper Star), Saw and Keeper Bee.
 
 `examples/` holds developer and diagnostic bundles; none of them ships. Diagnostic components
 and their support files are removed during public staging.

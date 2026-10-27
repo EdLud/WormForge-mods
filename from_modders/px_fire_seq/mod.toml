@@ -1,0 +1,67 @@
+# Project X's sequential-firing weapons -- the Ripper Star, the Megashark, the
+# hold-to-fire Megashark and the FAMAS -- and the shared base that fires their
+# bursts, ported to WormForge API 4.
+#
+# PX sequences these weapons by overriding `CWorm::FireFinal` and returning
+# before the stock fire so WA loops the shot (`ripper_fire.txt:11-32`,
+# `megashark_firing.txt:49-76`). API 4 has no global shot hook, so the base
+# (`lib/fire_seq.lua`) fires the first shot itself and lets a hidden timer
+# actor fire the rest, while its brain holds `worm.shots_fired`/`shots_to_fire`
+# at 0 and 1 so WA keeps the worm in its firing animation, as PX held
+# `nShoots = 1; nShooted = 0` (the laser's own shape, `laser_gun.lua:180` --
+# never from `on_fire`). The Megashark, its hold version and the FAMAS spawn
+# Lua actor rounds with `fire_sequential_actor`; the Ripper's live build uses
+# the missile base (`fire_seq_mis`). See README.md and the report.
+#
+# One bundle, not one per weapon, because they share the base and PX's
+# weapon-less worm posture (`sprites/px_hold/aim*`, `draw*`, the three hands),
+# and a weapon's `worm_sprites` sheets resolve only inside the bundle that
+# claims them (API 4 `require` is bundle-local). The trail is the exception:
+# it is the shared `effects.sdk` module (`wf-lib/effects/trail`).
+#
+# A component bundle (format_version 2): nothing runs until a profile selects
+# it; profiles/ holds one per weapon to load in the mod loader.
+id = "px.fire_seq"
+name = "Project X Sequential Fire"
+version = "1.3.0"
+author = "reddaz"
+api_version = 4
+format_version = 2
+dependencies = ["effects.sdk"]
+mod_icon = "profiles/mod_icon.png"
+
+[[components]]
+id = "px.ripper_star"
+type = "weapon"
+name = "Ripper Star"
+description = "PX's Ripper: a flurry of fifteen shurikens, one every four frames, thrown along the worm's live aim with PX's small wobble. Each bites a worm, mine, barrel or crate within 20 pixels of its impact for 4 damage and a shove, or sticks in the land."
+entry = "weapons/ripper_star.lua"
+icon = "sprites/ripper_star/icon.png"
+default_position = { row = "F10", column = 1 }
+
+[[components]]
+id = "px.megashark"
+type = "weapon"
+name = "Megashark"
+description = "PX's Megashark: a burst of twelve chlorophyte bullets, one every four frames, each on a long green trail. Past 90 pixels from the firing worm each one seeks the closest visible enemy, four bullets to a target, and blasts on impact with the record's own 9-power, 670-push explosion."
+entry = "weapons/megashark.lua"
+icon = "sprites/megashark/icon.png"
+default_position = { row = "F10", column = 2 }
+
+[[components]]
+id = "px.megashark_hold"
+type = "weapon"
+name = "Megashark (hold to fire)"
+description = "PX's Megashark on a separate slot, firing the inventory's ammo up to 20 bullets instead of a fixed twelve. Hold Space to keep the burst going; release it and the burst stops after the bullet already in flight. Infinite ammo uses the 20 cap."
+entry = "weapons/fire_while_holding_megashark.lua"
+icon = "sprites/megashark/icon.png"
+default_position = { row = "F10", column = 3 }
+
+[[components]]
+id = "px.famas"
+type = "weapon"
+name = "FAMAS"
+description = "Project X's FAMAS: three-round bursts, three bursts, then two on the last, each round a straight 13-damage bullet with a 250 push."
+entry = "weapons/famas.lua"
+icon = "sprites/famas/icon.png"
+default_position = { row = "F3", column = 6 }

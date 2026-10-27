@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.19.2"
+version = "0.19.4"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -869,8 +869,126 @@ entry = "components/specialists.lua"
 id = "ktk.control"
 type = "feature"
 name = "Kill the King"
-description = "Project X's Kill the King (CKtkControl): the attackers must destroy the defenders' king before the timer runs out."
+description = "Project X's Kill the King (CKtkControl): the attackers must destroy the defenders' king before the timer runs out. Kings, teams and timer are component options; edge slices start clear of mines, drums and crates."
 entry = "components/kill_the_king.lua"
+
+[[components.options]]
+key = "kings"
+type = "choice"
+choices = ["one", "two"]
+default = "one"
+label = "Number of kings"
+description = "One uses King 1 only. Two adds King 2; either king falling wins for the attackers, as in PX."
+
+[[components.options]]
+key = "attack_time_seconds"
+type = "int"
+min = 10
+max = 3600
+default = 300
+label = "Attack time (seconds)"
+description = "Timer for the attackers. 300 = 5:00."
+
+[[components.options]]
+key = "timer_mode"
+type = "choice"
+choices = ["attack_only", "defend_and_compensate"]
+default = "attack_only"
+label = "Timer mode"
+description = "Attack only: the timer drains on attacker turns. Defend and compensate also adds time back on defender turns."
+
+[[components.options]]
+key = "defender_gain_ms"
+type = "int"
+min = 0
+max = 100
+default = 5
+label = "Defender time gain (ms/frame)"
+description = "Only used by DefendAndCompensate. PX adds 5 ms per defender frame."
+
+[[components.options]]
+key = "attackers_team"
+type = "choice"
+choices = ["red", "blue", "green", "yellow", "purple", "cyan"]
+default = "red"
+label = "Attackers' team"
+description = "WA team colour that attacks."
+
+[[components.options]]
+key = "defenders_team"
+type = "choice"
+choices = ["red", "blue", "green", "yellow", "purple", "cyan"]
+default = "blue"
+label = "Defenders' team"
+description = "WA team colour that owns both kings."
+
+[[components.options]]
+key = "king1_x"
+type = "int"
+min = 0
+max = 10000
+default = 106
+label = "King 1 X (top-left)"
+description = "Map pixel coordinate of King 1's top-left corner."
+
+[[components.options]]
+key = "king1_y"
+type = "int"
+min = 0
+max = 10000
+default = 829
+label = "King 1 Y (top-left)"
+description = "Map pixel coordinate of King 1's top-left corner."
+
+[[components.options]]
+key = "king1_destroy_percent"
+type = "int"
+min = 1
+max = 100
+default = 70
+label = "King 1 destruction threshold (%)"
+description = "Solid terrain that must be destroyed. 70 leaves 30% HP; 100 needs full destruction."
+
+[[components.options]]
+key = "king2_x"
+type = "int"
+min = 0
+max = 10000
+default = 1420
+label = "King 2 X (top-left)"
+description = "Map pixel coordinate of King 2's top-left corner. Used when kings = two."
+
+[[components.options]]
+key = "king2_y"
+type = "int"
+min = 0
+max = 10000
+default = 300
+label = "King 2 Y (top-left)"
+description = "Map pixel coordinate of King 2's top-left corner. Used when kings = two."
+
+[[components.options]]
+key = "king2_destroy_percent"
+type = "int"
+min = 1
+max = 100
+default = 70
+label = "King 2 destruction threshold (%)"
+description = "Solid terrain that must be destroyed. 70 leaves 30% HP; 100 needs full destruction."
+
+[[components.options]]
+key = "show_timer"
+type = "bool"
+default = true
+label = "Show attack timer"
+description = "Draw the remaining attack time on the HUD."
+
+[[components.options]]
+key = "show_king_hp"
+type = "bool"
+default = true
+label = "Show king HP"
+description = "Draw each king's remaining HP on the HUD."
 
 [[components]]
 id = "px.oil_drums"

@@ -1,0 +1,135 @@
+# Project X's saw (map_object_saw): two weapon records plus the random map
+# spawner. A saw is a stationary, invincible spinning blade; see lib/saw.lua
+# and report_saw.md for the source-verified behaviour.
+id = "px.saw"
+name = "Saw"
+version = "0.6.4"
+author = "reddaz"
+api_version = 4
+format_version = 2
+mod_icon = "profiles/saw_mod.png"
+dependencies = ["effects.sdk", "px.electric", "wf.sdk"]
+
+[[components]]
+id = "px.saw_grenade"
+type = "weapon"
+name = "Saw"
+description = "Project X's saw grenade: a spinning blade planted where it lands, slicing and pushing anything that touches it."
+entry = "weapons/saw_grenade.lua"
+icon = "sprites/saw/icon.png"
+default_position = { row = "F8", column = 1 }
+
+[[components.options]]
+key = "size"
+type = "int"
+default = 50
+min = 10
+max = 100
+label = "Saw size (%)"
+description = "Art and collision scale. PX's fired saw is 50%; the editor default is 100%."
+
+[[components]]
+id = "px.saw_place"
+type = "weapon"
+name = "Saw (place)"
+description = "Project X's weak-throw saw: the same planted blade, thrown with the place record."
+entry = "weapons/saw_place.lua"
+icon = "sprites/saw/icon_place.png"
+default_position = { row = "F8", column = 2 }
+
+[[components.options]]
+key = "size"
+type = "int"
+default = 50
+min = 10
+max = 100
+label = "Saw size (%)"
+description = "Art and collision scale. PX's fired saw is 50%; the editor default is 100%."
+
+[[components]]
+id = "px.saw_random"
+type = "feature"
+name = "Random saws"
+description = "PX's random_saws: seed the map with teamless saws, one per vertical slice, on the first turn."
+entry = "weapons/saw_random.lua"
+
+[[components.options]]
+key = "quantity"
+type = "int"
+default = 4
+min = 1
+max = 12
+label = "Random saws"
+description = "One saw per map slice. PX falls back to 4 when its undefined setting is absent."
+
+[sprites."sprites/saw/sawsheet.png"]
+frames = 11
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/foldedblades.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+# Invisible collision discs. The engine ties a `mask` actor to its sprite's
+# pixel size, so lib/saw.lua picks the largest disc below the Lua circle.
+[sprites."sprites/saw/mask_08.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_16.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_24.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_32.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_40.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_48.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_56.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_64.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_72.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_80.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_88.png"]
+frames = 1
+fps = 15
+play = "loop"
+
+[sprites."sprites/saw/mask_96.png"]
+frames = 1
+fps = 15
+play = "loop"
