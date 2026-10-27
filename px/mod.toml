@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.19.7"
+version = "0.19.8"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1533,6 +1533,24 @@ description = "Highlander's Gravler."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravler_ico.png"
 default_position = { row = "F5", column = 6 }
+
+[[components.options]]
+key = "timer"
+type = "int"
+min = 1
+max = 60
+default = 20
+label = "Timer (seconds)"
+description = "How long after it's fired the Gravler blows up on its own, unless it hits a worm or an object first."
+
+[[components.options]]
+key = "blast_power"
+type = "int"
+min = 1
+max = 100
+default = 40
+label = "Blast power (radius and damage)"
+description = "The size of its explosion. WA ties a blast's radius and damage together, so this sets both."
 
 [[components]]
 id = "px.mortar_strike"

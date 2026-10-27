@@ -5802,6 +5802,18 @@ do
     M.message(worm(32), wa.msg.START_TURN)
     check("sentry: each turn refills its configured ammo", s.ammo == options.ammo and s.active)
   end
+  for _, setting in ipairs({ { timer = 20, blast_power = 40 }, { timer = 5, blast_power = 75 } }) do
+    new_match()
+    HIGHLANDER_CLAIMING = "px.gravler"
+    require("components/loader").install({ id = "px.gravler", option = function(key)
+      return assert(setting[key], key)
+    end })
+    HIGHLANDER_CLAIMING = nil
+    local spec = replaced[#replaced]
+    check("gravler: timer " .. setting.timer .. " s and blast power " .. setting.blast_power,
+      spec.missile.fuse == setting.timer * 1000 and spec.missile.explosion.power == setting.blast_power
+        and spec.missile.explosion.push_pct == 110)
+  end
   for _, fuel in ipairs({ 1, 255, 300, 999 }) do
     new_match()
     HIGHLANDER_CLAIMING = "px.helicopter"

@@ -68,4 +68,11 @@ function weapon.definition()
   })
 end
 
+-- The profile's options: its fuse, in seconds, and its blast. WA's power is
+-- the blast's radius and damage together (one record field).
+function weapon.configure(ctx, spec)
+  spec.missile.fuse = ctx.option("timer") * 1000
+  spec.missile.explosion.power = ctx.option("blast_power")
+end
+
 return weapon
