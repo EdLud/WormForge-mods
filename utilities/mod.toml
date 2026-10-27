@@ -254,6 +254,14 @@ label = "Projectile shadow casting"
 description = "Shadow casting for projectiles' light: terrain blocks it."
 
 [[components.options]]
+key = "proj_ownership"
+type = "choice"
+choices = ["everyone", "active"]
+default = "everyone"
+label = "Projectile vision"
+description = "Who sees a projectile's light: everyone, or only the alliance that fired it (for a projectile without a team, the alliance whose turn it is, its retreat included)."
+
+[[components.options]]
 key = "explosion_circle"
 type = "int"
 default = 40

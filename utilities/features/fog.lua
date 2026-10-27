@@ -13,6 +13,7 @@ local KEYS = {
   "proj_cone_length",
   "proj_cone_width",
   "proj_shadow_cast",
+  "proj_ownership",
   "explosion_circle",
   "explosion_ownership",
   "crate_circle",
