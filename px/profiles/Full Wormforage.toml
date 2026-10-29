@@ -216,6 +216,7 @@ ammo = -1
 [weapon_settings."px.swim_suit"]
 after_use = "continue"
 ammo = -1
+auto_use = true
 
 [weapon_settings."px.thumper_nade"]
 after_use = "continue"

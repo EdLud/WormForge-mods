@@ -4,6 +4,13 @@ local weapon = {}
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {}
 
+-- Auto-Use: off by default (a profile opts in with weapon_settings."px.swim_suit".auto_use).
+weapon.defaults = { auto_use = false }
+
+-- Set by weapon.configure(ctx), read inside the closures weapon.setup() builds below.
+local automatic = false
+local fast_walk_auto_use = false -- whether stock.fast_walk's own Auto-Use is on in this profile
+
 function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     copy_from = "stock.laser_sight",
@@ -86,6 +93,7 @@ function weapon.setup()
 
   local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
   local swim_in_game = false    -- SwimInGame: someone has worn the suit
+  local pending = nil           -- Auto-Use: worm id to put the suit on for at this turn's start
   local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy, dive, dived }
 
   local function swimmer_of(worm)
@@ -101,6 +109,14 @@ function weapon.setup()
   local function swim_drop_art(worm, s)
     if s.body then s.body:despawn(); s.body = nil end
     worm.body_visible = true
+  end
+
+  -- The suit goes on: FireFinal(Swim Suit), whether fired by hand or by Auto-Use.
+  local function suit_on(worm, s)
+    wa.sound.play(worm, "sounds/swim_suit/putting_on_ssuit.wav")
+    s.suit, s.plopready = true, true
+    swim_in_game = true
+    worm.collision_mask = SWIM_SUIT_MASK
   end
 
   -- The suit comes off, the water's bit back in its mask. `sink`: it gave out
@@ -372,6 +388,16 @@ function weapon.setup()
 
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
+      if pending == worm.id and worm.turn then
+        -- Auto-Use: spend one unit putting the suit on, as Fast Walk's own
+        -- switch does at turn start.
+        pending = nil
+        local s = swimmer_of(worm)
+        if not s.suit and worm:ammo("px.swim_suit") ~= 0 then
+          suit_on(worm, s)
+          worm:ammo("px.swim_suit", -1)
+        end
+      end
       swim_frame(worm)
     elseif msg == wa.msg.JUMP then
       -- M_ENTER: no jumping while it swims.
@@ -390,10 +416,7 @@ function weapon.setup()
         -- FireFinal(Swim Suit), in place of WA's laser sight.
         local s = swimmer_of(worm)
         if not s.suit then
-          wa.sound.play(worm, "sounds/swim_suit/putting_on_ssuit.wav")
-          s.suit, s.plopready = true, true
-          swim_in_game = true
-          worm.collision_mask = SWIM_SUIT_MASK
+          suit_on(worm, s)
         elseif worm.y < wa.world.water() then
           suit_off(worm, s, false)
         end
@@ -403,9 +426,18 @@ function weapon.setup()
     end
   end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.FIRE_WEAPON } })
 
-  -- fastswim: the swim speed is 2 again every turn.
-  wa.on.turn_start(function()
-    swim_speed = 2
+  -- fastswim: the swim speed starts each turn at what Fast Walk's own
+  -- Auto-Use would make it (6, switched on, if the profile sets it; 2
+  -- otherwise) — Fast Walk's engine-side Auto-Use flips its native bit
+  -- directly and never fires through Lua, so this mirrors it rather than
+  -- waiting on a Fast Walk FIRE_WEAPON that won't come. Manually firing
+  -- Fast Walk mid-turn still toggles it, above. Auto-Use: queue putting the
+  -- suit on for whoever's turn is starting (consumed at its first frame,
+  -- above); manually taking it off mid-turn does not bring it back until
+  -- the next turn starts.
+  wa.on.turn_start(function(ev)
+    swim_speed = fast_walk_auto_use and 6 or 2
+    if automatic and ev.worm then pending = ev.worm.id end
   end)
 
   -- A missile in the water hits worms too, once anyone has worn the suit.
@@ -430,6 +462,12 @@ function weapon.setup()
     end)
   end
   end
+end
+
+function weapon.configure(ctx)
+  automatic = ctx.data.auto_use == true
+  local fast_walk = ctx.weapons["stock.fast_walk"]
+  fast_walk_auto_use = fast_walk ~= nil and fast_walk.data.auto_use == true
 end
 
 return weapon
