@@ -103,10 +103,15 @@ table.sort(placed, function(a, b) return INDEX[a.slot] < INDEX[b.slot] end)
 for id in pairs(highlander) do ids[#ids + 1] = id end
 table.sort(ids)
 for _, id in ipairs(ids) do placed[#placed + 1] = { id = id } end
+-- Each entry's `data`, as the engine's: the weapon's defaults (Highlander's
+-- profile sets none of their keys).
+local defaults_of = require("components/weapon").defaults
 local weapons = {}
 for _, w in ipairs(placed) do
   local s = settings[w.id] or {}
   w.options = { pool = s.pool or "not dealt", cavern = s.cavern ~= false }
+  w.data = {}
+  for k, v in pairs(highlander[w.id] and defaults_of(w.id) or {}) do w.data[k] = v end
   weapons[w.id] = w
 end
 
@@ -118,7 +123,7 @@ for _, w in ipairs(placed) do
     HIGHLANDER_CLAIMING = w.id
     local options = own_options[w.id] or {}
     loader.install({ id = w.id, weapons = weapons, placed = placed,
-      options = options, option = function(key)
+      data = w.data, options = options, option = function(key)
         assert(options[key] ~= nil, w.id .. " has no option " .. key)
         return options[key]
       end })
