@@ -7,7 +7,7 @@ return {
     ammo = { round_start = 0 },
     delay = 0,
     crate = { chance_pct = 40, type = "utility" },
-    on_collect = "use",
+    auto_use = true,
     after_use = "continue",
   },
   install = function(ctx)
@@ -16,7 +16,7 @@ return {
     local bonus_mode = ctx.option("bonus_mode")
     local stacking = bonus_mode == "stack"
     local retreat_collect = ctx.option("retreat_collect")
-    local automatic = ctx.data.on_collect ~= "keep"
+    local automatic = ctx.data.auto_use ~= false
     local used, pending, started = {}, nil, false
 
     local function add_time(worm, count, retreat)

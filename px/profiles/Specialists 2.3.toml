@@ -745,7 +745,7 @@ ammo = -1
 delay = 0
 after_use = "continue"
 crate_pct = 0
-on_collect = "use"
+auto_use = true
 
 [weapons."stock.fast_walk"]
 row = "utility"

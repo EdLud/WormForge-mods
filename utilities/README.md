@@ -90,7 +90,7 @@ Using this utility does not end the turn. Each countdown is capped at one hour.
 "utilities.plus_ten" = { row = "utility", column = 6 }
 
 [weapon_settings]
-"utilities.plus_ten" = { crate = 60, on_collect = "use" }
+"utilities.plus_ten" = { crate = 60, auto_use = true }
 
 [options."utilities.plus_ten"]
 seconds = 15

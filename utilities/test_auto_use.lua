@@ -32,7 +32,7 @@ local function setup(policy, ammo, options)
       return function(fn) hooks[name] = fn end
     end }),
   }
-  definition.install({ id = id, data = { on_collect = policy }, option = function(key)
+  definition.install({ id = id, data = { auto_use = policy == "use" }, option = function(key)
     assert(options[key] ~= nil, key)
     return options[key]
   end })

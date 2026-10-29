@@ -97,7 +97,7 @@ label = "Damage number side"
 description = "alternate starts on the worm's facing side, then flips left/right per worm so hits stay readable; facing always follows the worm; random is a local coin."
 
 # An instant utility of our own: configurable extra time, in utility crates.
-# Auto-Use is configured by the profile's compatible on_collect use/keep choice.
+# Auto-Use is the profile's auto_use setting (the older on_collect = "use"/"keep" still reads).
 [[components]]
 
 id = "utilities.plus_ten"

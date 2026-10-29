@@ -193,7 +193,7 @@ after_use = "continue"
 delay = 0
 crate_pct = 0
 power = 0
-on_collect = "use"
+auto_use = true
 
 [weapon_settings."stock.skip_go"]
 ammo = -1
