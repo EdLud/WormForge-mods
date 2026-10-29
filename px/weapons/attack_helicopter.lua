@@ -60,7 +60,8 @@ return {
     local COOLDOWN_SHOT  = 4       -- frames between shots (:270)
     local BULLET_SPEED   = 35      -- homeToPlace speed (:387, "35.0")
     local BULLET_FRAMES  = 3       -- homeToPlace runs this long (:384)
-    local BULLET_FUSE    = 3000    -- timeBeforeExplosion (:304)
+    local BULLET_FUSE    = 3000    -- timeBeforeExplosion (:304), the longest a round flies
+    local EXIT_MARGIN    = 3       -- frames a round flies on past a side of the map
     local MUZZLE         = 22      -- barrel length: the gun sheet's tip above its centre
     local BLAST_DAMAGE   = 80      -- Weap->launch.explosion.damage (:477)
     local BLAST_KIND     = 100     -- big blast (PX's pushPower 120 has no field here)
@@ -207,23 +208,23 @@ return {
     -- a little random angle and speed, gravity and no bounce, gone after 100
     -- frames. The sentry port's `casing()` (weapons/sentry_gun.lua:16-49) is the
     -- same PxParticle(115); its sprite is WA's uzicase sheet.
+    --
+    -- A casing touches nothing, so it is no actor: the shot notes where and how
+    -- it left, and wa.on.draw (below) works out where it is now. As actors, one
+    -- per shot for 100 frames, they cost a brain call a frame each and held
+    -- room in WA's object pool, which counts every Lua actor as a missile:
+    -- four helicopters' casings left room for few bullets.
+    local casings = {} -- in the order they left: { x, y, vx, vy, g, born }
     local function eject(h)
       local ang = h.gun + HALF_PI + math.rad(wa.random(-CASING_JITTER, CASING_JITTER))
       local speed = wa.random(CASING_SPEED_MIN, CASING_SPEED_MAX) / 100
-      local life, spin = CASING_LIFE, 0
-      wa.actors.spawn({
-        sprite = ART .. "casing.png", x = h.x, y = h.y + 10, -- PX: PosX, PosY + 10 (:369)
+      local now = wa.world.frame()
+      while casings[1] and now - casings[1].born >= CASING_LIFE do table.remove(casings, 1) end
+      casings[#casings + 1] = {
+        x = h.x, y = h.y + 10, -- PX: PosX, PosY + 10 (:369)
         vx = wa.math.cos(ang) * speed, vy = wa.math.sin(ang) * speed,
-        gravity = false, collide = false, owner = h.owner, kind = "casing",
-        on = function(c)
-          life = life - 1
-          if life <= 0 then c:despawn(); return end
-          c:gravity()
-          c:move({ terrain = false, worms = false })
-          spin = (spin + 1) % CASING_FRAMES
-          c:frame(spin)
-        end,
-      })
+        g = wa.world.gravity(), born = now,
+      }
     end
 
     -- PX's target selection in shootBullet (the FindWormInBox / FindShootableInBox
@@ -298,6 +299,32 @@ return {
       return tx, ty -- PX: shoots at the click itself (sometimes "kinda fun")
     end
 
+    -- A round's fuse: PX's 3000 ms, or until its line has left the map by a side
+    -- if that is sooner. A round flies straight at BULLET_SPEED (no gravity, no
+    -- wind; homeToPlace only turns it onto this same line), so past a side it
+    -- can never come back to hit anything. PX's rounds that missed flew off the
+    -- side and sank in the sea outside the map until the 3 s ran out: two of
+    -- three rounds in reddaz's 4-UP replay (2026-10-27), each holding WA's
+    -- object pool -- the pool every missile and Lua actor is counted in -- for
+    -- ~160 frames when a hit took at most 54.
+    local function fuse_ms(sx, sy, tx, ty)
+      local dx, dy = tx - sx, ty - sy
+      local len = math.sqrt(dx * dx + dy * dy)
+      if len == 0 then return BULLET_FUSE end
+      local vx = dx / len * BULLET_SPEED
+      local w = wa.world.size().w
+      local frames
+      if vx < -0.01 then
+        frames = sx / -vx
+      elseif vx > 0.01 then
+        frames = (w - sx) / vx
+      else
+        return BULLET_FUSE
+      end
+      frames = math.max(frames, 0) + EXIT_MARGIN
+      return math.min(BULLET_FUSE, (math.floor(frames) + 1) * 20)
+    end
+
     -- PX's shootBullet (:288-380): launch a real missile at the muzzle, remember
     -- the target so wa.on.missile_frame can home it, then the shooting sound and
     -- the casing. True when a round left the barrel; false when WA's object pool
@@ -342,20 +369,30 @@ return {
       -- A `missile` override on PX's own bullet record crashed WA on launch
       -- (Access Violation, null read; REPORT.md 11.8), so what the slot builds
       -- on is not what is launched.
+      -- PX aims each bullet at the picked target, +-1 random on its x (:362).
+      local tx, ty = pick_target(h)
+      tx = tx + wa.random(-1, 1)
       local ok, id = pcall(wa.weapons.launch, {
         weapon = "stock.bazooka", owner = h.owner, x = sx, y = sy, vx = 0, vy = 0,
-        missile = { trail = { sprite = 0 }, explosion = { power = 13 }, fuse = BULLET_FUSE,
-          gravity_pct = 0, wind_pct = 0 },
+        missile = { trail = { sprite = 0 }, explosion = { power = 13 },
+          fuse = fuse_ms(sx, sy, tx, ty), gravity_pct = 0, wind_pct = 0 },
       })
       if not ok then
         if tostring(id):find("object pool is full", 1, true) then return false end
         error(id, 0)
       end
       if id then
-        -- PX aims each bullet at the picked target, +-1 random on its x (:362).
-        local tx, ty = pick_target(h)
-        shots[id] = { x = tx + wa.random(-1, 1), y = ty, frames = BULLET_FRAMES,
-          owner = h.owner }
+        -- Forget the rounds whose frames stopped (any order does: each one is
+        -- dropped on its own).
+        local now = wa.world.frame()
+        for _, old in ipairs(wa.sorted(shots)) do
+          local r = shots[old]
+          if now - (r.seen or r.born) > 1 then
+            trail.drop(old)
+            shots[old] = nil
+          end
+        end
+        shots[id] = { x = tx, y = ty, frames = BULLET_FRAMES, owner = h.owner, born = now }
         trail.add(id, h.owner,  {every = 1, g = 30, b = 10}) -- the round's trail, drawn by lib/px_trail.lua
       end
       h.firing = true
@@ -497,22 +534,12 @@ return {
     -- runs it before super, so it is the frame's "pre" phase.
     --
     -- PX also draws each bullet itself (redWeapSheet, :364) with WA's own
-    -- sprite left at 0 (:301), turned to its flight (WAT_TrackMovement, :303):
-    -- the Highlander missile-sprite pattern (lib/missile_sprites.lua:112-159)
-    -- hides WA's sprite and follows the missile with a GPU actor.
-    local follow = {} -- missile id -> { actor, seen }
-    local function gone(id)
-      return function(b)
-        local f = follow[id]
-        if f and f.seen then f.seen = false; return end
-        -- The round is gone -- the same test that drops its sprite. Its trail
-        -- stays behind: lib/px_trail.lua sheds it and draws it.
-        trail.drop(id)
-        follow[id] = nil
-        shots[id] = nil
-        b:despawn()
-      end
-    end
+    -- sprite left at 0 (:301), turned to its flight (WAT_TrackMovement, :303).
+    -- WA's sprite is hidden below and wa.on.draw draws the round where the
+    -- missile is, from the positions its frames leave in `shots`. The round is
+    -- gone once its frames stop (hit, burst or off the map): it is no longer
+    -- drawn, its trail is left to lib/px_trail.lua to shed, and the next shot
+    -- forgets it.
     wa.on.missile_frame(function(m)
       local s = shots[m.id]
       if not s then return end
@@ -532,21 +559,48 @@ return {
         end
         return
       end
-      local f = follow[m.id]
-      if not f then
-        f = { actor = wa.actors.spawn({
-          sprite = BULLET, x = m.x, y = m.y, gravity = false, collide = false,
-          owner = s.owner, on = gone(m.id),
-        }) }
-        follow[m.id] = f
+      -- Where it was and is: the draw steps it on from here by WA's own
+      -- interpolation, as the engine steps actors.
+      s.px, s.py = s.cx or m.x, s.cy or m.y
+      s.cx, s.cy, s.vx, s.vy = m.x, m.y, m.vx, m.vy
+      s.seen = wa.world.frame()
+    end)
+
+    -- The casings and rounds, drawn. Presentation only: nothing here is read
+    -- by the simulation, and math.* is fine at render time.
+    local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
+    local QUAD = { points = { {}, {}, {}, {} }, blend = "alpha" }
+    local function put(sheet, frame, x, y, half, rot, flip, depth)
+      local c, sn = math.cos(rot), math.sin(rot)
+      QUAD.sprite, QUAD.frame, QUAD.depth = sheet, frame, depth
+      for i, k in ipairs(CORNERS) do
+        local dx, dy = k[1] * flip * half, k[2] * half
+        QUAD.points[i][1] = x + (dx * c - dy * sn)
+        QUAD.points[i][2] = y + (dx * sn + dy * c)
       end
-      f.seen = true
-      local b = f.actor
-      b.x, b.y, b.vx, b.vy = m.x, m.y, 0, 0
-      b.facing = m.vx < 0 and -1 or 1
-      -- WeapSprite::CalculateAngle, WAT_TrackMovement (rotation 0).
-      local rot = -wa.math.atan(m.vx, m.vy) - math.pi
-      b:gfx({ angle = math.deg(rot) % 360, depth = wa.depth.OBJECTS - 1 })
+      wa.draw.quad(QUAD)
+    end
+    local CASING = ART .. "casing.png"
+    wa.on.draw(function()
+      local now, f = wa.world.frame(), wa.draw.fraction()
+      for _, c in ipairs(casings) do
+        -- Each frame the actor took gravity, then moved (c:gravity, c:move).
+        local age = now - c.born
+        if age < CASING_LIFE then
+          local t = age + f
+          put(CASING, age % CASING_FRAMES, c.x + c.vx * t,
+            c.y + c.vy * t + c.g * t * (t + 1) / 2, 30, 0, 1, wa.depth.BEHIND_TERRAIN)
+        end
+      end
+      for _, id in ipairs(wa.sorted(shots)) do
+        local r = shots[id]
+        if r.seen and now - r.seen <= 1 then
+          -- WeapSprite::CalculateAngle, WAT_TrackMovement (rotation 0); the
+          -- art is mirrored for a round flying left, as the actor's facing was.
+          put(BULLET, 0, r.cx + (r.cx - r.px) * f, r.cy + (r.cy - r.py) * f, 16,
+            -math.atan(r.vx, r.vy) - math.pi, r.vx < 0 and -1 or 1, wa.depth.OBJECTS - 1)
+        end
+      end
     end)
   end,
 }
