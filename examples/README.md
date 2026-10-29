@@ -10,7 +10,7 @@ weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
 of war, +N Seconds and the Cursor) and `mods/sdk/`.
 
 - `starting_guide` (`example.starting_guide`) — the example of the
-  [WormForge starting guide](https://github.com/ropahektic/WormForge/blob/main/docs/starting-guide-1-your-first-mod.md),
+  [WormForge starting guide](https://github.com/EdLud/WormForge/blob/main/docs/starting-guide-1-your-first-mod.md),
   growing part by part. Part 1: `guide.moon_grenade`, WA's Grenade with about
   a third of the gravity, one burst in four digging a crater (`on_explode`,
   `wa.random`, `wa.land.cut`, a HUD line); `profiles/Moon Grenade.toml`

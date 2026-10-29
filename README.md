@@ -3,7 +3,7 @@
 The source repository for WormForge's Lua packs, artwork, sounds, profiles and
 pack tests. Mod changes belong here. The engine lives in
 [EdLud/WormForgeNew](https://github.com/EdLud/WormForgeNew); the production
-catalogue is served by [ropahektic/WormForge](https://github.com/ropahektic/WormForge).
+catalogue is served by [EdLud/WormForge](https://github.com/EdLud/WormForge).
 
 The packs players receive, selected by `catalogue.toml` with their profiles:
 
@@ -91,8 +91,8 @@ that exact commit, excluding ignored or untracked files. The signed index record
 the source repository and commit. With the same retained store and base URL,
 building the same commit produces the same catalogue bytes.
 
-Build in the website checkout (ropahektic/WormForge, served at
-`https://ropahektic.github.io/WormForge/`, the only catalogue address):
+Build in the website checkout (EdLud/WormForge, served at
+`https://edlud.github.io/WormForge/`, the only catalogue address):
 
 ```sh
 python3 catalogue/tools/publish-packs.py --site .

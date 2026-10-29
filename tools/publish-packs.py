@@ -47,9 +47,9 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-# The catalogue the DLL reads (weapons::PUBLIC_INDEX_URL): ropahektic/WormForge,
+# The catalogue the DLL reads (weapons::PUBLIC_INDEX_URL): EdLud/WormForge,
 # the only one.
-BASE_URL = "https://ropahektic.github.io/WormForge/downloads/packs/"
+BASE_URL = "https://edlud.github.io/WormForge/downloads/packs/"
 INDEX_SCHEMA = 3
 SOURCE_URL = "https://github.com/EdLud/WormForge-mods"
 # Never in a zip: the OS's and Python's leftovers.
