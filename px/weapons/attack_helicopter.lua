@@ -298,11 +298,13 @@ return {
       return tx, ty -- PX: shoots at the click itself (sometimes "kinda fun")
     end
 
-    -- PX's shootBullet (:288-380): pick a shooting sound, launch a real missile
-    -- at the muzzle and remember the target so wa.on.missile_frame can home it.
+    -- PX's shootBullet (:288-380): launch a real missile at the muzzle, remember
+    -- the target so wa.on.missile_frame can home it, then the shooting sound and
+    -- the casing. True when a round left the barrel; false when WA's object pool
+    -- is full, and then nothing plays, flies or drops: a helicopter that retried
+    -- every frame played a WAV and logged an error each time (reddaz's 4-UP
+    -- replay, 2026-10-27: ~140 refused launches a second).
     local function shoot(h)
-      wa.sound.play(h.owner, SND .. "hks" .. wa.random(1, 3) .. ".wav")
-      h.firing = true
       -- PX spawns each round at PosX + spriteXOffset + 10, PosY + spriteYOffset
       -- + 20 (:310-311), a fixed offset from the gun's anchor -- that reads as a
       -- nudge off the hull, not the barrel. Fire from the muzzle instead: the
@@ -340,11 +342,15 @@ return {
       -- A `missile` override on PX's own bullet record crashed WA on launch
       -- (Access Violation, null read; REPORT.md 11.8), so what the slot builds
       -- on is not what is launched.
-      local id = wa.weapons.launch({
+      local ok, id = pcall(wa.weapons.launch, {
         weapon = "stock.bazooka", owner = h.owner, x = sx, y = sy, vx = 0, vy = 0,
         missile = { trail = { sprite = 0 }, explosion = { power = 13 }, fuse = BULLET_FUSE,
           gravity_pct = 0, wind_pct = 0 },
       })
+      if not ok then
+        if tostring(id):find("object pool is full", 1, true) then return false end
+        error(id, 0)
+      end
       if id then
         -- PX aims each bullet at the picked target, +-1 random on its x (:362).
         local tx, ty = pick_target(h)
@@ -352,7 +358,10 @@ return {
           owner = h.owner }
         trail.add(id, h.owner,  {every = 1, g = 30, b = 10}) -- the round's trail, drawn by lib/px_trail.lua
       end
+      h.firing = true
+      wa.sound.play(h.owner, SND .. "hks" .. wa.random(1, 3) .. ".wav")
       eject(h) -- (:369) the casing, after the shot
+      return true
     end
 
     -- PX's heliShoot::Message M_FRAME (:203-284).
@@ -392,8 +401,8 @@ return {
       h.firing = false
       if h.shooting and h.cooldown == 0 then
         update_aim(h, false)
-        shoot(h)
-        h.shots = h.shots + 1
+        -- A refused round is not spent: try again after the shot cadence.
+        if shoot(h) then h.shots = h.shots + 1 end
         h.cooldown = COOLDOWN_SHOT
       elseif h.shooting and h.cooldown > 0 then
         update_aim(h, false)
