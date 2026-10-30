@@ -1,4 +1,4 @@
-description = "First Mole Shopper test batch: F1 Lantern, F2 Far Sight, F3 launched Mole Bombs, F4 stock placed Mole Bomb. Unlimited ammo/time; remaining arsenal is not included yet."
+description = "First Mole Shopper test batch: F1 Lantern, F2 Far Sight, F4 stock Mole Bomb. Unlimited ammo/time; remaining arsenal is not included yet."
 features = ["core.fog"]
 
 [options."core.fog"]
@@ -50,14 +50,6 @@ after_use = "continue"
 row = "F2"
 column = 1
 [weapon_settings."px.far_sight"]
-ammo = -1
-crate_pct = 0
-after_use = "continue"
-
-[weapons."px.mole_bombs"]
-row = "F3"
-column = 1
-[weapon_settings."px.mole_bombs"]
 ammo = -1
 crate_pct = 0
 after_use = "continue"

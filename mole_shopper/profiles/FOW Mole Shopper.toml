@@ -3,10 +3,14 @@
 description = "Mole Shopper by popka and 0rang3: coalition fog, 199 HP, 40-second turns and the original weapon/crate loadout. Shift-assisted aiming is omitted."
 features = ["core.fog", "core.utilities"]
 
+[crates]
+weapon = 48
+health = 4
+utility = 48
+
 [options."core.fog"]
-circle_radius = 110
+circle_radius = 200
 cone_width = 45
-cone_length = 0
 shadow_cast = true
 discover = "texture"
 view_ownership = "alliance"
@@ -18,9 +22,9 @@ proj_cone_length = 0
 proj_cone_width = 45
 proj_shadow_cast = true
 proj_ownership = "active"
-explosion_circle = 40
+explosion_circle = 5
 explosion_ownership = "active"
-crate_circle = 30
+crate_circle = 0
 crate_shadow_cast = true
 spectator_mode = true
 placement_vision = false
@@ -78,7 +82,7 @@ keep_control_after_bumping_head = false
 keep_control_after_skimming = "lose_control"
 loss_of_control_doesn_t_end_turn = false
 manual_worm_placement = false
-maximum_crate_count_on_map_at_once = 5
+maximum_crate_count_on_map_at_once = 11
 maximum_flamelet_count = 200
 maximum_jet_pack_speed = 5.0
 maximum_projectile_speed = 32.0
@@ -101,7 +105,7 @@ rubberworm_air_viscosity_applies_to_worms = false
 rubberworm_anti_lock_aim = false
 rubberworm_anti_sink = false
 rubberworm_bounciness = 0.0
-rubberworm_crate_rate = 0
+rubberworm_crate_rate = 2
 rubberworm_crate_shower = false
 rubberworm_extended_fuses_herds = false
 rubberworm_gravity_strength = 1.0
@@ -578,25 +582,14 @@ remember_selection = true
 ends_turn = false
 retreat = 4000
 
-# Mole Bombs (PX dynamite)
-[weapons."px.mole_bombs"]
+# Mole Bomb (PX dynamite, two moles per use): WA's own, with two shots
+[weapons."stock.mole_bomb"]
 row = "F5"
 column = 1
 
-[weapon_settings."px.mole_bombs"]
+[weapon_settings."stock.mole_bomb"]
 ammo = -1
-delay = 0
-crate_type = "weapon"
-crate_collect = 1
 shots = 2
-after_use = "retreat"
-crate_pct = 0.0
-
-[weapon_settings."px.mole_bombs".record.handling]
-available_in_caves = true
-remember_selection = true
-ends_turn = true
-retreat = 0
 
 # Gravler (PX mine)
 [weapons."px.gravler"]
@@ -1245,26 +1238,6 @@ remember_selection = true
 ends_turn = false
 retreat = -1
 
-# Select Worm (PX select_worm)
-[weapons."stock.select_worm"]
-row = "F12"
-column = 3
-
-[weapon_settings."stock.select_worm"]
-ammo = 0
-delay = 0
-crate_type = "weapon"
-crate_collect = 1
-shots = 1
-after_use = "continue"
-crate_pct = 1.6181229773462784
-
-[weapon_settings."stock.select_worm".record.handling]
-available_in_caves = true
-remember_selection = false
-ends_turn = false
-retreat = 0
-
 # Ice Arrow (PX freeze)
 [weapons."px.ice_arrow"]
 row = "F12"
@@ -1292,7 +1265,7 @@ column = 5
 
 [weapon_settings."px.health_zone"]
 ammo = 1
-delay = 0
+delay = 5
 crate_type = "weapon"
 crate_collect = 1
 shots = 1
