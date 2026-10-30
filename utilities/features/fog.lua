@@ -20,7 +20,8 @@ local KEYS = {
   "crate_shadow_cast",
   "spectator_mode",
   "placement_vision",
-  "fog_floor"
+  "fog_floor",
+  "hide_enemy_hud"
 }
 
 return function(ctx)

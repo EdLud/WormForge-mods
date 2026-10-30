@@ -276,7 +276,7 @@ type = "choice"
 choices = ["everyone", "active"]
 default = "everyone"
 label = "Explosion vision"
-description = "Who sees an explosion's light and its crater: everyone, or only the alliance whose turn made it, its retreat included."
+description = "Who sees an explosion's light and its crater, and the glow of fire: everyone, or only the alliance whose turn made it, its retreat included."
 
 [[components.options]]
 key = "crate_circle"
@@ -308,6 +308,13 @@ choices = ["everything", "all but enemies", "only my side"]
 default = "all but enemies"
 label = "Camera follows"
 description = "everything: WA's normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only your own side's worms, cursor and shots."
+
+[[components.options]]
+key = "hide_enemy_hud"
+type = "bool"
+default = true
+label = "Hide enemy labels and arrows"
+description = "Never show the other sides' worm names, team names and health, the arrow over the worm whose turn it is, the worm select arrows, their cursors, markers and crosshair, even where your light reaches them. One exception: an enemy's health shows while the light of your worm whose turn it is reaches its body. Off: they all show wherever the fog is lit."
 
 [[components.options]]
 key = "placement_vision"
