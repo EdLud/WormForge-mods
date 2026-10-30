@@ -17,7 +17,15 @@ local PACKS = {
 return function(ctx)
   local heal = ctx.option("heal_per_turn")
   if heal > 0 then
-    wa.on.turn_start(function(ev) ev.worm:heal(heal) end)
+    -- The turn's first worm only: a worm switch within the turn (Tab,
+    -- Select Worm) runs turn_start again, with no turn_end before it.
+    local healed = false
+    wa.on.turn_start(function(ev)
+      if healed then return end
+      healed = true
+      ev.worm:heal(heal)
+    end)
+    wa.on.turn_end(function() healed = false end)
   end
 
   local on = {}

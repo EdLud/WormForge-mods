@@ -21,7 +21,7 @@ live_hp = true
 
 | Setting | Type | What it does |
 |---|---|---|
-| Heal at turn start | number, 0–50 | Health the worm whose turn starts gets. |
+| Heal at turn start | number, 0–50 | Health the turn's first worm gets when its team's turn starts. Switching worms within the turn (Tab, Select Worm) doesn't heal again. |
 | ExTurnSide | switch | Left and right turn the worm during rope swings and other actions. By red. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by red. |
 | Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels (wall jump) and Backspace hops it off the land within 30 pixels below (bunny hop). Project X's parkour script. |
