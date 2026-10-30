@@ -304,10 +304,10 @@ description = "Reveal the whole map to spectators and alliances with no survivin
 [[components.options]]
 key = "camera_follow"
 type = "choice"
-choices = ["all", "owned", "own_side_only"]
-default = "owned"
+choices = ["everything", "all but enemies", "only my side"]
+default = "all but enemies"
 label = "Camera follows"
-description = "all: whatever WA follows. owned: never the other side's worms, cursor or shots, so where the camera goes gives none of them away; crates, drums, fire and explosions still move it. own_side_only: not those either."
+description = "everything: WA's normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only your own side's worms, cursor and shots."
 
 [[components.options]]
 key = "placement_vision"
