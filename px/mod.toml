@@ -1665,6 +1665,17 @@ entry = "components/weapon.lua"
 icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
 
+# Not PX's: a pulled mine that runs into the magnet hands it some of its speed
+# (WA's momentum exchange); at full the magnet is knocked away, pulls the mine
+# back and is knocked again. Every WA mine counts, the scheme's too.
+[[components.options]]
+key = "mine_push"
+type = "choice"
+choices = ["none", "light", "full"]
+default = "light"
+label = "Mines push the magnet"
+description = "How hard a mine that runs into the magnet knocks it. None: it stays put and the mines gather on it, as in Project X. Light: a fifth of the push. Full: the mine knocks it away, it pulls the mine back, and so on. Every mine counts, the Mine's and the level's alike; blasts, worms and other weapons push it as usual."
+
 [components.suggests."hl.rules"]
 pool = "second"
 
