@@ -200,6 +200,36 @@ do
     M.actors[1].spec.owner.id == 3, M.actors[1].spec.owner.id)
 end
 
+print("oil drums: a burst between turns is no team's")
+do
+  -- Set off by fire, another drum or a mine after the shot: no team and no
+  -- turn's worm. PX bursts it for team 0; it used to burst into nothing.
+  local d = drum_of("explosive")
+  M.turn = nil
+  check("the pack still stands in for WA's blast", burst(d, 0) == true)
+  local owner = M.fires[1] and M.fires[1].owner
+  check("explosive: its three fires and its blast, all of one owner",
+    #M.fires == 3 and #blasts() == 1 and owner ~= nil
+    and M.fires[3].owner == owner and M.actors[#M.actors].spec.owner == owner)
+  check("the owner is an actor of no worm, gone on its first frame",
+    owner.spec and owner.spec.owner == nil and owner.spec.sprite == false
+    and (owner.spec.on(owner) or owner.dead))
+  d = drum_of("nuke")
+  M.turn = nil
+  burst(d, 0)
+  check("nuke: both first rockets fly, for no team",
+    M.rockets and #M.rockets == 2 and M.rockets[1][1].spec and M.rockets[1][1].spec.owner == nil)
+  d = drum_of("napalm")
+  burst(d, 2)
+  check("a team with no worm left: the turn's worm", M.fires[1].owner and M.fires[1].owner.id == 16)
+  M.worm(33, 2, 0, 0)
+  d = M.drum(2, 600, 300)
+  frame()
+  M.fires = {}
+  burst(d, 2)
+  check("a team with a worm: its lowest worm", M.fires[1] and M.fires[1].owner and M.fires[1].owner.id == 33)
+end
+
 print("oil drums: drawing")
 do
   local d = drum_of("explosive")

@@ -152,6 +152,17 @@ function weapon.setup()
   local nr_owner = {}    -- missile id -> its worm's id, for a rocket nobody fired (an oil drum's)
   local nr_expect        -- fired: the next mine-slot missile is the rocket
 
+  -- A rocket fired for no team (an oil drum set off between turns): no worm's
+  -- id, which is team * 16 + index with a team from 1. Its nuke flies and
+  -- blasts for no team too.
+  local NO_TEAM = 0
+
+  -- What to keep of an owner: its id, read while it lives; an actor's (no
+  -- team's) is NO_TEAM.
+  local function keep(owner)
+    return owner.kind == "worm" and owner.id or NO_TEAM
+  end
+
   local function near(ax, ay, bx, by)
     local r = NR_CARRY
     return math.abs(ax - bx) < r and math.abs(ay - by) < r
@@ -162,6 +173,7 @@ function weapon.setup()
   -- worm or any living one stands in, so the nuke still launches and blasts
   -- the same on every machine.
   local function owner_of(id)
+    if id == NO_TEAM then return nil end
     local turn, any
     for _, w in ipairs(wa.worms.all()) do
       if w.id == id then return w end
@@ -169,6 +181,13 @@ function weapon.setup()
       any = any or w
     end
     return turn or any
+  end
+
+  -- The owner to fire or blast for: the kept worm, or one in its stead (see
+  -- owner_of); for NO_TEAM a new owner of no team at (x, y).
+  local function owner_at(id, x, y)
+    if id == NO_TEAM then return shared.no_team_owner(x, y) end
+    return owner_of(id)
   end
 
   wa.on.missile_frame(function(m)
@@ -210,7 +229,7 @@ function weapon.setup()
         local n = (nr_first[m.id] or 0) + 1
         nr_first[m.id] = n
         local id = nr_owner[m.id] or nr_shooter_id
-        if n % 10 == 0 and id then
+        if n % 10 == 0 and id and id ~= NO_TEAM then
           wa.sound.play(owner_of(id), NR_HISS)
         end
       end
@@ -233,7 +252,7 @@ function weapon.setup()
   shared.nuke_rocket_first = function(owner, x, y, vx, vy)
     local id = wa.weapons.launch({ weapon = "px.nuke_rocket", owner = owner, x = x, y = y, vx = vx, vy = vy })
     if id then
-      nr_first[id], nr_owner[id] = 0, owner.id
+      nr_first[id], nr_owner[id] = 0, keep(owner)
     end
     return id
   end
@@ -247,7 +266,7 @@ function weapon.setup()
       nr_nuke[id], nr_climbing[id] = nil, nil
       local owner_id = nr_owner[id] or nr_shooter_id
       nr_owner[id] = nil
-      local owner = owner_id and owner_of(owner_id)
+      local owner = owner_id and owner_at(owner_id, ev.x, ev.y)
       if owner then
         wa.sound.play(owner, 85)
         wa.sound.play(owner, 70) -- "louder please :D"
@@ -265,7 +284,7 @@ function weapon.setup()
       nr_first[id], nr_speed[id] = nil, nil
       local owner_id = nr_owner[id] or nr_shooter_id
       nr_owner[id] = nil
-      if owner_id then
+      if owner_id and owner_id ~= NO_TEAM then
         wa.sound.play(owner_of(owner_id), "sounds/nuke_rocket_launch.wav")
       end
       -- Launched after the blast, as PX's comes after super.
@@ -282,7 +301,7 @@ function weapon.setup()
       local pending = nr_pending
       nr_pending = {}
       for _, p in ipairs(pending) do
-        local owner = owner_of(p.owner or nr_shooter_id) or worm
+        local owner = owner_at(p.owner or nr_shooter_id, p.x, p.y) or worm
         local id = wa.weapons.launch({
           weapon = "px.nuke_rocket", owner = owner, x = p.x, y = p.y, vx = p.vx, vy = p.vy,
           missile = {
@@ -294,7 +313,7 @@ function weapon.setup()
         })
         if id then
           nr_nuke[id] = 0
-          nr_owner[id] = owner.id
+          nr_owner[id] = keep(owner)
         end
       end
     end

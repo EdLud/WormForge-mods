@@ -185,8 +185,17 @@ function M.install(opts)
     return lo + wa.random(0, 65536) * (hi - lo) / 65536
   end
 
+  -- An owner for no team, as PX's blasts and shots of team 0: a Lua actor of
+  -- no worm, gone on its first frame. What it fires, launches and lays is no
+  -- team's (a missile's constructor skips its team for team 0).
+  shared.no_team_owner = function(x, y)
+    return wa.actors.spawn({ sprite = false, gravity = false, collide = false,
+      x = x, y = y, on = function(a) a:despawn() end })
+  end
+
   -- A worm of the team whose shot set the drum off, as PX's blasts are its
-  -- OwnerTeam's; else the turn's worm.
+  -- OwnerTeam's; else the turn's worm; else, between turns (a drum set off
+  -- by fire, another drum or a mine after the shot), no team, as PX's.
   local function owner_for(team)
     if team and team > 0 then
       local found
@@ -338,7 +347,7 @@ function M.install(opts)
     local burst = launched[ev.drum.uid] and LAUNCHED[kind] or BURST[kind]
     if not burst then return end
     ev:replace()
-    burst(ev, owner_for(ev.team))
+    burst(ev, owner_for(ev.team) or shared.no_team_owner(ev.x, ev.y))
   end)
 
   local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
