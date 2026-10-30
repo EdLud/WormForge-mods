@@ -641,7 +641,8 @@ WA fires a utility that does nothing and the script does the work:
   clock stands still while WA waits for things to settle after a shot, and
   some things (a grave at 2.4x) never settle under a strong gravity. The
   retreat doesn't count toward the 10 s. A turn whose worm dies (a Kamikaze)
-  ends just before the next team's turn, so the gravity is back for it.
+  ends when WA ends it too, so the gravity is back before WA waits for things
+  to settle.
   Fired with nothing chosen, it doesn't fire.
 - **Keys:** the digit keys are synced like the other keys.
 - **Hints:** the weapon tooltip (`wf-lib/tooltip`, bottom right, in WA's
