@@ -883,6 +883,14 @@ local function new_match(opts)
           for _, h in ipairs(M.hurt_handlers) do h(hit) end
         end
       end,
+      -- As the engine's: a completed acquisition (a crate's, here).
+      weapon_grant = function(f)
+        M.grant_handlers = M.grant_handlers or {}
+        M.grant_handlers[#M.grant_handlers + 1] = f
+        M.weapon_grant = function(...)
+          for _, h in ipairs(M.grant_handlers) do h(...) end
+        end
+      end,
       death = function(f)
         M.death_handlers = M.death_handlers or {}
         M.death_handlers[#M.death_handlers + 1] = f
@@ -2961,6 +2969,87 @@ do
     if line:find("took") then took = true end
   end
   check("no transfer to a dead worm", not took)
+end
+
+-- As WA's pickup: the ammo into the collector's row at once, then the
+-- engine's grant event.
+local function crate(id, weapon, amount)
+  amount = amount or 1
+  local row = ammo[worm(id).ammo_group]
+  row[SLOT(weapon)] = (row[SLOT(weapon)] or 0) + amount
+  M.weapon_grant({ source = "crate", worm_id = id, items = { { weapon = weapon, amount = amount } } })
+end
+
+-- A pooled weapon none of the four worms was dealt.
+local function undealt()
+  local held = {}
+  for _, id in ipairs({ 16, 17, 32, 33 }) do
+    for _, n in ipairs(hand(id)) do held[n] = true end
+  end
+  for _, id in ipairs(require("lib/shared").POOLED) do
+    if not held[SLOT(id)] then return id end
+  end
+  error("every pooled weapon was dealt")
+end
+
+print("crates: a pooled weapon from a crate is the team's until it is used")
+do
+  new_match()
+  frame()
+  turn(16)
+  local w = undealt()
+  crate(16, w)
+  check("usable the turn it is collected", ammo[0][SLOT(w)] == 1)
+  turn(32)
+  check("kept through the other team's turn, and not theirs",
+    ammo[0][SLOT(w)] == 1 and (ammo[1][SLOT(w)] or 0) == 0)
+  turn(17)
+  check("usable by a teammate on its turn", ammo[0][SLOT(w)] == 1)
+  M.turn_start({ worm = worm(17), active = worm(17) }) -- Tab: the same turn again
+  check("Tab keeps it", ammo[0][SLOT(w)] == 1)
+  ammo[0][SLOT(w)] = 0 -- used
+  turn(33)
+  turn(16)
+  check("used, it is gone, not refilled", ammo[0][SLOT(w)] == 0)
+  crate(16, w, 2)
+  ammo[0][SLOT(w)] = 1 -- one of two used
+  turn(32)
+  turn(17)
+  check("a crate of two: the one not used is kept", ammo[0][SLOT(w)] == 1)
+  crate(32, "stock.bazooka")
+  check("a weapon outside the pools is left to WA", ammo[1].bazooka == 1)
+end
+
+print("crates: a crate copy of a dealt weapon adds to the hand's one use")
+do
+  new_match()
+  frame()
+  turn(16)
+  local h = hand(16)[1]
+  crate(16, ID(h))
+  check("two this turn", ammo[0][h] == 2)
+  ammo[0][h] = 1 -- one used: the hand's
+  turn(32)
+  turn(16)
+  check("the hand's use is spent first: the crate's is kept", ammo[0][h] == 2)
+  ammo[0][h] = 0 -- both used
+  turn(32)
+  turn(16)
+  check("both used: the hand's one use again", ammo[0][h] == 1)
+end
+
+print("crates: a stolen weapon adds to the team's crate copy of it")
+do
+  new_match()
+  frame()
+  turn(16)
+  local h = hand(32)[1]
+  crate(16, ID(h))
+  kill(32)
+  check("the stolen use goes on top of the crate's copy", ammo[0][h] == 2, tostring(ammo[0][h]))
+  kill(16)
+  check("the team keeps its crate copy when the active worm dies on its turn",
+    ammo[0][h] == 1)
 end
 
 print("inventory verbs: damage and weapon conditions choose arbitrary targets")

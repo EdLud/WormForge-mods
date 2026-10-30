@@ -21,6 +21,7 @@
 --   * Every pooled slot is zeroed for every team at each turn start, not
 --     just the previous worm's. PX relied on its scheme having those slots at
 --     zero. Here the scheme can say anything, so the pack enforces it itself.
+--     What a team took from crates is put back after the zeroing (below).
 --
 --   * PX's GiveWeapons also sets the Hot Air Balloon to 3 and the Wind
 --     Changer to 1 each turn. The Highlander scheme gives them as weapon data
@@ -62,11 +63,107 @@ local function deal(worm)
   ))
 end
 
--- The hand, one use of each, for the turn. PX's GiveWeapons (the Hot Air
--- Balloons and the Wind Changer) is weapon data in the Highlander profile:
--- the engine gives it.
+-- ---------------------------------------------------------------- crates
+
+-- A pooled weapon from a crate is the team's, not the worm's: any of its
+-- worms may use it, on that turn or a later one, until it is used, and it
+-- is never refilled. WA puts a crate's ammo in the collector's ammo row at
+-- once (one row per alliance, which WA shares), so it is usable the turn it
+-- is collected; each zeroing of the pooled slots would take it back, so the
+-- row's crate stock is laid over the hand again after it.
+--
+-- The hand's use goes first. A row given hand h (0 or 1) and crate stock s
+-- that has r left has used h + s - r, the crate's being those past h, so
+-- the crate stock left is s - max(0, s - r) = min(s, r): read before every
+-- write that would lose it.
+local POOLED = shared.POOLED
+local is_pooled = {}
+for _, id in ipairs(POOLED) do is_pooled[id] = true end
+local crate_stock = {} -- [ammo_group][weapon] = copies
+
+-- One live worm per ammo row, in WA's worm order.
+local function rows()
+  local out, seen = {}, {}
+  for _, live in ipairs(wa.worms.all()) do
+    if not seen[live.ammo_group] then
+      seen[live.ammo_group] = true
+      out[#out + 1] = live
+    end
+  end
+  return out
+end
+
+-- The ammo row a crate's collector draws on. A homing missile may collect
+-- for a worm that has since died: then any worm of its team.
+local function row_of(worm_id)
+  local team_row
+  for _, live in ipairs(wa.worms.all()) do
+    if live.id == worm_id then return live.ammo_group end
+    if team_row == nil and live.team == worm_id // 16 then team_row = live.ammo_group end
+  end
+  return team_row
+end
+
+-- Walks POOLED, not pairs(): the same order on every peer. `only`, a set
+-- of weapon ids, limits it to those.
+local function count_crate_uses(live_rows, only)
+  for _, live in ipairs(live_rows) do
+    local stock = crate_stock[live.ammo_group]
+    if stock then
+      for _, name in ipairs(POOLED) do
+        local s = stock[name]
+        if s and (not only or only[name]) then
+          local left = live:ammo(name)
+          if left >= 0 and left < s then stock[name] = left > 0 and left or nil end
+        end
+      end
+    end
+  end
+end
+
+local function restore_crate_stock(live_rows, only)
+  for _, live in ipairs(live_rows) do
+    local stock = crate_stock[live.ammo_group]
+    if stock then
+      for _, name in ipairs(POOLED) do
+        local s = stock[name]
+        if s and (not only or only[name]) then
+          local have = live:ammo(name)
+          if have >= 0 then live:ammo(name, { set = have + s }) end
+        end
+      end
+    end
+  end
+end
+
+wa.on.weapon_grant(function(event)
+  if event.source ~= "crate" then return end
+  local row
+  for _, item in ipairs(event.items) do
+    if is_pooled[item.weapon] then
+      row = row or row_of(event.worm_id)
+      if row == nil then return end
+      local stock = crate_stock[row] or {}
+      crate_stock[row] = stock
+      stock[item.weapon] = (stock[item.weapon] or 0) + item.amount
+      wa.log(string.format(
+        "highlander: worm %d's team keeps %d %s from a crate (%d in its stock)",
+        event.worm_id, item.amount, item.weapon, stock[item.weapon]
+      ))
+    end
+  end
+end)
+
+-- -------------------------------------------------------------- the turn
+
+-- The hand, one use of each, for the turn, over the team's crate stock.
+-- PX's GiveWeapons (the Hot Air Balloons and the Wind Changer) is weapon
+-- data in the Highlander profile: the engine gives it.
 local function start_turn(worm)
+  local live = rows()
+  count_crate_uses(live)
   arsenal:apply(worm, { clear = true, each = 1 })
+  restore_crate_stock(live)
 end
 
 local function on_death(event)
@@ -78,8 +175,11 @@ local function on_death(event)
 
   if active and active.id == victim.id then
     -- Died on its own turn: nothing to hand on, just take its weapons away.
+    local live = rows()
+    count_crate_uses(live)
     arsenal:clear(victim)
     arsenal:apply(victim, { clear = true, each = 1 })
+    restore_crate_stock(live)
     wa.log(string.format("highlander: worm %d died on its own turn", victim.id))
     return
   end
@@ -92,8 +192,13 @@ local function on_death(event)
   arsenal:transfer(victim, active, {
     weapons = "all", mode = "move", x = victim.x, y = victim.y,
   })
-  -- Usable at once, this turn, not from the stealer's next turn.
+  -- Usable at once, this turn, not from the stealer's next turn, over
+  -- what its team has of them from crates.
+  local stolen = {}
+  for _, name in ipairs(mine) do stolen[name] = true end
+  count_crate_uses({ active }, stolen)
   arsenal:apply(active, { weapons = mine, each = 1 })
+  restore_crate_stock({ active }, stolen)
   wa.log(string.format(
     "highlander: worm %d took %s from worm %d",
     active.id, describe(mine), victim.id
