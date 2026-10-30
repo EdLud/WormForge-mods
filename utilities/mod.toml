@@ -34,7 +34,7 @@ default = 0
 min = 0
 max = 50
 label = "Heal at turn start (HP)"
-description = "Health the worm whose turn starts gets."
+description = "Health the turn's first worm gets; switching worms (Tab, Select Worm) doesn't heal again."
 
 [[components.options]]
 key = "ex_turn_side"

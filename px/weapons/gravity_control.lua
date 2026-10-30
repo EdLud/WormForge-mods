@@ -60,8 +60,8 @@ function weapon.setup()
   wa.on.turn_retreat(function() retreating = true end)
 
   -- Reset at turn end, after the retreat; delaying until the next turn can
-  -- softlock settling. A turn whose worm died gets its end (with no worm)
-  -- just before the next team's turn starts.
+  -- softlock settling. A turn whose worm is gone gets its end (with no
+  -- worm) when WA ends the turn, before the settling too.
   require("lib/turn_controls").register("px.gravity_control", {
     frame = function(worm)
       gravity_initial = gravity_initial or wa.world.gravity()
