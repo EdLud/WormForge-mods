@@ -1,7 +1,8 @@
 # PX record facts, extracted independently of the profile generator.
 # The profile departs from them (2026-10-30): WA's Mole Bomb with two shots
 # replaces the PX Mole Bombs port, Select Worm is left out, and the Health
-# Zone has a 5-turn delay.
+# Zone has a 5-turn delay; Low Gravity comes in weapon crates at 0.5%
+# (pct), not in utility crates.
 source_sha256 = "cfd7f39ca10fb454dbfbc2d93425ce565f4e1f70ebc73e3b9e7984fa8a239cfd"
 weapon_weight = 309
 utility_weight = 5
@@ -57,7 +58,7 @@ weapons = [
   { id = "px.ice_arrow", row = "F12", column = 4, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 3000 },
   { id = "px.health_zone", row = "F12", column = 5, ammo = 1, chance = 5, count = 1, kind = "weapon", delay = 5, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 3000 },
   { id = "px.antifire_suit", row = "utility", column = 1, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 3000 },
-  { id = "stock.low_gravity", row = "utility", column = 2, ammo = 1, chance = 5, count = 1, kind = "utility", delay = 0, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 0 },
+  { id = "stock.low_gravity", row = "utility", column = 2, ammo = 1, chance = 5, pct = 0.5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 0 },
   { id = "stock.fast_walk", row = "utility", column = 3, ammo = 3, chance = 0, count = 1, kind = "utility", delay = 0, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 0 },
   { id = "stock.damage_x2", row = "utility", column = 4, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 0 },
   { id = "px.parkour", row = "utility", column = 5, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 0 },
