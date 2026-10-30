@@ -50,7 +50,8 @@ function weapon.setup()
   -- cutting 4 px holes there (along the cut when the aim held still); and
   -- every worm, mine, crate and oil drum within 5 px of it takes fire damage:
   -- a worm 2, then 1 once it has taken 10, and no more after 45 from this beam;
-  -- an oil drum 4, a crate 1. Drawn: a red strip, its width pulsing from 1.0
+  -- an oil drum 4, a crate 1. Each hit, past the 45 too, pushes 1 px/frame
+  -- along the beam. Drawn: a red strip, its width pulsing from 1.0
   -- to 0.5, and glows at the muzzle and where it hits; red sparks from the
   -- muzzle, glows rising from the cut, yellow sparks where it touches things.
   --
@@ -149,8 +150,9 @@ function weapon.setup()
             if obj.hp > 0 then
               local taken = r.taken[key] or 0
               local amount = taken >= 45 and 0 or taken >= 10 and 1 or 2
-              -- A burn, not a hit: the worm goes on with what it was doing.
-              if amount > 0 then obj:hurt({ amount = amount, react = false }) end
+              -- PX's M_GUNEXP carries the beam's direction as its force: 1
+              -- px/frame along the beam, still sent past the 45 cap.
+              obj:hurt({ amount = amount, vx = r.dx, vy = r.dy })
               r.taken[key] = taken + amount
             end
           elseif obj.kind == "oil" or obj.kind == "crate" then

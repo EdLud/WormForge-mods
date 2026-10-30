@@ -620,7 +620,8 @@ along its aim for 5 s, the worm held firing (aim live) for as long:
   4 px holes there, along the cut while the aim holds still.
 - **Damage:** everything within 5 px of it takes fire damage: a worm 2, then
   1 once it has taken 10, and no more than 45 from one beam; an oil drum 4, a
-  crate 1.
+  crate 1. Each hit pushes 1 px/frame along the beam, as PX's hit carries the
+  beam's direction as its force; a worm past the 45 is still pushed.
 - **Looks:** a red strip pulsing from full width to half, glows at the muzzle
   and the hit, red sparks from the muzzle, glows rising from the cut, yellow
   sparks on what it touches.

@@ -4936,7 +4936,8 @@ do
   check("the first trace: 2 to the worm, 4 to the drum, a 4 px cut where it hits land",
     target.hp == 98 and drum.taken == 4 and M.digs[1] and M.digs[1].x == 300 and M.digs[1].radius == 4,
     tostring(target.hp) .. " " .. tostring(drum.taken))
-  check("a burn, not WA's hit: the worm goes on with what it was doing", target.reacted == false)
+  check("WA's hit, pushing 1 px/frame along the beam, as PX's", target.reacted
+    and target.knock[1] == 1 and target.knock[2] == 0, tostring(target.knock and target.knock[1]))
   tick(39)
   check("every fourth frame: 2 until 10 taken, then 1", target.hp == 85, tostring(target.hp))
   M.quads, M.ribbons = {}, {}
@@ -4946,7 +4947,7 @@ do
     and strip.sprite == "sprites/laser_gun/laser_beam.png" and (strip.points[1].color & 0xFFFFFF) == 0xFF0000
     and strip.points[2].x == 300 and strip.points[1].width <= 16 and strip.points[1].width >= 8)
   tick(210)
-  check("no more than 45 from one beam", target.hp == 55, tostring(target.hp))
+  check("no more than 45 from one beam, still pushed", target.hp == 55 and target.knock[1] == 1, tostring(target.hp))
   check("after 250 frames it stops and lets WA end the shot", shooter.shots_fired == shooter.shots_to_fire
     and M.sounds[#M.sounds] == "sounds/laser_gun/laser_end.wav")
   tick(200)
