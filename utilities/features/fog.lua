@@ -28,4 +28,10 @@ return function(ctx)
   for _, key in ipairs(KEYS) do scheme[key] = ctx.option(key) end
   wa.fog.set(scheme)
   wa.fog.enable(true)
+  local camera = ctx.option("camera_follow")
+  if camera == "owned" then
+    wa.camera.follow("owned")
+  elseif camera == "own_side_only" then
+    wa.camera.follow("owned", { public = false })
+  end
 end
