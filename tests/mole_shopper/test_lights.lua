@@ -7,7 +7,6 @@ end
 -- Declarations must load with no native WA binding.
 local lantern = require("weapons/lantern")
 local sight = require("weapons/far_sight")
-local moles = require("weapons/mole_bombs")
 local claims, actors, draws, sounds, hooks, frame = {}, {}, {}, {}, {}, 0
 local solid, solid_reads, denied = false, 0, 0
 wa = {
@@ -21,12 +20,7 @@ wa = {
     assert(text:find("terrain") and options.to == "coalition" and options.alliance == 1)
     denied = denied + 1
   end},
-  weapons = {replace = function(spec) claims[#claims + 1] = spec end,
-    data = function(id)
-      assert(id == "px.mole_bombs")
-      return {clusters = {bit = {sprite = 152,
-        dig = {dive_sprite = 158, sprite_1 = 159, sprite_2 = 160, sprite_3 = 160}}}}
-    end},
+  weapons = {replace = function(spec) claims[#claims + 1] = spec end},
   actors = {spawn = function(spec)
     local actor = {id = #actors + 1, x = spec.x, y = spec.y, spec = spec, gfx_values = {}}
     function actor:gfx(fields)
@@ -136,23 +130,4 @@ ammo = -1
 spec.on_click{worm = owner, x = 500.5, y = 300.25}
 assert(#actors == 4 and ammo == -1 and spent == 3)
 
-moles.install{id = "px.mole_bombs"}
-spec = claims[4]
-assert(spec.hold.sheet == "sprites/mole_bombs/hold.png" and spec.hold.thrown)
-assert(spec.copy_from == "stock.mole_bomb" and spec.fires.method == 3)
-assert(spec.fires.type == 1 and spec.fires.launch_power_pct == 20)
-assert(spec.handling.shots == 2 and spec.clusters.bit.explosion.power == 40)
-wa.world.keys = function() return {shift = true} end
-local function motion(sprite, vy, weapon, phase)
-  local m = {id = 77, sprite = sprite, vy = vy, weapon = weapon or "px.mole_bombs", phase = phase or "pre"}
-  hooks.missile(m)
-  return m.vy
-end
-assert(motion(166, 0) == 0, "the parent mole never gets fast-drop")
-for _, sprite in ipairs({152, 158, 159, 160}) do assert(motion(sprite, 1) == 9) end
-assert(motion(152, 9) == 17 and motion(152, 10) == 10)
-assert(motion(152, 0, "px.mole_bomb") == 0, "Highlander's placed mole remains unchanged")
-assert(motion(152, 0, nil, "post") == 0, "accelerate only once per physics frame")
-wa.world.keys = function() return {shift = false} end
-assert(motion(152, 0) == 0)
-print("Mole Shopper lights, lifetimes, throw velocity and isolated Shift fast-drop passed")
+print("Mole Shopper lights, lifetimes and throw velocity passed")

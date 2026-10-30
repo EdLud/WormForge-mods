@@ -1,6 +1,6 @@
 id = "px.mole_shopper"
 name = "Mole Shopper"
-version = "0.1.5"
+version = "0.1.6"
 author = "popka, 0rang3 and Project X authors; WormForge port"
 api_version = 4
 format_version = 2
@@ -10,9 +10,6 @@ dependencies = ["wf.sdk"]
 frames = 1
 
 [sprites."sprites/lantern/hold.png"]
-frames = 1
-
-[sprites."sprites/mole_bombs/hold.png"]
 frames = 1
 
 [sprites."sprites/far_sight/reveal.png"]
@@ -69,15 +66,6 @@ description = "A charged throw that breaks into explosive fragments."
 entry = "weapons/thrown_ming_vase.lua"
 icon = "sprites/thrown_ming_vase/icon.png"
 default_position = { row = "F6", column = 1 }
-
-[[components]]
-id = "px.mole_bombs"
-type = "weapon"
-name = "Mole Bombs"
-description = "Launch two moles. Space starts the digging stage; hold Shift to accelerate its descent."
-entry = "weapons/mole_bombs.lua"
-icon = "mole_bomb"
-default_position = { row = "F3", column = 1 }
 
 [[components]]
 id = "px.j_bomb"

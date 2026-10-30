@@ -15,10 +15,9 @@ and don't ship with the pack.
   Terrain blocking rejects solid-terrain clicks without spending ammo and casts
   terrain shadows. Disable it to place and reveal through terrain.
   The PX controller's 60-frame timer does not limit the reveal's lifetime.
-- **Mole Bombs:** launch two stock moles per use at fixed 20% power, without charging.
-  Space switches to digging;
-  Shift accelerates only this component's digging child. Highlander's placed
-  Mole Bomb and the stock Mole Bomb remain unchanged.
+- **Two moles per use:** the full profile gives WA's own Mole Bomb two shots
+  (`shots = 2`), which also works mid-jump and after landing. The PX port's
+  separate Mole Bombs weapon is retired.
 
 Vision uses the existing WormForge fog renderer: a 110px worm circle,
 coalition ownership and terrain shadows. The full profile remembers terrain
