@@ -29,9 +29,9 @@ return function(ctx)
   wa.fog.set(scheme)
   wa.fog.enable(true)
   local camera = ctx.option("camera_follow")
-  if camera == "owned" then
+  if camera == "all but enemies" then
     wa.camera.follow("owned")
-  elseif camera == "own_side_only" then
+  elseif camera == "only my side" then
     wa.camera.follow("owned", { public = false })
   end
 end
