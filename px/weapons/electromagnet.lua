@@ -1,6 +1,12 @@
 -- Electromagnet: record, art and behaviour.
 local weapon = {}
 
+-- The "mine_push" option: the share of WA's momentum exchange the magnet
+-- keeps when a mine runs into it (body.pushed_by). Not PX's: at full a pulled
+-- mine knocks it away, it pulls the mine back, and so on.
+local MINE_PUSH = { none = 0, light = 0.2, full = 1 }
+local mine_push = MINE_PUSH.light
+
 -- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
@@ -41,6 +47,10 @@ function weapon.definition()
     params = { gpu_prefix = "sprites/electromagnet/" },
     on_fire = function(fire) fires.electromagnet(fire) end,
   })
+end
+
+function weapon.configure(ctx)
+  mine_push = MINE_PUSH[ctx.option("mine_push")]
 end
 
 function weapon.setup()
@@ -274,7 +284,7 @@ function weapon.setup()
     local a = wa.actors.spawn({
       sprite = BODY .. (pol < 0 and "magnet.png" or "magnet2.png"),
       x = m.x, y = m.y, vx = m.vx, vy = m.vy, owner = worm,
-      drown = false, body = { physics = "mine" }, on = {
+      drown = false, body = { physics = "mine", pushed_by = { mines = mine_push } }, on = {
         frame = function(actor) frame(m, actor) end,
         hit = function(actor, event) hit(m, actor, event) end,
       },

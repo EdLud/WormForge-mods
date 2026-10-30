@@ -64,10 +64,13 @@ local function read(path, header)
       option_key = line:match('^key = "([%w_]+)"') or option_key
       local default = line:match("^default = (%d+)$")
       local flag = line:match("^default = (%a+)$")
-      if id and option_key and (default or flag == "true" or flag == "false") then
+      local choice = line:match('^default = "([%w_ ]+)"$')
+      if id and option_key and (default or choice or flag == "true" or flag == "false") then
         own_options[id] = own_options[id] or {}
         if default then
           own_options[id][option_key] = tonumber(default)
+        elseif choice then
+          own_options[id][option_key] = choice
         else
           own_options[id][option_key] = flag == "true"
         end

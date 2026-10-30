@@ -1451,6 +1451,17 @@ do
   check("the magnet inherits mine physics with the worm's launch momentum",
     magnet.spec.body.physics == "mine" and near(magnet.vx, 3.3) and near(magnet.vy, -2.15))
   check("native body pushes need no second Lua contact impulse", magnet.contact == nil)
+  check("by default a mine's push on the magnet is light, a fifth of WA's",
+    magnet.spec.body.pushed_by.mines == 0.2)
+  local electromagnet = require("weapons/electromagnet")
+  for _, case in ipairs({ { "none", 0 }, { "full", 1 }, { "light", 0.2 } }) do
+    local option, share = case[1], case[2]
+    electromagnet.configure({ option = function(key) return key == "mine_push" and option or nil end })
+    require("lib/shared").fires.electromagnet({ worm = owner })
+    check("mine_push " .. option .. " keeps " .. share .. " of a mine's push",
+      M.spawned[#M.spawned].spec.body.pushed_by.mines == share)
+  end
+  electromagnet.configure({ option = function() return "light" end })
   -- WA has moved/pushed this body before its brain runs.
   magnet:warp { x = 140, y = 160, vx = -4, vy = -2 }
   magnet.on(magnet)
