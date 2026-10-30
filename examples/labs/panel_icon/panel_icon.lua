@@ -7,7 +7,7 @@
 -- frame is derived the way theirs is, so it looks native in both states.
 --
 -- This icon is PX's Hellish Hand Grenade, copied byte for byte, so replays
--- refer to it in the .WFAssets collection instead of embedding it.
+-- refer to it by hash in the public store instead of embedding it.
 return {
   install = function()
     wa.weapons.replace({
