@@ -9,10 +9,15 @@
 --   right away: what it was for, the frame, and Lua's memory around it.
 -- packs: with profile, that line also shows each pack's hook handler time.
 --   Off by default: timing every handler makes each hook call slower.
--- spikes: with profile, each "perf spike:" line also names the Lua lines the
---   call spent its time on. Off by default: Lua runs slower while it samples.
+-- spikes: with profile, each "perf spike:" line also names the Lua lines and
+--   the verbs ("[C] play") the call spent its time on. Off by default: Lua
+--   runs slower while it samples.
+-- packs and spikes are this add-on's options.
 --
 -- Presentation only: no timing reaches the game, so it is safe online.
-return function()
-  wa.perf.enable({ counter = true, profile = true })
+return function(ctx)
+  wa.perf.enable({
+    counter = true, profile = true,
+    spikes = ctx.option("spikes") == true, packs = ctx.option("packs") == true,
+  })
 end

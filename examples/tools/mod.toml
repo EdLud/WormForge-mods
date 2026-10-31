@@ -2,7 +2,7 @@
 # counters on their own, and the stress test with the Highlander weapons it
 # fires (that one needs the px.ports bundle too).
 id = "example.tools"
-version = "0.2.0"
+version = "0.3.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -22,6 +22,20 @@ type = "feature"
 name = "FPS counter and profiler"
 description = "WormForge's FPS counter (top right) and profiler (wkLua.log), on this machine."
 entry = "perf.lua"
+
+[[components.options]]
+key = "spikes"
+type = "bool"
+default = false
+label = "Name what spikes spent their time on"
+description = "Each perf spike line in wkLua.log also names the Lua lines and the verbs (as [C] play) a slow Lua call spent its time on. Lua runs slower while it is on."
+
+[[components.options]]
+key = "packs"
+type = "bool"
+default = false
+label = "Time each pack"
+description = "The perf lua line in wkLua.log also gives each pack's hook handler time. Every hook call runs slower while it is on."
 
 [[components]]
 id = "tools.worm_state_logger"
