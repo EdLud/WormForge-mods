@@ -137,6 +137,49 @@ do
   check("a casing is gone after its 100 frames", (draw().casing or 0) == 0)
 end
 
+print("attack helicopter: two at once")
+do
+  -- Two helicopters two frames apart fire on alternate even frames. One shot
+  -- sound starts per shot cadence between them, and the sound's pick is
+  -- still drawn for every round, so the draws do not change.
+  reset()
+  local bodies, heard, picks = {}, {}, 0
+  local play, random = wa.sound.play, wa.random
+  wa.sound.play = function(target, path)
+    if path:find("/hks", 1, true) then heard[#heard + 1] = FRAME end
+    play(target, path)
+  end
+  wa.random = function(lo, hi)
+    if lo == 1 and hi == 3 then picks = picks + 1 end
+    return random(lo, hi)
+  end
+  local function step(n)
+    for _ = 1, n do
+      FRAME = FRAME + 1
+      for _, b in ipairs(bodies) do b.on.frame(b) end
+    end
+  end
+  local function click_one()
+    local before = #actors
+    click({ worm = { id = 3, kind = "worm", facing = 1, x = 1000, y = 500 }, x = 1000, y = 500 })
+    for i = before + 1, #actors do
+      local a = actors[i]
+      if type(a.on) == "table" and a.on.frame then bodies[#bodies + 1] = a end
+    end
+  end
+  click_one()
+  step(2)
+  click_one()
+  for _ = 1, 400 do if launched >= 34 then break end step(1) end
+  wa.sound.play, wa.random = play, random
+  check("both magazines fly: 34 rounds", launched == 34)
+  check("a pick drawn for every round", picks == 34)
+  local apart = true
+  for i = 2, #heard do if heard[i] - heard[i - 1] < 4 then apart = false end end
+  check("no two shot sounds within one shot cadence", apart)
+  check("fewer shot sounds than rounds, as many as one helicopter's", #heard < 34 and #heard >= 17)
+end
+
 print("attack helicopter: any other launch error")
 do
   reset()

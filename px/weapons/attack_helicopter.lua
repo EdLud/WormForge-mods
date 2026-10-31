@@ -93,6 +93,7 @@ return {
 
     local helis = {}   -- body actor id -> helicopter state
     local shots = {}   -- bullet missile id -> { x, y, frames } the homing target
+    local shot_heard   -- the frame the last shot sound started, any helicopter's
 
 
     -- Round toward zero, as PX's fixed-point arithmetic does.
@@ -396,7 +397,19 @@ return {
         trail.add(id, h.owner,  {every = 1, g = 30, b = 10}) -- the round's trail, drawn by lib/px_trail.lua
       end
       h.firing = true
-      wa.sound.play(h.owner, SND .. "hks" .. wa.random(1, 3) .. ".wav")
+      -- The pick is drawn for every round, heard or not, so the draws stay
+      -- the same. At most one shot sound starts per shot cadence, whichever
+      -- helicopter fires: one helicopter is heard on every round, several
+      -- together start no more voices than one. Each start costs a DirectSound
+      -- buffer, and the 1.2 s sounds piled up: five helicopters kept ~60
+      -- voices going, and a start then took ~4 ms under Wine (the replay of
+      -- 2026-10-31 08.29, half the helicopters' simulation time).
+      local pick = wa.random(1, 3)
+      local now = wa.world.frame()
+      if not shot_heard or now - shot_heard >= COOLDOWN_SHOT then
+        shot_heard = now
+        wa.sound.play(h.owner, SND .. "hks" .. pick .. ".wav")
+      end
       eject(h) -- (:369) the casing, after the shot
       return true
     end
