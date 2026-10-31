@@ -19,8 +19,7 @@ anim = "track" })` draws a turning actor over your native missile. Register
 your sheet through `wa.weapons.replace`'s `sprites` field first.
 
 The helper also exposes `cyclical_frame`, `track_angle`, `rotation_turn` and
-`spin_turn`, preserving the PX port's existing calculations. See
-`examples/shared_library_demo` in the source repository for a complete weapon.
+`spin_turn`, preserving the PX port's existing calculations.
 
 `require("wf-lib/holds")` returns the posture/hand data directly.
 `require("wf-lib/shared")` returns `{ sprites = ..., holds = ... }`.
