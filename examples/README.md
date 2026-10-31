@@ -3,7 +3,7 @@ its profiles under **Bundled profiles** in the loader's profile line, where it
 has one, or add its weapons (**Manage Weapon Panel**) and add-ons (a click on
 its card) to your own profile. Nothing in a bundle runs until a profile selects it, and a
 weapon goes wherever the profile places it: its code never names a slot, it
-names weapons by id (`labs.cut_lab`, `stock.bazooka`).
+names weapons by id (`guide.moon_grenade`, `stock.bazooka`).
 
 None of these ships to players. The packs that do are `mods/px/` (Project X's
 weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
@@ -15,44 +15,12 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   a third of the gravity, one burst in four digging a crater (`on_explode`,
   `wa.random`, `wa.land.cut`, a HUD line); `profiles/Moon Grenade.toml`
   places it beside WA's Grenade.
-- `component_demo` (`example.components`) — the smallest bundle: two weapons
-  built on WA's Bazooka and Mortar, and an add-on with a setting. Its README
-  walks through the format, with a profile to write by hand.
-- `labs` (`example.labs`) — one small weapon per part of the API, each in its
-  own folder or file.
-  - `labs.cut_lab` — WA's Bazooka cuts a hole of the chosen shape where it
-    lands (+ cycles the shape, 1-9 and 0 the size): `wa.land.cut`.
-  - `labs.hurt_lab` (Ten) — Space eats WA's punch and `worm:hurt(10)`s every
-    enemy.
-  - `labs.echo_mine` — WA's mine: the first proximity puffs dirt, the boom
-    sprays five bananas with exhaust trails. `on_proximity` and `on_explode`
-    as data.
-  - `labs.panel_icon` — a pack PNG as the panel icon.
-  - `labs.worm_toss` — the land cursor: click-hold a worm to drag it, release
-    to throw.
-  - `labs.q_bazooka` (add-on) — Q selects WA's Bazooka, wherever it is placed;
-    Space charges and fires it as usual.
-  - `labs.shuffle_panel` (add-on, Shuffled panel) — each turn the placed
-    weapons swap places on the panel at random, the same for every player
-    (`wa.panel.layout` / `set_layout`).
-  - `labs.rec_*`, the Record Lab — copies of WA's Bazooka and Grenade, each with one field of its weapon record changed raw, to settle what the field does;
-    the HUD names both readings. Place them beside WA's Bazooka and Grenade
-    to compare.
-- `gif_donkey` (`example.gif_donkey`) — Growth Hormones, written twice: as
-  data flags the engine runs (`gif.flags`) and as Lua (`gif.lua`). Both can be
-  placed side by side.
-- `gravler_strike` (`example.gravler_strike`) — WA's Mole Squadron with PX's
-  four Gravler sprites swapped in (`mole_dig_rotation`). PX weapon-data tuning
-  is pending comparison.
 - `pooz` (`example.pooz`) — selecting the weapon possesses the worm as a
   humanoid runner (run/sprint, coyote time at edges, double jump). A/D, W to
   jump, Shift. Switch weapon to drop out.
 - `turret` (`example.turret`) — Space plants a persistent Lua turret, placed
   as WA places a mine. Line of sight is `wa.land.trace`; rounds are
   `worm:hurt` and a shove, not explosions.
-- `wormcraft` (`example.wormcraft`) — aimed as WA's Cluster Bomb; the shot
-  plays an anime cut-in (speed lines and portrait) with `cutout.mp3`, then
-  writes `WormCraft` letter by letter.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
   - `tools.perf` — the FPS counter (top right: live fps, the 2 s average, and
@@ -75,7 +43,3 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
 Profiles own their game scheme too: unset settings take Intermediate. Use the
 loader's **Manage Scheme (.WSC)** page or a profile's `[scheme]`; gravity and
 wind have moved there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).
-
-- `shared_library_demo` (`example.shared_library`) — an independent weapon using
-  `dependencies = ["wf.sdk"]` and `require("wf-lib/px_sprite_builder")`, including
-  shared posture/hand art and native missile flight drawing.

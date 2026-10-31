@@ -29,10 +29,9 @@ under `WormForge/Profiles/`.
 
 The public [SDK helpers](sdk/README.md) expose the PX sprite builder, postures
 and hands through `require("wf-lib/px_sprite_builder")` with
-`dependencies = ["wf.sdk"]` in your manifest. See
-[`examples/shared_library_demo`](examples/shared_library_demo) for a separate
-weapon using these helpers. Library state stays private to each consuming
-bundle. Selected dependencies and assets are frozen for online games and replays.
+`dependencies = ["wf.sdk"]` in your manifest. Library state stays private
+to each consuming bundle. Selected dependencies and assets are frozen for
+online games and replays.
 
 The engine checks this repository out at `mods/`; the website checks it out at
 `catalogue/`. Both are Git submodules pinned to a particular commit. Initialize
