@@ -163,30 +163,59 @@ function trail.install()
   -- for a collection inside the draw.
   if wa.on.draw and wa.draw.ribbon then
     local RIBBON = { blend = "add", points = {} }
-    local function pass(t, sprite, width)
-      local pts, n = t.pts, #t.pts
-      if n < 2 then return end -- `if (trailAmount < 2) return;` (:1300)
-      RIBBON.sprite, RIBBON.depth = sprite, t.depth
-      local rp = RIBBON.points
+    -- PX's t for point i of n (a 0-based i over n, plus one) floored at 0.1:
+    -- strength, texcoord and width in one number, and the colour it scales.
+    -- They depend on n and the trail's colour only, so each ramp is worked
+    -- out once: five Attack Helicopters kept ~50 trails drawn, and the
+    -- per-point arithmetic was a good part of the draw.
+    local ramps = {} -- "r,g,b" -> n -> { f = {...}, color = {...} }
+    local function ramp(t, n)
+      local by_n = t.ramps
+      if not by_n then
+        local key = t.r .. "," .. t.g .. "," .. t.b
+        by_n = ramps[key]
+        if not by_n then by_n = {}; ramps[key] = by_n end
+        t.ramps = by_n
+      end
+      local r = by_n[n]
+      if r then return r end
+      r = { f = {}, color = {} }
       for i = 1, n do
-        -- PX's t (a 0-based i over n, plus one) floored at 0.1: strength,
-        -- texcoord and width in one number.
         local f = i / (n + 1)
         if f < 0.1 then f = 0.1 end
-        local p = rp[i]
-        if not p then p = {}; rp[i] = p end
-        p.x, p.y, p.u, p.width = pts[i][1], pts[i][2], f, f * width
-        p.color = (255 << 24) | (math.floor(t.r * f) << 16)
+        r.f[i] = f
+        r.color[i] = (255 << 24) | (math.floor(t.r * f) << 16)
           | (math.floor(t.g * f) << 8) | math.floor(t.b * f)
       end
+      by_n[n] = r
+      return r
+    end
+    local function draw(t)
+      local pts, n = t.pts, #t.pts
+      if n < 2 then return end -- `if (trailAmount < 2) return;` (:1300)
+      local r = ramp(t, n)
+      local fs, colors = r.f, r.color
+      local rp = RIBBON.points
+      local width = t.core_w
+      for i = 1, n do
+        local p = rp[i]
+        if not p then p = {}; rp[i] = p end
+        local pt, f = pts[i], fs[i]
+        p.x, p.y, p.u, p.width, p.color = pt[1], pt[2], f, f * width, colors[i]
+      end
       for i = #rp, n + 1, -1 do rp[i] = nil end
+      RIBBON.sprite, RIBBON.depth = t.beam, t.depth
       wa.draw.ribbon(RIBBON)
+      -- The glow is the same strip, wider: only the widths change.
+      if t.glow_w > 0 then
+        width = t.glow_w
+        for i = 1, n do rp[i].width = fs[i] * width end
+        RIBBON.sprite = t.glow
+        wa.draw.ribbon(RIBBON)
+      end
     end
     wa.on.draw(function()
-      for _, t in ipairs(trails) do
-        pass(t, t.beam, t.core_w)
-        if t.glow_w > 0 then pass(t, t.glow, t.glow_w) end
-      end
+      for _, t in ipairs(trails) do draw(t) end
     end)
   end
 end
