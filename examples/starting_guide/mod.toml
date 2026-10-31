@@ -9,7 +9,7 @@ format_version = 2
 id = "guide.moon_grenade"
 type = "weapon"
 name = "Moon Grenade"
-description = "WA's Grenade with about a third of the gravity. One burst in four also digs a crater."
+description = "WA's Grenade with about a third of the gravity and a small burst, which digs three craters in the ground below it."
 entry = "weapons/moon_grenade.lua"
 icon = "grenade"
 default_position = { row = "F2", column = 6 }
