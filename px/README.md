@@ -53,6 +53,8 @@ These settings do not change **Ammo**, the number of uses a team gets.
 | Weapon | Setting | Range | Default |
 |---|---|---|---|
 | Attack Helicopter (`px.attack_helicopter`) | Bullets per strafe (`bullets`) | 1–1000 | 17 |
+| Gravity Gun (`px.gravity_gun`) | Grabs worms (`grab_worms`) | all, own, off | all |
+| Gravity Gun (`px.gravity_gun`) | Grabs mines, crates, oil drums, gravestones (`grab_mines`, `grab_crates`, `grab_oil_drums`, `grab_graves`) | on, off | on |
 | Helicopter (`px.helicopter`) | Fuel (`fuel`) | 1–999 | 100 |
 | Sentry Gun (`px.sentry_gun`) | Health (`health`) | 1–500 | 50 |
 | Sentry Laser (`px.sentry_laser`) | Health (`health`) | 1–500 | 35 |
@@ -72,6 +74,10 @@ only a byte. Its crash still scales with fuel left and speed, so more fuel
 can cause much larger explosions. An Attack Helicopter with 1000 rounds
 strafes for roughly 100 seconds plus its entry, wind-up and exit (the
 current four-frame cooldown fires every fifth frame).
+
+The Gravity Gun's own worms go by colour: the firing worm's colour, its
+team and allies. A kind it doesn't take is no obstacle: the
+aim passes over it to what lies behind, for both the pull and the push.
 
 ## Rules
 

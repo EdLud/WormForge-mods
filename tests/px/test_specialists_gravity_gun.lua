@@ -98,4 +98,27 @@ check(hold_sheet==0,"nothing on the aim: the claws close")
 local calls=random_calls
 for _=1,5 do quads={};each(hooks.draw) end
 check(random_calls==calls,"drawing leaves WA's random numbers alone")
+-- The options: what the aim may take, worms by colour.
+local function query()local q;traced=function(t)q=t end;step({});return q end
+local function has(list,v)for _,x in ipairs(list) do if x==v then return true end end return false end
+local q=query()
+check(#q.with==6 and #q.ignore==1 and q.ignore[1]==worm,"by default it takes every kind, and every worm but its own")
+local ally={id=2,alliance=0,hp=100}
+local enemy={id=3,alliance=1,hp=100}
+wa.worms.all=function()return {worm,ally,enemy}end
+local function configure(o)
+  local all={grab_worms="all",grab_mines=true,grab_crates=true,grab_oil_drums=true,grab_graves=true}
+  for k,v in pairs(o) do all[k]=v end
+  gun.configure({option=function(k)assert(all[k]~=nil,"unknown option "..k);return all[k] end})
+end
+configure({grab_mines=false,grab_graves=false})
+q=query()
+check(has(q.with,"worms") and has(q.with,"crates") and has(q.with,"oil") and has(q.with,"terrain")
+  and not has(q.with,"mines") and not has(q.with,"graves"),"mines and graves off: the aim passes over them")
+configure({grab_worms="own"})
+q=query()
+check(#q.ignore==2 and q.ignore[2]==enemy,"own: the other colour's worms are passed over")
+configure({grab_worms="off"})
+q=query()
+check(not has(q.with,"worms") and #q.ignore==1,"off: the aim passes over every worm")
 print("Specialists Gravity Gun: ALL PASS")

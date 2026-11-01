@@ -2362,6 +2362,42 @@ entry = "components/weapon.lua"
 icon = "sprites/gravity_gun/gravity_gun_ico.png"
 default_position = { row = "F8", column = 8 }
 
+[[components.options]]
+key = "grab_worms"
+type = "choice"
+choices = ["all", "own", "off"]
+default = "all"
+label = "Grabs worms"
+description = "All: any worm. Own: only worms of your colour (your team and its allies). Off: no worm. A worm the gun can't take is no obstacle for it: the aim goes on to what lies behind."
+
+[[components.options]]
+key = "grab_mines"
+type = "bool"
+default = true
+label = "Grabs mines"
+description = "Off: the gun passes over mines, neither pulling nor pushing them."
+
+[[components.options]]
+key = "grab_crates"
+type = "bool"
+default = true
+label = "Grabs crates"
+description = "Off: the gun passes over crates, neither pulling nor pushing them."
+
+[[components.options]]
+key = "grab_oil_drums"
+type = "bool"
+default = true
+label = "Grabs oil drums"
+description = "Off: the gun passes over oil drums, neither pulling nor pushing them."
+
+[[components.options]]
+key = "grab_graves"
+type = "bool"
+default = true
+label = "Grabs gravestones"
+description = "Off: the gun passes over gravestones, neither pulling nor pushing them."
+
 [[components]]
 id = "px.personal_invisibility"
 type = "weapon"

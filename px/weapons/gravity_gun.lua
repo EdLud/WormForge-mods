@@ -5,7 +5,8 @@
 -- Space throws whatever the aim meets (an object, or land: the worm recoils).
 -- Not ported: the Lightning Strike's "superworm" gun, missiles as targets (the trace finds worms, mines, crates,
 -- oil drums and graves), the arrow-key aim while jumping, and the muted
--- fire speech.
+-- fire speech. Not PX's: the component's options say which of those it
+-- takes (worms by colour); what it can't take is no obstacle to the aim.
 local holds = require("wf-lib/holds")
 local weapon = {}
 local ID = "px.gravity_gun"
@@ -23,6 +24,9 @@ local WALL_PUSH = 5.0       -- gg_wall_push_miltiplier
 -- PX's MaskIndex as the API's body circles.
 local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, grave = 8 }
 local TARGETS = { "terrain", "worms", "mines", "crates", "oil", "graves" }
+-- What the aim meets and which worms, from the options (configure).
+local grabs = TARGETS
+local grab_worms = "all"
 
 local states = {}           -- worm id -> its gun
 local claws = 0             -- the held art shown: 0 closed, 1 open
@@ -40,11 +44,18 @@ local function aim_dir(worm)
   return wa.math.sin(ang), -wa.math.cos(ang)
 end
 
--- TraceLine from the worm along the aim; the first object or land.
+-- TraceLine from the worm along the aim; the first object or land the gun
+-- may take.
 local function trace(worm, distance)
   local dx, dy = aim_dir(worm)
+  local ignore = { worm }
+  if grab_worms == "own" then
+    for _, w in ipairs(wa.worms.all()) do
+      if w.alliance ~= worm.alliance then ignore[#ignore + 1] = w end
+    end
+  end
   return wa.world.trace({ x0 = worm.x, y0 = worm.y, x1 = worm.x + dx * distance,
-    y1 = worm.y + dy * distance, radius = 0, with = TARGETS, ignore = { worm } })
+    y1 = worm.y + dy * distance, radius = 0, with = grabs, ignore = ignore })
 end
 
 local function radius(obj) return RADIUS[obj.kind] or 6 end
@@ -444,6 +455,16 @@ local function render_gun()
       wa.draw.quad({ sprite = ART .. "gravity_gun_aiming2_ghost.png", frame = 0, depth = wa.depth.WORMS - 1,
         points = { at(-1, -1), at(1, -1), at(1, 1), at(-1, 1) } })
     end
+  end
+end
+
+function weapon.configure(ctx)
+  grab_worms = ctx.option("grab_worms")
+  grabs = { "terrain" }
+  if grab_worms ~= "off" then grabs[#grabs + 1] = "worms" end
+  for _, kind in ipairs({ { "mines", "grab_mines" }, { "crates", "grab_crates" },
+      { "oil", "grab_oil_drums" }, { "graves", "grab_graves" } }) do
+    if ctx.option(kind[2]) then grabs[#grabs + 1] = kind[1] end
   end
 end
 
