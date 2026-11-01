@@ -42,8 +42,14 @@ trail.DEPTH = nil
 trail.BEAM = "sprites/px_effects/beam.png"
 trail.GLOW = "sprites/px_effects/beam_glow.png"
 
--- Every trail drawn: the live rounds, and the ones outliving them.
+-- Every trail drawn: the live rounds, and the ones outliving them. With
+-- `wa.draw.trail` (WormForge after 0.9.61) the engine keeps and draws each
+-- one (`t.kept`) and sheds it once its round is gone; this module only feeds
+-- it points. An older DLL draws them from `wa.on.draw` below.
 local trails = {}
+-- The default sheets, named by the pack that installed the trails (as
+-- wa.sprites.key does in install): a path is looked up on every draw.
+local keys = {}
 -- Missile id -> its trail, while the round is in the air.
 local live = {}
 -- One hidden actor, while there is a trail to sample or to shed. It ticks the
@@ -67,8 +73,12 @@ local function start_driver(t, owner)
           -- Its round stopped firing frames: hit, exploded or gone from the map.
           v.live = false
           live[v.id] = nil
+          if v.kept then v.kept:finish() end
         end
-        if not v.live and tick % v.vanish == 0 then
+        if v.kept and not v.live then
+          -- The engine sheds it from here.
+          table.remove(trails, i)
+        elseif not v.live and tick % v.vanish == 0 then
           table.remove(v.pts, 1)
           if #v.pts == 0 then
             -- `table.remove`, not `trails[i] = nil`: a hole anywhere before the
@@ -107,6 +117,15 @@ function trail.add(id, owner, opts)
   -- `trail.DEPTH` cannot be read at load time (see trail.DEPTH above), so the
   -- default is resolved here, in a game frame, where `wa` does exist.
   if t.depth == nil then t.depth = wa.depth.OBJECTS end
+  if wa.draw.trail then
+    local glow = t.glow_w > 0
+    t.kept = wa.draw.trail({
+      sprite = keys[t.beam] or t.beam, width = t.core_w,
+      glow = glow and (keys[t.glow] or t.glow) or nil, glow_width = glow and t.glow_w or nil,
+      color = (255 << 24) | (math.floor(t.r) << 16) | (math.floor(t.g) << 8) | math.floor(t.b),
+      max = t.max, shed = t.vanish, floor = 0.1, blend = "add", depth = t.depth,
+    })
+  end
   trails[#trails + 1] = t
   live[id] = t
   start_driver(t, owner)
@@ -126,13 +145,11 @@ function trail.drop(id)
   if t then
     t.live = false
     live[id] = nil
+    if t.kept then t.kept:finish() end
   end
 end
 
 local installed = false
--- The default sheets, named by the pack that installed the trails (as
--- wa.sprites.key does in install): a path is looked up on every draw.
-local keys = {}
 
 -- Register the engine callbacks. Call this from your component's install(ctx):
 -- a component's file, and anything it requires, only returns data -- `wa` does
@@ -160,13 +177,14 @@ function trail.install()
     end
     pts[#pts + 1] = { m.x, m.y }
     if #pts > t.max then table.remove(pts, 1) end
+    if t.kept then t.kept:push(m.x, m.y) end
   end)
 
   -- PX's DrawTrail (:1298-1380), from the render callback. `wa.draw.ribbon`
   -- copies its table, so one spec is refilled for every pass of every trail, as
   -- the packs do (electrical.lua:409-440): a table per draw made enough garbage
   -- for a collection inside the draw.
-  if wa.on.draw and wa.draw.ribbon then
+  if wa.on.draw and wa.draw.ribbon and not wa.draw.trail then
     local RIBBON = { blend = "add", points = {} }
     -- PX's t for point i of n (a 0-based i over n, plus one) floored at 0.1:
     -- strength, texcoord and width in one number, and the colour it scales.
