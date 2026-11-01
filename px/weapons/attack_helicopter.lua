@@ -33,7 +33,9 @@
 -- sound volume/pan and the rotor loop rate (`wa.sound.play` has neither), the
 -- `CSmoker` on impact, and the `CFire` fan's directional velocity (the three
 -- fires are placed apart instead). PX's `CColMask(15,15,MakeCircleMask(15))`
--- circle is dropped on purpose: an actor only takes `mask = true`, a square.
+-- circle is dropped on purpose. The body carries no mask either: stamped into
+-- the walk grid, its rotor sheet was ground worms stood on and ropes caught,
+-- remade every frame it flew. Blasts still reach it (`hit`).
 --
 -- The rounds trail: PX's effect-manager trail, as a module (lib/px_trail.lua).
 -- REPORT.md 11.9 maps it back to px_effects.c, and TRAIL.md is how to put it on
@@ -502,7 +504,7 @@ return {
       }
       h.body = wa.actors.spawn({
         sprite = ART .. "empty.png", x = h.x, y = h.y, vx = 0, vy = 0,
-        gravity = false, collide = true, owner = worm, as_object = true, mask = true,
+        gravity = false, collide = true, owner = worm, as_object = true,
         on = { frame = frame, hit = hit },
       })
       h.aim = wa.actors.spawn({ sprite = ART .. "aim.png", x = h.x, y = h.y,
