@@ -12,12 +12,16 @@
 -- spikes: with profile, each "perf spike:" line also names the Lua lines and
 --   the verbs ("[C] play") the call spent its time on. Off by default: Lua
 --   runs slower while it samples.
--- packs and spikes are this add-on's options.
+-- natives: with profile, the "perf lua:" line also gives the slowest verbs,
+--   every call of each summed ("quad", "all"). Off by default: Lua runs
+--   slower while it is on.
+-- packs, spikes and natives are this add-on's options.
 --
 -- Presentation only: no timing reaches the game, so it is safe online.
 return function(ctx)
   wa.perf.enable({
     counter = true, profile = true,
     spikes = ctx.option("spikes") == true, packs = ctx.option("packs") == true,
+    natives = ctx.option("natives") == true,
   })
 end

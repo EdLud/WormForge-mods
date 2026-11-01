@@ -593,7 +593,10 @@ return {
       end
       wa.draw.quad(QUAD)
     end
-    local CASING = ART .. "casing.png"
+    -- Each sheet named once, by its pack (wa.sprites.key): given as a path,
+    -- a sheet is looked up through the running pack on every draw.
+    local CASING = wa.sprites.key(ART .. "casing.png")
+    local BULLET_SHEET = wa.sprites.key(BULLET)
     wa.on.draw(function()
       local now, f = wa.world.frame(), wa.draw.fraction()
       for _, c in ipairs(casings) do
@@ -610,7 +613,7 @@ return {
         if r.seen and now - r.seen <= 1 then
           -- WeapSprite::CalculateAngle, WAT_TrackMovement (rotation 0); the
           -- art is mirrored for a round flying left, as the actor's facing was.
-          put(BULLET, 0, r.cx + (r.cx - r.px) * f, r.cy + (r.cy - r.py) * f, 16,
+          put(BULLET_SHEET, 0, r.cx + (r.cx - r.px) * f, r.cy + (r.cy - r.py) * f, 16,
             -math.atan(r.vx, r.vy) - math.pi, r.vx < 0 and -1 or 1, wa.depth.OBJECTS - 1)
         end
       end
