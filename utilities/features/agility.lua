@@ -7,13 +7,17 @@
 --
 -- Notes:
 --   * PX's `GetCurrentWorm() == this` is `worm.turn`.
---   * PX's ModulatedGravity == 1 is worm.gravity == 1 (a plain factor).
+--   * PX's ModulatedGravity is Gravity Control's factor on the world's
+--     gravity (Env->Gravity), not the worm's own (worm.gravity, PX's
+--     GravityFactor), so ModulatedGravity == 1 is wa.world.gravity() still
+--     at the match's: Very Low Gravity (0.3) is under the 0.1 nudge, and
+--     with it held up the worm rose.
 --   * State check uses worm.state_id against the hex values from the state
 --     logger, not the string names, since that's the precise source here.
 --   * Keys follow the synchronized turn-player input in networked matches.
 
 local STEP      = 0.1   -- per-tick nudge, matches C's 0.1
-local STEP_LOWG = 0.03   -- up-nudge when gravity < 1.0
+local STEP_LOWG = 0.03   -- up-nudge while the world's gravity is changed
 local LIMIT     = 3                  -- matches C's SpX/SpY <= 3 cap
 
 -- Allowed states, by worm.state_id, mirroring the C allowlist:
@@ -32,9 +36,12 @@ local ALLOWED = {
   [0x81] = true,  -- WS_POWERFLY
 }
 
+local match_gravity  -- the world's gravity at the match's first frame
+
 -- Runs once per worm per frame: the msgs filter makes the engine skip Lua
 -- for every other message a worm gets (thousands a frame in a busy match).
 wa.on.worm_message(function(worm)
+  match_gravity = match_gravity or wa.world.gravity()
   if not worm.turn then return end
 
   local state = worm.state_id
@@ -43,7 +50,7 @@ wa.on.worm_message(function(worm)
   local k = worm.keys
 
   if k.up then
-    local step = (worm.gravity or 1) == 1 and STEP or STEP_LOWG
+    local step = wa.world.gravity() == match_gravity and STEP or STEP_LOWG
     if worm.vy >= -LIMIT then worm.vy = worm.vy - step end
   end
   if k.down and worm.vy <= LIMIT then
