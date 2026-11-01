@@ -68,8 +68,9 @@ function weapon.setup()
   local WALK = "sprites/ferret/walk.png"
   local FRAMES = 10
   local SOUND = "sounds/ferret/walk.wav"
-  -- The scheme record's explosion (ExplodeAt): damage 100, blast 50.
-  local BOOM = { damage = 100, id = 50 }
+  -- PX's record's explosion (ExplodeAt): power 50, push 100%, a Grenade's.
+  -- WA's CreateExplosion takes the push first (id) and the power second.
+  local BOOM = { damage = 50, id = 100, below = false }
   -- A worm it runs into is thrown first (SpX = TurnSide, SpY = -5), a mine or a
   -- ball flicked (SpX = TurnSide, SpY = -7).
   local WORM_UP, MINE_UP = -5, -7
@@ -235,6 +236,9 @@ function weapon.setup()
       f.why or "?", f.x // 1, f.y // 1, f.age))
     f.dead = true
     forget(f)
+    -- PX's ExplodeAt(PosX, PosY): the traced point at its feet, in the land,
+    -- not the body drawn LIFT above it, so a worm it walks into flies up.
+    a.x, a.y = f.x, f.y
     a:explode(BOOM)
     if a.id ~= 0 then a:despawn() end
   end

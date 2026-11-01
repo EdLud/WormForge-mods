@@ -3487,8 +3487,12 @@ do
   f = M.spawned[1]
   run(120)
   check("it blows up on a worm, thrown up first (SpX = TurnSide, SpY = -5)",
-    f.dead and #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 100 and M.actor_booms[1].opts.id == 50
-    and victim.vy == -5 and victim.vx == 1, #M.actor_booms)
+    f.dead and #M.actor_booms == 1 and victim.vy == -5 and victim.vx == 1, #M.actor_booms)
+  local boom = M.actor_booms[1] or { opts = {} }
+  check("a Grenade's blast (power 50, push 100%), PX's record's",
+    boom.opts.damage == 50 and boom.opts.id == 100 and boom.opts.below == false)
+  check("at its feet on the floor, not at its body: PX's ExplodeAt(PosX, PosY)",
+    boom.y and boom.y > 195 and boom.y < 204, boom.y)
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
