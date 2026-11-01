@@ -60,6 +60,8 @@ wa = {
     frame = function() return FRAME end, gravity = function() return 0.1 end,
   },
   worms = { all = function() return {} end },
+  -- The installing component names its sheets (it runs in install).
+  sprites = { key = function(path) return "px.attack_helicopter:" .. path end },
   land = { trace = function() return nil end },
   actors = { spawn = actor },
   sound = { play = function(_, path) sounds[#sounds + 1] = path end },
@@ -98,12 +100,14 @@ local function run(body, frames, until_launched)
     if until_launched and launched >= until_launched then return end
   end
 end
--- One rendered frame: what the draw hooks put on screen, by sheet.
+-- One rendered frame: what the draw hooks put on screen, by sheet. Every
+-- sheet is given by its pack's key, made once, never as a bare path.
 local function draw()
   quads = {}
   for _, f in ipairs(draws) do f() end
   local by = {}
   for _, q in ipairs(quads) do
+    assert(q.sprite:find("px.attack_helicopter:", 1, true) == 1, "a sheet drawn by path: " .. q.sprite)
     local k = q.sprite:match("casing") and "casing" or q.sprite:match("bullet") and "bullet" or q.sprite
     by[k] = (by[k] or 0) + 1
   end

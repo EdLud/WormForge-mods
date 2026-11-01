@@ -2,7 +2,7 @@
 # counters on their own, and the stress test with the Highlander weapons it
 # fires (that one needs the px.ports bundle too).
 id = "example.tools"
-version = "0.3.0"
+version = "0.4.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -36,6 +36,13 @@ type = "bool"
 default = false
 label = "Time each pack"
 description = "The perf lua line in wkLua.log also gives each pack's hook handler time. Every hook call runs slower while it is on."
+
+[[components.options]]
+key = "natives"
+type = "bool"
+default = false
+label = "Time each verb"
+description = "The perf lua line in wkLua.log also gives the slowest verbs (as quad or all), every call of each summed, not only inside spikes. Lua runs slower while it is on."
 
 [[components]]
 id = "tools.worm_state_logger"

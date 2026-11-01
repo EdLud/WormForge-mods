@@ -130,6 +130,9 @@ function trail.drop(id)
 end
 
 local installed = false
+-- The default sheets, named by the pack that installed the trails (as
+-- wa.sprites.key does in install): a path is looked up on every draw.
+local keys = {}
 
 -- Register the engine callbacks. Call this from your component's install(ctx):
 -- a component's file, and anything it requires, only returns data -- `wa` does
@@ -138,6 +141,8 @@ local installed = false
 function trail.install()
   if installed then return end
   installed = true
+  keys[trail.BEAM] = wa.sprites.key(trail.BEAM)
+  keys[trail.GLOW] = wa.sprites.key(trail.GLOW)
 
   -- PX's FillTrail (:1210-1233), on the missile's own game frame.
   wa.on.missile_frame(function(m)
@@ -204,13 +209,13 @@ function trail.install()
         p.x, p.y, p.u, p.width, p.color = pt[1], pt[2], f, f * width, colors[i]
       end
       for i = #rp, n + 1, -1 do rp[i] = nil end
-      RIBBON.sprite, RIBBON.depth = t.beam, t.depth
+      RIBBON.sprite, RIBBON.depth = keys[t.beam] or t.beam, t.depth
       wa.draw.ribbon(RIBBON)
       -- The glow is the same strip, wider: only the widths change.
       if t.glow_w > 0 then
         width = t.glow_w
         for i = 1, n do rp[i].width = fs[i] * width end
-        RIBBON.sprite = t.glow
+        RIBBON.sprite = keys[t.glow] or t.glow
         wa.draw.ribbon(RIBBON)
       end
     end
