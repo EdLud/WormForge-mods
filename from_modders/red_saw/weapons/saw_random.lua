@@ -90,7 +90,8 @@ local function attempt(a, st)
     local sx, sy = clear_at(hit.x, hit.y - 5, st.size)
     if sx then
       local depth = random_depth()
-      local electric = wa.random(1, 7) == 5
+      -- PX's 1-in-7 is 14%; the profile option is a percentage.
+      local electric = wa.random(1, 100) <= st.electric_chance
       local s = saw.spawn{
         x = sx, y = sy - 1, size = st.size, team = nil,
         depth = depth, electric = electric,
@@ -127,12 +128,14 @@ return {
     saw.install(ctx)
     local quantity = math.max(1, math.min(12,
       math.floor(ctx.option("quantity") or 4)))
+    local electric_chance = math.max(0, math.min(100,
+      math.floor(ctx.option("electric_chance") or 14)))
     local started = false
     wa.on.turn_start(function()
       if started then return end
       started = true
       local st = { quantity = quantity, slice = 0, attempts = 0,
-        spawned = 0, size = size() }
+        spawned = 0, size = size(), electric_chance = electric_chance }
       local owner = fetchWorm()
       if not owner then return end
       wa.actors.spawn{

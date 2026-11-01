@@ -26,3 +26,4 @@ size = 50
 
 [options."px.saw_random"]
 quantity = 4
+electric_chance = 14

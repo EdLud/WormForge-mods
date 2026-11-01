@@ -104,17 +104,24 @@ end
 
 local function hook()
   hooked = true
+  -- The worms and their weapons, read once a draw: each field read is a call
+  -- into the engine, and the draw runs every rendered frame.
+  local weapons = {}
   wa.on.draw(function()
+    local worms = wa.worms.all()
+    for j = 1, #worms do weapons[j] = worms[j].weapon end
     for i = 1, #draws do
       local art = draws[i]
-      for _, w in ipairs(wa.worms.all()) do
-        -- `draw_holds` skips dead, hidden and body-hidden worms
-        -- (`worm_hold.rs:309-315`); `visible`/`body_visible` are the same two
-        -- hide flags (`crates/lua-host/src/actor.rs:1523-1541`).
-        local st = w.state_id
-        if w.hp and w.hp > 0 and w.visible and w.body_visible
-            and w.weapon == art.weapon and st and FIRING[st] then
-          enqueue(art, w)
+      for j = 1, #worms do
+        if weapons[j] == art.weapon then
+          -- `draw_holds` skips dead, hidden and body-hidden worms
+          -- (`worm_hold.rs:309-315`); `visible`/`body_visible` are the same two
+          -- hide flags (`crates/lua-host/src/actor.rs:1523-1541`).
+          local w = worms[j]
+          local st = w.state_id
+          if st and FIRING[st] and w.hp and w.hp > 0 and w.visible and w.body_visible then
+            enqueue(art, w)
+          end
         end
       end
     end

@@ -57,7 +57,8 @@ holding).
 - The random feature mimics `random_saws.txt`: one hidden spawner, one saw per
   frame, one slice per saw, vertical terrain trace, 10 fitting attempts and
   shrink/retry. PX's undefined random count falls back to 4. Its z-plane is a
-  50/50 split between behind the map and in front of it.
+  50/50 split between behind the map and in front of it. `electric_chance` is
+  an int percent (default 14, PX's 1 in 7); 20 gives 1 in 5.
 
 ## Known departures / gaps
 
@@ -69,8 +70,8 @@ holding).
 - The team outline colour approximates WA's team colours.
 - Damage is applied on the electric hit (`damage_now`), then the taze hold runs;
   PX writes damage immediately and holds afterwards.
-- A static corpse (0 HP, no velocity; WA's `is_static`) is skipped before any
-  hurt, push or taze. Those writes never settle on a static worm.
+- WA's death states (`dying`/`drowning`/`dead`) are skipped before any hurt,
+  push or taze; they stay WA's. A zero-HP worm not yet in death is fair game.
 - A tazed mine keeps WA's stock blast. After it explodes, worms in PX's 116 px
   electric field get the 20-frame artificial taze: 15 damage on release and
   the captured blast push scaled to 116/100, with a trail on the mine. This

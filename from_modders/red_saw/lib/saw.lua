@@ -1,14 +1,6 @@
--- Project X's CSaw (PX_pending/map_object_saw/scripts/saw_script.txt).
---
--- A saw is stationary and invincible: PX resets PosX/PosY and SpX/SpY every
--- frame, ignores explosions while isDestructible is false, and never calls
--- Free. The port therefore uses one controller actor per saw, hidden behind a
--- small mask disc, and draws the three art layers itself. Collision is a Lua
--- circle (radius 100*size); the disc is a little smaller, because actor body
--- and mask sprites do not scale with a:gfx{scale}.
---
--- The source numbers and line references are in report_saw.md. No terrain
--- cut/dig is done on spawn: a saw may sit embedded or behind terrain.
+-- Project X's CSaw: stationary and invincible. One controller actor per saw,
+-- hidden behind a mask disc; collision is a Lua circle. Numbers and line
+-- references are in report_saw.md. No terrain cut on spawn.
 
 local M = {}
 
@@ -81,13 +73,11 @@ local turn_active = false
 local worm_slices, worm_next, worm_taze = {}, {}, {}
 local obj_hits, obj_next = {}, {}
 
--- The saw keeps its own static-corpse guard. The electric hold is now
--- unguarded on purpose; the engine clears WA's static flag.
+-- WA owns its death states (dying/drowning/dead); a dying worm stays static
+-- and take/release refuse it. A zero-HP worm not yet in death is fair game.
+local DEATH_STATES = { dying = true, drowning = true, dead = true }
 local function can_affect(w)
-  if not w then return false end
-  local hp = w.hp
-  if hp == nil or hp > 0 then return true end
-  return math.abs(w.vx or 0) > 0.01 or math.abs(w.vy or 0) > 0.01
+  return w ~= nil and not DEATH_STATES[w.state]
 end
 
 local function frame()
@@ -96,25 +86,19 @@ end
 
 -- The turn's worm.
 local function current_worm()
-  --for _, w in ipairs(wa.worms.all()) do
-  --  if w and w.turn then return w end
-  --end
   return current_turn_worm
 end
 
--- Any live worm can lend the mask actor its collision helper. PX's saw belongs
--- to the map, not to the worm that fired it: using the shooter meant the actor
--- outlived (or was freed with) a worm that may leave the round later.
+-- Any live worm can lend the mask actor its collision helper; the saw belongs
+-- to the map, not to whoever fired it.
 local function fetchWorm()
   for _, w in ipairs(wa.worms.all()) do
     if w and w.kind == "worm" then return w end
   end
 end
 
--- Whose saw it is. An explosion's `ev.worm` is the missile's owner, which need
--- not be a worm (see the Javelin in rules.lua), and then it has no real
--- alliance: reading it gave every saw team 0, the first colour, so the saw
--- just made it return current turn since missile obj can't persist past a turn
+-- The saw's owner. `ev.worm` need not be a worm (a Javelin, for example), so
+-- use the turn's worm; a missile cannot outlive its turn anyway.
 local function shooter_of(ev)
   return current_worm()
 end
@@ -302,13 +286,25 @@ local function missile_push(s, m, now)
   spark(m.x, m.y, 255, 255, 255, s.controller)
 end
 
+-- What may be in reach: `list.all{ near = { x, y, r } }` (WormForge after
+-- 0.9.61) lists only what is within r, in the list's own order, so each saw
+-- no longer makes five whole lists of handles a frame. r is a pixel wider
+-- than the reach and the distance is still tested below, so the same objects
+-- are hit as from the whole list. An older DLL lists everything.
+local near_works
+local function near(list, s, reach)
+  if near_works == nil then near_works = pcall(list.all, { near = { 0, 0, 0 } }) end
+  if near_works then return list.all({ near = { s.x, s.y, reach + 1 } }) end
+  return list.all()
+end
+
 local function process(s, now)
   -- PX clears stopRotation before processSawCollission (:186-189), so the
   -- anti-loop return below cannot leave an ally-contact stop latched.
   s.stop_rotation = false
   if s.hits_this_turn > 88 then return end
 
-  for _, w in ipairs(wa.worms.all()) do
+  for _, w in ipairs(near(wa.worms, s, s.radius + WORM_RADIUS)) do
     local dx, dy = w.x - s.x, w.y - s.y
     local reach = s.radius + WORM_RADIUS
     if dx * dx + dy * dy <= reach * reach then
@@ -329,12 +325,12 @@ local function process(s, now)
       end
     end
   end
-  objects(wa.crates.all(), "crate", OBJECT_RADIUS.crate, 5, 0.77, 1)
-  objects(wa.mines.all(), "mine", OBJECT_RADIUS.mine, 15, 0.85, 5)
-  objects(wa.oil.all(), "oil", OBJECT_RADIUS.oil, 20, 0.87, 1)
+  objects(near(wa.crates, s, s.radius + OBJECT_RADIUS.crate), "crate", OBJECT_RADIUS.crate, 5, 0.77, 1)
+  objects(near(wa.mines, s, s.radius + OBJECT_RADIUS.mine), "mine", OBJECT_RADIUS.mine, 15, 0.85, 5)
+  objects(near(wa.oil, s, s.radius + OBJECT_RADIUS.oil), "oil", OBJECT_RADIUS.oil, 20, 0.87, 1)
 
   local frames = {}
-  for _, m in ipairs(wa.missiles.all()) do
+  for _, m in ipairs(near(wa.missiles, s, s.radius + MISSILE_RADIUS)) do
     local dx, dy = m.x - s.x, m.y - s.y
     local reach = s.radius + MISSILE_RADIUS
     if dx * dx + dy * dy <= reach * reach then
@@ -357,6 +353,9 @@ local function tick(a, s)
   a.vx, a.vy = 0, 0
 
   local now = frame()
+  
+  if s.tazed and not s.electric then M.zap(s) end
+  
   process(s, now)
 
   if s.hits_this_turn < 88 and not s.stop_rotation then
@@ -386,14 +385,15 @@ local function spawn_controller(s)
 end
 
 local QUAD = { blend = "alpha", points = { {}, {}, {}, {} } }
+-- Made once: a table of five tables per layer per rendered frame was garbage.
+local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
 local function draw_layer(s, sheet, frame, depth, colour, angle)
   local half = 110 * s.size
   local c = wa.math.cos(angle)
   local sn = wa.math.sin(angle)
   local p = QUAD.points
-  local corners = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
   for i = 1, 4 do
-    local ox, oy = corners[i][1] * half, corners[i][2] * half
+    local ox, oy = CORNERS[i][1] * half, CORNERS[i][2] * half
     p[i].x = s.x + ox * c - oy * sn
     p[i].y = s.y + ox * sn + oy * c
   end
@@ -443,11 +443,9 @@ function M.install()
     sounds = { CUT[1], CUT[2], CUT[3], CUT[4], CLANK, SHOCK },
     gpu_prefix = "sprites/saw/",
   }
-  -- CurWorm. Also used for when a grenade is launched and the worm's turn ends. Reliable.
-  -- If obj is launched, the saw shouldnt be rogue.
+  -- Cache the turn's worm instead of scanning every frame.
   wa.on.worm_message(function(worm)
-    -- Avoids constant O(n) aswell.
-    if worm.turn then current_turn_worm = worm end  
+    if worm.turn then current_turn_worm = worm end
   end, { msgs = { wa.msg.FRAME_FINISH}})
   wa.on.turn_start(function()
     turn_active = true
@@ -480,7 +478,8 @@ function M.spawn(o)
     angle = 0, rotation = wa.random(-125, -80) / 1000,
     times_collided = 0, hits_this_turn = 0, transition = false,
     stop_rotation = false, missile_frames = {},
-    depth = o.depth or (wa.depth.OBJECTS + 1)
+    depth = o.depth or (wa.depth.OBJECTS + 1),
+    tazed = false
   }
   -- `visible=false` would also drop the sprite id the mask is built from, so
   -- keep the mask sprite and draw it as additive black to hide it.
