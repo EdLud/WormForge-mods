@@ -635,7 +635,7 @@ along its aim for 5 s, the worm held firing (aim live) for as long:
   taking PX's gun damage; the loop sound is replayed every 51 frames.
 
 **Wind Changer and Gravity Control.** PX's `wind_changer_script` (ravander,
-improved by 0rang3) and `gravity_control_script` (DabbyB, edited by 0rang3).
+improved by 0rang3) and `gravity_control_script` (DannyB, edited by 0rang3).
 Both records are one of WA's turn utilities with an index WA doesn't use, so
 WA fires a utility that does nothing and the script does the work:
 - **Wind Changer:** while it is selected, 0-9 choose the force. Firing it sets

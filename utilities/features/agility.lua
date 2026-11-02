@@ -1,4 +1,4 @@
--- From the Agility pack 1.1 (Zed / 0rang3, port by red), as it was.
+-- From the Agility pack 1.1 (Zed / 0rang3, port by reddaz), as it was.
 -- Agility (air control), ported from Zed's RPG Wars mod, edited by 0rang3.
 --
 -- 1:1 port now that vx/vy are directly writable during jump and other

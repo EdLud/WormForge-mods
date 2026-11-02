@@ -1,5 +1,5 @@
--- ExTurnSide, by red: left and right turn the worm during rope swings
--- and other actions. From red's ExTurnSide pack 1.0.1, as it was.
+-- ExTurnSide, by reddaz: left and right turn the worm during rope swings
+-- and other actions. From reddaz's ExTurnSide pack 1.0.1, as it was.
 
 -- Allows manual facing direction changes during rope swings and action states.
 local prev_left = false
