@@ -1,34 +1,37 @@
 -- lua mods/tests/px/test_girder_launcher.lua
--- A girder that would trap a worm (the shooter beside a wall) is refused at
--- the fire press, before WA counts the shot; at impact it is never laid.
+-- A girder that would hold a worm inside new land (the shooter beside a
+-- wall) is laid deeper into the land, or hits that worm instead.
 local root = (arg[0]:match("^(.*[/\\])") or "") .. "../../px/"
 package.path = root .. "?.lua;" .. package.path
 
-local fire_hook, trace_result, stamps, sounds, nearby, worms, launched
+local stamps, sounds, nearby, worms, launched, logs, solid
 local function reset()
-  fire_hook, trace_result, stamps, sounds, nearby, worms, launched = nil, {}, {}, {}, {}, {}, {}
+  stamps, sounds, nearby, worms, launched, logs = {}, {}, {}, {}, {}, {}
+  solid = function() return false end
 end
 reset()
 package.loaded["wf-lib/holds"] = { PX_POSTURE = {} }
 package.loaded["lib/turret"] = { projectile_target = function() end }
 wa = {
-  msg = { FIRE_WEAPON = 0x26 },
   on = {
-    worm_message = function(fn, spec)
-      assert(spec.msgs[1] == wa.msg.FIRE_WEAPON and #spec.msgs == 1)
-      fire_hook = fn
-    end,
+    worm_message = function() error("the Girder Launcher hooks no worm message") end,
     missile_frame = function() end,
     draw = function() end,
   },
-  world = {
-    trace = function(t) trace_result.query = t; return trace_result.hit end,
-    electrical_nearby = function() return nearby end,
+  -- WA's sine table is 16.16.
+  math = {
+    sin = function(x) return math.floor(math.sin(x) * 65536 + 0.5) / 65536 end,
+    cos = function(x) return math.floor(math.cos(x) * 65536 + 0.5) / 65536 end,
   },
+  world = { electrical_nearby = function() return nearby end },
   worms = { all = function() return worms end },
   sound = { play = function(worm, id) sounds[#sounds + 1] = id end },
-  land = { stamp = function(s) stamps[#stamps + 1] = s end },
+  land = {
+    stamp = function(s) stamps[#stamps + 1] = s end,
+    solid = function(x, y) return solid(x, y) end,
+  },
   weapons = { launch = function(spec) launched[#launched + 1] = spec; return #launched end },
+  log = function(line) logs[#logs + 1] = line end,
 }
 
 local weapon = dofile(root .. "weapons/girder_launcher.lua")
@@ -42,56 +45,66 @@ local function shooter(x, y, facing)
   return w
 end
 
-print("girder launcher: the fire press")
-do
-  -- Aim level, facing right: WA starts the shell 14 px out, at (114, 100).
-  reset(); weapon.setup()
-  local w = shooter(100, 100); worms = { w }
-  trace_result.hit = { hit = true, x = 116, y = 100 }
-  check("a wall 16 px ahead: the girder would cover the shooter, the fire is eaten", fire_hook(w) == "eat")
-  check("from 14 px out along the aim", trace_result.query.x0 == 114 and math.abs(trace_result.query.y0 - 100) < 1e-9)
-  check("WA's can't-fire sound", sounds[1] == 120)
-  trace_result.hit = { hit = true, x = 140, y = 100 }
-  check("a wall 40 px ahead: the girder lies clear of the shooter, it fires", fire_hook(w) == nil)
-  trace_result.hit = nil
-  check("nothing in reach: it fires", fire_hook(w) == nil)
-  trace_result.hit = { hit = true, x = 116, y = 100, obj = { kind = "worm", id = 3 } }
-  check("a body in the way: it is pushed, no girder, it fires", fire_hook(w) == nil)
-  trace_result.hit = { hit = true, x = 120, y = 100, starts_solid = true }
-  check("starting in the land: the girder lands at the start, eaten", fire_hook(w) == "eat")
-  -- Aiming straight up beside an overhang: the bar stands on the worm's head.
-  w.aim = 1
-  trace_result.hit = { hit = true, x = 100, y = 78 }
-  check("an overhang 22 px above: covers the head, eaten", fire_hook(w) == "eat")
-  local other = shooter(160, 100); other.id, other.turn = 4, false
-  worms = { w, other }
-  w.aim = 0.5
-  trace_result.hit = { hit = true, x = 150, y = 100 }
-  check("a wall where another worm stands: the girder would wall that worm in, eaten", fire_hook(w) == "eat")
-  nearby = { other }
-  check("that worm within 20 px of where it stops: pushed, not walled in, it fires", fire_hook(w) == nil)
-  w.turn = false
-  trace_result.hit = { hit = true, x = 116, y = 100 }
-  nearby = {}
-  check("not the turn's worm: left to WA", fire_hook(w) == nil)
+-- The mock's launch numbers missiles in order.
+local function shoot(_, w, vx, vy, x, y)
+  weapon.definition.on_fire({ worm = w, x = w.x, y = w.y, vx = vx, vy = vy })
+  weapon.definition.on_explode({ missile = #launched, x = x, y = y })
 end
 
-print("girder launcher: impact")
+print("girder launcher: where the girder is laid")
 do
   reset(); weapon.setup()
   local w = shooter(100, 100); worms = { w }
-  weapon.definition.on_fire({ worm = w, x = 114, y = 100, vx = 10, vy = 0 })
-  weapon.definition.on_explode({ missile = 1, x = 115, y = 100 })
-  check("a forecast miss: the girder is not laid over the shooter", #stamps == 0)
-  check("and WA's can't-fire sound", sounds[1] == 120)
-  weapon.definition.on_fire({ worm = w, x = 114, y = 100, vx = 10, vy = 0 })
-  weapon.definition.on_explode({ missile = 2, x = 150, y = 100 })
-  check("clear of every worm: the girder is laid", #stamps == 1 and stamps[1].x == 150)
-  local other = shooter(158, 100); other.id = 4
+  solid = function(x) return x >= 162 end
+  shoot(1, w, 10, 0, 150, 100)
+  check("clear of every worm: laid where the shell stops, along its flight",
+    #stamps == 1 and stamps[1].x == 150 and stamps[1].y == 100 and stamps[1].frame == 8)
+  check("drawn over the land, no buried blend", stamps[1].buried == nil)
+  check("with the impact sound", sounds[#sounds] == "sounds/girder_launcher/mgirder_impact.wav")
+  -- Beside a wall (land from x 106): at the impact its back half would be
+  -- land through the shooter, so it goes into the wall until its back end
+  -- (11 px behind its centre pixel) is a pixel clear of his shape (x 96..104).
+  solid = function(x) return x >= 106 end
+  shoot(2, w, 10, 0, 105, 100)
+  check("the shooter beside a wall: laid deeper, clear of him",
+    #stamps == 2 and stamps[2].x == 117 and stamps[2].y == 100 and w.hurt_by == nil)
+  check("that is logged", logs[#logs]:find("12px deeper", 1, true) ~= nil)
+  -- The engine plots it around the pixel its position rounds down to: at
+  -- 116.6 that is 116, whose back end (105) touches his shape's margin, so it
+  -- goes a pixel deeper. Rounded to nearest (117) it looked clear.
+  solid = function(x) return x >= 117 end
+  shoot(5, w, 10, 0, 116.6, 100)
+  check("a fractional impact is checked where the engine plots it",
+    #stamps == 3 and math.abs(stamps[3].x - 117.6) < 1e-9 and logs[#logs]:find("1px deeper", 1, true) ~= nil)
+  table.remove(stamps)
+  -- Aiming up under an overhang (land up to y 84): it goes up into it, its
+  -- lower end a pixel clear of his shape's top row (y 91).
+  solid = function(_, y) return y <= 84 end
+  shoot(3, w, 0, -10, 100, 85)
+  check("an overhang just above the head: laid up in it",
+    #stamps == 3 and stamps[3].x == 100 and stamps[3].y == 78 and stamps[3].frame == 0)
+  -- No land ahead to go into: the shooter takes the shell's hit instead.
+  solid = function() return false end
+  shoot(4, w, 10, 0, 105, 100)
+  check("no depth clears the shooter: he is hit and pushed, no girder",
+    #stamps == 3 and w.hurt_by == 3 and w.vx == 2.5 and w.vy == 0)
+  check("that is logged too", logs[#logs]:find("clears worm 17", 1, true) ~= nil)
+end
+
+print("girder launcher: struck bodies")
+do
+  reset(); weapon.setup()
+  local w = shooter(100, 100)
+  local other = shooter(158, 100); other.id, other.turn = 4, false
   worms = { w, other }; nearby = { other }
-  weapon.definition.on_fire({ worm = w, x = 114, y = 100, vx = 10, vy = 0 })
-  weapon.definition.on_explode({ missile = 3, x = 150, y = 100 })
-  check("a worm where it stops is pushed and hurt, no girder", #stamps == 1 and other.hurt_by == 3)
+  shoot(1, w, 10, 0, 150, 100)
+  check("a worm where it stops is pushed and hurt, no girder", #stamps == 0 and other.hurt_by == 3)
+  -- Beside a wall, the shooter is within 20 px of where it stops.
+  nearby = { w }
+  other.x = 1000
+  solid = function(x) return x >= 106 end
+  shoot(2, w, 10, 0, 105, 100)
+  check("the shooter is never the struck body", #stamps == 1 and stamps[1].x == 117 and w.hurt_by == nil)
 end
 
 print("ALL PASS")

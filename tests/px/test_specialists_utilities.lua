@@ -79,6 +79,8 @@ wa.depth={FRONT=9}
 wa.worms={all=function()return {w} end}
 wa.world.electrical_nearby=function()return objects end
 wa.land.stamp=function(s)stamps[#stamps+1]=s end
+wa.land.solid=function()return false end
+wa.math={sin=math.sin,cos=math.cos}
 wa.weapons={launch=function(ev)
   launch_event=ev
   return 100

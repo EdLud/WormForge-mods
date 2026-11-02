@@ -47,6 +47,7 @@ function weapon.setup()
   local fires = shared.fires
   local trunc = shared.trunc
   local turrets = require("lib/turret")
+  local stuck_stamp = require("lib/stuck_stamp")
 
   -- ---------------------------------------------------------------- Javelin
 
@@ -100,57 +101,9 @@ function weapon.setup()
       return o and math.abs(x - o.x) < r and math.abs(y - o.y) < r
     end
 
-    -- The stamp's spear (measured from stamp.png): frame f points f * 11.25
-    -- degrees clockwise from up, reaches 20px either way from its centre and
-    -- about 4px either side of its axis. WA's worm shape is 9x16, hotspot
-    -- (4,9). New land there would hold the worm inside the spear.
-    local SHAFT, HALF_WIDTH, DEEPEST = 20, 4, 30
-    local function holds(w, cx, cy, dx, dy, solid)
-      local x0, x1 = math.floor(w.x) - 4, math.floor(w.x) + 4
-      local y0, y1 = math.floor(w.y) - 9, math.floor(w.y) + 6
-      for t = -SHAFT, SHAFT do
-        for s = -HALF_WIDTH, HALF_WIDTH do
-          local px = math.floor(cx + dx * t - dy * s + 0.5)
-          local py = math.floor(cy + dy * t + dx * s + 0.5)
-          -- Land already there gains nothing: the spear's buried part.
-          if px >= x0 and px <= x1 and py >= y0 and py <= y1 and not solid(px, py) then return true end
-        end
-      end
-      return false
-    end
-    -- Where the spear can stick without holding a worm: the impact, else as
-    -- little deeper into the land along its flight (its point in land) as
-    -- clears every worm, its tail at most 10px past the impact (an impact on
-    -- the last free pixel above a worm's ground lies in its bottom row).
-    -- Returns the centre, or nil and the worm it cannot clear.
-    local function plant(x, y, frame)
-      local rad = math.rad(frame * 11.25)
-      local dx, dy = wa.math.sin(rad), -wa.math.cos(rad)
-      local near = {}
-      for _, w in ipairs(wa.worms.all()) do
-        if w.hp > 0 and math.abs(w.x - x) < 80 and math.abs(w.y - y) < 80 then near[#near + 1] = w end
-      end
-      table.sort(near, function(p, q) return p.id < q.id end)
-      local seen = {}
-      local function solid(px, py)
-        local k = px * 65536 + py
-        local v = seen[k]
-        if v == nil then v = wa.land.solid(px, py); seen[k] = v end
-        return v
-      end
-      local held
-      for d = 0, DEEPEST do
-        local cx, cy = x + dx * d, y + dy * d
-        if d == 0 or solid(math.floor(cx + dx * SHAFT + 0.5), math.floor(cy + dy * SHAFT + 0.5)) then
-          held = nil
-          for _, w in ipairs(near) do
-            if holds(w, cx, cy, dx, dy, solid) then held = w; break end
-          end
-          if not held then return cx, cy, d end
-        end
-      end
-      return nil, held
-    end
+    -- The stamp's spear (measured from stamp.png): 20px either way from its
+    -- centre, about 4px either side of its axis.
+    local SPEAR = { half_length = 20, half_width = 4 }
     fires.javelin = function(ev)
       local v = (ev.missile and speed[ev.missile]) or launching
       if ev.missile then speed[ev.missile] = nil end
@@ -179,7 +132,7 @@ function weapon.setup()
       local frame = orientation(vx, vy)
       local sx, sy, deeper
       if not target then
-        sx, sy, deeper = plant(ev.x, ev.y, frame)
+        sx, sy, deeper = stuck_stamp.place(ev.x, ev.y, frame, SPEAR)
         if not sx then
           target = sy
           wa.log(string.format("Javelin: no stuck spear at (%.1f,%.1f) clears worm %d; it is hit",
