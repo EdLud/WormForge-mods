@@ -999,7 +999,7 @@ type = "feature"
 name = "Project X oil drums"
 authors = ["Entuser"]
 credits = "sprites and skunk drum by Pablo, cluster, icy and electric drums by rafa``2, fitted to Highlander by 0rang3"
-description = "Every oil drum on the map is one of Project X's: explosive, napalm, nuke, cluster, icy, electric, mine, or on cavern maps teleport, each drawn as its kind and bursting into it. The nuke drum needs the Nuke Rocket placed."
+description = "cool oil drums from px. The nuke drum needs the Nuke Rocket placed."
 entry = "components/oil_drums.lua"
 before_weapons = true
 
