@@ -164,6 +164,9 @@ function M.install(ctx)
     half_height = RADIUS,
     kinds = { worm = true, oil = true, mine = true, crate = true, arrow = true, missile = true },
     one_shot = true,
+    -- A crate is blown up whenever it touches the zone, whatever the turn is
+    -- doing: crates drop at a turn's start, while the zone sleeps.
+    every_crate = DAMAGE,
     fade_frames = fx.FADE,
     frame = animate,
     tick = boom,

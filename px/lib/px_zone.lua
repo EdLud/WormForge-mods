@@ -36,6 +36,10 @@
 --   half_height      ...)` :382 is 40x30, the blast zone's 45x45 :374).
 --   kinds            which object kinds count (PX's `OC_*` list, :334).
 --   one_shot         `CBlast`'s `worknow`: act once per waking (:328-346).
+--   every_crate      a damage: a crate touching the box is hit with it and
+--                    sets the zone off at once, in every turn phase, armed or
+--                    not -- each crate once (ours, not PX's: crates dropping at
+--                    a turn's start fell through a zone asleep or spent).
 --   next_turn        begin spending turns after the next turn starts.
 --   fade_frames      visual-only tail after expiry; payload stops immediately.
 --   wakes(z, obj)    whether this activator acts at all -- the health zone's
@@ -73,6 +77,10 @@ local hooks_registered = false
 local FPS = 50
 local INACTIVE_FRAMES = 7 * FPS
 
+-- A crate's body is a circle of 9 pixels (`wa.world.trace`'s crate): it
+-- touches the box once its centre is this close to it.
+local CRATE_RADIUS = 9
+
 local function forget(o)
   if o.actor then o.actor:despawn() end
   for i, other in ipairs(objects) do
@@ -103,6 +111,31 @@ local function activator(o)
   return found
 end
 
+-- `every_crate`: every frame, so a falling crate cannot step over the box
+-- between two of the class's ticks, and whatever the turn is doing. The crate
+-- is hit first, while its handle is surely live -- WA blows a crate up on any
+-- hit -- and then the zone booms as it would for anything else, told only the
+-- kind, since the crate may be gone by then. One crate a frame: its blast can
+-- free the others in the list, which the next frame lists afresh. A boom the
+-- zone was armed for is spent by it.
+local CRATE = { kind = "crate" }
+local function crates(o)
+  local spec = o.spec
+  local rx, ry = spec.radius + CRATE_RADIUS, spec.half_height + CRATE_RADIUS
+  local near = { near = { o.x, o.y, math.max(rx, ry) * 1.5 } }
+  for _, crate in ipairs(wa.crates.all(near)) do
+    local key = (crate.uid or 0) ~= 0 and crate.uid or crate.id
+    if not o.crates_hit[key]
+        and math.abs(crate.x - o.x) <= rx and math.abs(crate.y - o.y) <= ry then
+      o.crates_hit[key] = true
+      crate:hit(spec.every_crate, 0, 0)
+      spec.tick(o, CRATE)
+      if o.active then o.armed = false end
+      return
+    end
+  end
+end
+
 -- PX's per-object `M_FRAME` (:184-229, :310-347), run once a world frame by an
 -- actor with no body.
 local function tick(o)
@@ -114,6 +147,7 @@ local function tick(o)
     if o.fade >= (spec.fade_frames or 0) then forget(o) end
     return
   end
+  if spec.every_crate then crates(o) end
   if spec.fps and o.timer % spec.fps == 0 then
     if spec.one_shot then
       -- `CBlast`'s `worknow`: it booms, then waits to be re-armed (:328-346).
@@ -220,6 +254,7 @@ function M.register(spec)
     o.active, o.start_be_inactive, o.inactive = true, false, 0
     o.counting = not spec.next_turn
     o.armed = spec.one_shot and true or false
+    o.crates_hit = {}
     -- PX's objects are `CObject`s that live on M_FRAME (:167-230, :306-347):
     -- here that is an actor with a per-frame brain and no body -- brains run on
     -- the world's FRAME_FINISH, so the same frame on every peer

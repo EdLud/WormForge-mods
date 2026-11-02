@@ -10,7 +10,7 @@ package.preload["wf-lib/px_sprite_builder"] = function()
   return assert(loadfile(sdk .. "px_sprite_builder.lua", "t", env))()
 end
 local hooks, actors, claims, draws, nearby, worms, keys, assets
-local blasts, sim_random, asset_loads, top_messages
+local blasts, sim_random, asset_loads, top_messages, crate_list
 local function event(name, ...)
   for _, f in ipairs(hooks[name] or {}) do f(...) end
 end
@@ -33,7 +33,7 @@ local function reset(rate, turns, both)
   for _, name in ipairs({"lib/weapon_hint", "wf-lib/tooltip", "lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
     "weapons/health_zone", "weapons/blast_zone"}) do package.loaded[name] = nil end
   hooks, actors, claims, draws, nearby, worms, keys, assets = {}, {}, {}, {}, {}, {}, {}, {}
-  blasts, sim_random, asset_loads, top_messages = 0, 0, 0, {}
+  blasts, sim_random, asset_loads, top_messages, crate_list = 0, 0, 0, {}, {}
   wa = {
     depth = { EFFECTS = 12, WORMS = 16, OBJECTS = 20 },
     math = { sin = math.sin, cos = math.cos, atan = math.atan },
@@ -48,6 +48,10 @@ local function reset(rate, turns, both)
       water = function() return 1000 end, keys = function() return keys end,
       electrical_nearby = function() return nearby end },
     worms = { all = function() return worms end },
+    crates = { all = function(f)
+      assert(f and f.near, "crates are listed near the zone")
+      return crate_list
+    end },
     random = function(lo) sim_random = sim_random + 1; return lo end,
     assets = { load = function(s)
       asset_loads = asset_loads + 1
@@ -157,6 +161,24 @@ assert(#exp==9 and exp[1].frame==1 and exp[1].blend=="add")
 -- Trigger once; repeated frames and cosmetic draws must not retrigger a blast.
 w.x=300; frames(5); assert(blasts==1); frames(50); draw(); draw(); assert(blasts==1)
 event("turn_end"); frames(360); event("turn_start"); frames(5); assert(blasts==2)
+-- A crate sets the zone off whenever it touches it, asleep or spent, each
+-- crate once: crates drop at a turn's start, while the zone sleeps.
+local function crate(id, x, y)
+  local c = { kind = "crate", id = id, uid = id, x = x, y = y, hits = 0 }
+  function c:hit(d) assert(d == 30); self.hits = self.hits + 1 end
+  return c
+end
+local c1 = crate(7, 300, 100 - 22.5 - 9)
+crate_list = { c1 }; frames(1); assert(blasts==3 and c1.hits==1, "a spent zone still blows a crate up")
+frames(50); assert(blasts==3 and c1.hits==1, "each crate once")
+w.x=900; event("turn_end"); frames(360)
+local c2 = crate(8, 300 + 22.5 + 10, 100)
+crate_list = { c2 }; frames(5); assert(blasts==3 and c2.hits==0, "a crate clear of the box is left alone")
+c2.x = 300; frames(1); assert(blasts==4 and c2.hits==1, "a sleeping zone blows a falling crate up")
+local c3, c4 = crate(9, 300, 100), crate(10, 305, 100)
+crate_list = { c3, c4 }; frames(1); assert(blasts==5 and c3.hits==1 and c4.hits==0, "one crate a frame")
+frames(1); assert(blasts==6 and c4.hits==1)
+crate_list = {}
 assert(sim_random==0, "effects must not consume gameplay RNG")
 health = reset(60); w=worm(); w.aiming=true
 event("worm_message",w,wa.msg.FRAME_FINISH)
