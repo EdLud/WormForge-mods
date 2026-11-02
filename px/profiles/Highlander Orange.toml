@@ -9,6 +9,7 @@ placement_range = 300
 agility = true
 collect_viewer = true
 instant_death = "settled"
+kill_counter = true
 live_hp = true
 parkour = true
 

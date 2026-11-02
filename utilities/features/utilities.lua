@@ -12,6 +12,7 @@ local PACKS = {
   { "live_hp", "features/live_hp" },
   { "instant_death", "features/instant_death", choice = true },
   { "collect_viewer", "features/collect_viewer" },
+  { "kill_counter", "features/kill_counter" },
 }
 
 return function(ctx)

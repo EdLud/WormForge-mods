@@ -28,6 +28,7 @@ live_hp = true
 | Live HP | switch | Non-active worms' health bars follow damage immediately, down to zero, preserving freeze and momentum. Originally by reddaz. |
 | Instant Death | switch, off by default | Zero-HP non-active worms start their native death sequence once their own motion settles, without waiting for the rest of the battlefield. |
 | Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
+| Kill counter | switch | A badge behind each worm counts its kills, 1 to 9, then infinity, and glow sparks burst from the killer. The worm whose turn it is gets the kill, whatever did the killing, and the victim's own count with it (a worm with 2 kills is worth 3). From Project X's kill counter, which Orange's Highlander loads. |
 
 Gravity and wind belong to the profile's scheme (**Manage Scheme (.WSC)** in the loader, `[scheme]`),
 including `gravity`, `constant_wind` and `wind`.
