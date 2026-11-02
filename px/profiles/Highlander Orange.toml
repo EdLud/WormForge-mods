@@ -8,6 +8,7 @@ placement_range = 300
 [options."core.utilities"]
 agility = true
 collect_viewer = true
+ex_turn_side = true
 instant_death = "settled"
 kill_counter = true
 live_hp = true

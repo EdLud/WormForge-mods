@@ -4,9 +4,9 @@ description = "Mole Shopper by popka and 0rang3: coalition fog, 199 HP, 40-secon
 features = ["core.fog", "core.utilities"]
 
 [crates]
-health = 4
-utility = 48
-weapon = 48
+health = 0
+utility = 0
+weapon = 100
 
 [options."core.fog"]
 animal_circle_radius = 170
@@ -996,6 +996,7 @@ retreat = 3000
 
 [weapon_settings."stock.mole_bomb"]
 ammo = -1
+crate_pct = 0.0
 shots = 2
 
 [weapon_settings."stock.ninja_rope"]
