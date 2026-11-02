@@ -5757,10 +5757,15 @@ do
   check("the thrower's identity survives a control/turn change", owner.hp == owner_hp and enemy.hp == enemy_hp - 80)
   owner.turn, enemy.turn = true, false
   owner.x, owner.y = 1000, 1000
+  b.x, b.y, enemy.x, enemy.y = 1000, 1000, 1000, 1000
   a.x, a.y = 120, 100
   nearby = { a }
+  -- The javelin went into land, ahead of it: its point there adds none.
+  M.solid = function(x) return x >= 100 end
   impact(1, 0)
+  M.solid = nil
   check("20px boundary is excluded", a.hp == 80 and #M.stamps == 1)
+  a.x, a.y = 1000, 1000
   nearby = {}
   owner.x, owner.y = 124, 124
   impact(-7, 7)
@@ -5802,8 +5807,45 @@ do
   nearby = { owner_alias }
   local stamps_before = #M.stamps
   impact(-8, 4)
-  check("a returning Javelin cannot hurt or push its thrower", owner.hp == 100
-    and owner.vx == 0 and owner.vy == 0 and #M.stamps == stamps_before + 1)
+  check("a spear that cannot stick clear of its thrower hits him instead", owner.hp == 80
+    and owner.vx == -2 and owner.vy == 1 and #M.stamps == stamps_before)
+  check("that is logged", logs[#logs]:find("clears worm " .. owner.id, 1, true) ~= nil)
+  owner.hp, owner.vx, owner.vy = 100, 0, 0
+  -- The replay's throw: aimed nearly straight down into the ground at the
+  -- thrower's feet (land from y 107). The tail would hold him; it goes in
+  -- deeper, its tail at the surface, and he is not hit.
+  M.solid = function(_, y) return y >= 107 end
+  owner.x, owner.y = 100, 100
+  nearby = { owner_alias }
+  stamps_before = #M.stamps
+  M.missile({ weapon = "prod", id = 7001, uid = 8001, phase = "pre", vx = -1, vy = 8 })
+  spec.on_explode({ x = 99, y = 108, missile = 7001, worm = { owner_object = true } })
+  local deep = M.stamps[#M.stamps]
+  check("a throw into the ground at the thrower's feet sticks deeper instead of holding him",
+    owner.hp == 100 and #M.stamps == stamps_before + 1 and deep.frame == 16
+    and deep.x == 99 and deep.y == 127)
+  -- WA bursts it on the last free pixel, in his own bottom row: deeper still.
+  M.missile({ weapon = "prod", id = 7002, uid = 8002, phase = "pre", vx = -1, vy = 8 })
+  spec.on_explode({ x = 99, y = 106, missile = 7002, worm = { owner_object = true } })
+  deep = M.stamps[#M.stamps]
+  check("an impact on the worm's own bottom row still sticks, its tail in the ground",
+    owner.hp == 100 and #M.stamps == stamps_before + 2 and deep.y == 127)
+  -- Every worm counts, not only those in the impact square.
+  owner.x, owner.y = 1000, 1000
+  enemy.x, enemy.y, enemy.hp = 100, 80, 100
+  nearby = {}
+  stamps_before = #M.stamps
+  impact(0, 8)
+  local clear = M.stamps[#M.stamps]
+  check("an enemy above a downward stamp's tail is cleared too", enemy.hp == 100
+    and #M.stamps == stamps_before + 1 and clear.x == 100 and clear.y > 100)
+  M.solid = nil
+  -- Below it in the air: deeper only goes further into the enemy, so it is hit.
+  enemy.x, enemy.y = 100, 115
+  stamps_before = #M.stamps
+  impact(0, 8)
+  check("an enemy no depth clears is hit instead", enemy.hp == 80 and #M.stamps == stamps_before)
+  enemy.x, enemy.y, enemy.hp, enemy.vx, enemy.vy = 108, 100, 100, 0, 0
   enemy.hp = 100
   nearby = { owner, enemy }
   spec.on_explode({ x = 100, y = 100, worm = { owner_object = true } })
@@ -5833,10 +5875,14 @@ do
   spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
   owner.turn, enemy.turn = false, true
   nearby = { owner_alias }
+  -- The handle in the list stands where it was; the worm has walked off,
+  -- so the spear sticks without holding him.
+  owner.x, owner.y, enemy.x, enemy.y = 1000, 1000, 1000, 1000
   local before = #M.stamps
   spec.on_explode({ x = 100, y = 100, missile = 8002 })
   check("launch captures the thrower even if control changes before its first frame",
     owner.hp == 100 and #M.stamps == before + 1 and M.stamps[#M.stamps].frame == 7)
+  owner.x, owner.y, enemy.x, enemy.y = 100, 100, 100, 100
   owner.turn, enemy.turn = true, false
   wa.weapons.launch = function() return 8003 end
   spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
