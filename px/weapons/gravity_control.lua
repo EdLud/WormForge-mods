@@ -32,9 +32,11 @@ function weapon.setup()
   local SETTLE_LIMIT = 500      -- frames (10 s) the turn clock may stand still
   local clock_seen = {}         -- worm id -> { clock, frames }: each worm counts the frames itself
   local retreating = false      -- the turn's retreat: the gravity holds until the turn ends
+  local settling = false        -- the turn has ended with Gravity Control on
+  local crate_floor = 0         -- the newest crate's uid when the turn ended
 
   local function gravity_back()
-    gravity_factor, clock_seen = nil, {}
+    gravity_factor, clock_seen, settling = nil, {}, false
     wa.world.set_gravity(gravity_initial)
   end
 
@@ -59,9 +61,22 @@ function weapon.setup()
 
   wa.on.turn_retreat(function() retreating = true end)
 
-  -- Reset at turn end, after the retreat; delaying until the next turn can
-  -- softlock settling. A turn whose worm is gone gets its end (with no
-  -- worm) when WA ends the turn, before the settling too.
+  -- As WA's Low Gravity: on through the settling after the turn, back for
+  -- the next turn. WA puts it back when it drops the crates between turns
+  -- (0x560E1E), else when the next team starts; it scales gravity only
+  -- while a team has the turn (0x5603A3). turn_start comes after the crate
+  -- drop, so a crate WA made since the turn ended puts it back before its
+  -- first step. A worm switch within the turn (Tab) runs turn_start without
+  -- an end, and changes nothing. The 10 s still clock still applies in the
+  -- settling: something that never settles under a strong gravity (a grave
+  -- at 2.4x) would hold the next turn off for ever.
+  wa.on.turn_start(function()
+    if settling then gravity_back() end
+  end)
+  wa.on.body_move(function(crate)
+    if settling and (crate.uid or 0) > crate_floor then gravity_back() end
+  end, { kinds = { "crate" } })
+
   require("lib/turn_controls").register("px.gravity_control", {
     frame = function(worm)
       gravity_initial = gravity_initial or wa.world.gravity()
@@ -86,7 +101,12 @@ function weapon.setup()
     end,
     finish = function()
       retreating = false
-      if gravity_factor then gravity_back() end
+      if gravity_factor and not settling then
+        settling, clock_seen, crate_floor = true, {}, 0
+        for _, crate in ipairs(wa.crates.all()) do
+          crate_floor = math.max(crate_floor, crate.uid or 0)
+        end
+      end
       gravity_choice = nil
     end,
     hint = function()

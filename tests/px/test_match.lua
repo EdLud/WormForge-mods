@@ -599,7 +599,7 @@ local function new_match(opts)
     mines = { all = function() return M.mines end },
     missiles = { all = function() return M.missiles end },
     crates = {
-      all = function() return M.crates end,
+      all = function() return M.crates or {} end,
       -- As the engine's: WA's crate, its contents WA's pick; recorded.
       spawn = function(spec)
         M.crate_spawns = M.crate_spawns or {}
@@ -915,8 +915,17 @@ local function new_match(opts)
           for _, h in ipairs(M.draws) do h() end
         end
       end,
+      -- Every handler, each for its kinds: the Portal Gun's and Gravity Control's.
       body_move = function(f, opts)
-        M.body_move = f
+        M.body_moves = M.body_moves or {}
+        M.body_moves[#M.body_moves + 1] = { f = f, kinds = opts and opts.kinds }
+        M.body_move = function(body)
+          for _, h in ipairs(M.body_moves) do
+            local wanted = not h.kinds
+            for _, kind in ipairs(h.kinds or {}) do wanted = wanted or kind == body.kind end
+            if wanted then h.f(body) end
+          end
+        end
       end,
       contact = function(f)
         M.contacts = M.contacts or {}
@@ -4930,9 +4939,36 @@ do
   check("5: very high gravity chosen (9 means nothing)", M.message(w, wa.msg.FIRE_WEAPON) == nil
     and M.gravity == (0.014373779296875 * 2.4), tostring(M.gravity))
   M.turn_start({ worm = w, active = w })
-  check("turn start leaves Gravity Control active", M.gravity == (0.014373779296875 * 2.4))
+  check("a worm switch (turn start, no end) leaves Gravity Control active", M.gravity == (0.014373779296875 * 2.4))
+  -- As WA's Low Gravity: on through the settling after the turn.
   M.turn_end({ worm = w, active = w })
-  check("turn end restores the match's gravity", M.gravity == 0.014373779296875)
+  check("turn end leaves it on for the settling", M.gravity == (0.014373779296875 * 2.4))
+  for _ = 1, 200 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("the settling (4 s, clock still) keeps it", M.gravity == (0.014373779296875 * 2.4))
+  M.turn_start({ worm = worm(32), active = worm(32) })
+  check("the next team's turn restores the match's gravity", M.gravity == 0.014373779296875)
+  M.turn_end({ worm = worm(32), active = worm(32) })
+  -- WA's crates between turns fall in the match's gravity; one that was
+  -- there when the turn ended does not end it.
+  M.crates = { { kind = "crate", uid = 40 }, { kind = "crate", uid = 41 } }
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.body_move({ kind = "crate", uid = 41 })
+  check("a crate in the turn (a Crate Shower) keeps it", M.gravity == (0.014373779296875 * 2.4))
+  M.turn_end({ worm = w, active = w })
+  M.body_move({ kind = "crate", uid = 41 })
+  M.body_move({ kind = "crate", uid = 40 })
+  check("a crate already there, moving in the settling, keeps it", M.gravity == (0.014373779296875 * 2.4))
+  M.crates[#M.crates + 1] = { kind = "crate", uid = 42 }
+  M.body_move({ kind = "crate", uid = 42 })
+  check("a crate dropped between turns restores the match's gravity", M.gravity == 0.014373779296875)
+  M.turn_start({ worm = worm(32), active = worm(32) })
+  check("the next turn after that leaves it", M.gravity == 0.014373779296875)
+  M.turn_end({ worm = worm(32), active = worm(32) })
+  M.crates = nil
   -- PX's rule: the turn clock standing still for 10 s puts the gravity back.
   local high = (0.014373779296875 * 2.4)
   M.digit = 5
@@ -4956,6 +4992,20 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("10 s with the clock still puts the gravity back", M.gravity == 0.014373779296875, tostring(M.gravity))
   M.turn_end({ worm = w, active = w })
+  M.turn_start({ worm = w, active = w })
+  -- The settling after the turn: 10 s with the clock still put it back too,
+  -- so what never settles under it (a grave at 2.4x) can't hold the next
+  -- turn off.
+  M.digit = 5
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.digit = nil
+  M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_end({ worm = w, active = w })
+  for _ = 1, 500 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("the settling keeps it for 10 s", M.gravity == high)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the settling, the clock still for 10 s, puts it back", M.gravity == 0.014373779296875)
+  M.turn_start({ worm = w, active = w })
   -- The retreat: the clock stands still, the gravity holds until the turn ends.
   M.digit = 5
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4965,16 +5015,19 @@ do
   for _ = 1, 700 do M.message(w, wa.msg.FRAME_FINISH) end
   check("a retreat keeps Gravity Control on, however long, the clock still", M.gravity == high, tostring(M.gravity))
   M.turn_end({ worm = w, active = w })
-  check("the turn's end, after the retreat, puts it back", M.gravity == 0.014373779296875)
+  check("the turn's end, after the retreat, keeps it for the settling", M.gravity == high)
+  M.turn_start({ worm = w, active = w })
+  check("the next turn puts it back", M.gravity == 0.014373779296875)
   -- A worm that dies in its turn (a Kamikaze) takes WA's turn-end messages
-  -- with it: the engine sends the turn's end, without a worm, before the
-  -- next team's turn.
+  -- with it: the engine sends the turn's end, without a worm, when WA ends
+  -- the turn.
   M.digit = 5
   M.message(w, wa.msg.FRAME_FINISH)
   M.digit = nil
   M.message(w, wa.msg.FIRE_WEAPON)
   M.turn_end({})
-  check("a turn end without its worm still puts the gravity back", M.gravity == 0.014373779296875)
+  M.turn_start({ worm = w, active = w })
+  check("a turn end without its worm, then the next turn, puts the gravity back", M.gravity == 0.014373779296875)
   M.turn_end({ worm = w, active = w })
   check("turn end after that leaves the match's gravity", M.gravity == 0.014373779296875)
 end
