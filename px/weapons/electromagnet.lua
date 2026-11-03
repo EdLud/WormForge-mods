@@ -372,6 +372,9 @@ function weapon.setup()
   end)
 
   if wa.on.draw and wa.draw.quad then
+    -- The sentries' health digits, upright over the spinning magnet.
+    local health_label = require("lib/sentry_health")
+    health_label.install()
     -- Refill one spec; the engine copies it before the next submission.
     local QUAD = { blend = "add", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
     local RING_IN, RING_OUT, SPARKS = BODY .. "ring_in.png", BODY .. "ring_out.png", BODY .. "magnetsparks.png"
@@ -387,6 +390,9 @@ function weapon.setup()
     end
     wa.on.draw(function()
       for _, m in ipairs(magnets) do
+        if m.alive and not m.sinking then
+          health_label.draw(m.health, HEALTH, m.x, m.y - 15, wa.depth.OBJECTS - 2)
+        end
         if m.alive and m.turns > 0 then
           local x, y = m.x, m.y
           local ring = m.pol < 0 and RING_IN or RING_OUT

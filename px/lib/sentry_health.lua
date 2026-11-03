@@ -1,5 +1,6 @@
 -- Small 5x7 digits on a transparent sheet. Rendering only: no actors, health
--- writes or shared RNG. Both sentry types share one GPU sheet for the match.
+-- writes or shared RNG. The sentries and the Electromagnet share one GPU
+-- sheet for the match.
 local M = { SHEET = "sprites/sentry_ui/digits.png" }
 local installed = false
 local WIDTH, HEIGHT, ADVANCE = 5, 7, 6
