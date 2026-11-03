@@ -104,6 +104,7 @@ function weapon.setup()
     -- The stamp's spear (measured from stamp.png): 20px either way from its
     -- centre, about 4px either side of its axis.
     local SPEAR = { half_length = 20, half_width = 4 }
+    local CRATE_REACH = 24
     fires.javelin = function(ev)
       local v = (ev.missile and speed[ev.missile]) or launching
       if ev.missile then speed[ev.missile] = nil end
@@ -119,6 +120,14 @@ function weapon.setup()
         if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
           and (o.kind ~= "worm" or o.id ~= shooter_id)
           and within(o, ev.x, ev.y, 20) then target = o; break end
+      end
+      -- A crate stops the javelin outside PX's square: a lobbed throw bursts
+      -- on its lid, 22px above its centre (replay of 2026-11-03), and stuck
+      -- there instead. Any throw that reaches a crate breaks it, at any speed.
+      if not target then
+        for _, o in ipairs(wa.world.electrical_nearby(ev.x, ev.y, 29, false)) do
+          if o.kind == "crate" and within(o, ev.x, ev.y, CRATE_REACH) then target = o; break end
+        end
       end
       if not target then
         local sentry = turrets.projectile_target(ev.x, ev.y)
