@@ -61,7 +61,9 @@ function rules.install(ctx)
       worm:ammo(id, { set = allowed[id] and -1 or 0, keep_delay = true })
     end
   end
-  wa.assets.load({ sprites = { GLOW }, gpu_prefix = "sprites/specialists/" })
+  -- The zombie's poses in colour with the match, so its tint never waits
+  -- for a copy mid-turn.
+  wa.assets.load({ sprites = { GLOW }, gpu_prefix = "sprites/specialists/", wa_sprites = { "worm" } })
   zombie.install(function(worm) return worm.id % 16 == 1 end, data.classes[1].name)
   wa.on.turn_start(function(event) refresh(event.worm) end)
   wa.on.worm_message(function(worm, msg)
