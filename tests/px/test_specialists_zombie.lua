@@ -97,6 +97,8 @@ check("a lethal hit on the Soldier is cut to 1 HP", hit.amount == 149 and soldie
 step()
 check("the Soldier comes back with 100 HP", soldier.hp == 100, soldier.hp)
 check("as a zombie WA's turns pass over", zombie.is_zombie(soldier) and soldier.selectable == false and soldier.name == "Zombie")
+check("tinted green, lit and glowing", type(soldier.tint) == "table" and soldier.tint.color == 0x60FF60
+  and soldier.tint.light > 0 and soldier.tint.glow > 0)
 hurt(soldier, 200)
 step()
 check("a zombie isn't cut short: it dies", soldier.hp <= 0 and zombie.is_zombie(soldier), soldier.hp)
@@ -139,13 +141,12 @@ gunner.x = -100
 step(); step()   -- the clock is read again after a switch
 check("Tab changes its target, its own team's too", soldier.inputs[#soldier.inputs] == "left")
 
--- The punch: a hop, the body swapped, 30 and a push to each worm in reach
+-- The punch: a hop, 30 and a push to each worm in reach
 -- once, the land dug.
 enemy.x, enemy.y = 10, 0
 h.start({ worm = enemy })
 step(); step()
 check("in reach it punches: a hop", soldier.released and soldier.released[1] == 0 and soldier.released[2] == -6)
-check("its body gives way to the punch art", soldier.body_visible == false)
 check("it faces the target", soldier.facing == 1)
 for _ = 1, 10 do step() end
 check("the target takes 30 and the push, once", enemy.hits and #enemy.hits == 1 and enemy.hits[1].amount == 30
@@ -154,7 +155,7 @@ check("the hit sounds as WA's Fire Punch's", #sounds == 1 and sounds[1][1] == en
 check("the punch digs", #cuts > 0 and cuts[1].y == soldier.y - 7)
 enemy.x = 2000   -- out of reach, so no second punch
 for _ = 1, 60 do step() end
-check("the body is back after the punch", soldier.body_visible == true)
+check("its body is never hidden: the tint is the look", soldier.body_visible == true)
 
 -- An invisible target is left alone.
 soldier.inputs, soldier.released = {}, nil
@@ -196,6 +197,7 @@ step()
 local shared = require("lib/shared")
 check("Lightning takes the strike for a zombie", shared.lightning_restores_worm(soldier) == true)
 check("a Soldier again", not zombie.is_zombie(soldier) and soldier.selectable and soldier.name == "Soldier" and soldier.hp == 100)
+check("its tint gone", soldier.tint == nil)
 check("Lightning heals a plain worm as usual", shared.lightning_restores_worm(soldier) == false)
 hurt(soldier, 500)
 step()

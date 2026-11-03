@@ -11,13 +11,12 @@
 -- which may turn once more.
 local zombie = {}
 
-local PUNCH = "sprites/specialists/zombie_punch.png"           -- 3 frames
-local PUNCH_STOP = "sprites/specialists/zombie_punch_stop.png" -- 13 frames
-zombie.sprites = { PUNCH, PUNCH_STOP }
-
 local HP = 100
+-- PX's RenderWorm colours a zombie with SetColorMod(RGB(0, 180, 0), 4), a
+-- smooth add. On WA's pink worm that is a pale peach, not a green: a green
+-- multiply, lit by the green and glowing in it, reads as PX's zombie art.
+local TINT = { color = 0x60FF60, light = 0.35, glow = 0.8 }
 local PUNCH_FRAMES = 30       -- FirePunchTimer
-local STOP_FRAMES = 22        -- punchstop at AnimSpeed 1/22
 local ATTACK_COOLDOWN = 60
 local DAMAGE_COOLDOWN = 60
 local PUNCH_DAMAGE = 30
@@ -41,7 +40,7 @@ function zombie.install(is_soldier, soldier_name)
   local zombies, spent = {}, {}         -- by worm id; spent: may not turn again
   local turning = {}                    -- a lethal hit was cut to 1 HP
   local attack_cd, damage_cd = {}, {}
-  local punch, stop = {}, {}            -- frames left of the punch, of its recovery
+  local punch = {}                      -- frames left of the punch
   local out = {}                        -- zombies of a team that is out
   local target                          -- the worm being played
   local last_frame, last_clock, running
@@ -60,6 +59,7 @@ function zombie.install(is_soldier, soldier_name)
       worm:heal(HP - worm.hp)
     end
     worm.selectable = false
+    worm.tint = TINT
     worm.name = "Zombie"
     wa.log("Specialists: worm " .. worm.id .. " comes back as a zombie")
   end
@@ -69,9 +69,9 @@ function zombie.install(is_soldier, soldier_name)
   shared.lightning_restores_worm = function(worm)
     if not zombies[worm.id] or out[worm.id] then return false end
     zombies[worm.id], spent[worm.id] = nil, nil
-    punch[worm.id], stop[worm.id] = nil, nil
+    punch[worm.id] = nil
     worm.selectable = true
-    worm.body_visible = true
+    worm.tint = nil
     worm.name = soldier_name
     wa.log("Specialists: Lightning restores worm " .. worm.id)
     return true
@@ -161,8 +161,7 @@ function zombie.install(is_soldier, soldier_name)
         and not attack_cd[z.id] and CAN_PUNCH[z.state] then
         face(z, tx)
         attack_cd[z.id] = ATTACK_COOLDOWN
-        punch[z.id], stop[z.id] = PUNCH_FRAMES, nil
-        z.body_visible = false
+        punch[z.id] = PUNCH_FRAMES
         z:release(0, HOP_Y)
       end
       if x < tx + 20 and x > tx - 20 and y > ty - 12 and y < ty + 90 then return end
@@ -179,11 +178,7 @@ function zombie.install(is_soldier, soldier_name)
   local function punching(z, worms)
     local left = punch[z.id]
     if not left then return end
-    if left > 1 then
-      punch[z.id] = left - 1
-    else
-      punch[z.id], stop[z.id] = nil, STOP_FRAMES
-    end
+    punch[z.id] = left > 1 and left - 1 or nil
     wa.land.cut({ x = z.x, y = z.y - 7, shape = "circle", radius = DIG_RADIUS })
     local f = z.facing >= 0 and 1 or -1
     for _, w in ipairs(worms) do
@@ -213,32 +208,9 @@ function zombie.install(is_soldier, soldier_name)
       return
     end
     if out[worm.id] or not alive(worm) then return end
-    if punch[worm.id] then
-      punching(worm, wa.worms.all())
-    elseif stop[worm.id] then
-      stop[worm.id] = stop[worm.id] > 1 and stop[worm.id] - 1 or nil
-      if not stop[worm.id] then worm.body_visible = true end
-    end
+    if punch[worm.id] then punching(worm, wa.worms.all()) end
     act(worm)
   end, { msgs = { wa.msg.FRAME_FINISH } })
-
-  -- The punch replaces the body (wormanim.txt): PUNCH while it lasts, then
-  -- PUNCH_STOP once through. The art faces left.
-  wa.on.draw(function()
-    for _, worm in ipairs(wa.worms.all()) do
-      local frame, sprite
-      if punch[worm.id] then
-        sprite, frame = PUNCH, math.floor((PUNCH_FRAMES - punch[worm.id]) / 10) % 3
-      elseif stop[worm.id] then
-        sprite, frame = PUNCH_STOP, math.min(12, math.floor((STOP_FRAMES - stop[worm.id]) * 13 / STOP_FRAMES))
-      end
-      if sprite then
-        local x, y, s = worm.x, worm.y, worm.facing >= 0 and 30 or -30
-        wa.draw.quad({ points = { {x+s,y-30}, {x-s,y-30}, {x-s,y+30}, {x+s,y+30} },
-          sprite = sprite, frame = frame, visibility = worm, depth = wa.depth.WORMS })
-      end
-    end
-  end)
 end
 
 return zombie

@@ -61,9 +61,7 @@ function rules.install(ctx)
       worm:ammo(id, { set = allowed[id] and -1 or 0, keep_delay = true })
     end
   end
-  local sprites = { GLOW }
-  for _, sprite in ipairs(zombie.sprites) do sprites[#sprites + 1] = sprite end
-  wa.assets.load({ sprites = sprites, gpu_prefix = "sprites/specialists/" })
+  wa.assets.load({ sprites = { GLOW }, gpu_prefix = "sprites/specialists/" })
   zombie.install(function(worm) return worm.id % 16 == 1 end, data.classes[1].name)
   wa.on.turn_start(function(event) refresh(event.worm) end)
   wa.on.worm_message(function(worm, msg)
