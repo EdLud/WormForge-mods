@@ -1,7 +1,7 @@
 # Project X Specialists 2.3 (five worms), 0rang3's September 2026 build.
 # Generated from the PX scheme's records and its WSC by a local script
 # (local/specialists/make_profile.py) that no longer exists: edit this file.
-description = "Project X Specialists 2.3: five worms per team, each a class with its own weapons. Utilities and special weapons come in crates. The Soldier zombie is not ported yet."
+description = "Project X Specialists 2.3: five worms per team, each a class with its own weapons. Utilities and special weapons come in crates. The Soldier comes back once as a zombie."
 features = ["core.utilities", "specialists.rules"]
 
 [options."core.utilities"]

@@ -1,6 +1,6 @@
 # Test profile: every class weapon, one class per F-row. Use five worms per team.
-# The full game is the "Specialists 2.3" profile; the Soldier zombie isn't ported.
-description = "Specialists class test: five worms per team, each class's weapons on its own F-row. Tests class switching, cooldowns and Medic healing. Crate Shower is supplied for pickup tests. The Soldier zombie is not ported yet."
+# The full game is the "Specialists 2.3" profile.
+description = "Specialists class test: five worms per team, each class's weapons on its own F-row. Tests class switching, cooldowns and Medic healing. Crate Shower is supplied for pickup tests. The Soldier comes back once as a zombie."
 features = ["core.utilities", "specialists.rules"]
 
 [options."core.utilities"]

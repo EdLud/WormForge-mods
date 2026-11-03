@@ -1,6 +1,8 @@
--- Class inventories, native cooldowns and Medic aura. No switching controller:
--- WA's continuous selection chooses the worm; this updates its class arsenal.
+-- Class inventories, native cooldowns, Medic aura and the Soldier's zombie.
+-- No switching controller: WA's continuous selection chooses the worm; this
+-- updates its class arsenal.
 local data = require("scheme/specialists_data")
+local zombie = require("scheme/specialists_zombie")
 local rules = {}
 local GLOW = "sprites/specialists/glow.png"
 local COLOURS = { 0x50780000, 0x50000078, 0x50007800, 0x505A5A00, 0x505A005A, 0x50005A5A }
@@ -41,7 +43,9 @@ function rules.install(ctx)
   local function survivors(worm)
     local count = 0
     for _, other in ipairs(wa.worms.all()) do
-      if other.team == worm.team and other.hp > 0 and class_of(other) then count = count + 1 end
+      if other.team == worm.team and other.hp > 0 and class_of(other) and not zombie.is_zombie(other) then
+        count = count + 1
+      end
     end
     return count
   end
@@ -57,7 +61,10 @@ function rules.install(ctx)
       worm:ammo(id, { set = allowed[id] and -1 or 0, keep_delay = true })
     end
   end
-  wa.assets.load({ sprites = { GLOW }, gpu_prefix = "sprites/specialists/" })
+  local sprites = { GLOW }
+  for _, sprite in ipairs(zombie.sprites) do sprites[#sprites + 1] = sprite end
+  wa.assets.load({ sprites = sprites, gpu_prefix = "sprites/specialists/" })
+  zombie.install(function(worm) return worm.id % 16 == 1 end, data.classes[1].name)
   wa.on.turn_start(function(event) refresh(event.worm) end)
   wa.on.worm_message(function(worm, msg)
     initialize(worm)

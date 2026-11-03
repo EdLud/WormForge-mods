@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.15"
+version = "0.20.16"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -859,11 +859,17 @@ description = "Off for weapons that come from the sky."
 [sprites."sprites/specialists/glow.png"]
 frames = 1
 
+[sprites."sprites/specialists/zombie_punch.png"]
+frames = 3
+
+[sprites."sprites/specialists/zombie_punch_stop.png"]
+frames = 13
+
 [[components]]
 id = "specialists.rules"
 type = "feature"
 name = "Specialists rules"
-description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns and the Medic aura. Use five worms per team and 100 starting HP; the Specialists 2.3 profile places the full weapon set. The Soldier zombie is not ported yet."
+description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns, the Medic aura and the Soldier who comes back once as a zombie. Use five worms per team and 100 starting HP; the Specialists 2.3 profile places the full weapon set."
 entry = "components/specialists.lua"
 
 [[components]]

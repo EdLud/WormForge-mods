@@ -85,7 +85,12 @@ function weapon.setup()
     for _, obj in ipairs(targets) do
       if struck(s, obj, length) then
         if obj.kind == "worm" then
-          if not revived_by_lightning[obj.id] then obj:heal(25) end
+          -- A rule may take the strike instead (Specialists: a zombie is a
+          -- Soldier again, no health added).
+          if not revived_by_lightning[obj.id]
+            and not (shared.lightning_restores_worm and shared.lightning_restores_worm(obj)) then
+            obj:heal(25)
+          end
         elseif obj.kind == "grave" then
           if obj.worm_id ~= 0 then
             local id = obj.worm_id

@@ -56,10 +56,16 @@ local function install(subset)
     worms = {all=function() return worms end},
     assets = {load=function(s) assert(s.sprites[1] == "sprites/specialists/glow.png") end},
     weapons = {data=function(id) return {handling={ends_turn=endings[id] or false}} end},
-    draw = {quad=function(q) draws[#draws+1] = q end}, depth = {EFFECTS=12},
+    draw = {quad=function(q) draws[#draws+1] = q end}, depth = {EFFECTS=12, WORMS=11},
     log = function(s) log[#log+1] = s end,
+    -- The Soldier's zombie (its own test: test_specialists_zombie.lua).
+    world = {frame=function() return 0 end, turn_clock=function() return 0 end,
+      gravity=function() return 0.25 end},
+    land = {trace=function() return false end, cut=function() end},
+    random = function(a) return a end,
+    sound = {play=function() end},
   }
-  for _, name in ipairs({"turn_start", "worm_message", "hurt", "draw"}) do
+  for _, name in ipairs({"turn_start", "turn_end", "worm_message", "hurt", "draw"}) do
     wa.on[name] = function(f, filter)
       hooks[name] = hooks[name] or {}
       if filter then
