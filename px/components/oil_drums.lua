@@ -7,12 +7,13 @@ return {
   install = function(ctx)
     local loader = require("components/loader")
     loader.also("weapons/electric_grenade")
+    -- The nuke drum fires the Nuke Rocket's rockets: the manifest launches
+    -- it, so it has a slot even off the panel, and its module runs here.
+    loader.also("weapons/nuke_rocket")
     -- PX's icy drum takes a Swim Suit off: only a placed one can be on.
     loader.load(loader.place(ctx))
     local drums = require("lib/oil_drums")
     drums.load_assets()
-    -- The nuke drum fires the Nuke Rocket's rockets, which only a placed
-    -- Nuke Rocket launches.
-    drums.install({ deal = true, nuke = ctx.weapons["px.nuke_rocket"] ~= nil })
+    drums.install({ deal = true })
   end,
 }

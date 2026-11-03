@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.11"
+version = "0.20.12"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -999,9 +999,11 @@ type = "feature"
 name = "Project X oil drums"
 authors = ["Entuser"]
 credits = "sprites and skunk drum by Pablo, cluster, icy and electric drums by rafa``2, fitted to Highlander by 0rang3"
-description = "cool oil drums from px. The nuke drum needs the Nuke Rocket placed."
+description = "cool oil drums from px."
 entry = "components/oil_drums.lua"
 before_weapons = true
+# The nuke drum fires the Nuke Rocket's rockets, placed or not.
+launches = ["px.nuke_rocket"]
 
 [[components]]
 id = "px.double_bazooka"

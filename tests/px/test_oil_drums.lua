@@ -66,7 +66,7 @@ local function mock(opts)
       draw = function(f) M.draw = f end,
     },
   }
-  require("lib/oil_drums").install({ deal = true, nuke = opts.nuke ~= false })
+  require("lib/oil_drums").install({ deal = true })
 end
 
 local function frame()
@@ -103,14 +103,14 @@ end
 
 print("oil drums: the deal")
 do
-  mock({ nuke = false })
+  mock()
   local seen = {}
   M.rng = function(lo, hi) seen[#seen + 1] = hi; return lo end
   local c, a, b = M.drum(3, 0, 0), M.drum(1, 10, 0), M.drum(2, 20, 0)
   frame()
   check("every drum dealt once, in uid order: kinds drawn for 1, 2, 3",
     #M.randoms == 3 and M.randoms[1][1] == 1)
-  check("without the Nuke Rocket: six kinds on an open map", seen[1] == 6, seen[1])
+  check("seven kinds on an open map", seen[1] == 7, seen[1])
   check("WA stops drawing each", not a.visible and not b.visible and not c.visible)
   frame()
   check("a drum is dealt once", #M.randoms == 3)

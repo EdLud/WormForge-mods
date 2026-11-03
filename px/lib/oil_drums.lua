@@ -10,8 +10,9 @@
 -- in for WA's blast with the kind's.
 --
 -- Not ported: the bee drum (Keeper Bees are not ported) and PX's plane crash
--- drum. The nuke drum needs the Nuke Rocket placed; without it, it is left
--- out of the deal. The icy drum's Kamikaze special case is not ported.
+-- drum. The nuke drum fires the Nuke Rocket's rockets: px.oil_drums
+-- launches it, placed or not. The icy drum's Kamikaze special case is not
+-- ported.
 --
 -- The Specialists Barrel Launcher (weapon_barrel_launchers: bl_script.txt)
 -- fires the same drums one at a time (M.launch): its napalm and mine drums
@@ -109,12 +110,11 @@ end
 -- Set up once, by the px.oil_drums add-on (opts.deal: every map drum is
 -- dealt a kind) and/or the Barrel Launcher (its drums only). A second call
 -- only adds what it asks for.
-local installed, settings = false, { deal = false, nuke = false }
+local installed, settings = false, { deal = false }
 
 function M.install(opts)
   opts = opts or {}
   if opts.deal then settings.deal = true end
-  if opts.nuke then settings.nuke = true end
   if installed then return end
   installed = true
   local shared = require("lib/shared")
@@ -127,9 +127,7 @@ function M.install(opts)
 
   local function deal()
     local pool = {}
-    for _, kind in ipairs(DEAL) do
-      if kind ~= "nuke" or settings.nuke then pool[#pool + 1] = kind end
-    end
+    for _, kind in ipairs(DEAL) do pool[#pool + 1] = kind end
     if wa.world.cavern() then pool[#pool + 1] = "teleport" end
     return pool[wa.random(1, #pool)]
   end

@@ -514,8 +514,6 @@ return {
       helis[h.body.id] = h
     end
 
-    wa.log(("Attack Helicopter at %s %d"):format(ctx.position.row, ctx.position.column))
-
     wa.weapons.replace({
       -- This slot also launches the helicopter's bullets, so its bullet
       -- record must stay intact; the strike itself needs an open-sky map.
