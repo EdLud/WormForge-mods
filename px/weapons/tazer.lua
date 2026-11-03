@@ -1,6 +1,6 @@
--- One chain-lightning shot per team turn, sharing the existing electrical arc.
+-- A chain-lightning shot, sharing the existing electrical arc; it never ends
+-- the turn, so a worm may fire it again while ammo lasts.
 local weapon = {}
-local available=true
 weapon.definition = {
   copy_from="stock.handgun",
   name="Tazer",
@@ -22,8 +22,6 @@ weapon.definition = {
   sounds={"sounds/lightning/tazer_loop.wav"},
   params={gpu_prefix="sprites/"},
   on_fire=function(ev)
-    if not available then return end
-    available=false
     local worm=ev.worm
     local angle=(1-worm.aim)*math.pi
     if worm.facing<0 then angle=2*math.pi-angle end
@@ -35,15 +33,8 @@ weapon.definition = {
 }
 weapon.requires={"weapons/electric_grenade","lib/electrical"}
 function weapon.setup()
-  available=true
-  wa.on.worm_message(function(worm,msg)
-    if msg==wa.msg.TURN_STARTED then available=true
-    elseif msg==wa.msg.FIRE_WEAPON and worm.turn and worm.weapon=="px.tazer" then
-      if not available then return "eat" end
-    end
-  end,{msgs={wa.msg.TURN_STARTED,wa.msg.FIRE_WEAPON}})
   require("lib/weapon_hint").register("px.tazer",function()
-    return available and "Tazer\nSpace: a chaining electric arc" or "Tazer\nUsed this turn"
+    return "Tazer\nSpace: a chaining electric arc"
   end)
 end
 return weapon

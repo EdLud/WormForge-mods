@@ -9,16 +9,13 @@ wa={msg={TURN_STARTED=56,FIRE_WEAPON=61},math={sin=math.sin,cos=math.cos},
 local tazer=require("weapons/tazer")
 tazer.setup()
 local w={id=17,x=100,y=100,aim=0.5,facing=1,turn=true,hp=100,weapon="px.tazer"}
-assert(hooks.worm(w,61)==nil)
+assert(hooks.worm==nil,"the Tazer no longer gates FIRE_WEAPON")
 tazer.definition.on_fire{worm=w}
 assert(#arcs==1 and arcs[1].x==104 and math.abs(arcs[1].y-100)<1e-6)
 assert(arcs[1].ignore[1]==w and arcs[1].burst==false and arcs[1].dx==1)
-assert(hooks.worm(w,61)=="eat")
-tazer.definition.on_fire{worm=w};assert(#arcs==1)
-hooks.worm(w,51);assert(hooks.worm(w,61)=="eat","Tab/reselection cannot reset once-per-turn use")
-hooks.worm(w,56);w.facing=-1;tazer.definition.on_fire{worm=w}
-assert(#arcs==2 and arcs[2].x==96 and arcs[2].dx==-1)
-print("Tazer direction, owner immunity and actual-shot turn limit passed")
+w.facing=-1;tazer.definition.on_fire{worm=w}
+assert(#arcs==2 and arcs[2].x==96 and arcs[2].dx==-1,"a second shot in the same turn fires")
+print("Tazer direction, owner immunity and repeat shots passed")
 
 local tick,bodies,cuts,hits,quads,randoms,drawing=0,{},{},{},{},0,false
 wa={
