@@ -11,6 +11,7 @@ local function check(name, ok, detail)
 end
 
 local h, worms, frame, clock, log, cuts, landed, sounds
+tab_allowed = true
 local Worm = {}
 Worm.__index = Worm
 function Worm:heal(n, opts)
@@ -24,8 +25,13 @@ function Worm:hurt(spec)
   self.hits = self.hits or {}
   self.hits[#self.hits + 1] = spec
 end
-function Worm:input(spec) self.inputs[#self.inputs + 1] = spec.key end
+function Worm:input(spec)
+  self.inputs[#self.inputs + 1] = spec.key
+  if spec.key == "tab" and self.turn and tab_allowed then self.turn = false end
+end
+function Worm:clear_keys() self.keys_cleared = true end
 function Worm:release(vx, vy) self.released = { vx, vy } end
+function Worm:use(id) self.used = self.used or {}; self.used[#self.used + 1] = id; return true end
 
 local function worm(id, x, y)
   local w = setmetatable({ id = id, team = id // 16, x = x, y = y, hp = 150, state = "standing",
@@ -53,6 +59,7 @@ local function reset()
     world = {
       frame = function() return frame end,
       turn_clock = function() return clock end,
+      set_turn_clock = function(ms) clock = ms end,
       gravity = function() return 0.25 end,
     },
     land = {
@@ -141,27 +148,25 @@ gunner.x = -100
 step(); step()   -- the clock is read again after a switch
 check("Tab changes its target, its own team's too", soldier.inputs[#soldier.inputs] == "left")
 
--- The punch: a hop, 30 and a push to each worm in reach
--- once, the land dug.
+-- The punch: WA's own Fire Punch, used without firing (worm:use), facing
+-- the target, once a second at most.
 enemy.x, enemy.y = 10, 0
 h.start({ worm = enemy })
 step(); step()
-check("in reach it punches: a hop", soldier.released and soldier.released[1] == 0 and soldier.released[2] == -6)
+check("in reach it punches with WA's Fire Punch", soldier.used and soldier.used[1] == "stock.fire_punch", soldier.used and soldier.used[1])
 check("it faces the target", soldier.facing == 1)
-for _ = 1, 10 do step() end
-check("the target takes 30 and the push, once", enemy.hits and #enemy.hits == 1 and enemy.hits[1].amount == 30
-  and enemy.hits[1].vx == 4 and enemy.hits[1].vy == -9, enemy.hits and #enemy.hits)
-check("the hit sounds as WA's Fire Punch's", #sounds == 1 and sounds[1][1] == enemy and sounds[1][2] == 101, #sounds)
-check("the punch digs", #cuts > 0 and cuts[1].y == soldier.y - 7)
-enemy.x = 2000   -- out of reach, so no second punch
-for _ = 1, 60 do step() end
-check("its body is never hidden: the tint is the look", soldier.body_visible == true)
+for _ = 1, 30 do step() end
+check("no second punch within the attack cooldown", #soldier.used == 1, #soldier.used)
+for _ = 1, 40 do step() end
+check("another after it", #soldier.used == 2, #soldier.used)
+enemy.x = 2000   -- out of reach
+soldier.used = {}
 
 -- An invisible target is left alone.
 soldier.inputs, soldier.released = {}, nil
 enemy.invisibility, enemy.x = true, 120
 for _ = 1, 70 do step() end
-check("an invisible target is ignored", #soldier.inputs == 0 and not soldier.released)
+check("an invisible target is ignored", #soldier.inputs == 0 and not soldier.released and #soldier.used == 0)
 enemy.invisibility = nil
 
 -- Out of reach, standing and in sight: a leap.
@@ -188,6 +193,22 @@ check("a zombie with a living teammate stays", soldier.hp == 100)
 gunner.hp = 0
 step()
 check("its team's last human gone, the zombie is put to 0", soldier.hp == 0, soldier.hp)
+
+-- Turning on its own turn: Tab hands the turn on; without worm selection
+-- the turn's clock runs out.
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+soldier.turn = true
+hurt(soldier, 500)
+step(); step()   -- it turns, then hands over
+check("a Soldier turning on its own turn hands it on by Tab", soldier.inputs[1] == "tab" and soldier.turn == false)
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+soldier.turn, tab_allowed = true, false
+hurt(soldier, 500)
+step(); step()
+check("no worm selection: its keys are dropped and the clock run out", soldier.keys_cleared and clock == 0, clock)
+tab_allowed = true
 
 -- Lightning: a Soldier again, no health added, may turn once more.
 zombie = reset()

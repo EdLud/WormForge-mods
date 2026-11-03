@@ -16,19 +16,14 @@ local HP = 100
 -- smooth add. On WA's pink worm that is a pale peach, not a green: a green
 -- multiply, lit by the green and glowing in it, reads as PX's zombie art.
 local TINT = { color = 0x60FF60, light = 0.35, glow = 0.8 }
-local PUNCH_FRAMES = 30       -- FirePunchTimer
 local ATTACK_COOLDOWN = 60
-local DAMAGE_COOLDOWN = 60
-local PUNCH_DAMAGE = 30
-local PUNCH_PUSH_X, PUNCH_PUSH_Y = 4, -9
--- PX's punch is speeds and a hit, no sound. WA's own Fire Punch hits with
--- FirePunchImpact (sound 101, pushed with its hit at 0x5185FA): the same here.
-local PUNCH_SOUND = 101
-local HOP_Y = -6              -- PunchIt: SpX 0, SpY -6
 local LEAP_RANGE = 400
--- ApplyMask(4, x, y - 7) every punch frame. PX's mask 4 isn't documented
--- anywhere we have; a worm-sized round hole stands in for it.
-local DIG_RADIUS = 10
+-- The punch is WA's own Fire Punch, used without firing it (worm:use): its
+-- uppercut, flames, hit, hole and sound. PX's script fired the real one
+-- (weapon 16, then Space) until online games made it fall back to PunchIt, a
+-- hop of the same -6 with its own hits, which worm:use makes unneeded. The
+-- profile's Fire Punch record sets the damage and knock (WA's: 30).
+local PUNCH = "stock.fire_punch"
 
 -- The worm states PX lets punch (WS_IDLE, WS_JUMP, WS_WALKING, WS_SLIDING,
 -- WS_JUMPPREPARE).
@@ -39,8 +34,7 @@ function zombie.install(is_soldier, soldier_name)
   local shared = require("lib/shared")
   local zombies, spent = {}, {}         -- by worm id; spent: may not turn again
   local turning = {}                    -- a lethal hit was cut to 1 HP
-  local attack_cd, damage_cd = {}, {}
-  local punch = {}                      -- frames left of the punch
+  local attack_cd = {}
   local out = {}                        -- zombies of a team that is out
   local target                          -- the worm being played
   local last_frame, last_clock, running
@@ -69,7 +63,6 @@ function zombie.install(is_soldier, soldier_name)
   shared.lightning_restores_worm = function(worm)
     if not zombies[worm.id] or out[worm.id] then return false end
     zombies[worm.id], spent[worm.id] = nil, nil
-    punch[worm.id] = nil
     worm.selectable = true
     worm.tint = nil
     worm.name = soldier_name
@@ -121,10 +114,8 @@ function zombie.install(is_soldier, soldier_name)
 
   -- Once a frame: cooldowns, the turn clock, teams out.
   local function each_frame()
-    for _, t in ipairs({ attack_cd, damage_cd }) do
-      for _, id in ipairs(wa.sorted(t)) do
-        t[id] = t[id] > 1 and t[id] - 1 or nil
-      end
+    for _, id in ipairs(wa.sorted(attack_cd)) do
+      attack_cd[id] = attack_cd[id] > 1 and attack_cd[id] - 1 or nil
     end
     local clock = target and wa.world.turn_clock()
     running = clock ~= nil and last_clock ~= nil and clock < last_clock
@@ -133,6 +124,24 @@ function zombie.install(is_soldier, soldier_name)
   end
 
   local function face(worm, x) worm.facing = worm.x < x and 1 or -1 end
+
+  -- A Soldier that turns on its own team's turn is no longer the player's:
+  -- Tab hands the turn to the team's next worm, which WA's turn order now
+  -- picks past the zombie (worm.selectable). Specialists keeps worm
+  -- selection open all turn (world +0x5EC); where the scheme has none, Tab
+  -- can't, and the turn's clock is run out instead.
+  local function hand_over(worm)
+    worm:input({ key = "tab" })
+    if worm.turn then
+      worm:clear_keys()
+      if wa.world.turn_clock() > 0 then
+        wa.world.set_turn_clock(0)
+        wa.log("Specialists: worm " .. worm.id .. " turned on its own turn; no worm selection, the turn ends")
+      end
+    else
+      wa.log("Specialists: worm " .. worm.id .. " turned on its own turn; the team's next worm takes it")
+    end
+  end
 
   local function leap(z, t)
     local dx, dy = t.x - z.x, t.y - z.y
@@ -161,8 +170,7 @@ function zombie.install(is_soldier, soldier_name)
         and not attack_cd[z.id] and CAN_PUNCH[z.state] then
         face(z, tx)
         attack_cd[z.id] = ATTACK_COOLDOWN
-        punch[z.id] = PUNCH_FRAMES
-        z:release(0, HOP_Y)
+        z:use(PUNCH)
       end
       if x < tx + 20 and x > tx - 20 and y > ty - 12 and y < ty + 90 then return end
       if z.state == "standing" or z.state == "walking" then
@@ -170,26 +178,6 @@ function zombie.install(is_soldier, soldier_name)
       end
     elseif z.state == "standing" then
       leap(z, t)
-    end
-  end
-
-  -- FirePunch.txt: every frame of the punch, each other worm in reach
-  -- (x -4..+20 ahead, y -25..+12) takes 30 and a push, once a second at most.
-  local function punching(z, worms)
-    local left = punch[z.id]
-    if not left then return end
-    punch[z.id] = left > 1 and left - 1 or nil
-    wa.land.cut({ x = z.x, y = z.y - 7, shape = "circle", radius = DIG_RADIUS })
-    local f = z.facing >= 0 and 1 or -1
-    for _, w in ipairs(worms) do
-      if w.id ~= z.id and alive(w) and not damage_cd[w.id] then
-        local ahead = (w.x - z.x) * f
-        if ahead >= -4 and ahead <= 20 and w.y <= z.y + 12 and w.y >= z.y - 25 then
-          damage_cd[w.id] = DAMAGE_COOLDOWN
-          w:hurt({ amount = PUNCH_DAMAGE, vx = PUNCH_PUSH_X * f, vy = PUNCH_PUSH_Y })
-          wa.sound.play(w, PUNCH_SOUND)
-        end
-      end
     end
   end
 
@@ -207,8 +195,8 @@ function zombie.install(is_soldier, soldier_name)
       end
       return
     end
+    if worm.turn then hand_over(worm) end
     if out[worm.id] or not alive(worm) then return end
-    if punch[worm.id] then punching(worm, wa.worms.all()) end
     act(worm)
   end, { msgs = { wa.msg.FRAME_FINISH } })
 end
