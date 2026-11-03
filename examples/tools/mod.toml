@@ -1,8 +1,8 @@
-# Diagnostics and a stress test, as add-ons. profiles/ holds two: the
+# Diagnostics, a stress test and the pass-over test, as add-ons. profiles/ holds two: the
 # profiler and the state logger on their own, and the stress test with the Highlander weapons it
 # fires (that one needs the px.ports bundle too).
 id = "example.tools"
-version = "0.5.0"
+version = "0.6.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -14,6 +14,28 @@ type = "feature"
 name = "Hello"
 description = "Logs the turn phases and every hurt, as the smallest add-on there is."
 entry = "hello.lua"
+
+[[components]]
+id = "tools.pass_over"
+type = "feature"
+name = "Pass-over test"
+description = "Tests worm.selectable and worm:input, as Specialists' zombies will use them: the chosen worms are renamed Passed over, WA's turns and Tab skip them, and they walk toward the worm whose turn it is."
+entry = "pass_over.lua"
+
+[[components.options]]
+key = "worms"
+type = "choice"
+choices = ["first", "all"]
+default = "first"
+label = "Passed over"
+description = "first: each team's first worm. all: every worm, so WA's own pick has to stand and turns go on as usual."
+
+[[components.options]]
+key = "walk"
+type = "bool"
+default = true
+label = "Walk toward the turn's worm"
+description = "While the turn clock runs, each passed-over worm walks toward the worm whose turn it is, any team's."
 
 [[components]]
 id = "tools.perf"

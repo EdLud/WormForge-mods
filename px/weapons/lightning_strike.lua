@@ -89,7 +89,7 @@ function weapon.setup()
         elseif obj.kind == "grave" then
           if obj.worm_id ~= 0 then
             local id = obj.worm_id
-            local worm = obj:revive(id, 10)
+            local worm = obj:revive(id, weapon.revive_health)
             if worm then
               revived_by_lightning[worm.id] = true
               if shared.restore_lightning_inventory then
@@ -222,6 +222,13 @@ function weapon.setup()
       end
     end)
   end
+end
+
+-- The "revive_health" option: the health a worm brought back from its grave
+-- gets. Project X's Lightning gives 25; the Highlander port gave 10.
+weapon.revive_health = 10
+function weapon.configure(ctx)
+  weapon.revive_health = ctx.option("revive_health")
 end
 
 return weapon

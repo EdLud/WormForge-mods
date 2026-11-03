@@ -1,0 +1,2 @@
+description = "Pass-over test: each team's first worm is passed over by WA's turns and Tab and walks toward the turn's worm. Over the lobby's own weapons."
+features = ["tools.pass_over"]

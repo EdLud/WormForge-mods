@@ -15,10 +15,10 @@ python3 tools/audit_map.py tmp/input-verb/Audit.png
 ```
 
 `diagnostics` is disabled by default. Only that build exposes `wa.audit` and
-contains the RNG fixture hook. The add-on refuses to run without it. Both
-fixtures and `worm:input` require the bundle's `debug_input = true`, run only
-inside simulation callbacks, and are refused in network rounds. The engine
-logs a TEST BUILD banner. An ordinary release has no RNG-control API.
+contains the RNG fixture hook. The add-on refuses to run without it. The
+fixture requires the bundle's `debug_input = true` and is refused in network
+rounds; it and `worm:input` (an ordinary verb in every build) run only inside
+simulation callbacks. The engine logs a TEST BUILD banner. An ordinary release has no RNG-control API.
 
 Copy the `tools` bundle to `WormForge/Mods/`, preserving local edits. When
 installing by copying files, also copy its `profiles/Audit*.toml` files
@@ -244,7 +244,7 @@ protocol 8 home/moved logs together.
 `worm:input{key = "tab"}` uses WA's native selection handler and its gates;
 it does nothing outside selection mode or when called on an inactive worm.
 It cannot select a requested worm or give a newly spawned worm a turn.
-The existing debug-input/offline/simulation gates still apply.
+It runs only from simulation callbacks.
 
 Protocol 9 adds both Sheep Launcher paths within its one weapon case. The
 first launch uses the normal 45-degree aim, starting 128 pixels left of the

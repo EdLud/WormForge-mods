@@ -5352,6 +5352,37 @@ do
   for name in pairs(have) do if ammo[0][name] ~= 1 then restored = false end end
   check("the original Highlander hand is restored", restored)
 
+  -- The "revive_health" option: Specialists sets Project X's 25.
+  new_match()
+  local lightning_module = require("weapons/lightning_strike")
+  check("the profile's revive_health reaches the strike (default 10)", lightning_module.revive_health == 10)
+  lightning_module.configure({ option = function(key) assert(key == "revive_health"); return 25 end })
+  by_slot = {}
+  for _, spec in ipairs(replaced) do by_slot[spec.weapon] = spec end
+  owner = worm(16)
+  owner.x, owner.y = 100, 100
+  for _, w in ipairs(worms) do if w ~= owner then w.x, w.y = 1000, 1000 end end
+  turn(16)
+  frame()
+  kill(17)
+  remove(17)
+  local revived_hp
+  local grave25 = { id=704, kind="grave", worm_id=17, x=140, y=100 }
+  function grave25:revive(id, hp)
+    revived_hp = hp
+    local back = setmetatable({ id=id, kind="worm", team=1, alliance=0, ammo_group=0,
+      hp=hp, x=self.x, y=self.y-5, facing=1 }, Worm)
+    worms[#worms+1] = back
+    M.graves = {}
+    return back
+  end
+  M.graves = { grave25 }
+  by_slot.napalm_strike.on_click({ worm=owner, x=140, y=100 })
+  effect = M.spawned[#M.spawned]
+  for _ = 1, 166 do effect.on(effect) end
+  check("revive_health = 25 revives at 25 HP", revived_hp == 25, tostring(revived_hp))
+  lightning_module.revive_health = 10
+
   -- A revive the engine refuses (a living worm holds the place, a full
   -- team) plays Reinforcement's error sound at the grave.
   new_match()

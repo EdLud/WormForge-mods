@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.14"
+version = "0.20.15"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1609,6 +1609,15 @@ default_position = { row = "F6", column = 2 }
 [components.suggests."hl.rules"]
 pool = "second"
 cavern = false
+
+[[components.options]]
+key = "revive_health"
+type = "int"
+min = 1
+max = 1000
+default = 10
+label = "Revived worm's health"
+description = "The health a worm the strike brings back from its grave gets. Project X's Lightning gives 25, as in Specialists."
 
 [[components]]
 id = "px.pigeon_strike"
