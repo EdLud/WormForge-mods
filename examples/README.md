@@ -24,10 +24,9 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   `worm:hurt` and a shove, not explosions.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
-  - `tools.perf` — the FPS counter (top right: live fps, the 2 s average, and
-    the longest frame of the last 5 s in ms) and the profiler, which writes a
-    `perf:` line to `wkLua.log` every 10 s with each part of a rendered frame.
-    Presentation only, so safe online.
+  - `tools.perf` — the profiler, which writes a `perf:` line to `wkLua.log`
+    every 10 s with each part of a rendered frame. Presentation only, so safe
+    online. The FPS counter is Core utilities' **FPS counter** option.
   - `tools.worm_state_logger` — one HUD line with the active worm's raw state
     and every change logged to `wkLua.log`, for naming WA's worm states.
   - `tools.audit` — offline native firing through `worm:input`, with home and
@@ -37,7 +36,8 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     stock missiles, then 40 Lua actors from the same positions, drawn on the
     GPU in four styles, then Highlander's magnets, Bowling Ball Strikes and
     Electric Grenades. Its sprites load as assets (`wa.assets.load`).
-  - `profiles/Diagnostics.toml` ticks the counters over the lobby's weapons;
+  - `profiles/Diagnostics.toml` ticks the profiler and the state logger over
+    the lobby's weapons;
     `profiles/Stress.toml` places the three Highlander weapons the stress test
     fires (it needs `mods/px` too).
 

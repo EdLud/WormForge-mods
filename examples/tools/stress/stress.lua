@@ -56,7 +56,7 @@
 -- only reads it.
 --
 -- With PROFILE on, the pack also turns on the FPS counter and the profiler
--- (see mods/examples/perf). wkLua.log gets a "stress:" line when each batch
+-- (see tools/perf.lua). wkLua.log gets a "stress:" line when each batch
 -- goes, between the profiler's "perf:" lines.
 --
 -- Its two sheets go into the GPU atlas as assets (`wa.assets.load`,
@@ -92,7 +92,8 @@ return function()
   wa.assets.load({ sprites = { ORB, GLOW }, gpu_prefix = "stress/sprites/" })
 
   if PROFILE then
-    wa.perf.enable({ counter = true, profile = true })
+    wa.perf.enable({ profile = true })
+    wa.hud.fps_counter()
   end
 
   -- A linear congruential generator: the same numbers on every machine, and

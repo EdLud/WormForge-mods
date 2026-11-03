@@ -1,7 +1,6 @@
--- WormForge's FPS counter and profiler, on this machine.
+-- WormForge's profiler, on this machine. (The FPS counter is public now:
+-- Core utilities' "FPS counter" option, wa.hud.fps_counter().)
 --
--- counter: one line at the top right: the live frame rate, the average over
---   the last 2 s, and the longest frame in the last 5 s, in ms.
 -- profile: every 10 s, a "perf:" line in wkLua.log with each part of a
 --   rendered frame: its average and worst ms per frame, its share of the
 --   frame, and how often it ran. A "perf lua:" line splits the Lua time by
@@ -20,7 +19,7 @@
 -- Presentation only: no timing reaches the game, so it is safe online.
 return function(ctx)
   wa.perf.enable({
-    counter = true, profile = true,
+    profile = true,
     spikes = ctx.option("spikes") == true, packs = ctx.option("packs") == true,
     natives = ctx.option("natives") == true,
   })

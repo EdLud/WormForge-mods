@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.10.0"
+version = "0.11.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -102,6 +102,13 @@ choices = ["alternate", "facing", "random"]
 default = "alternate"
 label = "Damage number side"
 description = "alternate starts on the worm's facing side, then flips left/right per worm so hits stay readable; facing always follows the worm; random is a local coin."
+
+[[components.options]]
+key = "fps_counter"
+type = "bool"
+default = false
+label = "FPS counter"
+description = "Each player's own frame rate at the top right of their screen. Shows only; it changes nothing in the match. Needs a WormForge newer than 0.9.7."
 
 # An instant utility of our own: configurable extra time, in utility crates.
 # Auto-Use is the profile's auto_use setting (the older on_collect = "use"/"keep" still reads).

@@ -46,6 +46,13 @@ return function(ctx)
     on[#on + 1] = "damage_numbers"
   end
 
+  -- This machine's frame rate, drawn by the engine: a DLL up to 0.9.7
+  -- has no counter, and the rest of the feature runs without it.
+  if ctx.option("fps_counter") and wa.hud.fps_counter then
+    wa.hud.fps_counter()
+    on[#on + 1] = "fps_counter"
+  end
+
   wa.log(("heal %d, packs %s"):format(
     heal, #on > 0 and table.concat(on, " ") or "none"))
 end

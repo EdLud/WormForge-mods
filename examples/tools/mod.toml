@@ -1,8 +1,8 @@
 # Diagnostics and a stress test, as add-ons. profiles/ holds two: the
-# counters on their own, and the stress test with the Highlander weapons it
+# profiler and the state logger on their own, and the stress test with the Highlander weapons it
 # fires (that one needs the px.ports bundle too).
 id = "example.tools"
-version = "0.4.0"
+version = "0.5.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -19,8 +19,8 @@ entry = "hello.lua"
 id = "tools.perf"
 diagnostics = true
 type = "feature"
-name = "FPS counter and profiler"
-description = "WormForge's FPS counter (top right) and profiler (wkLua.log), on this machine."
+name = "Profiler"
+description = "WormForge's profiler (wkLua.log), on this machine. The FPS counter is Core utilities' FPS counter option."
 entry = "perf.lua"
 
 [[components.options]]
