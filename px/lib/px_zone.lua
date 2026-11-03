@@ -91,9 +91,28 @@ local function forget(o)
   end
 end
 
+-- A tie between two as near (graves stacked where worms died together) goes
+-- to the same one on every peer: worms first, by id; then graves, by the worm
+-- each is for; then anything else, by its uid. Never by an object's `id`: that
+-- is its heap address, which differs between machines and between a match and
+-- its replay (a Health Zone brought back worm 34 live and worm 17 in replay).
+local RANK = { worm = 1, grave = 2 }
+local function stable(obj)
+  if obj.kind == "worm" then return obj.id end
+  if obj.kind == "grave" then return obj.worm_id end
+  return 0
+end
+local function before(a, b)
+  local ra, rb = RANK[a.kind] or 3, RANK[b.kind] or 3
+  if ra ~= rb then return ra < rb end
+  local sa, sb = stable(a), stable(b)
+  if sa ~= sb then return sa < sb end
+  return (a.uid or 0) < (b.uid or 0)
+end
+
 -- PX's `activator`: the one object the payload acts on -- the nearest of the
--- kinds this class watches inside its box, ties by id, so every peer picks the
--- same one (`AddHealth`/`DamageHealth` :121-165, the blast zone :330-341).
+-- kinds this class watches inside its box, ties as above, so every peer picks
+-- the same one (`AddHealth`/`DamageHealth` :121-165, the blast zone :330-341).
 local function activator(o)
   local spec = o.spec
   local found, best
@@ -102,7 +121,7 @@ local function activator(o)
       local dx, dy = (obj.x or o.x) - o.x, (obj.y or o.y) - o.y
       if math.abs(dx) <= spec.radius and math.abs(dy) <= spec.half_height then
         local d = dx * dx + dy * dy
-        if not best or d < best or (d == best and obj.id < found.id) then
+        if not best or d < best or (d == best and before(obj, found)) then
           found, best = obj, d
         end
       end

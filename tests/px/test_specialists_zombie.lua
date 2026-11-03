@@ -210,6 +210,29 @@ step(); step()
 check("no worm selection: its keys are dropped and the clock run out", soldier.keys_cleared and clock == 0, clock)
 tab_allowed = true
 
+-- A dead zombie's grave brought back (the Health Zone at 1 HP, Lightning):
+-- a new body with the team's lobby name, selectable and untinted. A Soldier
+-- again, one that has had its turn.
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+enemy = worm(33, 10, 0)
+soldier.hp = 0
+step()
+hurt(soldier, 500)
+step()
+local revived = setmetatable({ id = 17, team = 1, x = 0, y = 0, hp = 1, state = "standing",
+  facing = 1, gravity = 1, selectable = true, body_visible = true, name = "w", inputs = {} }, Worm)
+worms[1] = revived
+step()
+check("a zombie's grave brought back is no zombie", not zombie.is_zombie(revived)
+  and log[#log] == "Specialists: worm 17 comes back from its grave a Soldier", log[#log])
+h.start({ worm = enemy })
+step(); step()
+check("it leaves the worm being played alone", #revived.inputs == 0 and revived.used == nil)
+hurt(revived, 50)
+step()
+check("and has had its turn: a lethal hit isn't cut, it stays dead", revived.hp < 0 and not zombie.is_zombie(revived), revived.hp)
+
 -- Lightning: a Soldier again, no health added, may turn once more.
 zombie = reset()
 soldier = worm(17, 0, 0); worm(18, 500, 0)

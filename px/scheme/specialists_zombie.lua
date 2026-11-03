@@ -12,6 +12,7 @@
 local zombie = {}
 
 local HP = 100
+local NAME = "Zombie"
 -- PX's RenderWorm colours a zombie with SetColorMod(RGB(0, 180, 0), 4), a
 -- smooth add. On WA's pink worm that is a pale peach, not a green: a green
 -- multiply, lit by the green and glowing in it, reads as PX's zombie art.
@@ -54,7 +55,7 @@ function zombie.install(is_soldier, soldier_name)
     end
     worm.selectable = false
     worm.tint = TINT
-    worm.name = "Zombie"
+    worm.name = NAME
     wa.log("Specialists: worm " .. worm.id .. " comes back as a zombie")
   end
 
@@ -186,6 +187,13 @@ function zombie.install(is_soldier, soldier_name)
     if frame ~= last_frame then
       last_frame = frame
       each_frame()
+    end
+    if zombies[worm.id] and worm.name ~= NAME and alive(worm) then
+      -- Its grave brought back (the Health Zone, Lightning): a new body WA
+      -- builds from the team's lobby record, which WA's turns pick and
+      -- nothing tints. A Soldier again, one that has had its turn.
+      zombies[worm.id], out[worm.id], attack_cd[worm.id] = nil, nil, nil
+      wa.log("Specialists: worm " .. worm.id .. " comes back from its grave a Soldier")
     end
     if worm.state == "drowning" then spent[worm.id] = true end
     if not zombies[worm.id] then

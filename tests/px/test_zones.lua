@@ -142,6 +142,20 @@ health = reset(30)
 local grave = {kind="grave",id=2,x=100,y=100,worm_id=17}
 function grave:revive(id,hp) assert(id==17 and hp==1); self.revived=true end
 nearby={grave}; health.on_explode({x=100,y=100}); frames(50); assert(grave.revived)
+-- Graves stacked as near: the one for the lower worm id comes back first on
+-- every peer, whatever order their addresses (`id`) and uids put them in.
+for _, ids in ipairs({{0x2000, 0x1000}, {0x1000, 0x2000}}) do
+  health = reset(30)
+  local first
+  local function stacked(id, worm_id)
+    local g = {kind="grave",id=id,uid=id,x=100,y=100,worm_id=worm_id}
+    function g:revive(wid) first = first or wid end
+    return g
+  end
+  nearby={stacked(ids[1],17), stacked(ids[2],34)}
+  health.on_explode({x=100,y=100}); frames(50)
+  assert(first==17, "stacked graves: the lower worm id comes back first, not the lower address")
+end
 
 -- Original animation sheets, phase timing, additive passes, shared asset load,
 -- cosmetic particles and cleanup all run through the real port entry points.

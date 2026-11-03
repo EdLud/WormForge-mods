@@ -33,10 +33,16 @@ function rules.install(ctx)
       end
       return nil
     end
-    if not initialized[worm.id] and worm.hp > 0 then
+    if worm.hp <= 0 then return class end
+    if not initialized[worm.id] then
       initialized[worm.id] = true
       worm.name = class.name
       if worm.hp < class.hp then worm:heal(class.hp - worm.hp) end
+    elseif worm.name ~= class.name and not zombie.is_zombie(worm) then
+      -- Brought back from its grave (the Health Zone, Lightning): a new
+      -- body WA builds from the team's lobby record, so its lobby name
+      -- again. It keeps the health it came back with.
+      worm.name = class.name
     end
     return class
   end

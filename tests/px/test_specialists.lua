@@ -158,6 +158,18 @@ assert(gunner:ammo("stock.banana_bomb") == -1)
 soldier.hp = 150
 select(gunner)
 assert(gunner:ammo("stock.banana_bomb") == 0)
+-- A grave brought back (the Health Zone, Lightning) is a new body with its
+-- lobby name: named for its class again, its health kept.
+emit("worm_message",engineer,wa.msg.FRAME_FINISH)
+table.remove(worms, 3)
+local revived = add_worm(1,3)
+revived.hp = 1
+emit("worm_message",revived,wa.msg.FRAME_FINISH)
+assert(revived.name == "Engineer" and revived.hp == 1, "a revived worm is named for its class, its health kept")
+-- The Soldier's zombie keeps its own name.
+soldier.hp = 0
+emit("worm_message",soldier,wa.msg.FRAME_FINISH)
+assert(soldier.hp == 100 and soldier.name == "Zombie", soldier.name)
 -- No future/missing component may reach a native ammo/delay API.
 local ctx = install({"stock.bazooka", "px.sentry_gun", "stock.parachute"})
 for _, w in ipairs(worms) do select(w) end
