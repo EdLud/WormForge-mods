@@ -30,8 +30,8 @@
 -- **The shadow look** (the component's `look` option, ours, not PX's): the
 -- invisible object that keeps the mask's turns carries a dark light instead
 -- (`docs/fog.md`, "Darkness without fog"): an opaque darkness cast from the
--- impact point, which terrain stops, so what lies behind a wall stays in
--- view. It spreads out from the point over `spread_seconds` to PX's 512
+-- impact point, which terrain stops (going on 5 pixels into it, then fading
+-- over 5 more), so what lies behind a wall stays in view. It spreads out from the point over `spread_seconds` to PX's 512
 -- pixels across, and fades with the mask's fade. It is drawn as the fog draws
 -- darkness, whether the match has fog or not; the weapon never turns fog on
 -- or changes it. A worm touching it, where this viewer sees it more than
@@ -118,6 +118,9 @@ function M.install(ctx)
   -- over `spread_frames` and faded with the mask. Written only when it
   -- changes; neither a spread nor a fade makes the engine cast again.
   local REACH = MASK_SIZE // 2
+  -- On into the terrain it reaches: 5 pixels at full, then fading over 5
+  -- more, so a worm dug in at a wall's face is not left in the light.
+  local INTO_TERRAIN = { depth = 5, falloff = 5 }
   local function shade(z)
     local circle = math.min(REACH, REACH * z.timer // spread_frames)
     local strength = math.floor(255 * opacity(z) + 0.5)
@@ -128,6 +131,7 @@ function M.install(ctx)
       shadow_cast = true, seen_by = "everyone", strength = strength,
       owner_strength = enemies_only and math.floor(OWN_SIDE * opacity(z) + 0.5) or nil,
       without_fog = true,
+      into_terrain = INTO_TERRAIN,
     }
   end
 

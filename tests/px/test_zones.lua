@@ -66,7 +66,7 @@ local function reset(rate, turns, both)
       for _, path in ipairs(s.sprites) do assets[path] = true end
     end },
     actors = { spawn = function(s)
-      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite }
+      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite, solid = s.solid }
       function a:despawn() self.dead = true end
       function a:explode(e) assert(e.damage == 30 and e.id == 30); blasts = blasts + 1 end
       function a:gfx() end
@@ -265,6 +265,7 @@ local function fire(claim)
   claim.on_explode({ x = 350, y = 200 })
   local a = actors[#actors]
   assert(a.x == 350 and a.y == 200 and a.sprite == false)
+  assert(a.solid == false, "a blast must not knock the zone (and its darkness) away")
   return a, shooter
 end
 local function four_turns()
@@ -303,6 +304,7 @@ for _, hides_for in ipairs({ "everyone", "enemies" }) do
     local l = assert(a.light)
     assert(l.mode == "dark" and l.reach == 256 and l.cone.length == 0 and l.without_fog == true)
     assert(l.shadow_cast == true and l.seen_by == "everyone")
+    assert(l.into_terrain.depth == 5 and l.into_terrain.falloff == 5, "on into the terrain")
     assert(l.circle == circle, "circle " .. tostring(l.circle) .. ", expected " .. circle)
     assert(l.strength == strength and l.owner_strength == own)
   end

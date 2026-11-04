@@ -277,9 +277,11 @@ function M.register(spec)
     -- PX's objects are `CObject`s that live on M_FRAME (:167-230, :306-347):
     -- here that is an actor with a per-frame brain and no body -- brains run on
     -- the world's FRAME_FINISH, so the same frame on every peer
-    -- (crates/lua-host/src/actor.rs).
+    -- (crates/lua-host/src/actor.rs). `solid = false`: nothing reaches it,
+    -- a blast included -- WA's knock would send it flying, with no gravity
+    -- or terrain to stop it, and a light it carries with it.
     o.actor = wa.actors.spawn({
-      sprite = false, x = x, y = y, gravity = false, collide = false,
+      sprite = false, x = x, y = y, gravity = false, collide = false, solid = false,
       owner = o.owner, on = { frame = function() tick(o) end },
     })
     objects[#objects + 1] = o
