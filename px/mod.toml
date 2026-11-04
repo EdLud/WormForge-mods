@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.20"
+version = "0.20.21"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -250,6 +250,11 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/health_zone/hold.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/spot_hider/pulse.png"]
+frames = 10
 fps = 15
 play = "loop"
 
@@ -2210,6 +2215,42 @@ description = "Project X's Blast Zone: the Health Zone's round, but the 45x45 zo
 entry = "weapons/blast_zone.lua"
 icon = "sprites/blast_zone/icon.png"
 default_position = { row = "F9", column = 6 }
+
+[[components]]
+id = "px.spot_hider"
+type = "weapon"
+name = "Spot Hider"
+authors = ["PyroMan"]
+credits = "ported by reddaz"
+description = "Project X's Spot Hider: the zones' round, and where it lands a darkness spreads out 512 pixels across and hides the spot, worms and their names, for 4 turns, then fades. Terrain stops it. It watches nothing and explodes nothing."
+entry = "weapons/spot_hider.lua"
+icon = "sprites/spot_hider/icon.png"
+default_position = { row = "F9", column = 7 }
+
+[[components.options]]
+key = "look"
+type = "choice"
+choices = ["shadow", "mask"]
+default = "shadow"
+label = "Look"
+description = "Shadow: an opaque darkness cast from where the round lands, which terrain stops, drawn as the fog of war draws darkness, with or without fog. Mask: Project X's flat see-through mask."
+
+[[components.options]]
+key = "hides_for"
+type = "choice"
+choices = ["everyone", "enemies"]
+default = "everyone"
+label = "Hides for"
+description = "Enemies: the shooter's side sees the shadow at half its darkness, so their own worms show through. The mask look hides for everyone."
+
+[[components.options]]
+key = "spread_seconds"
+type = "int"
+min = 0
+max = 30
+default = 4
+label = "Spread (seconds)"
+description = "How long the shadow takes to spread out from where the round lands to its full size."
 
 [sprites."sprites/thrown_dynamite/tdynamite.png"]
 frames = 4

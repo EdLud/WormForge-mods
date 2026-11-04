@@ -10,7 +10,7 @@ package.preload["wf-lib/px_sprite_builder"] = function()
   return assert(loadfile(sdk .. "px_sprite_builder.lua", "t", env))()
 end
 local hooks, actors, claims, draws, nearby, worms, keys, assets
-local blasts, sim_random, asset_loads, top_messages, crate_list
+local blasts, sim_random, asset_loads, top_messages, crate_list, fog_on
 local function event(name, ...)
   for _, f in ipairs(hooks[name] or {}) do f(...) end
 end
@@ -31,7 +31,7 @@ local function draw()
 end
 local function reset(rate, turns, both)
   for _, name in ipairs({"lib/weapon_hint", "wf-lib/tooltip", "lib/px_zone", "lib/px_zone_fx", "lib/px_health_zone", "lib/px_blast_zone",
-    "weapons/health_zone", "weapons/blast_zone"}) do package.loaded[name] = nil end
+    "lib/px_spot_hider", "weapons/health_zone", "weapons/blast_zone", "weapons/spot_hider"}) do package.loaded[name] = nil end
   hooks, actors, claims, draws, nearby, worms, keys, assets = {}, {}, {}, {}, {}, {}, {}, {}
   blasts, sim_random, asset_loads, top_messages, crate_list = 0, 0, 0, {}, {}
   wa = {
@@ -44,6 +44,9 @@ local function reset(rate, turns, both)
       return true
     end},
     msg = { FIRE_WEAPON = 1, FRAME_FINISH = 2 }, on = {},
+    -- Only the read: a weapon never turns fog on or changes its settings.
+    fog = { enabled = function() return fog_on end },
+    log = function() end,
     world = { wind = function() return 0 end, gravity = function() return 1/8 end,
       water = function() return 1000 end, keys = function() return keys end,
       electrical_nearby = function() return nearby end },
@@ -62,7 +65,7 @@ local function reset(rate, turns, both)
       for _, path in ipairs(s.sprites) do assets[path] = true end
     end },
     actors = { spawn = function(s)
-      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner }
+      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite }
       function a:despawn() self.dead = true end
       function a:explode(e) assert(e.damage == 30 and e.id == 30); blasts = blasts + 1 end
       function a:gfx() end
@@ -243,3 +246,77 @@ keys.digit=5; hint_frames(3)
 assert(#top_messages==5 and top_messages[5]:find("6 turns",1,true))
 hint_frames(10); assert(#top_messages==5)
 print("Zone tooltips: coalition, selection, mode/duration changes and no repeated messages passed")
+
+-- Spot Hider: the shadow look's spreading darkness, or PX's flat mask.
+local function spot_hider(options, placed)
+  reset(); claims = {}
+  require("weapons/spot_hider").install({ id = "px.spot_hider",
+    weapons = { ["px.spot_hider"] = placed ~= false and {} or nil },
+    option = function(k) return options[k] end })
+  return claims[1]
+end
+local function fire(claim)
+  local shooter = worm(); shooter.weapon = "px.spot_hider"
+  event("worm_message", shooter, wa.msg.FIRE_WEAPON)
+  local missile = { weapon = "px.spot_hider", phase = "pre", id = 1, x = 100, y = 100, vx = 1, vy = 0 }
+  event("missile_frame", missile); missile.phase = "post"; event("missile_frame", missile)
+  assert(actors[#actors].sprite == "sprites/spot_hider/pulse.png", "the pulse flies")
+  claim.on_explode({ x = 350, y = 200 })
+  local a = actors[#actors]
+  assert(a.x == 350 and a.y == 200 and a.sprite == false)
+  return a, shooter
+end
+local function four_turns()
+  for turn = 1, 4 do
+    event("turn_end")
+    if turn < 4 then frames(1); event("turn_start"); frames(50) end
+  end
+end
+
+-- PX's mask: drawn over the worms and the land, four turns, then the fade.
+do
+  local claim = spot_hider({ look = "mask" })
+  assert(claim.wep == "weps/spot_hider_wep.wep" and claim.handling.ends_turn)
+  assert(claim.hold.sheet == "sprites/spot_hider/pulse.png" and claim.hold.frames == 1)
+  assert(#claim.sprites == 2 and claim.sprites[2] == "sprites/spot_hider/mask.png")
+  local a = fire(claim)
+  local function mask(alpha)
+    local d = draw()
+    assert(#d == 1 and d[1].sprite == "sprites/spot_hider/mask.png" and d[1].color == alpha << 24)
+    assert(d[1].blend == "alpha" and d[1].depth == wa.depth.EFFECTS)
+    assert(d[1].points[2][1] - d[1].points[1][1] == 512, "PX's 4x mask")
+  end
+  mask(100); four_turns(); mask(100)
+  assert(a.light == nil, "the mask look casts nothing")
+  frames(375); mask(50)
+  frames(375); assert(a.dead and #draw() == 0, "gone after the fade")
+end
+
+-- The shadow look: a darkness without fog that spreads out and fades.
+for _, hides_for in ipairs({ "everyone", "enemies" }) do
+  local claim = spot_hider({ look = "shadow", hides_for = hides_for, spread_seconds = 4 })
+  assert(#claim.sprites == 1, "no mask sheet in the shadow look")
+  local a, shooter = fire(claim)
+  assert(a.owner == shooter, "the darkness belongs to the shooter's side")
+  local function light(circle, strength, own)
+    local l = assert(a.light)
+    assert(l.mode == "dark" and l.reach == 256 and l.cone.length == 0 and l.without_fog == true)
+    assert(l.shadow_cast == true and l.seen_by == "everyone")
+    assert(l.circle == circle, "circle " .. tostring(l.circle) .. ", expected " .. circle)
+    assert(l.strength == strength and l.owner_strength == own)
+  end
+  local own = hides_for == "enemies" and 128 or nil
+  light(0, 255, own)
+  frames(100); light(128, 255, own)
+  frames(100); light(256, 255, own)
+  assert(#draw() == 0, "the shadow look draws no quad: the engine draws the darkness")
+  four_turns(); light(256, 255, own)
+  frames(375); light(256, 128, own and 64)
+  frames(375); assert(a.dead, "the darkness goes with its object")
+end
+-- No spread: full size at once.
+local a = fire(spot_hider({ look = "shadow", spread_seconds = 0 }))
+frames(1); assert(a.light.circle == 256)
+assert(spot_hider({}, false) == nil, "an unplaced Spot Hider registers nothing")
+assert(sim_random == 0)
+print("Spot Hider: PX's mask and its fade; the shadow's spread, fade, owner and hides-for passed")

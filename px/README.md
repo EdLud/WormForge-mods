@@ -212,7 +212,7 @@ Super Tele places it immediately and plays its start sound at the destination.
 
 ### Ported by reddaz
 
-Seven weapons outside Highlander, ported by reddaz with their own files:
+Eight weapons outside Highlander, ported by reddaz with their own files:
 they take no part in Highlander's pools.
 
 - **Attack Helicopter** (`px.attack_helicopter`, `weapons/attack_helicopter.lua`):
@@ -224,7 +224,7 @@ they take no part in Highlander's pools.
   falls, drills down through the land and blows up. The Super sprays fire as
   it drills and cuts sideways with five overlapping blasts.
 
-Four more come from his Project X sprite-builder ports. Each is its own
+Five more come from his Project X sprite-builder ports. Each is its own
 component (`weapons/<name>.lua`, the port in `lib/px_<name>.lua`) on PX's own
 record (`weps/<name>_wep.wep`): the throw, the arc, the wind on it and the
 blast are WA's with PX's numbers. The worm holds them with px's posture
@@ -249,6 +249,15 @@ hands out together with its missile flight drawing (`sb.flight`).
 - **Blast Zone** (`px.blast_zone`), by PyroMan: the same round, and the 45x45
   zone it leaves explodes (30 damage and a shove) whenever a worm, mine,
   barrel, crate, arrow or missile is inside it. 1-5 set its turns.
+- **Spot Hider** (`px.spot_hider`), by PyroMan: the same round, and where it
+  lands a darkness hides the spot for 4 turns, then fades over 15 seconds. It
+  watches nothing and explodes nothing. Its **Look** is ours by default, not
+  PX's: an opaque darkness cast from the impact point, drawn as the fog of war
+  draws darkness, with or without fog. Terrain stops it, so what lies behind
+  a wall stays in view, and it covers the worms' names with the worms. It
+  spreads out to 512 px across over **Spread (seconds)** (default 4). **Hides
+  for** "enemies" leaves the shooter's side seeing it at half its darkness.
+  The **mask** look is PX's flat see-through 512 px mask.
 
 The zones share PX's `CWZone` machinery (`lib/px_zone.lua`): the turn count,
 the seven seconds of inactivity after a turn, the box and its one activator.
