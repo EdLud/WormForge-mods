@@ -2255,7 +2255,7 @@ description = "How long the shadow takes to spread out from where the round land
 [[components.options]]
 key = "radius"
 type = "int"
-min = 64
+min = 10
 max = 350
 default = 256
 label = "Size (radius)"
