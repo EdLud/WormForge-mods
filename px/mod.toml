@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.25"
+version = "0.20.26"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -2592,6 +2592,4 @@ frames = 20
 [sprites."sprites/platform/platform_sprite.png"]
 frames = 1
 [sprites."sprites/platform/platform_broken.png"]
-frames = 1
-[sprites."sprites/small_worm/small_worm.png"]
 frames = 1

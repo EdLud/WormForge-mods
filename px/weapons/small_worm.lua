@@ -2,15 +2,13 @@
 -- standing still, the worm takes WA's mine shape (a 7x5 block), three
 -- quarters of its gravity and half again its mass (PX's SpeedDivider: hits
 -- push it less); fired again, or once it stands still after the turn, it is
--- itself again. PX draws the worm's own sprite at 0.85; until we can, the
--- stand-in is a still worm (WA's wbrth1, baked at 0.6), turned the way the
--- worm faces.
+-- itself again. PX draws the worm's own sprite at 0.85 (RenderNewWorm), as
+-- `worm.body_scale` does: every pose WA draws, sized about its centre.
 local weapon = {}
 local ID = "px.small_worm"
-local LOOK = "sprites/small_worm/small_worm.png"
--- The baked worm, facing left as WA's sheets do; it stands on the bottom of
--- WA's mine shape (7x5, hotspot (3,2)), centred on the worm.
-local LOOK_W, LOOK_H, MASK_BOTTOM = 13, 16, 3
+-- 0.85 the size, moved up 4 px to stand on the bottom of WA's mine shape
+-- (7x5, hotspot (3,2)) as a whole worm stands on the ground (set in game).
+local BODY = { scale = 0.85, y = -4 }
 local GRAVITY, MASS = 0.75, 1.5
 
 weapon.definition = {
@@ -19,7 +17,6 @@ weapon.definition = {
   panel_icon = "sprites/small_worm/small_ico.png",
   handling = { remember_selection = false, ends_turn = false, retreat = -1 },
   utility = { effect = "scripted" },
-  sprites = { LOOK },
 }
 weapon.requires = { "lib/turn_controls" }
 
@@ -29,11 +26,11 @@ function weapon.setup()
 
   local function activate(worm)
     small[worm.id] = { ending = false }
-    worm.y = worm.y - 5
+    worm.y = worm.y - 10
     worm.shape = "mine"
     worm.gravity = worm.gravity * GRAVITY
     worm.mass = worm.mass * MASS
-    worm.body_visible = false
+    worm.body_scale = BODY
     require("lib/weapon_hint").notice(worm, "Small worm mode: ON")
   end
 
@@ -51,7 +48,7 @@ function weapon.setup()
     end
     worm.gravity = worm.gravity / GRAVITY
     worm.mass = worm.mass / MASS
-    worm.body_visible = true
+    worm.body_scale = nil
     require("lib/weapon_hint").notice(worm, "Small worm mode: OFF")
   end
 
@@ -69,20 +66,6 @@ function weapon.setup()
     local s = small[worm.id]
     if s and s.ending and worm.state == "standing" then deactivate(worm) end
   end, { msgs = { wa.msg.FRAME_FINISH } })
-  wa.on.draw(function()
-    for _, w in ipairs(wa.worms.all()) do
-      if small[w.id] then
-        local top, bottom = w.y + MASK_BOTTOM - LOOK_H, w.y + MASK_BOTTOM
-        -- The sheet's left edge goes where the worm looks.
-        local near, far = w.x - LOOK_W / 2, w.x + LOOK_W / 2
-        if w.facing == 1 then near, far = far, near end
-        wa.draw.quad({
-          points = { { near, top }, { far, top }, { far, bottom }, { near, bottom } },
-          sprite = LOOK, depth = wa.depth.WORMS, visibility = w,
-        })
-      end
-    end
-  end)
 end
 
 return weapon
