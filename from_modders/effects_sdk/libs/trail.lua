@@ -1,83 +1,46 @@
--- Project X's effect-manager trail (wklua_and_px/utils/px_effects.c), as a
--- shared effects module: one trail per round, sampled in game frames and drawn
--- with the engine's textured beams (`wa.draw.ribbon`). It is what PX's bullet
--- sets with `linkedEffect1->SetTrail(12, 2, 0)`; TRAIL.md is how to bolt it
--- onto a weapon, and REPORT.md 11.9 is the line-by-line mapping back to
--- px_effects.c.
---
--- Consume it with `require("wf-lib/effects/trail")` after declaring
--- `dependencies = ["effects.sdk"]`. The two beam sheets are this bundle's
--- assets; put `trail.BEAM` and `trail.GLOW` in the component's `sprites` list.
---
---   * At most `max` points (PX's `trailMaxL`, :264), one appended every `every`
---     game frames while the round moves (PX's `treshold`, :266; sampled at
---     :579-582, made at :1210-1233), the oldest dropped past the cap
---     (`DetractTrail`, :1229-1232 and :1235-1248). No point while the round is
---     at rest (:1215), nor one within 0.01 of the point before it (:1223).
---   * `DrawTrail` (:1298-1380) draws two textured beams: a sharp core
---     (`tazer_lightningBeamSprite`) and, wider, a soft glow (`beam_glowSprite`;
---     it runs because `shouldBeamGlow` defaults true, :92). Point i of n has
---     t = (i+1)/(n+1) floored at 0.1 -- type 0, the third `SetTrail` argument,
---     is neither the wavy nor the mid-thick-edge-thin profile (:1311-1323) --
---     and that t is the point's texcoord, its colour scale, and, through the
---     width, how thick it draws.
---   * PX's widths are half widths (`TexturedBeamPoint` lays the section out at
---     +-dx; `textured_beam(draw_quad).PXC:35-47`), and `wa.draw.ribbon` wants
---     the full one, so `core_w` and `glow_w` are already doubled (PX's
---     rayThickness 4.0 and rayGlowThick 6.5, :149-150).
---   * The effect outlives its round: with the link gone `IsTargetMoving()` is
---     true again (:560), so the shed that is left is the vanish -- one point
---     every `vanish` game frames, from the oldest end (:583-587, and
---     trailVanishSpd is 2, :169).
---
--- `trail.sample` is that fill for a round that is not a WA missile: a Lua
--- actor calls it from its own frame callback, passing its id and the frame's
--- position and velocity (the Megashark's bullets do). The missile callback in
--- `trail.install` is a one-line call to the same function, so a round's trail
--- is sampled the same way whichever the engine is flying.
+-- Project X's effect-manager trail: a short ribbon sampled in game frames and
+-- drawn with `wa.draw.ribbon`. Consume with `require("wf-lib/effects/trail")`
+-- and list `trail.BEAM`/`trail.GLOW` in the component's sprites.
+-- See README.md for the sampling and width rules.
 
 local trail = {}
 
--- The defaults are PX's bullet's. `add` copies them, so change these once, or
--- pass the same names in `opts` for one trail. `beam` and `glow` are qualified
--- `wf-lib/effects/...` paths: the consuming component must list both in its
--- `sprites` table.
+-- PX bullet defaults; `add` copies them or takes the same names in `opts`.
 trail.MAX, trail.EVERY, trail.VANISH = 12, 2, 2
 trail.CORE_W, trail.GLOW_W = 8.0, 13.0
--- The effect's colour is its CEffectManager constructor's r, g, b, which PX's
--- bullet script does not show: white is a neutral stand-in.
 trail.R, trail.G, trail.B = 255, 255, 255
--- nil means `wa.depth.OBJECTS`, which only exists inside install(ctx): the engine
--- refuses `wa` while it is loading a component's file and everything it requires
--- ("a component's file only returns its data; use wa in install(ctx)").
+-- nil -> `wa.depth.OBJECTS`, resolved inside a game frame.
 trail.DEPTH = nil
 trail.BEAM = "wf-lib/effects/sprites/px_effects/beam.png"
 trail.GLOW = "wf-lib/effects/sprites/px_effects/beam_glow.png"
 
--- Every trail drawn: the live rounds, and the ones outliving them.
 local trails = {}
--- Missile id -> its trail, while the round is in the air.
-local live = {}
--- One hidden actor, while there is a trail to sample or to shed. It ticks the
--- game frames, so nothing here depends on the render rate.
+local live = {} -- round id -> trail while it is in the air
 local driver, tick = nil, 0
--- Game frames a live trail may go unsampled before its round counts as gone.
--- A WA missile fires its callback every game frame while it exists, but a Lua
--- actor may skip one legitimately: the Megashark's bullet arms at 90 px and
--- returns before it moves on that frame. The driver ticks on that same frame,
--- so with 2 the gap reaches `STALE` and the trail ends at the arming frame.
--- Three leaves one skipped frame alive; the vanish starts a frame later than
--- PX's at worst, which the 2-frame shed already hides.
+-- Frames a live trail may go unsampled; 3 tolerates one skipped actor frame.
 local STALE = 3
 
+-- The driver only needs *an* owner; prefer whose turn it is (the usual one)
+-- and fall back to any living worm so late blasts still draw.
+local function current_worm()
+  local first
+  for _, w in ipairs(wa.worms.all()) do
+    if w.turn then return w end
+    if not first and w.hp > 0 then first = w end
+  end
+  return first
+end
+
+-- Event owners can be a zero handle: `ev.worm` wraps 0, which is still a
+-- truthy userdata and `or` will not replace it. `wa.actors.spawn` refuses 0.
+local function usable(owner)
+  return owner ~= nil and (owner.id or 0) ~= 0
+end
+
 local function start_driver(t, owner)
-  if driver then return end
-  -- The sprite is never seen; it just has to be one the consumer declares in
-  -- its `sprites` list. `persist` keeps the clock alive through a nearby blast:
-  -- if the driver died
-  -- with a round's own explosion, `tick` would freeze and every later trail on
-  -- the map would stop shedding (the handle cannot be tested for death from
-  -- Lua). The round's end is the driver's only exit, when `trails` empties.
+  if driver then return true end
+  -- Hidden timer; `persist` keeps it alive through a blast so the shed never
+  -- freezes. It exits when `trails` empties.
   driver = wa.actors.spawn({
     sprite = t.beam, visible = false, gravity = false, collide = false,
     persist = true, owner = owner,
@@ -93,11 +56,7 @@ local function start_driver(t, owner)
         if not v.live and tick % v.vanish == 0 then
           table.remove(v.pts, 1)
           if #v.pts == 0 then
-            -- `table.remove`, not `trails[i] = nil`: a hole anywhere before the
-            -- end makes `#trails` unspecified and stops the draw's `ipairs` at
-            -- the hole, which reads as "no trail is drawn any more" for every
-            -- round, live ones included. The loop runs backwards so shifting the
-            -- tail down cannot skip an element.
+            -- Remove the hole; the loop runs backwards so the shift is safe.
             table.remove(trails, i)
             live[v.id] = nil
           end
@@ -106,11 +65,13 @@ local function start_driver(t, owner)
       if #trails == 0 then driver = nil; a:despawn() end
     end,
   })
+  return driver ~= nil
 end
 
--- Trail the round `id`, owned by `owner` (a worm or a team, as `wa.actors.spawn`
--- wants). `opts` overrides any of the fields above for this trail alone.
+-- Trail the round `id`; `opts` overrides any field above for this trail.
 function trail.add(id, owner, opts)
+  if not usable(owner) then owner = current_worm() end
+  if not usable(owner) then return nil end
   local t = {
     id = id, pts = {}, live = true, seen = tick,
     max = trail.MAX, every = trail.EVERY, vanish = trail.VANISH,
@@ -118,20 +79,17 @@ function trail.add(id, owner, opts)
     r = trail.R, g = trail.G, b = trail.B,
     depth = trail.DEPTH, beam = trail.BEAM, glow = trail.GLOW,
   }
-  -- Every field `opts` may override, one at a time: a `pairs` loop would read in
-  -- an unspecified order (wfcheck's lockstep note), even though copying values
-  -- cannot depend on it.
+  -- Fixed key order; `pairs` would be unordered.
   for _, k in ipairs({
     "max", "every", "vanish", "core_w", "glow_w", "r", "g", "b", "depth", "beam", "glow",
   }) do
     if opts and opts[k] ~= nil then t[k] = opts[k] end
   end
-  -- `trail.DEPTH` cannot be read at load time (see trail.DEPTH above), so the
-  -- default is resolved here, in a game frame, where `wa` does exist.
+  -- Resolve the depth default in a game frame, where `wa` exists.
   if t.depth == nil then t.depth = wa.depth.OBJECTS end
+  if not start_driver(t, owner) then return nil end
   trails[#trails + 1] = t
   live[id] = t
-  start_driver(t, owner)
   return t
 end
 
@@ -140,9 +98,7 @@ function trail.has(id)
   return live[id] ~= nil
 end
 
--- The round is gone: stop sampling it and let its trail be shed. Optional -- the
--- driver notices a round that stopped firing frames within STALE game frames --
--- but this starts the fade at once.
+-- The round is gone; start its fade now instead of waiting for STALE.
 function trail.drop(id)
   local t = live[id]
   if t then
@@ -151,10 +107,7 @@ function trail.drop(id)
   end
 end
 
--- PX's FillTrail (:1210-1233), for one round's frame. A WA missile's
--- `wa.on.missile_frame` and a Lua actor's own brain both call this with the
--- round's id and its motion for the frame. `tick` is the trail driver's clock,
--- so the sampling stays in game frames on either path.
+-- PX's FillTrail for one round's frame; both missiles and actors call this.
 function trail.sample(id, x, y, vx, vy)
   local t = live[id]
   if not t then return end
@@ -173,18 +126,13 @@ end
 
 local installed = false
 
--- Register the engine callbacks. Call this from your component's install(ctx):
--- a component's file, and anything it requires, only returns data -- `wa` does
--- not exist yet, which is why nothing above this line touches it, and why
--- `trail.DEPTH` waits for `add` to resolve it.
+-- Register callbacks from install(ctx); `wa` does not exist at require time.
 function trail.install()
   if installed then return end
   installed = true
 
-  -- PX's FillTrail (:1210-1233), on the missile's own game frame. A missile
-  -- only counts as filled once it has moved (`phase == "post"`), but `seen`
-  -- is refreshed on both phases so a round that is still in the air is never
-  -- mistaken for gone.
+  -- Fill on the missile's frame; refresh `seen` on both phases so a live round
+  -- is never mistaken for gone.
   wa.on.missile_frame(function(m)
     if m.phase ~= "post" then
       local t = live[m.id]
@@ -194,10 +142,7 @@ function trail.install()
     trail.sample(m.id, m.x, m.y, m.vx, m.vy)
   end)
 
-  -- PX's DrawTrail (:1298-1380), from the render callback. `wa.draw.ribbon`
-  -- copies its table, so one spec is refilled for every pass of every trail, as
-  -- the packs do (electrical.lua:409-440): a table per draw made enough garbage
-  -- for a collection inside the draw.
+  -- PX's DrawTrail. Reuse one ribbon spec: a table per draw made garbage.
   if wa.on.draw and wa.draw.ribbon then
     local RIBBON = { blend = "add", points = {} }
     local function pass(t, sprite, width)
@@ -206,8 +151,7 @@ function trail.install()
       RIBBON.sprite, RIBBON.depth = sprite, t.depth
       local rp = RIBBON.points
       for i = 1, n do
-        -- PX's t (a 0-based i over n, plus one) floored at 0.1: strength,
-        -- texcoord and width in one number.
+        -- PX's t: strength, texcoord and width in one number.
         local f = i / (n + 1)
         if f < 0.1 then f = 0.1 end
         local p = rp[i]

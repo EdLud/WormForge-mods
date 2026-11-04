@@ -5,8 +5,8 @@ ported from the API 1.0 script `bee.lua` to WormForge **API 4**.
 
 | Component | What it is |
 |---|---|
-| `spawn.bees.keeper` | The launcher. Fires a bee: it spins out of the muzzle for half a second, then hunts the first worm that moves inside 235 px, stings it on contact (40 damage) and bursts. |
-| `spawn.bees.swarm` | An add-on. Seeds the map with rogue bees on the first turn: one per map slice, on ground a worm can stand on. |
+| `spawn.bees.keeper` | The launcher. Fires a bee: it spins out of the muzzle for half a second, then hunts the worm whose turn it is (or any worm a weapon throws) inside 235 px. On contact it stings, takes the worm, lifts it about 117 px, lets go and bursts. |
+| `spawn.bees.swarm` | An add-on. Seeds the map with rogue bees on the first turn: one per map slice, on ground a worm can stand on. 4 by default. Rogue bees wear no hat. |
 
 A bee that loses its target, drifts more than 420 px from where it hatched, or
 hunts for more than 160 frames gives up, spins where it stands and looks again
@@ -20,7 +20,8 @@ spins detonates.
   original is kept at `porting-analysis/_superseded/random_bees/bee.lua`.
 - `profiles/Keeper Bee.toml` -- a profile placing the weapon in F1 and the swarm
   on, infinite ammo.
-- `sprites/`, `sounds/` -- PX's own bee art and buzzes, unchanged.
+- `sprites/`, `sounds/` -- PX's own bee art and buzzes, unchanged; plus
+  `sprites/gray_hat.png`, the team-tinted hat the port draws over launcher bees.
 - Checked clean: `wfcheck API-4.0/random_bees --strict
   --exclude semantic_all_rules.lua` -> no errors or warnings (REPORT.md 20);
   `check_paths.py` -> every declared path resolves.
@@ -41,20 +42,67 @@ ammo = -1
 
 [options."spawn.bees.swarm"]
 spawn_map_bees = true    # whether or not the map is seeded at all
-bee_amount     = 22      # how many bees (1-60)
+bee_amount     = 4       # how many bees (1-60)
 ```
 
-`bee_amount` is the API 2 file's `BEE_SPAWN_QUANTITY` (`:4`), and
-`spawn_map_bees` replaces its once-only `spawnedMapBees` gate (`:7`, `:647`) --
-turning it off leaves the launcher alone in the match. `ammo`/`delay`/`crate`
-are the weapon's own profile settings, as every weapon's are (the original
-handed the slot no ammo numbers at all).
+`bee_amount` is the API 2 file's `BEE_SPAWN_QUANTITY` (`:4`; 4 instead of its
+22, which crowds the map), and `spawn_map_bees` replaces its once-only
+`spawnedMapBees` gate (`:7`, `:647`) -- turning it off leaves the launcher
+alone in the match. `ammo`/`delay`/`crate` are the weapon's own profile
+settings, as every weapon's are (the original handed the slot no ammo numbers
+at all).
 
 The swarm is an **add-on, not part of the weapon**, because API 4 gives
 declared options to features only (`crates/weapons/src/components.rs:160`,
 "Features: their settings"; a weapon's own `defaults` may only carry the
 weapon-data fields, `bundles.rs` `WEAPON_DATA`). Placing the weapon without the
 add-on is a valid profile: the launcher works, the map stays clear.
+
+## The hat
+
+Launcher bees wear `sprites/gray_hat.png`, tinted with the owner's visible
+coalition colour (WA's `worm.alliance`, 0..5 = red..cyan). Rogue map bees wear
+no hat.
+
+The sheet is a 40x32 canvas with the offset around the bee's centre already
+baked in, so the port draws it as one `wa.draw.quad` at 1:1 and only follows the
+bee: its presentation position, its facing (the mirrored corner order) and the
+last angle handed to `a:angle`. Frame 0 of the flight strip is nudged 1 px up to
+match the art. Depth `0x18FFFF` sits over the bee (`0x190000`) and under terrain
+(`0x180000`).
+
+A bee that was chasing and then loses more than 4 px/frame of speed in one frame
+(a wall, a bump, WA zeroing the body) is knocked out of its hat: a hat-shaped
+body takes the bee's speed, tumbles down, lands on its own brim and clears after
+110 frames. The bee stays bare for 70 frames, then the hat is back. A chase
+*start* only speeds the bee up, and the drop is gated on the previous frame
+chasing, so nothing falls off at the start of a hunt. Rogue bees never drop one.
+
+## Who the bees chase
+
+A bee only looks at the worm whose turn it is; a passive, standing worm is not a
+target. The exception is a weapon that throws worms: anything in `hit`,
+`blasted`, `tumbling`, `jumping`, `jump_falling`, `jump_prepare` or
+`parachuting` stays a target whoever's turn it is, so several worms knocked into
+the air can be chased at once. A target that stops being either (or that another
+bee already took) is dropped. Non-rogue bees still ignore their own team.
+
+## The sting
+
+Instead of bursting on contact, a bee stings: `worm:take{ turn = "run" }` (the
+turn timer keeps running) and `worm:carry` place the worm 18 px above the bee.
+The sprite turns head-down/tail-up (`90`, a vertical flip), so the stinger is in
+the worm and the bee flies up tail-first. It climbs 3 px a frame for 39 frames
+(117 px, three times the first pass) with a random sideways drift of at most
+25 px, then `worm:release(..., { tumble = true })` lets go just before
+`a:explode` so the blast can throw the worm. If the engine refuses the worm
+(WA's death states) or a spinning bee hits it, the old burst happens at once. If
+the bee dies, is despawned or the worm is taken back mid-lift, the worm is
+released tumbling and the bee bursts.
+
+`worm:set_state` is diagnostics-only (`debug_worm_state`), so this uses the
+supported hold path instead. `STING_FRAMES`, `STING_LIFT_PX`, `STING_GAP_PX`,
+`STING_DRIFT_PX` and `STING_ANGLE` are the knobs.
 
 ## What the port changed
 

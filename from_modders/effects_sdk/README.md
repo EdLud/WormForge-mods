@@ -33,6 +33,28 @@ library bundle can live at `Mods/effects_sdk` (as this test copy does) or under
 `Mods/wf-lib/effects_sdk`; the export name and `asset_namespace` decide how it
 is imported.
 
+## Owners
+
+The hidden driver actor that ticks a trail or effect needs a real owner;
+`wa.actors.spawn` refuses a zero handle. Event fields such as `ev.worm` can be
+one (a zero handle is still a truthy userdata), so `trail.add` and the effect
+manager fall back to the turn's worm, and skip the effect when there is none.
+
+## Trail
+
+`libs/trail.lua` is PX's `SetTrail` effect: one ribbon per round, sampled in
+game frames.
+
+- At most `max` points, one every `every` frames while the round moves; the
+  oldest drops past the cap.
+- It draws a sharp core (`core_w`) and a wider glow (`glow_w`). PX's widths are
+  half-widths; this module stores the doubled full widths `wa.draw.ribbon`
+  wants.
+- When the round disappears, the ribbon sheds one point every `vanish` frames
+  from the oldest end.
+- `trail.sample(id, x, y, vx, vy)` is the fill for a Lua actor; WA missiles are
+  sampled from `trail.install`'s own frame callback.
+
 ## Modules
 
 - `libs/trail.lua` — PX's effect-manager trail; one trail per round, sampled in
@@ -44,3 +66,7 @@ is imported.
   widths are doubled in the module, and the `core_w`/`glow_w` overrides are
   full widths too. Small rings floor the core (and thin-spin maximum) at 6.4 px
   full, about 2 px visible through the beam texture, so tiny saws stay legible.
+- `libs/custom_explosion.lua` — PX's non-electric `do_custom_explosion`:
+  falloff damage, push, crater and one effect burst. Call it from `on_explode`
+  after zeroing the record's own `explosion.power`; the electric variant stays
+  in `px.electric` because it also tazes and chains.

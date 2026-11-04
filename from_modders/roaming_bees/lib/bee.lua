@@ -1,79 +1,15 @@
--- Keeper Bee -- reddaz's Project X bee, ported to WormForge API 4.
---
--- The original is `bee.lua` (API 1.0/2.0), kept beside the report at
--- `porting-analysis/_superseded/random_bees/bee.lua`. This module is that file
--- with its API calls moved to API 4 and split so both components can share it:
--- the launcher (`weapons/keeper_bee.lua`) and the map swarm
--- (`features/bee_swarm.lua`). Nothing here runs at load -- `wa` only exists
--- inside a component's install -- so every function that touches `wa` is
--- called from an install or from a simulation callback.
---
--- What changed, and why (original line numbers are the API 2 file's):
---
---   * `math.cos`/`math.sin`/`math.atan` -> `wa.math.*` (`:68-69`, `:90-91`,
---     `:122-123`, `:426`, `:461`). Lua's go to each machine's C runtime and can
---     differ in the last bit, which desyncs a match; the engine's are WA's own
---     sine table and a portable atan (`wfcheck` rule lockstep-rng,
---     `crates/lua-host/src/spawn.rs` "math_table"). `math.deg` has no engine
---     twin: it is one multiply by 180/pi.
---   * every `wa.random` range is floored first (`:212-213`, `:442`, `:570`).
---     `wa.random` takes whole numbers (`spawn.rs` `random_fn`), and the
---     original handed it floats (`ROAM_RANGE_X * scale`, `waterY`), which the
---     engine refuses rather than rounds.
---   * the map spawner is no longer a `worm.id == 1*16+1` worm-message hack
---     (`:644-657`). It seeds on the first `wa.on.turn_start`, which is the API
---     4 turn event carrying the turn's worm (`crates/lua-host/src/dispatch.rs`
---     "turn_event"). There is no round-start hook in API 4, so it seeds once
---     per match and retries each turn until at least one bee lands.
---   * `wa.worms.active()` (`:487`) does not exist in API 4 -- `wa.worms` is
---     `all` and `nearest` (`spawn.rs` "bind_worms") -- so the fallback owner is
---     `wa.worms.all()[1]`.
---   * `kind = "bee"` (`:499`) is dropped: `wa.actors.spawn` has no `kind` key
---     (`spawn.rs` "parse_spawn"), and a Lua actor's `kind` reads "actor", a
---     worm's "worm" (`actor.rs:1126`, `:1522`) -- which is what the spawn-point
---     test actually checks (`:80`, `:94`).
---   * `wa.world.size()` is `{ w, h }` in map pixels (`spawn.rs` "world.size"),
---     not `{ width, height }` (`:552-556`), and the water line is
---     `wa.world.water()` (`spawn.rs` "world.water") rather than the map height
---     (`:553`).
---   * `for currentSlice = 0, ...` (`:557`) was a global; it is local here.
---   * `playBuzz(worm or { x = fire.x, y = fire.y })` (`:626`) becomes
---     `playBuzz(fire.worm)`: `wa.sound.play` takes a live handle, and a plain
---     `{x, y}` table is not one (`spawn.rs` "bind_sound" -> `parse_handle`).
---   * `size.width`/`size.height` in the log line (`:556`) were nil, and the
---     `//` there is `math.floor(a / b)`.
---   * the weapon registration (`:603-639`) is `install_weapon`, and the
---     `worm_message` hook (`:644-657`) is `install_swarm`.
---
---   * WA moves the bee now (a plain body with `body.hits`), so the brain no
---     longer calls `a:move`, and a wall is not found by looking for it: the
---     bee's `on.bump` (engine commit cb8affe) says what its own movement ran
---     into. A bump into land is a bonk; a bump into a worm or an object is a
---     touch. The recovery teleport (`checkSpawnPoint`, its trace and `fits`)
---     is gone from bonks and is only used to place a bee. `SPEED_SCALE` makes
---     up for the second step `a:move` used to add.
---   * the spawn clearance is a filled disc (`isClearOfTerrain`), not eight
---     points, and a spot that does not clear it is refused instead of falling
---     back to the target. A bee buried later (a javelin's `wa.land.stamp`) is
---     found by its own position and pulled out (`unbury`).
---   * the mine-physics body (`body.physics = "mine"`) was tried and dropped:
---     slow, and it ignored a speed multiplier.
---
--- Everything else -- the constants, the AI, the spawn geometry, the numbers --
--- is the original's, line for line.
+-- Keeper Bee: PX's bee AI, shared by the launcher and the map swarm.
+-- API 4 uses wa.math, integer wa.random, turn-start spawning and a real body
+-- moved by WA (`on.bump`). See logging_problems.md for the port notes.
 
 local M = {}
 
--- Verbose spawn logging, the original's `wa.log` calls (:489, :505, :540,
--- :556, :589, :595, :650, :653). Off by default; the swarm's summary line is
--- always logged.
+-- Verbose spawn logging; the swarm's summary line is always logged.
 M.DEBUG = false
 
 -- The bundle's own files, named once.
 M.SPRITE = "sprites/bee_flight.png"
--- The engine-side collision shape (`body.shape`), as lib/turret gives its
--- turrets theirs (`art.mask`). `on.bump` needs the body to collide with
--- something, so the body below always carries `hits`.
+-- Engine collision mask; `on.bump` needs the body to carry `hits`.
 M.BODY_MASK = "sprites/bee/bee_mask.png"
 M.SOUNDS = {
   "sounds/bzz1.wav",
@@ -81,10 +17,11 @@ M.SOUNDS = {
   "sounds/bzz3.wav",
   "sounds/bzz4.wav",
 }
+-- Team-tinted fedora. The sheet is a 40x32 canvas with the hat offset around
+-- the bee's centre baked in, so it is drawn at 1:1 and only follows the bee.
+M.HAT = "sprites/gray_hat.png"
 
--- The bee's six worm poses: the aim art (32 frames, one per aim angle) and the
--- take-out/throw art (10 frames), as WA's own slot names (`gfx.rs`
--- `stock_worm_sprite_id`). The original's `worm_sprites` table (:615-622).
+-- WA's aim and throw slots, as the original's `worm_sprites`.
 M.WORM_SPRITES = {
   weaponlnk = "sprites/aim_p_muitb55w.gif",
   weaponlnku = "sprites/aim_u_muitb55w.gif",
@@ -97,23 +34,23 @@ M.WORM_SPRITES = {
 -------------------------------------------------------------------------------
 -- Map Auto-Spawn Configuration (:4-8)
 -------------------------------------------------------------------------------
-local BEE_SPAWN_QUANTITY  = 22
-local BEE_SPAWN_TRIES_PER_SLICE = 999
+local BEE_SPAWN_QUANTITY  = 4
+local BEE_SPAWN_TRIES_PER_SLICE = 250
 local SPAWN_TOP_MARGIN_PX = 100  -- don't probe within this far of the map's ceiling
 local swarmPlanted        = false
 
 -- Bee AI Constants (:11-46)
 local SENSOR_RADIUS_PX  = 235
-local CONTACT_RADIUS_PX = 26
-local CHASE_SPEED       = (3.5)
+local CONTACT_RADIUS_PX = 34
+local CHASE_SPEED       = (3.7)
 local CHASE_STRENGTH    = 0.14
 local CHASE_STEER_EVERY = 1
 local ROAM_SPEED        = (0.6)
 local ROAM_SPEED_BASE   = 0.12
 local ROAM_COOLDOWN_MIN = 10
-local ROAM_COOLDOWN_MAX = 20
+local ROAM_COOLDOWN_MAX = 32
 local ROT_SMOOTH_DEG    = 4
-local ROAM_STRENGTH     = 0.12
+local ROAM_STRENGTH     = 0.10
 local ROAM_STEER_EVERY  = 1
 local BONK_LIMIT        = 4
 local SPIN_FRAMES       = 20
@@ -123,9 +60,9 @@ local ROAM_RANGE_Y      = 110
 local ROAM_ARRIVE_PX    = 20
 local BEE_RADIUS_PX     = 4
 local CORNER_BUFFER_PX  = 2
-local HOMING_MAX_DIST_PX = 470
-local HOMING_MAX_DURATION = 160
-local ROAM_MAX_DIST_PX   = 420
+local HOMING_MAX_DIST_PX = 440
+local HOMING_MAX_DURATION = 150
+local ROAM_MAX_DIST_PX   = 410
 local LOOKOUT_COOLDOWN_GIVEUP  = 150
 local LOOKOUT_COOLDOWN_TIMEOUT = 200
 
@@ -134,16 +71,11 @@ local ROAM_FAIL_SCALE      = 0.5
 local CLIP_FRAMES_LIMIT    = 6   -- frames with the centre inside land before it is pulled out
 local UNBURY_MAX_RADIUS_PX = 150  -- how far out the search for a free spot goes
 
--- A bee is only born where this disc around it is free of land. The body's
--- real shape is bigger than its 4 px radius, and a bee born inside land cannot
--- get out. Raise it if bees still spawn touching terrain.
+-- Only spawn where this disc is free; raise it if bees still touch terrain.
 local SPAWN_CLEAR_RADIUS_PX = 7
--- WA moves the bee once a frame. The `a:move` call it replaces added a second
--- step, so every speed here (the numbers below are the ones tuned with it) is
--- multiplied by this. 1.0 = the numbers as written.
+-- WA's move replaces the second step `a:move` added; 1.0 = PX's speeds.
 local SPEED_SCALE = 2.0
--- After a bump into land drops its target, the bee ignores worms this many
--- frames. Without it, it picks the same worm straight back and bumps again.
+-- Frames to ignore worms after a land bump, so the bee does not re-pick it.
 local BUMP_LOOKOUT_FRAMES = 45
 
 local ROAM_SLOWDOWN_RADIUS_PX = 60
@@ -173,9 +105,7 @@ local function shouldStop(s)
   return s.dead or s.freeMe or s.stopMe
 end
 
--- A hit on the bee: the original's `ev.damage` block (:308-313), which PX fed
--- through the actor's own damage message. The spin it starts is what kills a
--- hurt bee: a spinning bee that runs out of spins detonates (:321-341).
+-- A damaged bee spins; when the spin runs out it detonates.
 local function takeHit(a, s, damage, spin)
   if (damage or 0) <= 0 then return end
   s.hp = s.hp - damage
@@ -212,29 +142,25 @@ local function checkSpawnPoint(obj, x, y, targetX, targetY, maxRadius, clearRadi
   maxRadius = maxRadius or 50
   clearRadius = clearRadius or (BEE_RADIUS_PX + 1)
   local worm = wa.worms.nearest(obj)
-  -- A worm handle is the only kind that can answer `:fits` (`actor.rs:1817`).
+  -- Only a worm handle answers `:fits`.
   if obj and obj.kind ~= "worm" then obj = worm end
 
   local r = 0
   while r <= maxRadius do
-    -- Clean step calculation using native units
     local step = (r == 0) and 360 or math.max(15, math.floor(360 / (r / 2) + 0.5))
     local angdeg = 0
     while angdeg < 360 do
       local rad = angdeg * math.pi / 180
-      -- Fully deterministic engine math (safe across all architectures)
       local tx = x + math.floor(r * wa.math.cos(rad))
       local ty = y + math.floor(r * wa.math.sin(rad))
-      -- Leverage native C++ :fits() cache if an entity context exists
       local fitsHere = false
       if obj and type(obj.fits) == "function" and obj.kind == "worm" then
         fitsHere = obj:fits(tx, ty)
       else
         fitsHere = true
       end
-      -- A worm-sized hole is not enough: the bee's own disc must be free too.
+      -- The bee's own disc must fit, and the target must be visible.
       if fitsHere then fitsHere = isClearOfTerrain(tx, ty, clearRadius) end
-      -- Verify line-of-sight back to target
       if fitsHere then
         local hit = wa.land.trace(tx, ty, targetX, targetY)
         if not hit or not hit.hit then
@@ -249,8 +175,7 @@ local function checkSpawnPoint(obj, x, y, targetX, targetY, maxRadius, clearRadi
   return targetX, targetY
 end
 
--- Sampled disc test for bigger radii (a filled disc at r=14 is ~600 solid()
--- calls per candidate): centre, a half-radius ring and the full-radius ring.
+-- Sampled disc test: centre, half-radius ring, full-radius ring.
 local function roomClear(x, y, r)
   if wa.land.solid(x, y) then return false end
   for i = 0, 15 do
@@ -262,8 +187,7 @@ local function roomClear(x, y, r)
   return true
 end
 
--- A bee that spawns in a slit or a pocket can't steer out. Fire short traces
--- in 8 directions: at most one may be blocked, so there is always a way out.
+-- A bee in a slit needs at least one open direction; probe eight.
 local ESCAPE_TRACE_PX = 18
 local function hasEscapeRoom(x, y)
   local blockedN = 0
@@ -299,15 +223,7 @@ local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx)
   end
   return nil, nil
 end
--- math.floor() rounds toward -inf, not toward zero. Under the old
--- fixed-point scheme that was invisible (speeds were huge integers, a
--- fraction of a pixel didn't matter); now that speed/strength are small
--- fractions by design (ROAM_SPEED=0.6, CHASE_STRENGTH=0.17, etc), floor()
--- crushes small POSITIVE corrections to exactly 0 while rounding any
--- NEGATIVE correction down to a full extra -1. That's an asymmetric bias,
--- not a truncation: velocity can only ever hold still or drift negative,
--- never cleanly approach a positive target speed. Removed -- interpolate
--- in plain floats and let a.vx/a.vy hold the fractional result directly.
+-- Keep fractional velocities: flooring them biased the steering to zero.
 local function steer(a, tx, ty, speed, strength)
   speed = speed * SPEED_SCALE
   local dx, dy = tx - a.x, ty - a.y
@@ -325,31 +241,24 @@ local function distPx(a, tx, ty)
 end
 
 local function isThereLandThere(a, tx, ty)
- -- local b = CORNER_BUFFER_PX * 0.5
- -- local tyOff = ty
-
-  local function blocked(x0, y0, x1, y1)
-    local hit = wa.land.trace(x0, y0, x1, y1)
-    return hit and hit.hit
-  end
-  
-  return blocked(a.x,a.y,tx,ty) 
-
-  --return false
+  local hit = wa.land.trace(a.x, a.y, tx, ty)
+  return hit and hit.hit
 end
 
-local function findClosestEnemy(a, s)
-  if (s.lookoutCooldown or 0) > 0 then return nil end
+-- One target pass per frame for every bee: cache worms, test distance before
+-- tracing, as PX's AssignCurseHomingTargets does.
+local SENSOR_RADIUS_SQ = SENSOR_RADIUS_PX * SENSOR_RADIUS_PX
+local targetFrame = nil
+local wormsById = {}
+
+local function closestEnemy(a, s, worms)
   local best, bestDist2
-  for _, w in ipairs(wa.worms.all()) do
-    -- A walking worm has no velocity. Probably bresenham-walking along the mask, doing micro teleports.
-    local moving = (w.vx ~= 0 or w.vy ~= 0 or w.state_label == "walking") and (w.state ~= "standing" and w.state_label ~= "standing")
-    local isEnemy = s.rogue or (w.team ~= s.team)
-    if isEnemy and w.hp > 0 and moving then
-      local dx = (w.x - a.x)
-      local dy = (w.y - a.y)
+  for i = 1, #worms do
+    local w = worms[i]
+    if s.rogue or w.team ~= s.team then
+      local dx, dy = w.x - a.x, w.y - a.y
       local d2 = dx * dx + dy * dy
-      if d2 <= SENSOR_RADIUS_PX * SENSOR_RADIUS_PX and (not bestDist2 or d2 < bestDist2) then
+      if d2 <= SENSOR_RADIUS_SQ and (not bestDist2 or d2 < bestDist2) then
         if not isThereLandThere(a, w.x, w.y) then
           best, bestDist2 = w, d2
         end
@@ -359,12 +268,67 @@ local function findClosestEnemy(a, s)
   return best
 end
 
+-- Turn-based threat: the worm whose turn it is, plus any worm a weapon has
+-- thrown into the air (several can be flying at once; PX's trampoline or a
+-- blast can do it). A passive, standing worm is not a target.
+local KNOCKED = {
+  blasted = true, tumbling = true,
+  jumping = true,
+  parachuting = true,
+}
+
+local function refreshTargets()
+  local frame = wa.world.frame() or 0
+  if targetFrame == frame then return end
+  targetFrame = frame
+ 
+  local worms = wa.worms.all()
+  local candidates = {}
+  local targetable = {}
+  wormsById = {}
+  for i = 1, #worms do
+    local w = worms[i]
+    wormsById[w.id] = w
+    local knocked = KNOCKED[w.state or ""] or false
+    -- A bee picks a worm that is moving: it has speed, or it is walking
+    -- (walking can read speed 0), or WA has knocked it. Its turn does not
+    -- matter, and a worm that stands still is not picked.
+    local moving = w.vx ~= 0 or w.vy ~= 0 or w.state == "walking" or knocked
+    -- A worm a bee already has cannot be taken twice.
+    if w.hp > 0 and not w.taken and moving then
+      candidates[#candidates + 1] = w
+      targetable[w.id] = true
+    end
+  end
+
+  -- One loop for every live actor; only bees have a state entry.
+  for _, a in ipairs(wa.actors.all()) do
+    local s = state[a.id]
+    if s and not s.dead and not s.freeMe and not s.stopMe
+        and not s.spin and not s.softSpin then
+      if (s.lookoutCooldown or 0) > 0 then
+        s.lookoutCooldown = s.lookoutCooldown - 1
+      end
+      local target = s.targetId and wormsById[s.targetId]
+      -- A locked target is kept until it dies, is already held (taken), or
+      -- the brain gives up on distance or time. Not when it stops moving or
+      -- its turn ends: `targetable` is for picking a NEW target only.
+      if target and (target.hp <= 0 or target.taken
+          or (not s.rogue and target.team == s.team)) then
+        target = nil
+        s.targetId = nil
+      end
+      if not target and (s.lookoutCooldown or 0) <= 0 then
+        target = closestEnemy(a, s, candidates)
+        s.targetId = target and target.id or nil
+      end
+    end
+  end
+end
+
 local function wormById(id)
   if not id then return nil end
-  for _, w in ipairs(wa.worms.all()) do
-    if w.id == id then return w end
-  end
-  return nil
+  return wormsById[id]
 end
 
 local function randomizeSpeed()
@@ -379,7 +343,9 @@ local function tryFindPath(a, s, scale)
   local fx = rand(-rangeX, rangeX)
   local fy = rand(-rangeY, rangeY)
   local tx, ty = s.startX - fx, s.startY - fy
-
+  
+  local waterY = math.floor(wa.world.water())
+  if ty > waterY - 14 then ty  = waterY -15 end
   if not isThereLandThere(a, tx, ty) then
     return tx, ty
   end
@@ -412,10 +378,108 @@ local function pickRoamPoint(a, s)
   return false
 end
 
+-- A worm the bee is carrying (the sting) is let go, tumbling, whenever the
+-- carrying stops for any reason.
+local function letGo(s, vx, vy)
+  local st = s.sting
+  s.sting = nil
+  if st and st.worm and st.worm.taken then
+    if st.worm.state == "frozen" then
+      st.worm:release(vx or 0, vy or -2.9, { tumble = false})
+      st.worm:freeze()
+    else
+      st.worm:release(vx or 0, vy or -4, { tumble = true})
+    end
+  end
+end
+
 local function detonate(a, s)
+  -- An interrupted sting must not leave the worm held to a gone bee.
+  letGo(s, a.vx, a.vy)
+  wa.sound.play(a,54)
   a:explode({ damage = s.supercharged and 55 or 40, id = 100 })
   state[a.id] = nil
   a:despawn()
+end
+
+-------------------------------------------------------------------------------
+-- Sting and kidnap
+-------------------------------------------------------------------------------
+-- On contact the bee stings, takes the worm, lifts it 3x the old 39 px
+-- (39 frames at twice the speed) while drifting at most 25 px sideways, with
+-- the worm above its tail-up body, then bursts. The worm is let go just before
+-- the blast so the explosion can knock it.
+local STING_MIN    = 39
+local STING_FRAMES = STING_MIN + 20        -- 3x the old distance / 2x the old speed
+local STING_LIFT_PX = 3.0      -- was 1.5
+local STING_GAP_PX = 18        -- worm above the stinger
+local STING_DRIFT_PX = 37      -- total sideways drift, random each sting
+local STING_ANGLE = 90         -- head down, tail (the sting) up at the worm
+
+local function startSting(a, s, worm)
+  if not worm or worm.hp <= 0 then return false end
+  -- The engine refuses a worm in WA's death; those just get the old burst.
+  if not worm:take({ turn = "run" }) then return false end
+  wa.sound.play(worm,87)
+  wa.sound.play(worm,33)
+  local facing = a.facing < 0 and -1 or 1
+  local angle = STING_ANGLE * facing
+  s.sting = {
+    worm = worm,
+    ticks = 0,
+    angle = angle,
+    vx = rand(-STING_DRIFT_PX, STING_DRIFT_PX) / STING_FRAMES,
+  }
+  s.targetId = nil
+  s.homingDuration = 0
+  s.rot, s.gfxAngle = angle, angle
+  a:angle(angle)
+  a.vx, a.vy = s.sting.vx, -STING_LIFT_PX
+  worm:carry(a.x, a.y - STING_GAP_PX)
+  return true
+end
+
+local STING_RESCUE_PX = 24
+local STING_GAPS = { STING_GAP_PX, 12, 6, 0 }
+
+local function stingSpot(a, worm)
+  for i = 1, #STING_GAPS do
+    local y = a.y - STING_GAPS[i]
+    if worm:fits(a.x, y) then return a.x, y end
+  end
+  return nil, nil
+end
+
+local function stingTick(a, s)
+  local st = s.sting
+  local w = st.worm
+  st.ticks = st.ticks + 1
+
+  --if (st.ticks % 9) == 0 then wa.sound.play(w,33) end
+ 
+  -- WA took it back, it died, or the lift is done: let go and burst.
+  if not w or not w.taken or w.hp <= 0 or st.ticks >= STING_FRAMES then
+    letGo(s, a.vx, a.vy)
+    detonate(a, s)
+    return
+  end
+ 
+  a.vx, a.vy = st.vx, -STING_LIFT_PX
+  a:angle(st.angle)
+  s.gfxAngle = st.angle
+ 
+  -- Where the worm hangs: above the bee if it fits there; otherwise the
+  -- nearest free spot within a short radius; otherwise there is no room (a
+  -- ceiling, an indestructible block) and the worm is let go where it last
+  -- fitted and the bee bursts, before anything is despawned or moved.
+  local cx, cy = stingSpot(a, w)
+  if not cx then
+    cx, cy = checkSpawnPointNoLOS(w, a.x, a.y - STING_GAP_PX, STING_RESCUE_PX, 10)
+  end
+  if not cx or not w:carry(cx, cy) then
+    letGo(s, a.vx, a.vy)
+    detonate(a, s)
+  end
 end
 
 local function updateAnim(a, s)
@@ -429,18 +493,14 @@ local function updateAnim(a, s)
   end
 end
 
--- The centre and four points 3 px out are all free: a cheap test for "not
--- buried or pressed into a wall", for the per-frame last-safe record.
+-- Centre plus four points: a cheap "not buried" test.
 local function cheapClear(x, y)
   if wa.land.solid(x, y) then return false end
   return not (wa.land.solid(x - 3, y) or wa.land.solid(x + 3, y)
     or wa.land.solid(x, y - 3) or wa.land.solid(x, y + 3))
 end
 
--- The nearest spot whose whole disc is free, walking rings outward from (x, y).
--- No line of sight: a bee buried by a stamp (a javelin's `wa.land.stamp`) has
--- nothing to see from, and the old recovery's trace back to its last safe
--- point is a trace into the same land. Cheap probe first, full disc to confirm.
+-- Nearest free disc, walking rings outward; no line of sight.
 local function findFreeSpot(x, y, maxRadius)
   local r = 0
   while r <= maxRadius do
@@ -460,9 +520,7 @@ local function findFreeSpot(x, y, maxRadius)
   return nil, nil
 end
 
--- Pull a buried bee out: the centre in land for CLIP_FRAMES_LIMIT frames is
--- enough. A body WA cannot move does not bump either, so there is nothing for
--- a bonk to count.
+-- Pull a buried bee out; WA cannot bump a body it cannot move.
 local function unbury(a, s)
   local tx, ty = findFreeSpot(a.x, a.y, UNBURY_MAX_RADIUS_PX)
   if not tx then tx, ty = s.lastSafeX, s.lastSafeY end
@@ -475,9 +533,7 @@ local function unbury(a, s)
   log("[BEE] unburied to " .. tostring(tx) .. "," .. tostring(ty))
 end
 
--- Per-frame upkeep. Walls are not found here: WA moves the bee and `bump`
--- (below) hears what it ran into. This keeps the bonk count decaying, notes the
--- last safe spot, and pulls out a bee buried by a stamp.
+-- Keep the last safe spot, decay bonks, and unbury a stuck bee.
 local function checkClipping(a, s)
   if s.bonk == 0 and s.clipFrames < 1 and cheapClear(a.x, a.y) then
     s.lastSafeX, s.lastSafeY = a.x, a.y
@@ -498,6 +554,141 @@ local function checkClipping(a, s)
 end
 
 -------------------------------------------------------------------------------
+-- The hat (presentation only, with a cosmetic drop)
+-------------------------------------------------------------------------------
+-- WA's visible coalition colours, PX's GetTeamColor (same table as red_saw).
+local TEAM_COLOUR = {
+  [0] = 0xFFFF7066, -- red
+  [1] = 0xFF4D6AFF, -- blue
+  [2] = 0xFF7CF78C, -- green
+  [3] = 0xFFFFF7AB, -- yellow
+  [4] = 0xFFAF83E6, -- purple
+  [5] = 0xFF47FFFF, -- cyan
+}
+
+local HAT_HALF_W, HAT_HALF_H = 20, 16
+-- One step in front of the actor's 0x190000 and still behind terrain 0x180000.
+local HAT_DEPTH = 0x18FFFF
+-- reddaz: frame 0 wants the hat one pixel up to line up with the art.
+local function hatY(s)
+  return (s.sprnum == 1) and -1 or 0
+end
+
+-- Refilled per draw: `wa.draw.quad` copies the table into the frame's list.
+local HAT = { blend = "alpha", depth = HAT_DEPTH, points = { {}, {}, {}, {} } }
+local hatHooked = false
+
+-- A chase that ends in a sudden stop (a wall, a bump, WA zeroing the speed)
+-- knocks the hat off; starting a chase only speeds the bee up.
+local HAT_STOP_DIFF = 4
+local HAT_REGROW_FRAMES = 130
+local HAT_DROP_FRAMES = 110
+local hatDrops = {}
+
+-- The engine's rotation (render::Sprite::emit, crates/render/src/geom.rs:92-135):
+-- degrees clockwise, y down, with a mirrored sheet's corners swapped.
+local function hatCorner(t, cx, cy, cos, sin, lx, ly)
+  t.x = cx + lx * cos - ly * sin
+  t.y = cy + lx * sin + ly * cos
+end
+
+local function drawHats()
+  for _, a in ipairs(wa.actors.all()) do
+    local s = state[a.id]
+    if s and not s.rogue and (s.hatLost or 0) <= 0 then
+      local cx, cy = a.x, a.y + hatY(s)
+      local rad = (s.gfxAngle or 0) * (math.pi / 180)
+      local cos, sin = wa.math.cos(rad), wa.math.sin(rad)
+      local p = HAT.points
+      if a.facing < 0 then
+        hatCorner(p[1], cx, cy, cos, sin, HAT_HALF_W, -HAT_HALF_H)
+        hatCorner(p[2], cx, cy, cos, sin, -HAT_HALF_W, -HAT_HALF_H)
+        hatCorner(p[3], cx, cy, cos, sin, -HAT_HALF_W, HAT_HALF_H)
+        hatCorner(p[4], cx, cy, cos, sin, HAT_HALF_W, HAT_HALF_H)
+      else
+        hatCorner(p[1], cx, cy, cos, sin, -HAT_HALF_W, -HAT_HALF_H)
+        hatCorner(p[2], cx, cy, cos, sin, HAT_HALF_W, -HAT_HALF_H)
+        hatCorner(p[3], cx, cy, cos, sin, HAT_HALF_W, HAT_HALF_H)
+        hatCorner(p[4], cx, cy, cos, sin, -HAT_HALF_W, HAT_HALF_H)
+      end
+      HAT.sprite = M.HAT
+      HAT.color = TEAM_COLOUR[s.colour] or 0xFFFFFFFF
+      wa.draw.quad(HAT)
+    end
+  end
+end
+
+-- The dropped hat is a real body so it lands on its own brim, with nothing
+-- able to hit it and a timer that clears it, or the water.
+local function hatDropTick(h)
+  local d = hatDrops[h.id]
+  if not d then return end
+  d.age = d.age + 1
+  d.rot = d.rot + d.spin
+  h:angle(d.rot)
+  if d.age >= HAT_DROP_FRAMES or h:in_water() then
+    hatDrops[h.id] = nil
+    h:despawn()
+  end
+end
+
+local function speedPx(a)
+  return math.abs(a.vx) + math.abs(a.vy)
+end
+
+local function dropHat(a, s)
+  s.hatLost = HAT_REGROW_FRAMES
+  local h = wa.actors.spawn({
+    sprite = M.HAT,
+    x = a.x,
+    y = a.y + hatY(s),
+    vx = a.vx * 0.4 + rand(-2, 2),
+    vy = a.vy * 0.4 - rand(2, 4),
+    origin = "center",
+    owner = s.owner,
+    body = { shape = M.HAT, hits = { land = true }, hit_by = {} },
+    gravity = true,
+    drown = true,
+    -- frame: tumble and expire.
+    on = { frame = hatDropTick },
+  })
+  if not h then return end
+  h:angle(s.gfxAngle or 0)
+  h.facing = a.facing
+  h:gfx{ depth = HAT_DEPTH }
+  local colour = TEAM_COLOUR[s.colour]
+  if colour then h:tint(colour & 0x00FFFFFF) end
+  hatDrops[h.id] = {
+    rot = s.gfxAngle or 0,
+    spin = rand(5, 9) * (a.facing < 0 and -1 or 1),
+    age = 0,
+  }
+end
+
+-- Called once per brain, before any branch that zeroes the speed.
+local function updateHat(a, s)
+  if (s.hatLost or 0) > 0 then s.hatLost = s.hatLost - 1 end
+  local speed = speedPx(a)
+  if not s.rogue and not s.dead and not s.spin and not s.softSpin
+      and (s.hatLost or 0) <= 0 and s.wasChasing
+      and speed < (s.lastSpeed or speed) - HAT_STOP_DIFF then
+    dropHat(a, s)
+  end
+  s.lastSpeed = speed
+  s.wasChasing = s.targetId ~= nil
+end
+
+local function installHat()
+  if hatHooked then return end
+  if not (wa.on and wa.on.draw and wa.draw and wa.draw.quad) then
+    wa.log("Keeper Bee: this build has no wa.on.draw/wa.draw.quad")
+    return
+  end
+  hatHooked = true
+  wa.on.draw(drawHats)
+end
+
+-------------------------------------------------------------------------------
 -- Bee Actor Brain (:303-480)
 -------------------------------------------------------------------------------
 local function brain(a, ev)
@@ -505,28 +696,46 @@ local function brain(a, ev)
   if not s then return end
   ev = ev or {}
 
-  -- Damage/knockback is handled by the `hit` handler (`hurt`), not here.
-  -- Calling takeHit again would double-apply damage and force a spin on
-  -- blasts that hurt() deliberately left unspun.
-
+  -- Damage/knockback is in `hurt`; do not double-apply it here.
   if s.freeMe then
+    letGo(s, 0, 0)
     state[a.id] = nil
     a:despawn()
     return
   end
 
   if s.dead and not s.spin and not s.softSpin then
+    if s.sting then letGo(s, 0, 0) end
     s.spin = true
     s.spinN = 0
   end
 
+  
+  updateHat(a, s)
+
+  if a:in_water() then
+    --s.dead = true; log("[BEE] dead: in water")
+    a.vx = 0 a.vy = 1.5 s.desiredAngle = math.PI / 4
+    if s.sting then letGo(s, 0, 0) end
+    dropHat(a, s)
+    updateAnim(a, s)
+    return
+  end
+
   checkClipping(a, s)
+  refreshTargets()
+
+  -- A sting owns the frame: lift the worm, then burst.
+  if s.sting then
+    stingTick(a, s)
+    return
+  end
 
   if s.spin or s.softSpin then
     if s.spinN == 0 then playBuzz(a) end
-    --a.vx, a.vy = 0, 0
     s.rot = (s.rot + (s.dead and 9 or 7)) % 360
     a:angle(s.rot)
+    s.gfxAngle = s.rot
     s.spinN = s.spinN + 1
     if s.spinN >= SPIN_FRAMES then
       if s.dead then
@@ -545,30 +754,18 @@ local function brain(a, ev)
 
   s.ticks = (s.ticks or 0) + 1
 
-  if a:in_water() then
-    s.dead = true; log("[BEE] dead: in water")
-    return
-  end
-
   updateAnim(a, s)
 
   if a.vx ~= 0 then
     a.facing = a.vx > 0 and 1 or -1
   end
 
-  if (s.lookoutCooldown or 0) > 0 then
-    s.lookoutCooldown = s.lookoutCooldown - 1
-  end
-
   local target = wormById(s.targetId)
 
-  if target and (target.hp <= 0 or (not s.rogue and target.team == s.team)) then
+  if target and (target.hp <= 0 or target.taken
+      or (not s.rogue and target.team == s.team)) then
     target = nil
     s.targetId = nil
-  end
-  if not target then
-    target = findClosestEnemy(a, s)
-    s.targetId = target and target.id or nil
   end
 
   if target then
@@ -607,6 +804,8 @@ local function brain(a, ev)
     end
 
     if tdist <= CONTACT_RADIUS_PX then
+      -- Close enough: sting and carry, or burst if the worm cannot be taken.
+      if startSting(a, s, target) then return end
       s.dead = true; log("[BEE] dead: reached target")
       detonate(a, s)
       return
@@ -668,30 +867,26 @@ local function brain(a, ev)
   end
 
   if a.facing < 0 then
-    a:angle(-s.rot)
+    s.gfxAngle = -s.rot
   else
-    a:angle(s.rot)
+    s.gfxAngle = s.rot
   end
+  a:angle(s.gfxAngle)
 end
 
--- A blast or a hit landed on the bee. An API 4 brain only *sees* those when it
--- registers a `hit` function (`actor.rs` `actor_takes_hits`); with one, the
--- engine leaves WA's knock in the event for the brain to apply instead of
--- pushing the body itself (`engine/src/actor.rs` `blast_to_lua`). So the bee
--- takes the damage and the push both, as PX's did.
+-- A `hit` brain makes WA hand over the blast's knock instead of pushing the
+-- body; apply both, as PX did.
 local function hurt(a, ev)
   local s = state[a.id]
   if not s then return end
-  -- Blasts knock back without spinning (like PX's bowling ball take_hit).
-  -- Gun/fire hits still tumble the bee via takeHit's spin.
+  -- Blasts knock back without spinning; gun/fire hits tumble.
   ev = ev or {}
   takeHit(a, s, ev.damage, ev.kind ~= "blast")
   a.vx = a.vx + (ev.vx or 0) * 1.5
   a.vy = a.vy + (ev.vy or 0) * 1.5
 end
 
--- Only an ENEMY, living worm sets a bee off. Owner, teammates, crates, mines,
--- oil drums and other bees brushing past are ignored (they used to detonate it).
+-- Only a living enemy worm sets a bee off.
 local function isEnemyWorm(s, other)
   if type(other) ~= "userdata" then return false end
   if other.kind ~= "worm" then return false end
@@ -701,33 +896,29 @@ end
 
 local function onContact(a, ev)
   local s = state[a.id]
-  if not s or s.dead then return end
+  if not s or s.dead or s.sting then return end
   local other = ev and ev.other
   if isEnemyWorm(s, other) then
-    log("[BEE] detonate: enemy worm contact id=" .. tostring(a.id))
-    detonate(a, s)
+    -- A spinning bee is out of control: it only bursts. Otherwise sting and
+    -- carry the worm, or burst on a worm the engine will not hand over.
+    if not s.spin and not s.softSpin and startSting(a, s, other) then
+      log("[BEE] sting: enemy worm contact id=" .. tostring(a.id))
+    else
+      log("[BEE] detonate: enemy worm contact id=" .. tostring(a.id))
+      detonate(a, s)
+    end
   end
 end
 
--- WA moved the bee and its own sweep stopped on something: `ev.other` is "land"
--- or the worm/object it hit. WA's stop or bounce is already in a.vx/a.vy.
+-- WA's sweep stopped on something; its stop/bounce is already in vx/vy.
 local function bump(a, ev)
   local s = state[a.id]
   if not s or s.dead then return end
-  if ev.other ~= "land" then
-    --if isEnemyWorm(s, ev.other) then onContact(a, ev); return end
-    -- anything else (own worm, crate, mine...) counts as a bonk, no blast
-
-    -- random explosions are silly but can get annoying -red
-  end
   s.bonk = s.bonk + 1
-  local limit = s.targetId and 1 or BONK_LIMIT
+  local limit = BONK_LIMIT
   if s.bonk > limit then
+    -- Keep the lock: a bump is not a reason to give up the chase.
     s.spin, s.bonk = false, 0
-    if s.targetId then
-      s.targetId = nil
-      s.lookoutCooldown = BUMP_LOOKOUT_FRAMES
-    end
     s.arriveX = nil   -- a fresh roam point on the next frame
   end
 end
@@ -737,14 +928,10 @@ end
 -------------------------------------------------------------------------------
 function M.spawn_actor(opts)
   opts = opts or {}
-  -- `wa.worms.active()` is API 2's; API 4's `wa.worms` has `all` and
-  -- `nearest` only (`crates/lua-host/src/spawn.rs` "bind_worms").
   local owner = opts.owner or (wa.worms.all and wa.worms.all()[1])
 
   log("[ACTOR SPAWN] Attempting spawn at X=" .. tostring(opts.x) .. " Y=" .. tostring(opts.y))
   if not owner then return nil end
-  -- `kind` is not a spawn key in API 4, `a.kind` is "actor" whatever it says
-  -- (`spawn.rs` "parse_spawn", `actor.rs:1126`).
   local body = wa.actors.spawn({
     sprite  = opts.sprite or M.SPRITE,
     x       = opts.x,
@@ -754,14 +941,10 @@ function M.spawn_actor(opts)
     origin  = opts.origin or "center",
     owner   = owner,
     persist = opts.persist ~= false,
-    -- WA moves this body, stops it on land and tells it about it (`on.bump`
-    -- needs `hits`). Only fire and blasts hurt it; a worm touching it is a
-    -- touch.
+    -- WA moves this body and reports land bumps; only fire and blasts hurt it.
     body    = { shape = M.BODY_MASK, hits = { land = true, worms = true },
                 hit_by = { fire = true, blasts = true } },
-    -- The brain is a table: `frame` is its per-frame thinking, `hit` is what
-    -- makes WA hand the bee its blasts (`spawn.rs` "parse_brain"), `contact`
-    -- is a touch and `bump` is what its own movement ran into.
+    -- frame: per-frame brain; hit: blasts; contact: worm touch; bump: land.
     on      = { frame = opts.brain or brain, hit = hurt, contact = onContact, bump = bump },
   })
 
@@ -771,6 +954,9 @@ function M.spawn_actor(opts)
     state[body.id] = {
       rogue           = opts.rogue or false,
       team            = opts.team or (owner and owner.team) or -1,
+      -- Visible colour for the hat; internal `team` can differ from alliance.
+      colour          = opts.colour
+        or (owner and owner.kind == "worm" and owner.alliance) or nil,
       owner           = owner,
       hp              = opts.hp or MAX_HP,
       dead            = false,
@@ -782,6 +968,10 @@ function M.spawn_actor(opts)
       bonk            = 0,
       bonkhome        = 0,   -- set by the original, read by nothing
       rot             = 0,
+      gfxAngle        = 0,   -- last angle handed to `a:angle`, for the hat
+      hatLost         = 0,   -- frames until the hat grows back
+      lastSpeed       = 0,
+      wasChasing      = false,
       supercharged    = false,
       startX          = opts.x,
       startY          = opts.y,
@@ -851,7 +1041,7 @@ function M.spawn_map_bees(quantity, ownerWorm)
 
       local tryX = rand(sliceStart, sliceEnd)
       local tryY = rand(SPAWN_TOP_MARGIN_PX, math.max(SPAWN_TOP_MARGIN_PX + 1, (waterY) - 100))
-      local traceEndY = waterY - (70)
+      local traceEndY = waterY - (90)
 
       local hit = wa.land.trace(tryX, tryY, tryX, traceEndY)
 
@@ -890,6 +1080,9 @@ M.spawnRandomBees = M.spawn_map_bees
 -- The weapon component (API 2's registration, :603-639)
 -------------------------------------------------------------------------------
 function M.install_weapon(ctx)
+  -- The hat is drawn by the bundle, not by WA: put its sheet in the atlas.
+  wa.assets.load({ sprites = { M.HAT }, gpu_prefix = "sprites/" })
+  installHat()
   wa.weapons.replace({
     -- The `may be wrong weapon = "px.kbee"` note (:604) meant the key `weapon`,
     -- which names a *placed* weapon a replace aims at (`api.rs:1096-1103`).
@@ -921,10 +1114,10 @@ function M.install_weapon(ctx)
       local worm = fire.worm
       playBuzz(worm)
 
-      local sx, sy = checkSpawnPoint(worm, fire.x, fire.y, fire.x, fire.y, 80, 7, true)
+      local sx, sy = checkSpawnPoint(worm, fire.x, fire.y, worm.x, worm.y, 95, 14, true)
       if not sx then
         -- No clear room near the muzzle: the firing worm's own spot is free.
-        sx, sy = worm.x, worm.y - 8
+        sx, sy = worm.x, worm.y - 5
       end
 
       M.spawn_actor({
@@ -941,9 +1134,11 @@ end
 -- The swarm component (API 2's worm-message hook, :644-657)
 -------------------------------------------------------------------------------
 function M.install_swarm(ctx)
-  -- The add-on has no panel slot, so it loads its own copy of the sheet and
-  -- the buzzes (`wa.assets.load`, `api.rs`).
-  wa.assets.load({ sprites = { M.SPRITE }, sounds = M.SOUNDS, gpu_prefix = "sprites/" })
+  -- The add-on has no panel slot, so it loads its own copy of the sheet, the
+  -- hat and the buzzes (`wa.assets.load`, `api.rs`).
+  wa.assets.load({ sprites = { M.SPRITE, M.HAT }, sounds = M.SOUNDS,
+                   gpu_prefix = "sprites/" })
+  installHat()
 
   local on = ctx.option("spawn_map_bees")
   local amount = ctx.option("bee_amount")

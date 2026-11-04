@@ -5,8 +5,9 @@
 -- multiplies the release push (the tazed mine uses it for 116/100).
 -- set_message arms the next hit for 8 frames; the hit's own damage still applies.
 -- Arm a blast before it explodes; an on_explode callback runs after the damage.
--- A 0 HP worm awaiting death may still be hit, pushed and tazed: the engine
--- clears WA's ENT_IS_STATIC before those writes land (physics.rs).
+-- WA's death states are on `worm.state` (dying/drowning/dead): a dying worm
+-- stays static and worm:take/release refuse it. A 0 HP worm WA has not
+-- started killing is still fair game, so test the state, not HP.
 -- The caller loads tazed1/2, lightning/glow.png and tazer_loop.wav.
 
 local M = {}
@@ -42,9 +43,11 @@ local function now()
   return wa.world.frame() or 0
 end
 
--- Kept for callers; the engine owns the static/death guard now.
+-- `worm.state` is WA's game-logic name, not the diagnostics label. A dying,
+-- drowning or dead worm belongs to WA's death sequence.
+local DEATH_STATES = { dying = true, drowning = true, dead = true }
 local function can_affect(worm)
-  return worm ~= nil
+  return worm ~= nil and not DEATH_STATES[worm.state]
 end
 M.can_affect = can_affect
 
@@ -95,7 +98,11 @@ local function begin(worm, opts, damage)
     applying = false
     damage = 0
   end
+  -- The damage may have started WA's death. If it did, take() also refuses;
+  -- create no hold and leave the worm to WA.
+  if not can_affect(worm) then return end
   local vx, vy = worm.vx or 0, worm.vy or 0
+  if worm:take{ turn = "freeze" } == false then return end
   t = {
     worm = worm,
     frames = opts.frames,
@@ -112,7 +119,6 @@ local function begin(worm, opts, damage)
   }
   active[#active + 1] = t
   by_worm[id] = t
-  worm:take{ turn = "freeze" }
   worm.body_visible = false
   worm.vx, worm.vy = 0, 0
   if t.sound and wa.sound and wa.sound.play then wa.sound.play(worm, t.sound) end
@@ -122,16 +128,23 @@ local function finish(t)
   remove(t)
   local worm = t.worm
   worm.body_visible = true
+  -- A worm WA has started killing keeps its death. release() only lets go;
+  -- never write a push through a state WA owns.
+  if not can_affect(worm) then
+    local s = t.push_scale or 1
+    local px, py = t.push_x * s, t.push_y * s
+    worm.vx, worm.vy = px, py 
+    if worm.taken then worm:release(0, 0, { tumble = true }) end
+    return
+  end
   if t.damage > 0 and (worm.hp or 0) > 0 then
     applying = true
     worm:hurt(t.damage)
     applying = false
   end
-  -- A worm killed during the hold gets no extra damage above, but the hold
-  -- still releases it with its push; the engine clears WA's static flag.
-  -- Hand the worm back moving at the push, whatever the HP: a worm killed by
-  -- the hit still flies, and still dies once WA runs the death. `push_scale`
-  -- lets a caller raise the captured blast push (the tazed mine's 116/100).
+  -- A zero-HP worm WA has not started killing still gets its push.
+  -- `push_scale` lets a caller raise the captured blast push (the tazed
+  -- mine's 116/100).
   local s = t.push_scale or 1
   local px, py = t.push_x * s, t.push_y * s
   if worm.taken then
@@ -146,18 +159,22 @@ local function tick()
   for i = #active, 1, -1 do
     local t = active[i]
     local worm = t.worm
-    t.frames = t.frames - 1
-    t.phase = (t.phase + 0.1) % 1
-    -- WA's blast may re-show or release the worm after the hit; keep the
-    -- pose on it for the whole hold, even if it has 0 HP and is waiting to die.
-    worm.body_visible = false
-    if not worm.taken then worm:take{ turn = "freeze" } end
-    worm.vx, worm.vy = 0, 0
-    t.sound_age = t.sound_age + 1
-    if t.sound and t.sound_age % 46 == 0 and wa.sound and wa.sound.play then
-      wa.sound.play(worm, t.sound)
+    if not can_affect(worm) then
+      finish(t)
+    else
+      t.frames = t.frames - 1
+      t.phase = (t.phase + 0.1) % 1
+      -- WA's blast may re-show or release the worm after the hit; keep the
+      -- pose on it for the whole hold. A death state stops the hold instead.
+      worm.body_visible = false
+      if not worm.taken then worm:take{ turn = "freeze" } end
+      worm.vx, worm.vy = 0, 0
+      t.sound_age = t.sound_age + 1
+      if t.sound and t.sound_age % 46 == 0 and wa.sound and wa.sound.play then
+        wa.sound.play(worm, t.sound)
+      end
+      if t.frames <= 0 then finish(t) end
     end
-    if t.frames <= 0 then finish(t) end
   end
   if armed_hit and frame > armed_hit.expires then armed_hit = nil end
   if armed_blast and frame > armed_blast.expires then armed_blast = nil end

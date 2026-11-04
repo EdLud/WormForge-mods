@@ -286,25 +286,13 @@ local function missile_push(s, m, now)
   spark(m.x, m.y, 255, 255, 255, s.controller)
 end
 
--- What may be in reach: `list.all{ near = { x, y, r } }` (WormForge after
--- 0.9.61) lists only what is within r, in the list's own order, so each saw
--- no longer makes five whole lists of handles a frame. r is a pixel wider
--- than the reach and the distance is still tested below, so the same objects
--- are hit as from the whole list. An older DLL lists everything.
-local near_works
-local function near(list, s, reach)
-  if near_works == nil then near_works = pcall(list.all, { near = { 0, 0, 0 } }) end
-  if near_works then return list.all({ near = { s.x, s.y, reach + 1 } }) end
-  return list.all()
-end
-
 local function process(s, now)
   -- PX clears stopRotation before processSawCollission (:186-189), so the
   -- anti-loop return below cannot leave an ally-contact stop latched.
   s.stop_rotation = false
   if s.hits_this_turn > 88 then return end
 
-  for _, w in ipairs(near(wa.worms, s, s.radius + WORM_RADIUS)) do
+  for _, w in ipairs(wa.worms.all()) do
     local dx, dy = w.x - s.x, w.y - s.y
     local reach = s.radius + WORM_RADIUS
     if dx * dx + dy * dy <= reach * reach then
@@ -325,12 +313,12 @@ local function process(s, now)
       end
     end
   end
-  objects(near(wa.crates, s, s.radius + OBJECT_RADIUS.crate), "crate", OBJECT_RADIUS.crate, 5, 0.77, 1)
-  objects(near(wa.mines, s, s.radius + OBJECT_RADIUS.mine), "mine", OBJECT_RADIUS.mine, 15, 0.85, 5)
-  objects(near(wa.oil, s, s.radius + OBJECT_RADIUS.oil), "oil", OBJECT_RADIUS.oil, 20, 0.87, 1)
+  objects(wa.crates.all(), "crate", OBJECT_RADIUS.crate, 5, 0.77, 1)
+  objects(wa.mines.all(), "mine", OBJECT_RADIUS.mine, 15, 0.85, 5)
+  objects(wa.oil.all(), "oil", OBJECT_RADIUS.oil, 20, 0.87, 1)
 
   local frames = {}
-  for _, m in ipairs(near(wa.missiles, s, s.radius + MISSILE_RADIUS)) do
+  for _, m in ipairs(wa.missiles.all()) do
     local dx, dy = m.x - s.x, m.y - s.y
     local reach = s.radius + MISSILE_RADIUS
     if dx * dx + dy * dy <= reach * reach then
@@ -385,15 +373,14 @@ local function spawn_controller(s)
 end
 
 local QUAD = { blend = "alpha", points = { {}, {}, {}, {} } }
--- Made once: a table of five tables per layer per rendered frame was garbage.
-local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
 local function draw_layer(s, sheet, frame, depth, colour, angle)
   local half = 110 * s.size
   local c = wa.math.cos(angle)
   local sn = wa.math.sin(angle)
   local p = QUAD.points
+  local corners = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
   for i = 1, 4 do
-    local ox, oy = CORNERS[i][1] * half, CORNERS[i][2] * half
+    local ox, oy = corners[i][1] * half, corners[i][2] * half
     p[i].x = s.x + ox * c - oy * sn
     p[i].y = s.y + ox * sn + oy * c
   end

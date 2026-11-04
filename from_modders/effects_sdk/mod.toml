@@ -5,7 +5,7 @@
 # the public modules with `require("wf-lib/effects/...")`.
 id = "effects.sdk"
 name = "Project X Effects SDK"
-version = "0.2.1"
+version = "0.3.1"
 author = "reddaz"
 api_version = 4
 format_version = 2
@@ -17,6 +17,7 @@ asset_namespace = "wf-lib/effects"
 [exports]
 "wf-lib/effects/trail" = "libs/trail.lua"
 "wf-lib/effects/px_effects" = "libs/px_effects.lua"
+"wf-lib/effects/custom_explosion" = "libs/custom_explosion.lua"
 
 [sprites."sprites/px_effects/beam.png"]
 

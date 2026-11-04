@@ -72,10 +72,21 @@ local function copy(dst, src, keys)
   return merge(dst, src, keys)
 end
 
+-- The driver only needs *an* owner; prefer whose turn it is (the usual one)
+-- and fall back to any living worm so late blasts still draw.
 local function current_worm()
+  local first
   for _, w in ipairs(wa.worms.all()) do
     if w.turn then return w end
+    if not first and w.hp > 0 then first = w end
   end
+  return first
+end
+
+-- Event owners can be a zero handle: `ev.worm` wraps 0, which is still a
+-- truthy userdata and `or` will not replace it. `wa.actors.spawn` refuses 0.
+local function usable(owner)
+  return owner ~= nil and (owner.id or 0) ~= 0
 end
 
 local function new_seed()
@@ -330,8 +341,10 @@ local function burst_state(o)
     b.rebuffer = { at = 16, noise = 1.8, r = 120, g = 170, b = 240,
       fade = -0.85, segments = 1.30 }
   end
-  b.rebuffer.at = b.rebuffer.at or 16
-  b.rebuffer.segments = seg_count(b.rebuffer.segments, radius, 1.3)
+  if b.rebuffer then
+    b.rebuffer.at = b.rebuffer.at or 16
+    b.rebuffer.segments = seg_count(b.rebuffer.segments, radius, 1.3)
+  end
   fill_burst_noise(b)
   return b
 end
@@ -339,7 +352,7 @@ end
 local function update_burst(b)
   b.age = b.age + 1
   b.timer = b.timer + b.fade
-  if b.age == b.rebuffer.at then
+  if b.rebuffer and b.age == b.rebuffer.at then
     b.noise = b.rebuffer.noise or b.noise
     b.r, b.g, b.b = b.rebuffer.r or b.r, b.rebuffer.g or b.g,
       b.rebuffer.b or b.b
@@ -520,9 +533,9 @@ local function make_smoke(o)
     sprite = o.sprite or settings.smoke, depth = o.depth,
     rng = new_rng(o),
   }
+  if not ensure_driver(o.owner) then return nil end
   make_smoke_parts(sm, o)
   smokes[#smokes + 1] = sm
-  ensure_driver(o.owner)
   sm.remove = function(self) self.done = true end
   return sm
 end
@@ -555,12 +568,15 @@ draw = function()
 end
 
 ensure_driver = function(owner)
-  if driver then return end
+  if driver then return true end
+  if not usable(owner) then owner = current_worm() end
+  if not usable(owner) then return false end
   driver = wa.actors.spawn({
     sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false, owner = owner or current_worm(),
+    persist = true, drown = false, owner = owner,
     on = function(a) tick(a) end,
   })
+  return driver ~= nil
 end
 local function start_ray(e, i)
   local r = e.reach
@@ -710,8 +726,9 @@ function fx.emitter(o)
   copy(reach, o.reach, REACH_KEYS)
   local tro = copy({}, preset.trail, TRAIL_KEYS)
   copy(tro, o.trail, TRAIL_KEYS)
+  local owner = usable(o.owner) and o.owner or current_worm()
   local e = {
-    owner = o.owner, x = o.x or 0, y = o.y or 0,
+    owner = owner, x = o.x or 0, y = o.y or 0,
     vx = o.vx or 0, vy = o.vy or 0, follow = o.follow,
     random = o.random or "lcg", seed = o.seed or new_seed(),
     spark = spark, glow = glow, reach = reach,
@@ -719,12 +736,13 @@ function fx.emitter(o)
     trail_key = next_key, arcs = {}, cooldowns = {}, spark_phase = 0,
     ready = o.ready ~= false, dead = false,
   }
+  if not ensure_driver(owner) then return nil end
   next_key = next_key - 1
   if e.trail then
     e.trail.depth = e.trail.depth or settings.depth.trail
     e.trail.beam = e.trail.beam or settings.beam
     e.trail.glow = e.trail.glow or settings.glow
-    trail.add(e.trail_key, e.owner, e.trail)
+    trail.add(e.trail_key, owner, e.trail)
   end
   spark.sprite = spark.sprite or settings.spark
   spark.depth = spark.depth or settings.depth.spark
@@ -740,7 +758,6 @@ function fx.emitter(o)
     e.cooldowns[i] = base + (i - 1) * reach.stagger
   end
   emitters[#emitters + 1] = e
-  ensure_driver(e.owner)
   e.move_to = function(self, x, y) self.x, self.y = x, y end
   e.reach_to = function(self, x, y, opts)
     opts = opts or {}
@@ -807,8 +824,8 @@ function fx.ring(o)
   st.rng = new_rng(o)
   st.noise_vals = {}
   fill_ring_noise(st)
+  if not ensure_driver(o.owner) then return nil end
   rings[#rings + 1] = st
-  ensure_driver(o.owner)
   st.remove = function(self)
     if type(self) == "table" then self.done = true else st.done = true end
   end
@@ -835,8 +852,8 @@ function fx.arc(o)
   o = o or {}
   local a = make_arc(o)
   if a.degenerate then return nil end
+  if not ensure_driver(o.owner) then return nil end
   arcs[#arcs + 1] = a
-  ensure_driver(o.owner)
   return a
 end
 
@@ -857,8 +874,8 @@ function fx.burst(o)
   b.rng = new_rng(o)
   local st = burst_state(b)
   if not st then return nil end
+  if not ensure_driver(o.owner) then return nil end
   bursts[#bursts + 1] = st
-  ensure_driver(o.owner)
   if o.smoke ~= false and b.smoke ~= false then
     local src = b.smoke
     if src == true then src = {} end
@@ -882,8 +899,8 @@ function fx.spark(o)
   s.x, s.y = o.x or 0, o.y or 0
   s.sprite = s.sprite or settings.spark
   s.phase, s.age = 0, 0
+  if not ensure_driver(o.owner) then return nil end
   sparks[#sparks + 1] = s
-  ensure_driver(o.owner)
   s.remove = function(self) self.done = true end
   return s
 end
@@ -896,8 +913,8 @@ function fx.glow(o)
   g.x, g.y = o.x or 0, o.y or 0
   g.sprite = g.sprite or settings.blob
   g.age, g.done = 0, false
+  if not ensure_driver(o.owner) then return nil end
   glows[#glows + 1] = g
-  ensure_driver(o.owner)
   g.remove = function(self) self.done = true end
   return g
 end

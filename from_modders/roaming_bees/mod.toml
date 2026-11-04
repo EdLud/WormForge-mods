@@ -6,7 +6,7 @@
 # See README.md.
 id = "spawn.bees"
 name = "Keeper Bee"
-version = "1.0.0"
+version = "1.2.0"
 author = "reddaz"
 api_version = 4
 format_version = 2
@@ -16,7 +16,7 @@ mod_icon = "mod_icon.png"
 id = "spawn.bees.keeper"
 type = "weapon"
 name = "Keeper Bee"
-description = "Fires a bee that spins out of the muzzle, then hunts the first worm that moves. It stings on contact and bursts."
+description = "Fires a bee that spins out of the muzzle, then hunts the worm whose turn it is (or any worm a weapon throws). It stings, lifts the worm and bursts."
 entry = "weapons/keeper_bee.lua"
 icon = "sprites/beeico.png"
 credits = "Keeper Bee by reddaz (Project X port)"
@@ -41,7 +41,7 @@ description = "Seed the map with bees when the first turn starts. Off: the swarm
 [[components.options]]
 key = "bee_amount"
 type = "int"
-default = 22
+default = 4
 min = 1
 max = 60
 label = "Map bees"

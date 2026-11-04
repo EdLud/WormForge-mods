@@ -14,8 +14,9 @@ overwrite them; the effect manager and trail come from the shared `effects.sdk`:
   take the falloff damage through `object:hit`.
 - `lib/electric_damage.lua` -- the taze hold: the worm is taken, posed and
   shown `tazed1`/`tazed2` with the loop sound, then released with the push.
-  The engine clears WA's static flag for a dying worm, so a 0 HP worm is still
-  held and released; a worm killed during the hold takes no extra damage.
+  WA's `dying`/`drowning`/`dead` states stay WA's: no new hold, and a hold that
+  starts dying is only let go. A zero-HP worm WA has not started killing is
+  still held and released; a worm killed during the hold takes no extra damage.
 - `lib/taze_mine.lua` -- mark any mine as tazed from an electric weapon. The
   mine keeps WA's stock blast; after it is gone the worms in PX's electric
   field get the artificial taze (15 release damage, push scaled to 116/100)
