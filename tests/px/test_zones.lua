@@ -10,7 +10,7 @@ package.preload["wf-lib/px_sprite_builder"] = function()
   return assert(loadfile(sdk .. "px_sprite_builder.lua", "t", env))()
 end
 local hooks, actors, claims, draws, nearby, worms, keys, assets
-local blasts, sim_random, asset_loads, top_messages, crate_list, fog_on
+local blasts, sim_random, asset_loads, top_messages, crate_list, fog_on, shade_at
 local function event(name, ...)
   for _, f in ipairs(hooks[name] or {}) do f(...) end
 end
@@ -45,7 +45,8 @@ local function reset(rate, turns, both)
     end},
     msg = { FIRE_WEAPON = 1, FRAME_FINISH = 2 }, on = {},
     -- Only the read: a weapon never turns fog on or changes its settings.
-    fog = { enabled = function() return fog_on end },
+    fog = { enabled = function() return fog_on end,
+      shade = function(x, y) return shade_at and shade_at(x, y) or 0 end },
     log = function() end,
     world = { wind = function() return 0 end, gravity = function() return 1/8 end,
       water = function() return 1000 end, keys = function() return keys end,
@@ -314,6 +315,38 @@ for _, hides_for in ipairs({ "everyone", "enemies" }) do
   frames(375); light(256, 128, own and 64)
   frames(375); assert(a.dead, "the darkness goes with its object")
 end
+-- A worm touching the darkness, as this machine sees it, has WA's HUD over
+-- it hidden; out of it, or once the darkness is gone, it comes back.
+do
+  local claim = spot_hider({ look = "shadow" })
+  fire(claim)
+  local function at(x, y) return { id = x, x = x, y = y } end
+  local inside, edge, outside = at(350, 200), at(395, 200), at(600, 200)
+  worms = { inside, edge, outside }
+  -- Full darkness within 40 px of the impact, half of it (the shooter's
+  -- side, hides for enemies) from there to 60.
+  shade_at = function(x, y)
+    local d = math.sqrt((x - 350) ^ 2 + (y - 200) ^ 2)
+    return d <= 40 and 255 or d <= 60 and 128 or 0
+  end
+  draw()
+  local HUD = { labels = true, arrow = true, weapon = true, aim = true }
+  local function hides(w) return type(w.hide_hud) == "table" and w.hide_hud.labels and w.hide_hud.arrow
+    and w.hide_hud.weapon and w.hide_hud.aim end
+  assert(hides(inside), "a worm in the dark has its HUD hidden")
+  assert(hides(edge), "touching it with an edge is enough")
+  assert(outside.hide_hud == nil, "a worm in the light is left alone")
+  edge.x = 405; draw()
+  assert(edge.hide_hud == false, "half darkness (the shooter's side) shows it again")
+  four_turns(); frames(750); draw()
+  assert(inside.hide_hud == false, "shown again once the darkness is gone")
+  shade_at = nil
+  worms = {}
+  local mask = spot_hider({ look = "mask" }); fire(mask)
+  worms = { at(350, 200) }; draw()
+  assert(worms[1].hide_hud == nil, "PX's mask look hides no HUD")
+end
+
 -- No spread: full size at once.
 local a = fire(spot_hider({ look = "shadow", spread_seconds = 0 }))
 frames(1); assert(a.light.circle == 256)

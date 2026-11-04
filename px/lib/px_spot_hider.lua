@@ -34,10 +34,12 @@
 -- view. It spreads out from the point over `spread_seconds` to PX's 512
 -- pixels across, and fades with the mask's fade. It is drawn as the fog draws
 -- darkness, whether the match has fog or not; the weapon never turns fog on
--- or changes it. Worms' names under it are covered with the worms. With
--- `hides_for = "enemies"` the shooter's side sees it at half its darkness, so
--- their own worms show through. Drawing only; nothing of it reaches the
--- simulation.
+-- or changes it. A worm touching it, where this viewer sees it more than
+-- half dark, shows none of WA's HUD -- labels, arrows, the thought cloud of a
+-- weapon being picked, its aim -- only the worm itself, darkened
+-- (`worm.hide_hud`). With `hides_for = "enemies"` the shooter's side sees it
+-- at half its darkness, so their own worms and their HUD show through.
+-- Drawing only; nothing of it reaches the simulation.
 --
 -- Not ported, and why:
 --   * `useObj` (:358) -- PX attaches the animation to an object; here the
@@ -129,6 +131,43 @@ function M.install(ctx)
     }
   end
 
+  -- **The HUD of a worm in the dark.** Every drawn frame on each machine, by
+  -- that machine's own darkness (`wa.fog.shade`): a worm with more than half
+  -- of it at its centre or the edges of its body has WA's HUD over it hidden,
+  -- and shown again once it is out. The shooter's side sees at most half
+  -- with `hides_for = "enemies"`, so its own worms keep theirs.
+  local placed = {}
+  if shadow then
+    local HUD = { labels = true, arrow = true, weapon = true, aim = true }
+    local BODY = { { 0, 0 }, { -5, 0 }, { 5, 0 }, { 0, -7 }, { 0, 7 } }
+    local HALF = 128
+    local hidden = {}
+    wa.on.draw(function()
+      for i = #placed, 1, -1 do
+        if (placed[i].fade or 0) >= FADE_FRAMES then table.remove(placed, i) end
+      end
+      if #placed == 0 and next(hidden) == nil then return end
+      local now = {}
+      if #placed > 0 then
+        for _, w in ipairs(wa.worms.all()) do
+          for _, p in ipairs(BODY) do
+            if wa.fog.shade(w.x + p[1], w.y + p[2]) > HALF then
+              now[w.id] = w
+              break
+            end
+          end
+        end
+      end
+      for id, w in pairs(now) do
+        if not hidden[id] then w.hide_hud = HUD end
+      end
+      for id, w in pairs(hidden) do
+        if not now[id] then w.hide_hud = false end
+      end
+      hidden = now
+    end)
+  end
+
   -- The thrower, PX's `ClWT`/`ClWN`: whose side `hides_for = "enemies"`
   -- leaves able to see through the darkness.
   local shooter
@@ -203,7 +242,10 @@ function M.install(ctx)
     -- nothing of its own: explosion power 0, as the two zones'.
     on_explode = function(ev)
       local z = ZONES.place(ev.x, ev.y, { turns = MASK_TURNS, owner = shooter })
-      if shadow then shade(z) end
+      if shadow then
+        shade(z)
+        placed[#placed + 1] = z
+      end
     end,
   }
   spec.handling = { ends_turn = true }
