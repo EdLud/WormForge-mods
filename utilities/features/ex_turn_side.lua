@@ -8,8 +8,12 @@ local prev_right = false
 -- Once per worm per frame: the msgs filter skips Lua for every other message.
 wa.on.worm_message(function(worm)
   if not worm.turn then return end
+  if worm.state == "roping" then return end
+  if worm.state == "kamikaze" then return end
 
   local k = wa.world.keys()
+  
+  if k.shift then return end
   
   -- Left key pressed:
   if k.left and not prev_left then
