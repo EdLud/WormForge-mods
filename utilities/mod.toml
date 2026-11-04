@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.11.0"
+version = "0.12.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -345,6 +345,77 @@ min = 0
 max = 100
 label = "Minimum brightness (%)"
 description = "Fog brightness floor, percent. 0 is full darkness; higher values lift the whole map toward visibility."
+
+# Worm glow: every worm lit from within, for the fog's look of worms as lights.
+[[components]]
+id = "core.worm_glow"
+type = "feature"
+name = "Worm glow"
+description = "A soft glow round every worm, in every pose and with every weapon, as if the light the fog of war draws round a worm came from it. A worm a mod tints itself (the Specialists zombie) keeps its own. Needs the shader renderer."
+entry = "features/worm_glow.lua"
+
+[[components.options]]
+key = "strength"
+type = "int"
+default = 50
+min = 1
+max = 100
+label = "Strength (%)"
+description = "How strongly the glow shows, 1 to 100."
+
+[[components.options]]
+key = "radius"
+type = "int"
+default = 3
+min = 1
+max = 16
+label = "Blur radius"
+description = "How far the glow spreads past the worm, in pixels: its silhouette blurred twice by this much. Larger is softer and wider."
+
+[[components.options]]
+key = "pad"
+type = "int"
+default = 0
+min = 0
+max = 40
+label = "Padding"
+description = "Room round each pose for the glow, in pixels. 0 grows it with the blur radius (twice the radius and one). Less than that cuts the glow off at a box round the worm."
+
+[[components.options]]
+key = "gain"
+type = "int"
+default = 160
+min = 10
+max = 800
+label = "Gain (%)"
+description = "How solid the glow is near the worm before it fades: the blur brightened by this much. Higher keeps it bright further out."
+
+[[components.options]]
+key = "red"
+type = "int"
+default = 255
+min = 0
+max = 255
+label = "Red"
+description = "The glow's colour, its red part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
+
+[[components.options]]
+key = "green"
+type = "int"
+default = 255
+min = 0
+max = 255
+label = "Green"
+description = "The glow's colour, its green part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
+
+[[components.options]]
+key = "blue"
+type = "int"
+default = 255
+min = 0
+max = 255
+label = "Blue"
+description = "The glow's colour, its blue part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
 
 # One Cursor weapon with seven modes: until 0.5.0 the Cursor Suite bundle.
 [[components]]

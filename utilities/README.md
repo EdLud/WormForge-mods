@@ -2,7 +2,7 @@
 
 WormForge's own add-ons and tools (`core.utilities`, `format_version = 2`):
 **Utilities**, with the match settings the lobby scheme doesn't have and some
-players' favourite mods as switches; **Fog of war**; the **+N Seconds**
+players' favourite mods as switches; **Fog of war**; **Worm glow**; the **+N Seconds**
 utility; and the **Cursor** weapon. Fog of war and the Cursor were their own
 packs (`core.fog`, `example.cursor_suite`) until 0.6.0; installing this pack
 from the catalogue moves those to `WormForge/Backups/Packs`, since their
@@ -125,6 +125,20 @@ for animals and projectiles, light after explosions and around crates, the
 whole map for spectators and during placement, and a minimum brightness.
 The Lua lives in `features/fog.lua`; the pack's `[fog]` lets it drive the
 renderer.
+
+## Worm glow
+
+`core.worm_glow`, an add-on: a soft glow round every worm, so with the fog a
+worm reads as the light round it. Each worm's body keeps WA's colours (a
+white `worm.tint`) with a glow behind it in the add-on's colour
+(`glow_color`); a worm another mod tints (the Specialists zombie) keeps its
+own tint. Its settings: the glow's strength, its blur radius, the padding
+round each pose (0 grows it with the radius), its gain, and its colour as
+red, green and blue. WA's poses without a weapon are copied with the match
+(`wa_sprites = { "worm" }`), and the placed weapons' own worm poses get their
+glows with it (`worm_glow`), so none is made mid-match; WA's own weapon poses
+are copied the first time they are drawn. Needs WA's D3D9 shader renderer and
+a WormForge newer than 0.9.7. The Lua lives in `features/worm_glow.lua`.
 
 ## Cursor
 
