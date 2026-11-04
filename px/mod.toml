@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.23"
+version = "0.20.24"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -2222,7 +2222,7 @@ type = "weapon"
 name = "Spot Hider"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Spot Hider: the zones' round, and where it lands a darkness spreads out 512 pixels across and hides the spot, worms and their names, for 4 turns, then fades. Terrain stops it. It watches nothing and explodes nothing."
+description = "Project X's Spot Hider: the zones' round, and where it lands a darkness spreads out and hides the spot, worms and their names, for 4 turns, then fades. It fills the open air round corners, as much of it wherever it lands. It watches nothing and explodes nothing."
 entry = "weapons/spot_hider.lua"
 icon = "sprites/spot_hider/icon.png"
 default_position = { row = "F9", column = 7 }
@@ -2233,7 +2233,7 @@ type = "choice"
 choices = ["shadow", "mask"]
 default = "shadow"
 label = "Look"
-description = "Shadow: an opaque darkness cast from where the round lands, which terrain stops, drawn as the fog of war draws darkness, with or without fog. Mask: Project X's flat see-through mask."
+description = "Shadow: an opaque darkness that fills the open air from where the round lands, round corners, drawn as the fog of war draws darkness, with or without fog. Mask: Project X's flat see-through mask."
 
 [[components.options]]
 key = "hides_for"
@@ -2251,6 +2251,15 @@ max = 30
 default = 4
 label = "Spread (seconds)"
 description = "How long the shadow takes to spread out from where the round lands to its full size."
+
+[[components.options]]
+key = "radius"
+type = "int"
+min = 64
+max = 350
+default = 256
+label = "Size (radius)"
+description = "How much the shadow hides: as much as a circle of this radius. In the open it is that circle; landed in a pocket, it fills the pocket and flows on out of its openings, round corners, up to twice this far. The mask look keeps Project X's size."
 
 [sprites."sprites/thrown_dynamite/tdynamite.png"]
 frames = 4

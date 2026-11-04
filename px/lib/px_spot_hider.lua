@@ -29,10 +29,14 @@
 --
 -- **The shadow look** (the component's `look` option, ours, not PX's): the
 -- invisible object that keeps the mask's turns carries a dark light instead
--- (`docs/fog.md`, "Darkness without fog"): an opaque darkness cast from the
--- impact point, which terrain stops (going on 5 pixels into it, then fading
--- over 5 more), so what lies behind a wall stays in view. It spreads out from the point over `spread_seconds` to PX's 512
--- pixels across, and fades with the mask's fade. It is drawn as the fog draws
+-- (`docs/fog.md`, "Darkness without fog"): an opaque darkness that fills the
+-- open air from the impact point, round corners and along tunnels, until it
+-- covers as much as a circle of the `radius` option (PX's mask is 256), so a
+-- round landed in a pocket fills it and flows on out instead of hiding
+-- nothing (`fill`). It goes on 5 pixels into the terrain it meets, then
+-- fades over 5 more. It spreads out from the point over `spread_seconds`, by
+-- area, so a pocket fills first and then spills, and fades with the mask's
+-- fade. It is drawn as the fog draws
 -- darkness, whether the match has fog or not; the weapon never turns fog on
 -- or changes it. A worm touching it, where this viewer sees it more than
 -- half dark, shows none of WA's HUD -- labels, arrows, the thought cloud of a
@@ -114,10 +118,11 @@ function M.install(ctx)
     return 1 - math.min(1, (z.fade or 0) / FADE_FRAMES)
   end
 
-  -- The darkness the object casts: cast once to the mask's radius, spread out
-  -- over `spread_frames` and faded with the mask. Written only when it
-  -- changes; neither a spread nor a fade makes the engine cast again.
-  local REACH = MASK_SIZE // 2
+  -- The darkness the object carries: filled once to the area of `radius`'s
+  -- circle (the engine fills again only when the terrain under it changes),
+  -- spread out over `spread_frames` and faded with the mask. Written only
+  -- when it changes; neither a spread nor a fade makes the engine fill again.
+  local REACH = option("radius", MASK_SIZE // 2)
   -- On into the terrain it reaches: 5 pixels at full, then fading over 5
   -- more, so a worm dug in at a wall's face is not left in the light.
   local INTO_TERRAIN = { depth = 5, falloff = 5 }
@@ -132,6 +137,7 @@ function M.install(ctx)
       owner_strength = enemies_only and math.floor(OWN_SIDE * opacity(z) + 0.5) or nil,
       without_fog = true,
       into_terrain = INTO_TERRAIN,
+      fill = true,
     }
   end
 

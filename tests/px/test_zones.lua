@@ -305,6 +305,7 @@ for _, hides_for in ipairs({ "everyone", "enemies" }) do
     assert(l.mode == "dark" and l.reach == 256 and l.cone.length == 0 and l.without_fog == true)
     assert(l.shadow_cast == true and l.seen_by == "everyone")
     assert(l.into_terrain.depth == 5 and l.into_terrain.falloff == 5, "on into the terrain")
+    assert(l.fill == true, "it fills the air, round corners")
     assert(l.circle == circle, "circle " .. tostring(l.circle) .. ", expected " .. circle)
     assert(l.strength == strength and l.owner_strength == own)
   end
@@ -355,3 +356,11 @@ frames(1); assert(a.light.circle == 256)
 assert(spot_hider({}, false) == nil, "an unplaced Spot Hider registers nothing")
 assert(sim_random == 0)
 print("Spot Hider: PX's mask and its fade; the shadow's spread, fade, owner and hides-for passed")
+
+-- The radius option: as much darkness as a circle that size.
+do
+  local a = fire(spot_hider({ look = "shadow", radius = 120 }))
+  frames(300)
+  local l = assert(a.light)
+  assert(l.reach == 120 and l.circle == 120 and l.fill == true, "the radius sets the fill's size")
+end
