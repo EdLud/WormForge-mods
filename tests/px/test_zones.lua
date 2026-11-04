@@ -304,7 +304,7 @@ for _, hides_for in ipairs({ "everyone", "enemies" }) do
     local l = assert(a.light)
     assert(l.mode == "dark" and l.reach == 256 and l.cone.length == 0 and l.without_fog == true)
     assert(l.shadow_cast == true and l.seen_by == "everyone")
-    assert(l.into_terrain.depth == 5 and l.into_terrain.falloff == 5, "on into the terrain")
+    assert(l.into_terrain.depth == 8 and l.into_terrain.falloff == 8, "on into the terrain")
     assert(l.fill == true, "it fills the air, round corners")
     assert(l.circle == circle, "circle " .. tostring(l.circle) .. ", expected " .. circle)
     assert(l.strength == strength and l.owner_strength == own)

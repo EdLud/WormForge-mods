@@ -33,8 +33,8 @@
 -- open air from the impact point, round corners and along tunnels, until it
 -- covers as much as a circle of the `radius` option (PX's mask is 256), so a
 -- round landed in a pocket fills it and flows on out instead of hiding
--- nothing (`fill`). It goes on 5 pixels into the terrain it meets, then
--- fades over 5 more. It spreads out from the point over `spread_seconds`, by
+-- nothing (`fill`). It goes on 8 pixels into the terrain it meets, then
+-- fades over 8 more. It spreads out from the point over `spread_seconds`, by
 -- area, so a pocket fills first and then spills, and fades with the mask's
 -- fade. It is drawn as the fog draws
 -- darkness, whether the match has fog or not; the weapon never turns fog on
@@ -123,9 +123,9 @@ function M.install(ctx)
   -- spread out over `spread_frames` and faded with the mask. Written only
   -- when it changes; neither a spread nor a fade makes the engine fill again.
   local REACH = option("radius", MASK_SIZE // 2)
-  -- On into the terrain it reaches: 5 pixels at full, then fading over 5
+  -- On into the terrain it reaches: 8 pixels at full, then fading over 8
   -- more, so a worm dug in at a wall's face is not left in the light.
-  local INTO_TERRAIN = { depth = 5, falloff = 5 }
+  local INTO_TERRAIN = { depth = 8, falloff = 8 }
   local function shade(z)
     local circle = math.min(REACH, REACH * z.timer // spread_frames)
     local strength = math.floor(255 * opacity(z) + 0.5)
