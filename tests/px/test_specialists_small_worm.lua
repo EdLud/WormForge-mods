@@ -30,14 +30,14 @@ check(sw.definition.utility.effect=="scripted" and sw.definition.handling.ends_t
 worm.vx=1;send(wa.msg.FIRE_WEAPON)
 check(worm.shape=="worm","moving, it cannot be fired (PX's CanFire)")
 worm.vx=0;send(wa.msg.FIRE_WEAPON)
-check(worm.shape=="mine" and worm.y==190,"small: WA's mine shape, lifted 10 px")
+check(worm.shape=="mine" and worm.y==195,"small: WA's mine shape, lifted 5 px")
 check(near(worm.gravity,0.75) and near(worm.mass,1.5),"three quarters of its gravity, half again its mass")
 check(messages[#messages]=="Small worm mode: ON","PX's message")
-check(worm.body_visible and near(worm.body_scale.scale,0.85) and worm.body_scale.y==-4,
+check(worm.body_visible and near(worm.body_scale.scale,0.85) and worm.body_scale.y==-2,
   "its own body at 0.85 (PX's WAP->Size), on the mine shape's bottom")
 -- Fired again: itself, 9 px up, stopped, gravity and mass given back.
 worm.vx,worm.vy=0,0;send(wa.msg.FIRE_WEAPON)
-check(worm.shape=="worm" and worm.y==181 and near(worm.gravity,1) and near(worm.mass,1),"fired again: itself again")
+check(worm.shape=="worm" and worm.y==186 and near(worm.gravity,1) and near(worm.mass,1),"fired again: itself again")
 check(worm.body_scale==nil and messages[#messages]=="Small worm mode: OFF" and #cuts==0,"full size, no holes where it fits")
 -- The turn's end ends it once it stands still; stuck, PX's holes free it.
 send(wa.msg.FIRE_WEAPON)

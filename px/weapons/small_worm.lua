@@ -6,9 +6,9 @@
 -- `worm.body_scale` does: every pose WA draws, sized about its centre.
 local weapon = {}
 local ID = "px.small_worm"
--- 0.85 the size, moved up 4 px to stand on the bottom of WA's mine shape
+-- 0.85 the size, moved up 2 px to stand on the bottom of WA's mine shape
 -- (7x5, hotspot (3,2)) as a whole worm stands on the ground (set in game).
-local BODY = { scale = 0.85, y = -4 }
+local BODY = { scale = 0.85, y = -2 }
 local GRAVITY, MASS = 0.75, 1.5
 
 weapon.definition = {
@@ -26,7 +26,7 @@ function weapon.setup()
 
   local function activate(worm)
     small[worm.id] = { ending = false }
-    worm.y = worm.y - 10
+    worm.y = worm.y - 5
     worm.shape = "mine"
     worm.gravity = worm.gravity * GRAVITY
     worm.mass = worm.mass * MASS
