@@ -11,6 +11,10 @@ weapon.record = {
   },
 }
 
+-- In utility crates and on donor cards, as WA's Low Gravity it is built on: past
+-- WA's 70 a weapon otherwise comes in weapon crates and on no card.
+weapon.defaults = { crate = { type = "utility" }, donor_card = true }
+
 function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     copy_from = "stock.low_gravity",

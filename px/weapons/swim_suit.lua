@@ -5,7 +5,9 @@ local weapon = {}
 weapon.record = {}
 
 -- Auto-Use: off by default (a profile opts in with weapon_settings."px.swim_suit".auto_use).
-weapon.defaults = { auto_use = false }
+-- In utility crates and on donor cards, as WA's Laser Sight it is built on:
+-- past WA's 70 a weapon otherwise comes in weapon crates and on no card.
+weapon.defaults = { auto_use = false, crate = { type = "utility" }, donor_card = true }
 
 -- Set by weapon.configure(ctx), read inside the closures weapon.setup() builds below.
 local automatic = false

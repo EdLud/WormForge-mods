@@ -440,7 +440,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | super_banana | Chilli Bomb | icon, the chilli (held and in flight) | five more Chillis burst out of it and burst into fire |
 | laser_sight | Swim Suit | icon, the swim and float animations, the bubble, its sound | PX's swimming on WA's laser sight |
 | surrender | Wind Changer | icon, three wind sounds | 0-9 choose the force, firing sets the wind |
-| skip_go | Skip Go/Surrender | PX icon | Space skips the turn; holding Ctrl shows the Surrender pose and fires stock Surrender |
+| skip_go | Skip Go/Surrender | PX icon | Space skips the turn; holding Ctrl shows the Surrender pose and fires stock Surrender; the weapon tooltip names both keys |
 | uzi | Laser Gun | icon, the worm aiming and taking it out, its beam and glow, three sounds | PX's 5 s beam in place of the uzi's bullet |
 | low_gravity | Gravity Control | icon, its two sounds | 1-5 choose the gravity, firing holds it for the turn |
 | ninja_rope | Jump | icon, the worm aiming it | the worm leaves with the shot's speed |
@@ -693,14 +693,13 @@ right push it. It needs WA's own gravity and wind, `wa.world.gravity()` /
   Weapons fire from it as from WA's parachute.
 - **Landing:** PX swaps the sheet WA packs a parachute away with (`wparbak`,
   289) for the glider's own. Here WA never packs a parachute away: when the
-  glide ends coming down onto land below WA's 8-pixel-per-frame fall-damage
-  threshold, the glider's pack-away (6 frames at 24 a second) plays once WA
-  has the worm standing. A faster impact releases the worm at full speed into
-  WA's normal falling state, so WA can apply the scheme's fall damage and
-  loss of control. During that impact, the engine masks the parachute slot
-  inside the worm's frame handler so it cannot reopen and slow the worm; the
-  selected weapon is restored afterwards. A hard landing or a crash into
-  something ahead plays no pack-away.
+  glide ends coming down onto land, the glider sets the worm down under WA's
+  8-pixel-per-frame fall-damage threshold (at most 7, however fast it dived),
+  so it saves the worm, and its pack-away (6 frames at 24 a second) plays
+  once WA has the worm standing. A crash into something ahead plays no
+  pack-away; the worm falls on, and WA opens the glider again if it falls
+  fast enough (WA picks its automatic parachute by the record, so it does
+  past WA's 70).
 
 **Hot Air Balloon.** PX's `balloon_s` (r2_balloon by rafa''2, modified by
 0rang3), on the Bungee's slot, whose record the pack patches into a parachute.

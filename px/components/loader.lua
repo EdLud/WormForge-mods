@@ -50,6 +50,7 @@ local ORDER = {
   "weapons/barrel_launcher",
   "weapons/lightning_strike",
   "weapons/tazer",
+  "weapons/skip_go_surrender",
   "weapons/drilling_crew",
   "lib/electrical",
   "weapons/javelin",

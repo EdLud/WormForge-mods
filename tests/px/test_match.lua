@@ -4500,23 +4500,22 @@ do
   check("a held movement key skips the pack-away at contact",
     #M.spawned == n and w.body_visible == true)
   w.keys = {}
-  -- A fast downward arrival gives WA the full speed. The engine holds the
-  -- equipped chute closed until WA has resolved the impact and any damage.
+  -- A fast downward arrival: the glider sets the worm down under WA's fall
+  -- damage, and packs away as from a gentle landing.
   check("gliding into a hard landing", glide_again(20))
-  n = #M.spawned
   floor = w.y + 13 * (1 / 2)
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
-  check("hard landing: fall at full speed without auto chute", not w.taken
-    and w.state == "sliding" and w.vy >= 8 - 1
-    and w.release_options and w.release_options.suppress_auto_parachute == true,
+  check("hard landing: set down under fall damage", not w.taken
+    and w.state == "sliding" and w.vy <= 7
+    and not (w.release_options and w.release_options.suppress_auto_parachute),
     string.format("taken=%s state=%s vy=%s", tostring(w.taken), tostring(w.state), tostring(w.vy)))
+  M.contact(w, { kind = "land" }, { vx = w.vx, vy = w.vy, flags = 0 })
+  check("hard landing: the pack-away plays", M.spawned[#M.spawned].sprite == "sprites/hang_glider/pack.png"
+    and not M.spawned[#M.spawned].dead)
   w.state = "standing"
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("hard landing: no safe pack-away or mid-air unstick",
-    #M.spawned == n and w.state == "standing",
-    string.format("spawned=%d expected=%d state=%s", #M.spawned, n, tostring(w.state)))
+  for _ = 1, 14 do M.message(w, wa.msg.FRAME_FINISH) end
   -- The jump key lets go of it.
   check("gliding again", glide_again())
   check("the jump key: let go", M.message(w, wa.msg.JUMP) == "eat" and not w.taken

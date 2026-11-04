@@ -13,4 +13,10 @@ function weapon.definition()
   })
 end
 
+function weapon.setup()
+  require("lib/weapon_hint").hint("px.skip_go_surrender", function()
+    return "Skip Go/Surrender\nSpace: skip go\nCtrl + Space: surrender"
+  end)
+end
+
 return weapon

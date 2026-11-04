@@ -61,9 +61,10 @@ function weapon.setup()
     -- How long after coming down onto land WA may take to stand the worm up for
     -- the pack-away (frames).
     local GLIDER_PACK_WAIT = 50
-    -- WA's fall damage begins at 8 pixels/frame of downward impact speed. Its
-    -- fixed-point formula includes one 16.16 unit of bias.
-    local GLIDER_SAFE_LANDING_SPEED = 8 - 1 / 65536
+    -- WA's fall damage begins at 8 pixels/frame of downward impact speed. The
+    -- glider sets the worm down at most this fast, a pixel/frame under it for
+    -- the gravity WA adds before the impact: it saves the worm.
+    local GLIDER_SET_DOWN_SPEED = 7
     local GLIDER_PI = 3.141593
 
     local gliders = {} -- worm id -> { enabled, deployed, x, y, ang, target, cycle, sx, sy, art, pack, pack_t, landing }
@@ -193,14 +194,10 @@ function weapon.setup()
     local GLIDER_UNSTAND = 3
 
     -- The glide ends: the worm back to WA, falling on with the glider's speed.
-    -- `landing`: a gentle landing, so the pack-away plays once WA has the worm
-    -- standing. A hard landing gives WA the glider's full speed in its
-    -- falling state and lets WA decide whether it causes fall damage and loss
-    -- of control. Suppress automatic parachute firing only until WA handles
-    -- this impact; otherwise it immediately reopens and slows the worm.
-    -- Only a collision
-    -- elsewhere needs the short guard against WA standing it up in mid-air.
-    local function glider_close(worm, g, landing, hard_landing)
+    -- `landing`: onto land below, so the pack-away plays once WA has the worm
+    -- standing. Only a collision elsewhere needs the short guard against WA
+    -- standing it up in mid-air.
+    local function glider_close(worm, g, landing)
       g.deployed = false
       -- A gentle landing can spend several frames falling under WA's control
       -- before WA stands the worm up. Keep the wing over its body until the
@@ -219,14 +216,9 @@ function weapon.setup()
         wa.log("hang glider: closing without its art: " .. tostring(err))
       end
       g.landing = landing and GLIDER_PACK_WAIT or nil
-      g.unstand = not (landing or hard_landing) and GLIDER_UNSTAND or nil
+      g.unstand = not landing and GLIDER_UNSTAND or nil
       if worm.taken then
-        local vx, vy = g.sx, g.sy
-        if hard_landing then
-          worm:release(vx, vy, { suppress_auto_parachute = true })
-        else
-          worm:release(vx, vy)
-        end
+        worm:release(g.sx, g.sy)
       end
     end
 
@@ -259,11 +251,11 @@ function weapon.setup()
         glider_keys(worm, g)
         glider_think(worm, g)
         if glider_blocked(worm, g.x, g.y, g.sx, g.sy) then
-          -- Onto land below it: WA handles the impact with the glider's full
-          -- speed. Only a fall below its damage threshold gets the pack-away.
+          -- Onto land below it: the glider sets the worm down, however fast
+          -- it dived, and packs away.
           local below = g.sy > 0 and not worm:fits(g.x, g.y + (1.1 * g.sy + 4))
-          local hard_landing = below and g.sy >= GLIDER_SAFE_LANDING_SPEED
-          glider_close(worm, g, below and not hard_landing, hard_landing)
+          if below then g.sy = math.min(g.sy, GLIDER_SET_DOWN_SPEED) end
+          glider_close(worm, g, below)
           return
         end
         local x, y = g.x + g.sx, g.y + g.sy
