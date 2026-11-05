@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.12.1"
+version = "0.12.2"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -41,7 +41,7 @@ key = "ex_turn_side"
 type = "bool"
 default = false
 label = "ExTurnSide"
-description = "Left and right turn the worm during rope swings and other actions. By red."
+description = "Left and right turn the worm during jumps, flights and other actions; not on the rope, in a Kamikaze or while Shift is held. By red."
 
 [[components.options]]
 key = "agility"

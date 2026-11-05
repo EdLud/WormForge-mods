@@ -1,7 +1,8 @@
--- ExTurnSide, by reddaz: left and right turn the worm during rope swings
--- and other actions. From reddaz's ExTurnSide pack 1.0.1, as it was.
+-- ExTurnSide, by reddaz: left and right turn the worm during jumps,
+-- flights and other actions, but not on the rope, in a Kamikaze or while
+-- Shift is held. From reddaz's ExTurnSide pack 1.0.1, with his rope and
+-- state lock.
 
--- Allows manual facing direction changes during rope swings and action states.
 local prev_left = false
 local prev_right = false
 
