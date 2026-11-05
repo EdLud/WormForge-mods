@@ -3,7 +3,7 @@
 return {
   classes = {
     { name = "Soldier", hp = 150,
-      weapons = { "stock.bazooka", "stock.grenade", "px.mines_gun", "stock.dynamite", "px.chilli_bomb" },
+      weapons = { "stock.bazooka", "stock.grenade", "px.mines_gun", "px.tnt", "px.chilli_bomb" },
       survivor = { "px.parkour" } },
     { name = "Gunner", hp = 175,
       weapons = { "px.gatling_gun", "stock.prod", "px.swim_suit", "px.sentry_gun", "px.platform" },
@@ -21,7 +21,7 @@ return {
   -- Positive values use native team-turn upkeep; Tab never decrements them.
   delays = {
     ["stock.bazooka"] = 1, ["stock.grenade"] = 1, ["px.mines_gun"] = 2,
-    ["stock.dynamite"] = 2, ["px.chilli_bomb"] = 2, ["px.parkour"] = 1,
+    ["px.tnt"] = 2, ["px.chilli_bomb"] = 2, ["px.parkour"] = 1,
     ["px.gatling_gun"] = 1, ["stock.prod"] = 1, ["px.sentry_gun"] = 3,
     ["px.platform"] = 1, ["stock.banana_bomb"] = 1, ["stock.blow_torch"] = 1,
     ["stock.girder"] = 2, ["px.sentry_laser"] = 3, ["stock.mine"] = 2,

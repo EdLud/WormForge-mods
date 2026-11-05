@@ -90,19 +90,19 @@ for i, class in ipairs(classes) do
 end
 local soldier, gunner, engineer, ninja, medic = table.unpack(worms)
 soldier.hp = 100
-soldier:delay("stock.dynamite",3) -- Initial profile/native delay.
+soldier:delay("px.tnt",3) -- Initial profile/native delay.
 inventory[1]["stock.jet_pack"] = 2
 select(soldier); select(engineer); select(soldier)
-assert(soldier.hp == 100 and soldier:delay("stock.dynamite") == 3)
+assert(soldier.hp == 100 and soldier:delay("px.tnt") == 3)
 assert(inventory[1]["stock.jet_pack"] == 2, "non-class pickups survive switching")
 release(soldier,"stock.bazooka")
 assert(soldier:delay("stock.bazooka") == 1)
 select(ninja); select(soldier)
 assert(soldier:delay("stock.bazooka") == 1, "Tab cannot unlock a shot")
 -- Simulate native upkeep at a real turn boundary; Lua must not decrement again.
-soldier:delay("stock.bazooka",0); soldier:delay("stock.dynamite",2)
+soldier:delay("stock.bazooka",0); soldier:delay("px.tnt",2)
 emit("worm_message",soldier,wa.msg.TURN_STARTED)
-assert(soldier:delay("stock.bazooka") == 0 and soldier:delay("stock.dynamite") == 2)
+assert(soldier:delay("stock.bazooka") == 0 and soldier:delay("px.tnt") == 2)
 -- An explicit positive cooldown takes precedence over a turn-ending record.
 endings["stock.teleport"] = true
 select(medic); release(medic,"stock.teleport")

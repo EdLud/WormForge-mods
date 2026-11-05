@@ -1,14 +1,14 @@
 # PX record facts, extracted independently of the profile generator.
 # The profile departs from them (2026-10-30): WA's Mole Bomb with two shots
-# replaces the PX Mole Bombs port, Select Worm is left out, and the Health
-# Zone has a 5-turn delay; Low Gravity comes in weapon crates at 0.5%
-# (pct), not in utility crates.
+# replaces the PX Mole Bombs port, Select Worm is left out, and Low Gravity
+# comes in weapon crates at 0.5% (pct), not in utility crates. Delays are the
+# records' own (metadata), as PX plays them, not the WSC's.
 source_sha256 = "cfd7f39ca10fb454dbfbc2d93425ce565f4e1f70ebc73e3b9e7984fa8a239cfd"
 weapon_weight = 309
 utility_weight = 5
 weapons = [
   { id = "px.lantern", row = "F1", column = 1, ammo = 20, chance = 0, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 3000 },
-  { id = "px.double_bazooka", row = "F1", column = 2, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 1, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
+  { id = "px.double_bazooka", row = "F1", column = 2, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "px.igniter", row = "F1", column = 3, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "stock.homing_pigeon", row = "F1", column = 4, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "px.burning_sheep_launcher", row = "F1", column = 5, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
@@ -23,15 +23,15 @@ weapons = [
   { id = "px.shadow_bolt", row = "F3", column = 4, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 2, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "stock.longbow", row = "F3", column = 5, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 2, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "stock.baseball_bat", row = "F4", column = 1, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
-  { id = "px.kamikaze_rocket", row = "F4", column = 2, ammo = 1, chance = 0, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 4000 },
+  { id = "px.kamikaze_rocket", row = "F4", column = 2, ammo = 1, chance = 0, count = 1, kind = "weapon", delay = 2, shots = 1, caves = true, ends_turn = false, remember = true, retreat = 4000 },
   { id = "px.gravler", row = "F5", column = 2, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "px.thrown_dynamite", row = "F5", column = 3, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 5000 },
   { id = "px.j_bomb", row = "F5", column = 4, ammo = 0, chance = 3, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 5000 },
   { id = "px.ghost_sheep", row = "F5", column = 5, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 5000 },
-  { id = "px.sentry_gun", row = "F6", column = 1, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 5, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 5000 },
-  { id = "px.sentry_laser", row = "F6", column = 2, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 7, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 5000 },
+  { id = "px.sentry_gun", row = "F6", column = 1, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 5000 },
+  { id = "px.sentry_laser", row = "F6", column = 2, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 5000 },
   { id = "px.girder_launcher", row = "F6", column = 3, ammo = 2, chance = 0, count = 1, kind = "weapon", delay = 0, shots = 4, caves = true, ends_turn = false, remember = true, retreat = 3000 },
-  { id = "px.far_sight", row = "F6", column = 4, ammo = 2, chance = 0, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 3000 },
+  { id = "px.far_sight", row = "F6", column = 4, ammo = 2, chance = 0, count = 1, kind = "weapon", delay = 3, shots = 1, caves = true, ends_turn = false, remember = false, retreat = 3000 },
   { id = "px.lightning_strike", row = "F6", column = 5, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = false, ends_turn = false, remember = false, retreat = 3000 },
   { id = "stock.blow_torch", row = "F7", column = 1, ammo = -1, chance = 0, count = 3, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = true, retreat = 3000 },
   { id = "stock.pneumatic_drill", row = "F7", column = 2, ammo = -1, chance = 0, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = true, retreat = -1000 },
@@ -46,7 +46,7 @@ weapons = [
   { id = "px.golden_grenade", row = "F9", column = 4, ammo = 0, chance = 3, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "stock.salvation_army", row = "F9", column = 5, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "px.valyrian_fire", row = "F10", column = 1, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
-  { id = "px.bulldozer", row = "F10", column = 2, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 2, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
+  { id = "px.bulldozer", row = "F10", column = 2, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "px.thrown_ming_vase", row = "F10", column = 3, ammo = 0, chance = 5, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 3000 },
   { id = "stock.sheep_strike", row = "F10", column = 4, ammo = 0, chance = 3, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = false, retreat = 0 },
   { id = "px.cow_launcher", row = "F11", column = 1, ammo = 0, chance = 10, count = 1, kind = "weapon", delay = 0, shots = 1, caves = true, ends_turn = true, remember = true, retreat = 3000 },

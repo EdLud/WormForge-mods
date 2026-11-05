@@ -44,6 +44,7 @@ local ORDER = {
   "lib/turn_controls",
   "weapons/jump",
   "weapons/thrown_dynamite",
+  "weapons/tnt",
   "weapons/laser_gun",
   "weapons/super_tele",
   "weapons/electric_grenade",

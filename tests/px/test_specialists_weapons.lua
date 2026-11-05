@@ -68,3 +68,39 @@ wa.actors.spawn=function()error("pool full")end
 assert(not pcall(hooks.frame,owner))
 draws={};hooks.draw();assert(#draws==0)
 print("Thrown Dynamite sparks use one updater, inherit visibility and expire")
+
+-- TNT: the Specialists scheme's record, PX's upright sprite on every TNT
+-- missile (its bits have none of their own), and the fuse trail's particles
+-- on one updater.
+local tnt = require("weapons/tnt")
+local tnt_def = tnt.definition()
+assert(tnt_def.copy_from == "stock.dynamite" and tnt_def.name == "TNT")
+assert(tnt_def.missile.explosion.power == 50 and tnt_def.missile.burst == "clusters")
+assert(tnt_def.clusters.count == 3 and tnt_def.clusters.bit.explosion.power == 30)
+assert(tnt.missile_sprite.upright and tnt.missile_sprite.first_sprite == nil)
+hooks, actors, draws = {}, {}, {}
+wa = {
+  on = {missile_frame=function(f) hooks.missile=f end,draw=function(f) hooks.draw=f end},
+  math={sin=math.sin,cos=math.cos},depth={EFFECTS=7},
+  world={water=function()return 1000 end,wind=function()return 0 end},
+  worms={all=function()return {owner} end},
+  draw={quad=function(q)draws[#draws+1]={sprite=q.sprite,color=q.color} end},
+  actors={spawn=function(s)
+    local a={on=s.on};function a:despawn()self.dead=true end
+    actors[#actors+1]=a;return a
+  end},
+}
+require("lib/shared").current_worm = function() return owner end
+tnt.setup()
+hooks.missile({weapon="px.thrown_dynamite",phase="post",x=50,y=50})
+hooks.missile({weapon="px.tnt",phase="pre",x=50,y=50})
+assert(#actors==0, "only the TNT's own missiles, after WA moved them")
+hooks.missile({weapon="px.tnt",phase="post",x=50,y=50})
+hooks.missile({weapon="px.tnt",phase="post",x=50,y=50})
+hooks.draw()
+assert(#actors==1 and #draws==3, "a spark a frame, the glow every other")
+assert(draws[1].sprite=="sprites/tnt/trail.png" and draws[3].sprite=="sprites/tnt/glow.png")
+for _=1,40 do actors[1].on(actors[1]) end
+draws={};hooks.draw()
+assert(actors[1].dead and #draws==0, "the trail expires once the TNT is gone")
+print("TNT record, sprite and fuse trail passed")

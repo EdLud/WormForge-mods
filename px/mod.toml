@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.29"
+version = "0.20.30"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -2239,6 +2239,18 @@ description = "Project X Specialists: Thrown Dynamite."
 entry = "components/weapon.lua"
 icon = "sprites/thrown_dynamite/ico_tdynamite.png"
 default_position = { row = "F2", column = 8 }
+
+[[components]]
+id = "px.tnt"
+type = "weapon"
+name = "TNT"
+description = "Project X Specialists: TNT, the Soldier's dynamite. A smaller blast that bursts into three more around it."
+entry = "components/weapon.lua"
+icon = "sprites/tnt/ico_tnt.png"
+default_position = { row = "F5", column = 1 }
+
+[sprites."sprites/tnt/trail.png"]
+frames = 32
 
 [[components]]
 id = "px.tele_arrow"

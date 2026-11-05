@@ -1,6 +1,7 @@
 # Project X Specialists 2.3 (five worms), 0rang3's September 2026 build.
 # Generated from the PX scheme's records and its WSC by a local script
 # (local/specialists/make_profile.py) that no longer exists: edit this file.
+# Start-of-round delays are PX's own per-weapon Delay (record metadata), not the WSC's.
 description = "Project X Specialists 2.3: five worms per team, each a class with its own weapons. Utilities and special weapons come in crates. The Soldier comes back once as a zombie."
 features = ["core.utilities", "specialists.rules"]
 
@@ -135,7 +136,7 @@ column = 1
 [weapon_settings."px.igniter"]
 # Igniter, PX slot homing_missile
 ammo = 0
-delay = 1
+delay = 0
 after_use = "continue"
 crate_type = "weapon"
 crate_pct = 4.6296
@@ -195,7 +196,7 @@ column = 1
 [weapon_settings."px.chilli_bomb"]
 # Chilli Bomb, PX slot cluster_bomb
 ammo = 0
-delay = 0
+delay = 1
 after_use = "continue"
 crate_pct = 0
 
@@ -356,15 +357,14 @@ crate_pct = 0
 row = "F4"
 column = 5
 
-[weapon_settings."stock.dynamite"]
+[weapon_settings."px.tnt"]
 # TNT, PX slot dynamite
 ammo = 0
-delay = 0
+delay = 1
 after_use = "continue"
-power = 2
 crate_pct = 0
 
-[weapons."stock.dynamite"]
+[weapons."px.tnt"]
 row = "F5"
 column = 1
 
@@ -407,7 +407,7 @@ column = 4
 [weapon_settings."px.lightning_strike"]
 # Lightning Strike, PX slot air_strike
 ammo = 0
-delay = 5
+delay = 0
 after_use = "continue"
 crate_type = "weapon"
 crate_pct = 4.6296
@@ -583,7 +583,7 @@ column = 1
 [weapon_settings."px.bulldozer"]
 # Bulldozer, PX slot skunk
 ammo = 0
-delay = 2
+delay = 0
 after_use = "continue"
 crate_type = "weapon"
 crate_pct = 4.6296

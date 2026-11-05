@@ -22,7 +22,8 @@ do
 -- How it turns follows the record's animation type (the entry's +0x64,
 -- PX's launchdata.anim.type): 2, WAT_TrackMovement, faces its flight
 -- (WeapSprite type 2, as a bazooka shell); 1, WAT_Rotation, spins with its
--- speed (type 3, as a grenade), which `spin` asks for.
+-- speed (type 3, as a grenade), which `spin` asks for; `upright` keeps it
+-- unturned (type 5, as PX's TNT).
 
 -- Slot -> the weapon's WeapSpriteParams, as its PX script states them.
 local PX_WEAP_SPRITES = shared.missile_sprites
@@ -117,13 +118,16 @@ wa.on.missile_frame(function(m)
   f.seen = true
   local a = f.actor
   a.x, a.y, a.vx, a.vy = m.x, m.y, 0, 0
-  a.facing = m.vx < 0 and -1 or 1
+  a.facing = (m.vx < 0 and not p.upright) and -1 or 1
   if p.animate then
     f.phase = next_phase(f.phase, p.anim_speed)
     a:frame(frame_of(f.phase, p.frames))
   end
   local rot
-  if p.spin then
+  if p.upright then
+    -- WeapSprite type 5: drawn as it is, neither turned nor mirrored.
+    rot = 0
+  elseif p.spin then
     -- WeapSprite type 3: speed * (vx * 0.15 + |vy| * 0.01, towards vx) a
     -- frame, in pixels a frame and radians; WeapSprite's speed is 0.5
     -- unless the weapon's script sets it.

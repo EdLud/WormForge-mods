@@ -72,6 +72,7 @@ return {
   ["px.personal_invisibility"] = "weapons/personal_invisibility",
   ["px.small_worm"] = "weapons/small_worm",
   ["px.thrown_dynamite"] = "weapons/thrown_dynamite",
+  ["px.tnt"] = "weapons/tnt",
   ["px.tele_arrow"] = "weapons/tele_arrow",
   ["px.thumper_nade_strike"] = "weapons/thumper_nade_strike",
   ["px.valyrian_fire"] = "weapons/valyrian_fire",
