@@ -37,7 +37,7 @@ features = ["hl.rules"]
 "px.pigeon_strike" = { row = "F6", column = 3 }
 "px.submarine_attack" = { row = "F6", column = 4 }
 "px.gravler_strike" = { row = "F6", column = 5 }
-"px.blowtorch" = { row = "F7", column = 1 }
+"stock.blow_torch" = { row = "F7", column = 1 }
 "px.super_drill" = { row = "F7", column = 2 }
 "stock.baseball_bat" = { row = "F7", column = 3 }
 "px.electromagnet" = { row = "F7", column = 4 }
@@ -54,7 +54,7 @@ features = ["hl.rules"]
 "px.banana_express" = { row = "F9", column = 5 }
 "px.valyrian_fire" = { row = "F10", column = 1 }
 "px.remote_roller" = { row = "F10", column = 2 }
-"px.priceless_ming_vase" = { row = "F10", column = 3 }
+"stock.ming_vase" = { row = "F10", column = 3 }
 "px.bowling_ball_strike" = { row = "F10", column = 4 }
 "px.thumper_nade_strike" = { row = "F10", column = 5 }
 "px.cow_launcher" = { row = "F11", column = 1 }
@@ -66,15 +66,15 @@ features = ["hl.rules"]
 "px.wind_changer" = { row = "F12", column = 2 }
 "stock.select_worm" = { row = "F12", column = 3 }
 "px.weapon_crate" = { row = "F12", column = 4 }
-"px.cluster_bomb" = { row = "F12", column = 5 }
+"stock.cluster_bomb" = { row = "F12", column = 5 }
 "px.helicopter" = { row = "utility", column = 1 }
 "px.gravity_control" = { row = "utility", column = 2 }
 "stock.fast_walk" = { row = "utility", column = 3 }
 "px.swim_suit" = { row = "utility", column = 4 }
 "stock.teleport" = { row = "utility", column = 5 }
-"px.skunk" = { row = "utility", column = 6 }
+"stock.skunk" = { row = "utility", column = 6 }
 "stock.crate_spy" = { row = "utility", column = 7 }
-"px.mole_bomb" = { row = "utility", column = 8 }
+"stock.mole_bomb" = { row = "utility", column = 8 }
 "stock.crate_shower" = { row = "utility", column = 9 }
 
 [weapon_options."hl.rules"."stock.flame_thrower"]
@@ -116,7 +116,7 @@ after_use = "continue"
 [weapon_settings."px.blaster_worm"]
 after_use = "continue"
 
-[weapon_settings."px.blowtorch"]
+[weapon_settings."stock.blow_torch"]
 after_use = "continue"
 
 [weapon_settings."px.bowling_ball_strike"]
@@ -197,7 +197,7 @@ after_use = "continue"
 [weapon_settings."px.pogo_sheep"]
 after_use = "continue"
 
-[weapon_settings."px.priceless_ming_vase"]
+[weapon_settings."stock.ming_vase"]
 after_use = "continue"
 
 [weapon_settings."px.real_shotgun"]
@@ -249,3 +249,9 @@ after_use = "continue"
 # own Teleport comes in weapon crates wherever it is placed.
 [weapon_settings."stock.teleport"]
 crate_type = "utility"
+
+[weapon_options."hl.rules"."stock.blow_torch"]
+pool = "second"
+
+[weapon_options."hl.rules"."stock.ming_vase"]
+pool = "offensive"

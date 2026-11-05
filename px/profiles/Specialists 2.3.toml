@@ -416,14 +416,14 @@ crate_pct = 4.6296
 row = "F6"
 column = 1
 
-[weapon_settings."px.blowtorch"]
+[weapon_settings."stock.blow_torch"]
 # BlowTorch, PX slot blow_torch
 ammo = 0
 delay = 0
 after_use = "continue"
 crate_pct = 0
 
-[weapons."px.blowtorch"]
+[weapons."stock.blow_torch"]
 row = "F7"
 column = 1
 

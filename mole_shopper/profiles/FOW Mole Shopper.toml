@@ -160,7 +160,7 @@ ends_turn = false
 remember_selection = false
 retreat = 3000
 
-[weapon_settings."px.blowtorch"]
+[weapon_settings."stock.blow_torch"]
 after_use = "retreat"
 ammo = -1
 crate_collect = 3
@@ -169,7 +169,7 @@ crate_type = "weapon"
 delay = 0
 shots = 1
 
-[weapon_settings."px.blowtorch".record.handling]
+[weapon_settings."stock.blow_torch".record.handling]
 available_in_caves = true
 ends_turn = true
 remember_selection = true
@@ -214,7 +214,7 @@ water = true
 worms = true
 worms_frozen = true
 
-[weapon_settings."px.cluster_bomb"]
+[weapon_settings."stock.cluster_bomb"]
 after_use = "retreat"
 ammo = 0
 crate_collect = 1
@@ -223,19 +223,19 @@ crate_type = "weapon"
 delay = 0
 shots = 1
 
-[weapon_settings."px.cluster_bomb".record.clusters]
+[weapon_settings."stock.cluster_bomb".record.clusters]
 count = 6
 
-[weapon_settings."px.cluster_bomb".record.clusters.bit.explosion]
+[weapon_settings."stock.cluster_bomb".record.clusters.bit.explosion]
 power = 50
 
-[weapon_settings."px.cluster_bomb".record.handling]
+[weapon_settings."stock.cluster_bomb".record.handling]
 available_in_caves = true
 ends_turn = true
 remember_selection = false
 retreat = 3000
 
-[weapon_settings."px.cluster_bomb".record.missile.explosion]
+[weapon_settings."stock.cluster_bomb".record.missile.explosion]
 power = 55
 
 [weapon_settings."px.cow_launcher"]
@@ -1118,7 +1118,7 @@ retreat = -1
 column = 1
 row = "utility"
 
-[weapons."px.blowtorch"]
+[weapons."stock.blow_torch"]
 column = 1
 row = "F7"
 
@@ -1130,7 +1130,7 @@ row = "F10"
 column = 5
 row = "F1"
 
-[weapons."px.cluster_bomb"]
+[weapons."stock.cluster_bomb"]
 column = 2
 row = "F2"
 

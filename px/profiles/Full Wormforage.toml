@@ -21,10 +21,6 @@ ammo = -1
 after_use = "continue"
 ammo = -1
 
-[weapon_settings."px.blowtorch"]
-after_use = "continue"
-ammo = -1
-
 [weapon_settings."px.bowling_ball_strike"]
 after_use = "continue"
 ammo = -1
@@ -38,10 +34,6 @@ after_use = "continue"
 ammo = -1
 
 [weapon_settings."px.chilli_bomb"]
-after_use = "continue"
-ammo = -1
-
-[weapon_settings."px.cluster_bomb"]
 after_use = "continue"
 ammo = -1
 
@@ -125,10 +117,6 @@ ammo = -1
 after_use = "continue"
 ammo = -1
 
-[weapon_settings."px.mole_bomb"]
-after_use = "continue"
-ammo = -1
-
 [weapon_settings."px.mortar_strike"]
 after_use = "continue"
 ammo = -1
@@ -150,10 +138,6 @@ after_use = "continue"
 ammo = -1
 
 [weapon_settings."px.portal_gun"]
-after_use = "continue"
-ammo = -1
-
-[weapon_settings."px.priceless_ming_vase"]
 after_use = "continue"
 ammo = -1
 
@@ -186,10 +170,6 @@ after_use = "continue"
 ammo = -1
 
 [weapon_settings."px.skip_go_surrender"]
-after_use = "continue"
-ammo = -1
-
-[weapon_settings."px.skunk"]
 after_use = "continue"
 ammo = -1
 
@@ -479,10 +459,6 @@ row = "F4"
 column = 4
 row = "F1"
 
-[weapons."px.blowtorch"]
-column = 1
-row = "F7"
-
 [weapons."px.bowling_ball_strike"]
 column = 4
 row = "F10"
@@ -502,10 +478,6 @@ row = "F3"
 [weapons."px.chilli_bomb"]
 column = 1
 row = "F9"
-
-[weapons."px.cluster_bomb"]
-column = 5
-row = "F12"
 
 [weapons."px.cow_launcher"]
 column = 1
@@ -615,10 +587,6 @@ row = "F6"
 column = 8
 row = "F11"
 
-[weapons."px.mole_bomb"]
-column = 8
-row = "utility"
-
 [weapons."px.mortar_strike"]
 column = 1
 row = "F6"
@@ -650,10 +618,6 @@ row = "F5"
 [weapons."px.portal_gun"]
 column = 5
 row = "F8"
-
-[weapons."px.priceless_ming_vase"]
-column = 3
-row = "F10"
 
 [weapons."px.real_shotgun"]
 column = 1
@@ -690,10 +654,6 @@ row = "F3"
 [weapons."px.skip_go_surrender"]
 column = 1
 row = "F12"
-
-[weapons."px.skunk"]
-column = 6
-row = "utility"
 
 [weapons."px.sniper_rifle"]
 column = 2

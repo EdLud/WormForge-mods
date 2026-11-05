@@ -335,23 +335,24 @@ announces ON or OFF to the activating worm's coalition for three seconds.
 | Slot | Weapon | Notes |
 |---|---|---|
 | dynamite | Dynamite | WA's own (`stock.dynamite`) |
-| blow_torch | BlowTorch | |
+| blow_torch | BlowTorch | WA's own (`stock.blow_torch`) |
 | flame_thrower | Flame Thrower | WA's own (`stock.flame_thrower`) |
 | girder | Baseball Bat | WA's own (`stock.baseball_bat`): PX moved it here for the Electromagnet |
 | girder_pack | 3 Girder Pack | three girders, not five |
 | fast_walk | Fast Walk | WA's own (`stock.fast_walk`) |
 | crate_spy | Crate Spy | WA's own (`stock.crate_spy`) |
 | crate_shower | Crate Shower | WA's own (`stock.crate_shower`) |
-| magic_bullet | Cluster Bomb | stock cluster icon |
+| magic_bullet | Cluster Bomb | WA's own (`stock.cluster_bomb`) on its own slot |
 | invisibility | Teleport | WA's own (`stock.teleport`) on Invisibility's place |
-| damage_x2 | Skunk | stock skunk icon |
-| double_turn_time | Mole Bomb | stock mole icon |
-| ming_vase | Priceless Ming Vase | the stock vase under PX's name |
+| damage_x2 | Skunk | WA's own (`stock.skunk`) on its own slot |
+| double_turn_time | Mole Bomb | WA's own (`stock.mole_bomb`) on its own slot |
+| ming_vase | Priceless Ming Vase | WA's own (`stock.ming_vase`) |
 
-These are WA's own weapons. Moving one to another slot works only as far as
-WA reads the weapon from its record rather than its slot number. Played in
-game: the Cluster Bomb, Skunk and Mole Bomb fire as their records say; 3 Girder Pack
-places three. Open points:
+These are WA's own weapons. PX moved the Cluster Bomb, Skunk and Mole Bomb
+to other slots (it had only WA's 71) and renamed the BlowTorch and the Vase;
+a profile places WA's own anywhere, so the pack has no copies of them. Only
+the 3 Girder Pack is a weapon of its own: it places three, with its range
+option. Open points:
 
 - **Teleport on the invisibility slot:** WA disables Invisibility's slot in
   offline games, so the Teleport is unavailable offline. Not yet checked

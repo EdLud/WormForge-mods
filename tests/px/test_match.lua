@@ -79,7 +79,6 @@ local HOME = {
   ["px.lightning_strike"] = "napalm_strike",
   ["px.pigeon_strike"] = "mail_strike",
   ["px.gravler_strike"] = "mole_squadron",
-  ["px.blowtorch"] = "blow_torch",
   ["px.super_drill"] = "pneumatic_drill",
   ["px.electromagnet"] = "baseball_bat",
   ["px.3_girder_pack"] = "girder_pack",
@@ -94,7 +93,6 @@ local HOME = {
   ["px.banana_express"] = "mb_bomb",
   ["px.valyrian_fire"] = "petrol_bomb",
   ["px.remote_roller"] = "skunk",
-  ["px.priceless_ming_vase"] = "ming_vase",
   ["px.bowling_ball_strike"] = "sheep_strike",
   ["px.thumper_nade_strike"] = "carpet_bomb",
   ["px.cow_launcher"] = "mad_cow",
@@ -106,12 +104,12 @@ local HOME = {
   ["px.skip_go_surrender"] = "skip_go",
   ["px.wind_changer"] = "surrender",
   ["px.weapon_crate"] = "freeze",
-  ["px.cluster_bomb"] = "magic_bullet",
+  ["stock.cluster_bomb"] = "magic_bullet",
   ["px.helicopter"] = "jet_pack",
   ["px.gravity_control"] = "low_gravity",
   ["px.swim_suit"] = "laser_sight",
-  ["px.skunk"] = "damage_x2",
-  ["px.mole_bomb"] = "double_turn_time",
+  ["stock.skunk"] = "damage_x2",
+  ["stock.mole_bomb"] = "double_turn_time",
 }
 local ID_ON = {}
 for id, home in pairs(HOME) do ID_ON[home] = id end
@@ -1119,9 +1117,12 @@ do
     if by_slot[spec.weapon] then dupes = true end
     by_slot[spec.weapon] = spec
   end
-  -- One claim per Highlander weapon, each on its home slot.
+  -- One claim per Highlander weapon, each on its home slot. WA's own
+  -- weapons (stock.*) PX moved to another slot claim nothing.
   local weapons_count = 0
-  for _ in pairs(HOME) do weapons_count = weapons_count + 1 end
+  for id in pairs(HOME) do
+    if not id:find("^stock%.") then weapons_count = weapons_count + 1 end
+  end
   check("each Highlander weapon claims its slot, once", #replaced == weapons_count and not dupes,
     #replaced .. " of " .. weapons_count)
   -- A weapon component may claim only the slot it is placed on, and the
@@ -1249,8 +1250,7 @@ do
   check("no PX Baseball Bat on the girder slot: the Baseball Bat is WA's own", by_slot.girder == nil)
   check("a weapon on its own slot keeps its icon",
     by_slot.girder_pack and by_slot.girder_pack.panel_icon == nil)
-  check("Priceless Ming Vase: the stock vase, as the scheme tunes it",
-    by_slot.ming_vase and by_slot.ming_vase.panel_icon == nil and by_slot.ming_vase.on_fire == nil)
+  check("no PX Priceless Ming Vase on the vase slot: the vase is WA's own", by_slot.ming_vase == nil)
   check("Windy Cluster brings PX's icon and bits",
     by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
       and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster.png")

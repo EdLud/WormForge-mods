@@ -146,7 +146,7 @@ after_use = "continue"
 crate_type = "weapon"
 crate_pct = 2.1739
 
-[weapon_settings."px.blowtorch"]
+[weapon_settings."stock.blow_torch"]
 after_use = "continue"
 crate_type = "weapon"
 crate_pct = 2.1739
@@ -310,7 +310,7 @@ crate_pct = 2.1739
 crate_type = "utility"
 crate_pct = 9.0909
 
-[weapon_settings."px.priceless_ming_vase"]
+[weapon_settings."stock.ming_vase"]
 after_use = "continue"
 crate_type = "weapon"
 crate_pct = 2.1739
@@ -460,7 +460,7 @@ row = "F9"
 column = 4
 row = "F1"
 
-[weapons."px.blowtorch"]
+[weapons."stock.blow_torch"]
 column = 1
 row = "F7"
 
@@ -592,7 +592,7 @@ row = "F5"
 column = 5
 row = "F8"
 
-[weapons."px.priceless_ming_vase"]
+[weapons."stock.ming_vase"]
 column = 3
 row = "F10"
 
@@ -707,3 +707,9 @@ row = "F9"
 [weapons."stock.teleport"]
 column = 5
 row = "utility"
+
+[weapon_options."hl.rules"."stock.blow_torch"]
+pool = "second"
+
+[weapon_options."hl.rules"."stock.ming_vase"]
+pool = "offensive"

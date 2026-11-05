@@ -1653,18 +1653,6 @@ pool = "offensive"
 cavern = false
 
 [[components]]
-id = "px.blowtorch"
-type = "weapon"
-name = "BlowTorch"
-description = "Highlander's BlowTorch."
-entry = "components/weapon.lua"
-icon = "blow_torch"
-default_position = { row = "F7", column = 1 }
-
-[components.suggests."hl.rules"]
-pool = "second"
-
-[[components]]
 id = "px.super_drill"
 type = "weapon"
 name = "Super Drill"
@@ -1876,18 +1864,6 @@ label = "Launch power"
 description = "The push it gets when dropped, in % of full power, on top of the worm's own speed. Project X's is 15 (WA's Sheep and Skunk: 5); 0 just drops it."
 
 [[components]]
-id = "px.priceless_ming_vase"
-type = "weapon"
-name = "Priceless Ming Vase"
-description = "Highlander's Priceless Ming Vase."
-entry = "components/weapon.lua"
-icon = "ming_vase"
-default_position = { row = "F10", column = 3 }
-
-[components.suggests."hl.rules"]
-pool = "offensive"
-
-[[components]]
 id = "px.bowling_ball_strike"
 type = "weapon"
 name = "Bowling Ball Strike"
@@ -2028,15 +2004,6 @@ icon = "sprites/weapon_crate/icon.png"
 default_position = { row = "F12", column = 4 }
 
 [[components]]
-id = "px.cluster_bomb"
-type = "weapon"
-name = "Cluster Bomb"
-description = "Highlander's Cluster Bomb."
-entry = "components/weapon.lua"
-icon = "cluster_bomb"
-default_position = { row = "F12", column = 5 }
-
-[[components]]
 id = "px.helicopter"
 type = "weapon"
 name = "Helicopter"
@@ -2085,24 +2052,6 @@ default_position = { row = "utility", column = 4 }
 
 [components.suggests."hl.rules"]
 pool = "movement"
-
-[[components]]
-id = "px.skunk"
-type = "weapon"
-name = "Skunk"
-description = "Highlander's Skunk."
-entry = "components/weapon.lua"
-icon = "skunk"
-default_position = { row = "utility", column = 6 }
-
-[[components]]
-id = "px.mole_bomb"
-type = "weapon"
-name = "Mole Bomb"
-description = "Highlander's Mole Bomb."
-entry = "components/weapon.lua"
-icon = "mole_bomb"
-default_position = { row = "utility", column = 8 }
 
 [[components]]
 id = "px.attack_helicopter"

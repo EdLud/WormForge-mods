@@ -73,7 +73,7 @@ delay = 0
 crate_pct = 0
 power = 2
 
-[weapon_settings."px.blowtorch"]
+[weapon_settings."stock.blow_torch"]
 ammo = 0
 after_use = "continue"
 delay = 0
@@ -239,7 +239,7 @@ column = 3
 row = "F2"
 column = 5
 
-[weapons."px.blowtorch"]
+[weapons."stock.blow_torch"]
 row = "F3"
 column = 1
 
