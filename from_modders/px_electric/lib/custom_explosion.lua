@@ -74,16 +74,21 @@ function M.electric(o)
               px, py = dx / dist * force, dy / dist * force
             end
             if obj.kind == "worm" then
-              if o.taze ~= false then
-                -- Land the damage first. The engine clears WA's static flag,
-                -- so a lethal victim still gets the hold and its push.
-                obj:hurt(dmg)
-                zap.taze(obj, { frames = o.taze_frames or 20,
-                  push_x = px, push_y = py })
-              else
-                obj:hurt{ amount = dmg, vx = px, vy = py }
+              -- WA owns a dying/drowning/dead worm; no damage, hold or push
+              -- through its death. A zero-HP worm not yet in death is fair.
+              local live = not zap.can_affect or zap.can_affect(obj)
+              if live then
+                if o.taze ~= false then
+                  -- Land the damage first; a lethal hit may start the death,
+                  -- which the taze then leaves to WA.
+                  obj:hurt(dmg)
+                  zap.taze(obj, { frames = o.taze_frames or 20,
+                    push_x = px, push_y = py })
+                else
+                  obj:hurt{ amount = dmg, vx = px, vy = py }
+                end
+                hits = hits + 1
               end
-              hits = hits + 1
             elseif obj.kind == "crate" or obj.kind == "oil" then
               -- PX sends the same M_GUNEXP to every object (:103-124);
               -- object:hit is WA's damage and knockback path for a crate or

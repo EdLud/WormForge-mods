@@ -21,4 +21,4 @@ crate = 0
 
 [options."spawn.bees.swarm"]
 spawn_map_bees = true
-bee_amount = 22
+bee_amount = 4

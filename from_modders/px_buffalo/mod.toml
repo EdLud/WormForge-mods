@@ -1,0 +1,37 @@
+# Project X's Buffalo of Lies -- the big charging animal, three per shot.
+#
+# Source: weapon_buffalo.pxl (scripts/buffalo_s.txt). The record is the pack's
+# own buffalo_w.wep; the .wep's roam action moves it, and Lua runs the three
+# buffaloes, the sprite animation, the water sink and the sounds.
+# port by red
+id = "px.buffalo"
+name = "Buffalo of Lies"
+version = "15.0.5"
+author = "T17 / rafa''2"
+api_version = 4
+format_version = 2
+mod_icon = "sprites/buffalo/icon.png"
+dependencies = ["wf.sdk"]
+
+# PX's LoadSprite(buffalo.png, 20, 1): 20 vertical 64x64 frames.
+[sprites."sprites/buffalo/buffalo.png"]
+frames = 20
+fps = 32
+play = "loop"
+
+[[components]]
+id = "px.buffalo_of_lies"
+type = "weapon"
+name = "Buffalo of Lies"
+description = "PX's Buffalo of Lies: a buffalo charges along the terrain; each collision explodes it and sends the next one (three per shot)."
+entry = "weapons/buffalo.lua"
+icon = "sprites/buffalo/icon.png"
+default_position = { row = "F11", column = 8 }
+
+[[components.options]]
+key = "direction"
+type = "choice"
+choices = ["straight", "opposite", "random"]
+default = "straight"
+label = "After a collision"
+description = "Project X's 1/2/3 delay choice: keep charging, turn around, or roll a direction."

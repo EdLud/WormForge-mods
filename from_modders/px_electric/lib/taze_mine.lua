@@ -1,11 +1,13 @@
 -- Taze a mine from any electric weapon. PX only marks the mine
 -- (weapon_electric_mine.c:14-27); its DoExplosion then replaces the blast with
--- a 1.25x electric one (:93-100). This keeps WA's stock blast and, once the
--- mine is gone, gives the worms in PX's electric field the artificial taze
--- (custom_taze.c:64-103): 15 damage on release and the captured blast push
--- scaled to 116/100. Call M.taze(mine, opts) before the mine can be freed; the
--- module owns the mine emitter, trail, per-frame watch and driver. The caller
--- must load the effects SDK's trail.BEAM and trail.GLOW sprites.
+-- a 1.25x electric one (:93-100). This keeps WA's stock blast and draws PX's
+-- electric explosion (do_cus_exp_electric's createElectricExplosion,
+-- custom_taze.c:308-324) on the frame the mine goes, then gives the worms in
+-- PX's electric field the artificial taze (custom_taze.c:64-103): 15 damage on
+-- release and the captured blast push scaled to 116/100. Call M.taze(mine,
+-- opts) before the mine can be freed; the module owns the mine emitter, trail,
+-- per-frame watch and driver. The caller must load the effects SDK's trail.BEAM
+-- and trail.GLOW sprites.
 
 local fx = require("wf-lib/effects/px_effects")
 local zap = require("lib/electric_damage")
@@ -43,6 +45,14 @@ local function can_taze(w)
 end
 
 local function taze_blast(e)
+  -- PX's createElectricExplosion at the blast radius (dmg + 2) / 2, integer
+  -- division (custom_taze.c:313-315): the ring and the squashed lens, in front.
+  if fx and fx.burst then
+    fx.burst{
+      x = e.x, y = e.y, radius = e.effect_radius,
+      owner = e.owner, depth = wa.depth and wa.depth.FRONT,
+    }
+  end
   local list
   local nearby = wa.world and wa.world.electrical_nearby
   if nearby then
@@ -141,9 +151,14 @@ function M.taze(mine, opts)
   local damage = opts.damage or STOCK_DAMAGE
   local push = opts.push or TAZE_PUSH
   local push_from = opts.push_from or STOCK_PUSH
+  local owner = opts.owner or any_worm()
+  -- PX's tazed mine blows for Damage * 1.25: the damage radius is (dmg + 2) * 2
+  -- and the effect radius (dmg + 2) / 2, integer division (custom_taze.c:313).
+  local blast = math.floor(damage * 1.25)
   local e = {
-    id = id, uid = uid, x = mine.x, y = mine.y,
-    radius = opts.radius or ((math.floor(damage * 1.25) + 2) * 2),
+    id = id, uid = uid, x = mine.x, y = mine.y, owner = owner,
+    radius = opts.radius or ((blast + 2) * 2),
+    effect_radius = opts.effect_radius or math.floor((blast + 2) / 2),
     frames = opts.frames or DEFAULT_FRAMES,
     retain = opts.retain ~= false,
     taze_damage = opts.taze_damage or TAZE_DAMAGE,
@@ -151,7 +166,6 @@ function M.taze(mine, opts)
   }
   tazed[id] = e
   order[#order + 1] = e
-  local owner = opts.owner or any_worm()
   ensure_driver(owner)
   if fx and fx.emitter then
     e.effect = fx.emitter{

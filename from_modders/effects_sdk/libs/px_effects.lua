@@ -38,6 +38,23 @@ fx.PRESETS = {
   },
 }
 
+-- A strike from the sky: no spark or glow of its own, one bolt at a time that
+-- comes down from above the emitter onto it, held lit for a few frames.
+-- reach.from = "sky" starts the bolt sky[1]..sky[2] px above the emitter, up
+-- to sky_side px sideways, and ends it on the emitter; reach.hold keeps a
+-- finished bolt on screen for that many frames. Neither key changes the
+-- electric preset, which keeps PX's random reach points.
+fx.PRESETS.thunder = {
+  spark = false, glow = false,
+  reach = { count = 1, first = { 20, 80 }, stagger = 0, cooldown = { 30, 110 },
+    from = "below", down = { 40, 80 }, down_side = 16, hold = 3, fade = 20,
+    distance = 0, speed = { 0.5, 0.5 }, bulge = { 0, 0 },
+    curve = "line", terrain = true, noise = 9.0, segments = 14,
+    core_w = 5.0, glow_w = 12.0, r = 215, g = 190, b = 255 },
+  trail = fx.PRESETS.electric.trail,
+  burst = fx.PRESETS.electric.burst,
+}
+
 local installed, settings, driver
 local emitters, arcs, bursts, sparks, glows, smokes, rings = {}, {}, {}, {}, {}, {}, {}
 local next_key = -1
@@ -46,7 +63,8 @@ local SPARK_KEYS = { "sprite", "cell", "frames", "size", "rate", "pause",
   "r", "g", "b", "depth" }
 local GLOW_KEYS = { "sprite", "cell", "size", "passes", "r", "g", "b",
   "depth", "life" }
-local REACH_KEYS = { "count", "first", "stagger", "cooldown", "distance",
+local REACH_KEYS = { "from", "sky", "sky_side", "down", "down_side", "hold", "fade",
+  "count", "first", "stagger", "cooldown", "distance",
   "speed", "bulge", "curve", "terrain", "noise", "segments", "core_w",
   "glow_w", "core_dome", "glow_dome", "r", "g", "b", "depth" }
 local TRAIL_KEYS = { "every", "max", "vanish", "core_w", "glow_w", "r", "g",
@@ -72,10 +90,21 @@ local function copy(dst, src, keys)
   return merge(dst, src, keys)
 end
 
+-- The driver only needs *an* owner; prefer whose turn it is (the usual one)
+-- and fall back to any living worm so late blasts still draw.
 local function current_worm()
+  local first
   for _, w in ipairs(wa.worms.all()) do
     if w.turn then return w end
+    if not first and w.hp > 0 then first = w end
   end
+  return first
+end
+
+-- Event owners can be a zero handle: `ev.worm` wraps 0, which is still a
+-- truthy userdata and `or` will not replace it. `wa.actors.spawn` refuses 0.
+local function usable(owner)
+  return owner ~= nil and (owner.id or 0) ~= 0
 end
 
 local function new_seed()
@@ -186,6 +215,7 @@ local function make_arc(o)
     r = o.r or 130, g = o.g or 180, b = o.b or 255,
     depth = o.depth, persist = o.persist or false,
     on_done = o.on_done, done = false, owner = o.owner,
+    fade = o.fade, alpha = 1,
     rng = new_rng(o), noise_vals = {}, noise_age = 0,
   }
   st.core_dome = o.core_dome or st.core_w * 0.5
@@ -212,6 +242,16 @@ local function update_arc(st)
   end
   st.noise_age = st.noise_age + 1
   if st.noise_age % 2 == 0 then fill_arc_noise(st) end
+end
+
+-- Opt-in fade for a finished arc: `fade` frames of dimming (the beams are
+-- additive, so dimmer reads as more transparent). Returns true once the arc
+-- may be dropped: at once when it has no fade, else after the last fade frame.
+local function fade_done(st)
+  if not st.fade or st.fade <= 0 then return true end
+  st.fade_left = (st.fade_left or st.fade) - 1
+  st.alpha = st.fade_left / st.fade
+  return st.fade_left <= 0
 end
 
 -- Drawing. One spec and one point pool, refilled per pass; wa.draw.ribbon
@@ -251,7 +291,7 @@ local function draw_arc(st)
       local p = POINTS[i]
       p.x, p.y = x + jx * j, y + jy * j
       p.width, p.u = f * width, t
-      p.color = rgb(st.r, st.g, st.b, f)
+      p.color = rgb(st.r, st.g, st.b, f * (st.alpha or 1))
     end
     wa.draw.ribbon(RIBBON)
   end
@@ -330,8 +370,10 @@ local function burst_state(o)
     b.rebuffer = { at = 16, noise = 1.8, r = 120, g = 170, b = 240,
       fade = -0.85, segments = 1.30 }
   end
-  b.rebuffer.at = b.rebuffer.at or 16
-  b.rebuffer.segments = seg_count(b.rebuffer.segments, radius, 1.3)
+  if b.rebuffer then
+    b.rebuffer.at = b.rebuffer.at or 16
+    b.rebuffer.segments = seg_count(b.rebuffer.segments, radius, 1.3)
+  end
   fill_burst_noise(b)
   return b
 end
@@ -339,7 +381,7 @@ end
 local function update_burst(b)
   b.age = b.age + 1
   b.timer = b.timer + b.fade
-  if b.age == b.rebuffer.at then
+  if b.rebuffer and b.age == b.rebuffer.at then
     b.noise = b.rebuffer.noise or b.noise
     b.r, b.g, b.b = b.rebuffer.r or b.r, b.rebuffer.g or b.g,
       b.rebuffer.b or b.b
@@ -520,9 +562,9 @@ local function make_smoke(o)
     sprite = o.sprite or settings.smoke, depth = o.depth,
     rng = new_rng(o),
   }
+  if not ensure_driver(o.owner) then return nil end
   make_smoke_parts(sm, o)
   smokes[#smokes + 1] = sm
-  ensure_driver(o.owner)
   sm.remove = function(self) self.done = true end
   return sm
 end
@@ -555,19 +597,46 @@ draw = function()
 end
 
 ensure_driver = function(owner)
-  if driver then return end
+  if driver then return true end
+  if not usable(owner) then owner = current_worm() end
+  if not usable(owner) then return false end
   driver = wa.actors.spawn({
     sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false, owner = owner or current_worm(),
+    persist = true, drown = false, owner = owner,
     on = function(a) tick(a) end,
   })
+  return driver ~= nil
 end
 local function start_ray(e, i)
   local r = e.reach
+  local from_x, from_y = e.x, e.y
+  local to_x = e.x + rand_int(e, -r.distance, r.distance)
+  local to_y = e.y + rand_int(e, -r.distance, r.distance)
+  if r.from == "sky" then
+    local side = r.sky_side or 0
+    local height = rand_int(e, r.sky[1], r.sky[2])
+    local sx = side > 0 and rand_int(e, -side, side) or 0
+    for _ = 1, 8 do
+      from_x, from_y = e.x + sx, e.y - height
+      local blocked = wa.land.solid(from_x, from_y)
+      if not blocked then
+        local h = wa.land.trace(from_x, from_y, e.x, e.y)
+        blocked = h and h.hit
+      end
+      if not blocked then break end
+      height, sx = math.floor(height * 0.7), math.floor(sx * 0.7)
+    end
+    from_x, from_y = e.x + sx, e.y - height
+    to_x, to_y = e.x, e.y
+  elseif r.from == "below" then
+    local side = r.down_side or 0
+    local depth = rand_int(e, r.down[1], r.down[2])
+    local sx = side > 0 and rand_int(e, -side, side) or 0
+    from_x, from_y = e.x, e.y
+    to_x, to_y = e.x + sx, e.y + depth
+  end
   local a = make_arc({
-    from_x = e.x, from_y = e.y,
-    to_x = e.x + rand_int(e, -r.distance, r.distance),
-    to_y = e.y + rand_int(e, -r.distance, r.distance),
+    from_x = from_x, from_y = from_y, to_x = to_x, to_y = to_y,
     terrain = r.terrain, curve = r.curve,
     bulge = rand_int(e, r.bulge[1], r.bulge[2]),
     speed = rand_float(e, r.speed[1], r.speed[2]),
@@ -575,8 +644,10 @@ local function start_ray(e, i)
     core_w = r.core_w, glow_w = r.glow_w,
     core_dome = r.core_dome, glow_dome = r.glow_dome,
     r = r.r, g = r.g, b = r.b, depth = r.depth, owner = e.owner, rng = e,
+    fade = r.fade,
   })
   a.ray_index = i
+  a.hold_left = r.hold or 0
   e.arcs[#e.arcs + 1] = a
 end
 
@@ -603,10 +674,14 @@ local function update_emitter(e)
     local a = e.arcs[i]
     update_arc(a)
     if a.done then
-      local ray = a.ray_index
-      table.remove(e.arcs, i)
-      if ray then
-        e.cooldowns[ray] = rand_int(e, e.reach.cooldown[1], e.reach.cooldown[2])
+      if (a.hold_left or 0) > 0 then
+        a.hold_left = a.hold_left - 1     -- a finished bolt stays lit
+      elseif fade_done(a) then
+        local ray = a.ray_index
+        table.remove(e.arcs, i)
+        if ray then
+          e.cooldowns[ray] = rand_int(e, e.reach.cooldown[1], e.reach.cooldown[2])
+        end
       end
     end
   end
@@ -642,7 +717,7 @@ tick = function(a)
   for i = #arcs, 1, -1 do
     local st = arcs[i]
     update_arc(st)
-    if st.done and not st.persist then table.remove(arcs, i) end
+    if st.done and not st.persist and fade_done(st) then table.remove(arcs, i) end
   end
   for i = #bursts, 1, -1 do
     update_burst(bursts[i])
@@ -702,16 +777,23 @@ function fx.emitter(o)
   if not installed then wa.log("px_effects: fx.install(ctx) first") return nil end
   o = o or {}
   local preset = fx.PRESETS[o.preset or "electric"] or fx.PRESETS.electric
-  local spark = copy({}, preset.spark, SPARK_KEYS)
-  copy(spark, o.spark, SPARK_KEYS)
-  local glow = copy({}, preset.glow, GLOW_KEYS)
-  copy(glow, o.glow, GLOW_KEYS)
+  -- A preset (or the caller) may switch the spark or the glow off with false.
+  local spark, glow
+  if preset.spark and o.spark ~= false then
+    spark = copy({}, preset.spark, SPARK_KEYS)
+    copy(spark, o.spark, SPARK_KEYS)
+  end
+  if preset.glow and o.glow ~= false then
+    glow = copy({}, preset.glow, GLOW_KEYS)
+    copy(glow, o.glow, GLOW_KEYS)
+  end
   local reach = copy({}, preset.reach, REACH_KEYS)
   copy(reach, o.reach, REACH_KEYS)
   local tro = copy({}, preset.trail, TRAIL_KEYS)
   copy(tro, o.trail, TRAIL_KEYS)
+  local owner = usable(o.owner) and o.owner or current_worm()
   local e = {
-    owner = o.owner, x = o.x or 0, y = o.y or 0,
+    owner = owner, x = o.x or 0, y = o.y or 0,
     vx = o.vx or 0, vy = o.vy or 0, follow = o.follow,
     random = o.random or "lcg", seed = o.seed or new_seed(),
     spark = spark, glow = glow, reach = reach,
@@ -719,28 +801,32 @@ function fx.emitter(o)
     trail_key = next_key, arcs = {}, cooldowns = {}, spark_phase = 0,
     ready = o.ready ~= false, dead = false,
   }
+  if not ensure_driver(owner) then return nil end
   next_key = next_key - 1
   if e.trail then
     e.trail.depth = e.trail.depth or settings.depth.trail
     e.trail.beam = e.trail.beam or settings.beam
     e.trail.glow = e.trail.glow or settings.glow
-    trail.add(e.trail_key, e.owner, e.trail)
+    trail.add(e.trail_key, owner, e.trail)
   end
-  spark.sprite = spark.sprite or settings.spark
-  spark.depth = spark.depth or settings.depth.spark
-  spark.phase = 0
-  glow.sprite = glow.sprite or settings.blob
-  glow.depth = glow.depth or settings.depth.glow
-  glow.age = 0
+  if spark then
+    spark.sprite = spark.sprite or settings.spark
+    spark.depth = spark.depth or settings.depth.spark
+    spark.phase = 0
+  end
+  if glow then
+    glow.sprite = glow.sprite or settings.blob
+    glow.depth = glow.depth or settings.depth.glow
+    glow.age = 0
+  end
   -- A draw can land before the first tick; the quad needs these now.
-  spark.x, spark.y = e.x, e.y
-  glow.x, glow.y = e.x, e.y
+  if spark then spark.x, spark.y = e.x, e.y end
+  if glow then glow.x, glow.y = e.x, e.y end
   local base = rand_int(e, reach.first[1], reach.first[2])
   for i = 1, reach.count do
     e.cooldowns[i] = base + (i - 1) * reach.stagger
   end
   emitters[#emitters + 1] = e
-  ensure_driver(e.owner)
   e.move_to = function(self, x, y) self.x, self.y = x, y end
   e.reach_to = function(self, x, y, opts)
     opts = opts or {}
@@ -807,8 +893,8 @@ function fx.ring(o)
   st.rng = new_rng(o)
   st.noise_vals = {}
   fill_ring_noise(st)
+  if not ensure_driver(o.owner) then return nil end
   rings[#rings + 1] = st
-  ensure_driver(o.owner)
   st.remove = function(self)
     if type(self) == "table" then self.done = true else st.done = true end
   end
@@ -835,8 +921,8 @@ function fx.arc(o)
   o = o or {}
   local a = make_arc(o)
   if a.degenerate then return nil end
+  if not ensure_driver(o.owner) then return nil end
   arcs[#arcs + 1] = a
-  ensure_driver(o.owner)
   return a
 end
 
@@ -857,8 +943,8 @@ function fx.burst(o)
   b.rng = new_rng(o)
   local st = burst_state(b)
   if not st then return nil end
+  if not ensure_driver(o.owner) then return nil end
   bursts[#bursts + 1] = st
-  ensure_driver(o.owner)
   if o.smoke ~= false and b.smoke ~= false then
     local src = b.smoke
     if src == true then src = {} end
@@ -882,8 +968,8 @@ function fx.spark(o)
   s.x, s.y = o.x or 0, o.y or 0
   s.sprite = s.sprite or settings.spark
   s.phase, s.age = 0, 0
+  if not ensure_driver(o.owner) then return nil end
   sparks[#sparks + 1] = s
-  ensure_driver(o.owner)
   s.remove = function(self) self.done = true end
   return s
 end
@@ -896,8 +982,8 @@ function fx.glow(o)
   g.x, g.y = o.x or 0, o.y or 0
   g.sprite = g.sprite or settings.blob
   g.age, g.done = 0, false
+  if not ensure_driver(o.owner) then return nil end
   glows[#glows + 1] = g
-  ensure_driver(o.owner)
   g.remove = function(self) self.done = true end
   return g
 end

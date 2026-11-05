@@ -1,0 +1,57 @@
+# Reflective Laser Gun -- Project X's weapon_gun_laserreflect, ported to
+# WormForge API 4.
+#
+# The record is PX's own `weapon_lasergun.wep` from that pack, so the slot fires
+# exactly as PX's does; the gun itself is Lua (one reflected path, buffered,
+# then every hit at once). The art and sounds are the Laser Gun's, copied here
+# so the bundle does not depend on `px`.
+id = "px.laser_reflect"
+name = "Project X Reflective Laser"
+version = "0.8.0"
+author = "reddaz"
+api_version = 4
+format_version = 2
+
+# Animated gun poses: PX's laser gun sheets (32 frames at 15 fps).
+[sprites."sprites/laser_gun/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/laser_gun/drawd.png"]
+fps = 15
+play = "loop"
+
+[[components]]
+id = "px.laser_reflect"
+type = "weapon"
+name = "Reflective Laser Gun"
+credits = "ported by reddaz"
+description = "Project X's Reflective Laser Gun: charges for half a second, then a beam that bounces off the terrain twice and hits every worm and object on its path at once."
+entry = "weapons/laser_reflect.lua"
+icon = "sprites/laser_gun/ico_lasergun.png"
+default_position = { row = "F3", column = 4 }
+
+[[components.options]]
+key = "bounces"
+type = "int"
+min = 0
+max = 10
+default = 2
+label = "Bounces"
+description = "How many times the beam reflects off the terrain. PX: 2 (three runs); 0 is a straight beam."
