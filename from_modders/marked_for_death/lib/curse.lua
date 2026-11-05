@@ -43,6 +43,14 @@ local function frame()
   return wa.world.frame() or 0
 end
 
+-- `damage` at `pct` percent, in whole numbers. PX truncates the new health
+-- (line 159), so a part point of damage counts: 25 at 150% takes 38.
+local function scaled(damage, pct)
+  return (damage * pct + 99) // 100
+end
+-- The 0.9.8 blast fallback's own hurt, which the hook must not scale again.
+local adding = false
+
 -- WA keeps a 0 HP worm alive until its death starts, so only WA's death
 -- states count (project rule: state, not HP or speed).
 local function dead(w)
@@ -108,7 +116,7 @@ end
 function curse.mark(w, mult)
   if dead(w) then return false end
   mult = mult or curse.MARK_MULTIPLIER
-  marked[w.id] = { left = curse.MARK_TURNS, mult = mult }
+  marked[w.id] = { left = curse.MARK_TURNS, mult = mult, pct = math.floor(mult * 100 + 0.5) }
   play(w, 31)
   play(w, 138)
   start_thunder(w, mult)
@@ -473,15 +481,35 @@ function curse.install()
   ok, err = pcall(wa.assets.load, { sprites = { SMOKE }, gpu_prefix = "sprites/" })
   if not ok then wa.log("curse glow asset: " .. tostring(err)) end
 
+  -- A marked worm takes its mark's percentage of every blast and hit (PX's
+  -- M_EXPLOSION and M_GUNEXP, lines 154-173), flames and the axe's share
+  -- too. Scaled in `pre`, so WA takes it as its own damage: one number, the
+  -- hit's own push, and WA's death for a worm it brings to 0. A blast's
+  -- `damage` is what it takes off this worm; its `amount` is its power, and
+  -- scaling that would also scale the blast's reach and push.
   wa.on.hurt(function(hit)
-    if hit.phase ~= "post" or hit.lost <= 1 then return end
-    local m = marked[hit.worm.id]
+    local w = hit.worm
+    if not w or adding then return end
+    local m = marked[w.id]
     if not m then return end
-    local prevx = hit.worm.vx
-    local prevy = hit.worm.vy
-    hit.worm:hurt(math.floor(hit.lost * m.mult - hit.lost))
-    hit.worm.vx = prevx
-    hit.worm.vy = prevy -- idk just in case
+    local kind = hit.kind
+    if hit.phase == "pre" then
+      if hit.expected == 0 then return end   -- WA takes nothing (Phased Worms, a lockout)
+      if kind == "blast" then
+        -- hit.damage can be set only on DLLs after 0.9.8, which also give
+        -- hit.expected; older ones get the post fallback below.
+        if hit.expected ~= nil then hit.damage = scaled(hit.damage, m.pct) end
+      elseif kind == "hit" or kind == "fire" then
+        hit.amount = scaled(hit.amount, m.pct)
+      elseif kind == "percent" then
+        hit.amount = math.min(100, scaled(hit.amount, m.pct))
+      end
+    elseif kind == "blast" and hit.expected == nil and hit.lost > 0 then
+      -- 0.9.8: the blast's extra share as damage alone, no second hit.
+      adding = true
+      w:hurt{ amount = scaled(hit.lost, m.pct) - hit.lost, react = false }
+      adding = false
+    end
   end)
 
   -- PX counts a marked/cursed worm's turns on the turns of its own team
