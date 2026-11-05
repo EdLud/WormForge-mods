@@ -39,13 +39,10 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter" }
-
 function weapon.setup()
   local shared = require("lib/shared")
   local current_worm = shared.current_worm
   local fires = shared.fires
-  local trunc = shared.trunc
   local turrets = require("lib/turret")
   local stuck_stamp = require("lib/stuck_stamp")
 

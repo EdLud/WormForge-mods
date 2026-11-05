@@ -270,12 +270,6 @@ function weapon.setup()
     end)
   end
   end
-
-  -- Shared by the balloon and glider handlers to recognize the equipped weapon.
-  local balloons = {}
-
-  shared.balloons = balloons
-  shared.trunc = trunc
 end
 
 function weapon.configure(ctx, spec)

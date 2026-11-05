@@ -30,11 +30,11 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/sniper_rifle", "weapons/electric_grenade", "lib/electrical" }
+weapon.requires = { "lib/electrical" }
 
 function weapon.setup()
   local shared = require("lib/shared")
-  local current_worm, held = shared.current_worm, shared.held
+  local current_worm = shared.current_worm
   local electrical = require("lib/electrical")
   local c = electrical.context()
   local sq = c.sq

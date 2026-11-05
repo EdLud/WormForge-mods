@@ -85,11 +85,12 @@ check(#log.cuts==1,"Bulldozer: once a frame, before WA's")
 worms,mines,crates,oil={}, {}, {}, {}
 log.hurts,log.hits={}, {}
 local arcs={}
-shared.electric_grenade_explode=function(e)arcs[#arcs+1]=e end
+local electrical=package.loaded["lib/electrical"]
+package.loaded["lib/electrical"]={context=function()return {grenade_arc=function(e)arcs[#arcs+1]=e end}end}
 local barrel=require("weapons/barrel_launcher")
 barrel.setup()
-check(barrel.definition.wep=="weps/barrel_launcher.wep" and barrel.requires[1]=="weapons/electric_grenade",
-  "Barrel Launcher: PX's scheme record; it needs the Electric Grenade's arc")
+check(barrel.definition.wep=="weps/barrel_launcher.wep" and barrel.requires[1]=="lib/electrical",
+  "Barrel Launcher: PX's scheme record; it needs the Tazer's arc (lib/electrical), no other weapon")
 local shooter=worm(7,50,50);shooter.turn=true;shooter.weapon="px.barrel_launcher"
 function shooter:ammo(id,n)log.ammo[#log.ammo+1]={id,n}end
 turn_worm=shooter
@@ -131,6 +132,7 @@ check(#log.drums==built and log.ammo[1][1]=="px.barrel_launcher" and log.ammo[1]
   and log.messages[#log.messages]=="No space to launch!" and log.sounds[#log.sounds]==120,
   "Barrel Launcher: no room, no drum: the shot is refunded")
 collides=false
+package.loaded["lib/electrical"]=electrical
 
 -- Trampoline ------------------------------------------------------------------
 local trampoline=require("weapons/trampoline")

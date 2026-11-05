@@ -33,9 +33,11 @@ local function mock(opts)
   package.loaded["lib/shared"] = {
     current_worm = function() return M.turn end,
     nuke_rocket_first = function(...) M.rockets = M.rockets or {}; M.rockets[#M.rockets + 1] = { ... } end,
-    electric_grenade_explode = function(ev) M.arc = ev end,
     swim_suit_off = function(w) M.unsuited = M.unsuited or {}; M.unsuited[#M.unsuited + 1] = w.id end,
   }
+  package.loaded["lib/electrical"] = { context = function()
+    return { grenade_arc = function(ev) M.arc = ev end }
+  end }
   package.loaded["lib/oil_drums"] = nil
   wa = {
     log = function() end,

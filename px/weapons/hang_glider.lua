@@ -19,13 +19,14 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter", "weapons/sniper_rifle" }
-
 function weapon.setup()
   local shared = require("lib/shared")
-  local STOPPERS = shared.STOPPERS
+  -- What stops the glider besides terrain, by radius in pixels: the Sniper
+  -- Rifle's laser stoppers (PX's Trace).
+  local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
+  -- The Hot Air Balloon's worms, by id: an active balloon is not a glider.
+  shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
-  local trunc = shared.trunc
 
   -- ------------------------------------------------------------- Hang-Glider
   do

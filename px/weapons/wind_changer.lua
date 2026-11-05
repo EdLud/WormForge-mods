@@ -26,7 +26,7 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter", "weapons/gravity_control", "lib/turn_controls" }
+weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
   -- PX's force steps, applied toward the firing worm's facing.

@@ -75,6 +75,11 @@ function weapon.setup()
   wa.on.worm_message(function(worm, msg)
     local h = held[worm.id]
     if msg == wa.msg.FIRE_WEAPON and h then h.firing = true end
+    if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.sniper_rifle"
+        and worm:ammo("px.sniper_rifle") ~= 0 then
+      -- The rifle's own shot, over WA's (PX's snipfiring).
+      wa.sound.play(worm, "sounds/sniper_firing.wav")
+    end
     if msg ~= wa.msg.FRAME_FINISH then return end
     if worm.weapon == "px.sniper_rifle" and worm.aiming and shared.owns("px.sniper_rifle") then
       held[worm.id] = { weapon = "px.sniper_rifle", aim = worm.aim }
@@ -195,8 +200,6 @@ function weapon.setup()
   end
   end
 
-  shared.STOPPERS = STOPPERS
-  shared.held = held
 end
 
 return weapon

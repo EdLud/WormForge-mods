@@ -1,12 +1,12 @@
 -- Project X's oil drums, the px.oil_drums add-on: every oil drum on the map
 -- is one of PX's kinds (lib/oil_drums). It installs before the weapons
--- (before_weapons) so the Electric Grenade's arc, which the electric drum
--- fires, is set up whether or not the grenade is placed.
+-- (before_weapons) so the Tazer's arc (lib/electrical), which the electric
+-- drum fires, is set up whether or not an electric weapon is placed.
 
 return {
   install = function(ctx)
     local loader = require("components/loader")
-    loader.also("weapons/electric_grenade")
+    loader.also("lib/electrical")
     -- The nuke drum fires the Nuke Rocket's rockets: the manifest launches
     -- it, so it has a slot even off the panel, and its module runs here.
     loader.also("weapons/nuke_rocket")

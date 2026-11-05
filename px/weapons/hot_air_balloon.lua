@@ -30,10 +30,10 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter" }
-
 function weapon.setup()
   local shared = require("lib/shared")
+  -- Shared with the Hang Glider, which leaves an active balloon alone.
+  shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
 
   -- --------------------------------------------------------- Hot Air Balloon

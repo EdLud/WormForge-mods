@@ -24,13 +24,9 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter", "weapons/sniper_rifle" }
-
 function weapon.setup()
   local shared = require("lib/shared")
   local current_worm = shared.current_worm
-  local held = shared.held
-  local trunc = shared.trunc
 
   -- --------------------------------------------------------------- Swim Suit
   do

@@ -16,8 +16,8 @@ local CHOICES = {
   { kind = "teleport", name = "Teleport Barrel", sound = 67 },
 }
 
--- The electric drum fires the Electric Grenade's arc.
-weapon.requires = { "weapons/electric_grenade" }
+-- The electric drum fires the Tazer's arc.
+weapon.requires = { "lib/electrical" }
 
 local choice = 1 -- reset to the napalm drum at each turn's start and end
 

@@ -2561,7 +2561,7 @@ do
   end
   -- An Electric Grenade going off at (x, y), run until its arc has zapped.
   local function arc_at(x, y, caster, life)
-    require("lib/shared").electric_grenade_explode({ x = x, y = y, worm = caster, life = life })
+    require("lib/electrical").context().grenade_arc({ x = x, y = y, worm = caster, life = life })
     local effect = M.spawned[#M.spawned]
     for _ = 1, 60 do if not effect.dead then effect.on(effect) end end
   end

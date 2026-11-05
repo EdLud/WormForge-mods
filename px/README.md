@@ -796,7 +796,15 @@ Each migrated weapon module owns:
 - `weapon.setup()`: optional runtime state and hook registration.
 - `weapon.configure(ctx, spec)`: optional component-option handling.
 - `weapon.missile_sprite`: optional visual settings for the shared renderer.
-- `weapon.requires`: runtime dependencies; loading one does not claim it.
+- `weapon.requires`: runtime dependencies, `lib/` modules only; loading one
+  does not claim it.
+
+A profile may place any weapon alone, and the loader sets up only what the
+placed weapons require, so a weapon's behaviour lives in its own module and
+never in another weapon's: what two weapons share goes in `lib/` (the Tazer's
+arc is `lib/electrical`'s). A weapon may still react to another in its own
+module (the Hot Air Balloon refuses the Super Drill). The lua-host test
+`px_weapons_depend_on_no_other_weapon` checks both.
 
 Keep module loading pure: the editor reads defaults before a match exists.
 Use `wa` only inside the runtime functions. The loader copies the definition's

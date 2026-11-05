@@ -60,11 +60,8 @@ function weapon.setup()
     if msg == wa.msg.FIRE_WEAPON then
       if worm.weapon == "px.fire_jump" and worm:ammo("px.fire_jump") ~= 0 then
         winding[worm.id] = 0
-      elseif worm.weapon == "px.sniper_rifle" and worm:ammo("px.sniper_rifle") ~= 0 then
-        -- The Sniper Rifle's own shot, over WA's (PX's snipfiring).
-        wa.sound.play(worm, "sounds/sniper_firing.wav")
       end
-      -- Neither eats the shot: WA's fire punch still runs.
+      -- It doesn't eat the shot: WA's fire punch still runs.
       return
     end
     if msg ~= wa.msg.FRAME_FINISH then return end

@@ -24,7 +24,7 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/helicopter", "weapons/wind_changer", "lib/turn_controls" }
+weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
   local GRAVITY_FACTORS = { 0.3, 0.5, 1.0, 1.7, 2.4 }

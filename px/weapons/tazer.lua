@@ -31,7 +31,7 @@ weapon.definition = {
     }
   end,
 }
-weapon.requires={"weapons/electric_grenade","lib/electrical"}
+weapon.requires={"lib/electrical"}
 function weapon.setup()
   require("lib/weapon_hint").register("px.tazer",function()
     return "Tazer\nSpace: a chaining electric arc"
