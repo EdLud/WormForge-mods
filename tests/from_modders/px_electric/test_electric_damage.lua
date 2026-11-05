@@ -155,26 +155,27 @@ f.M.hurt_electric(f.worm, 5, { frames = 2 })
 f.tick(4)
 assert(f.worm.hp == 85 and f.worm.hurts == 1, "chained damage commits once")
 
--- A worm killed while held keeps the pose to the end of the hold, then is let
--- go without the library's damage.
+-- A worm killed while held is let go on the next frame, not at the end of the
+-- hold, without the library's damage: WA starts its death then.
 local g = setup()
-g.M.hurt_electric(g.worm, 10, { frames = 4 })
+g.M.hurt_electric(g.worm, 10, { frames = 4, push_x = 2, push_y = -3 })
 g.worm.hp = 0
 g.tick(1)
-assert(g.worm.taken and not g.worm.body_visible, "still held after the hit")
-g.tick(3)
-assert(not g.worm.taken and g.worm.body_visible, "released when the hold ends")
+assert(not g.worm.taken and g.worm.body_visible, "released on the frame after it died")
+assert(g.worm.vx == 2 and g.worm.vy == -3, "with its push")
 assert(g.worm.hurts == 0, "no damage on a dead worm")
+g.tick(3)
+assert(not g.worm.taken, "not taken again")
 
--- The hold is not gated by HP: a worm already at 0 is still taken, drawn, and
--- released with its push (`worm:release` carries it; `worm:hurt` does not).
+-- A worm already at 0 is taken and drawn for the hit's frame, then released
+-- with its push on the next (`worm:release` carries it; `worm:hurt` does not).
 local n = setup()
 n.worm.hp = 0
 n.M.taze(n.worm, { frames = 2, push_x = 3, push_y = -5 })
-assert(n.worm.taken and not n.worm.body_visible, "a dead worm is still held")
-assert(n.draw()[1].sprite:find("tazed"), "its pose still draws")
-n.tick(2)
-assert(not n.worm.taken and n.worm.body_visible, "released after the hold")
+assert(n.worm.taken and not n.worm.body_visible, "a dead worm is taken for the hit")
+assert(n.draw()[1].sprite:find("tazed"), "its pose draws")
+n.tick(1)
+assert(not n.worm.taken and n.worm.body_visible, "released on the next frame")
 assert(n.worm.vx == 3 and n.worm.vy == -5, "the dead worm gets the push")
 
 -- A lethal hit lands, and the library still writes no push to a dead worm.

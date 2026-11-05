@@ -524,8 +524,6 @@ function turret.new(cfg)
         s.phase = s.planter and 2 or 3
         a.hit_by = s.phase == 3 and t.hit_by or t.passage_hit_by
       end
-      wa.log(string.format("Sentry planted %s id=%d mask=(%.2f,%.2f) art_feet=%.2f support_y=%.2f overlap=%d",
-        t.kind, a.id, s.x, s.y, s.y + feet.burial, s.y - t.sink_px + 1, t.sink_px))
       play(a, t.sounds.place)
     end
     s.planted = planted

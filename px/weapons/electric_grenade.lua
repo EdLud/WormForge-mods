@@ -240,8 +240,9 @@ function weapon.setup()
     for _,obj in ipairs(ev.ignore or {}) do arc.ignore[target_key(obj)] = true end
     arcs[#arcs + 1] = arc
     -- An explosion without a worm would leave the driver owned by the exploding
-    -- grenade: the turn's worm owns it then, as every other effect's.
-    local driver = effect_actor(ev.x, ev.y, ev.worm or current_worm(), function(a)
+    -- grenade: the turn's worm owns it then, as every other effect's. Between
+    -- turns there is none: `ev.owner`, the caller's (an oil drum's no-team owner).
+    local driver = effect_actor(ev.x, ev.y, ev.worm or current_worm() or ev.owner, function(a)
       arc.sound_age = arc.sound_age + 1
       if arc.life > 0 and arc.sound_age % 46 == 0 then
         wa.sound.play(a, "sounds/lightning/tazer_loop.wav")
@@ -261,7 +262,7 @@ function weapon.setup()
     local ignore = {}
     if thrower then ignore[#ignore+1] = thrower end
     if ev.worm then ignore[#ignore+1] = ev.worm end
-    return c.start_arc({x=ev.x,y=ev.y,worm=ev.worm,life=ev.life,ignore=ignore})
+    return c.start_arc({x=ev.x,y=ev.y,worm=ev.worm,owner=ev.owner,life=ev.life,ignore=ignore})
   end
 
   c.find_target = find_target

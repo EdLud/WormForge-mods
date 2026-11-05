@@ -178,6 +178,14 @@ do
   check("electric: the Electric Grenade's arc for 30 frames, the turn's worm spared",
     M.arc and M.arc.life == 30 and M.arc.worm == M.turn and M.arc.x == 500 and blasts()[1].damage == 10)
 
+  -- Between turns (fire, a mine or another drum after the shot) no worm has
+  -- the turn: the arc's driver is the drum's owner, for no team, not nil.
+  drum_of("electric")
+  M.turn = nil
+  burst(M.drums[1])
+  check("electric between turns: the arc has an owner, the drum's no-team actor",
+    M.arc and M.arc.worm == nil and M.arc.owner ~= nil and M.arc.owner.spec.owner == nil)
+
   drum_of("mine")
   M.rng = function(lo) return lo end
   burst(M.drums[1])

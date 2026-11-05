@@ -148,16 +148,23 @@ local function tick()
     local worm = t.worm
     t.frames = t.frames - 1
     t.phase = (t.phase + 0.1) % 1
-    -- WA's blast may re-show or release the worm after the hit; keep the
-    -- pose on it for the whole hold, even if it has 0 HP and is waiting to die.
-    worm.body_visible = false
-    if not worm.taken then worm:take{ turn = "freeze" } end
-    worm.vx, worm.vy = 0, 0
-    t.sound_age = t.sound_age + 1
-    if t.sound and t.sound_age % 46 == 0 and wa.sound and wa.sound.play then
-      wa.sound.play(worm, t.sound)
+    if (worm.hp or 1) <= 0 then
+      -- Killed while held: the engine lets go of a dead worm every frame so
+      -- WA can start its death, and taking it again each frame only let the
+      -- turn clock run through the rest of the hold. Hand it back now.
+      finish(t)
+    else
+      -- WA's blast may re-show or release the worm after the hit; keep the
+      -- pose on it for the whole hold.
+      worm.body_visible = false
+      if not worm.taken then worm:take{ turn = "freeze" } end
+      worm.vx, worm.vy = 0, 0
+      t.sound_age = t.sound_age + 1
+      if t.sound and t.sound_age % 46 == 0 and wa.sound and wa.sound.play then
+        wa.sound.play(worm, t.sound)
+      end
+      if t.frames <= 0 then finish(t) end
     end
-    if t.frames <= 0 then finish(t) end
   end
   if armed_hit and frame > armed_hit.expires then armed_hit = nil end
   if armed_blast and frame > armed_blast.expires then armed_blast = nil end

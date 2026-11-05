@@ -146,7 +146,6 @@ function M.install(opts)
     local kind = deal()
     kinds[drum.uid] = kind
     drum.visible = false
-    wa.log(("oil drums: drum %d is %s"):format(drum.uid, kind))
     return kind
   end
 
@@ -277,7 +276,7 @@ function M.install(opts)
   BURST.electric = function(ev, owner)
     -- PX's tazer shot, the Electric Grenade's, searching 30 frames; the turn's
     -- worm is not a target.
-    shared.electric_grenade_explode({ x = ev.x, y = ev.y, worm = current_worm(), life = 30 })
+    shared.electric_grenade_explode({ x = ev.x, y = ev.y, worm = current_worm(), owner = owner, life = 30 })
     blast(owner, ev.x, ev.y, 10)
   end
 

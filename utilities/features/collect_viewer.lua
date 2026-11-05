@@ -1,6 +1,6 @@
 -- A presentation-only inventory acquisition viewer. No actors or physics.
 local CONFIG = {
-  debug = true,          -- targeted grant/preview/visibility diagnostics in wkLua.log
+  debug = false,         -- targeted grant/preview/visibility diagnostics in wkLua.log
   size = 24,             -- bounding square, world pixels; aspect preserved
   rise = 48,             -- world pixels over one lifetime
   amplitude = 6,         -- horizontal sine amplitude, world pixels
