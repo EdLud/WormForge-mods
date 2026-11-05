@@ -15,7 +15,11 @@ function weapon.definition()
     panel_icon = "sprites/hang_glider/ico_glider.png",
     sprites = { "sprites/hang_glider/glider.png", "sprites/hang_glider/pack.png" },
     sounds = { "sounds/hang_glider/hangopen.wav", "sounds/hang_glider/hangclose.wav" },
-    params = { gpu_prefix = "sprites/hang_glider/" },
+    params = {
+      gpu_prefix = "sprites/hang_glider/",
+      -- The worm is in them: they glow as it does (Worm glow).
+      worm_art = { "sprites/hang_glider/glider.png", "sprites/hang_glider/pack.png" },
+    },
   })
 end
 
@@ -97,10 +101,12 @@ function weapon.setup()
     end
 
     local function glider_art(worm, x, y, sheet)
-      return wa.actors.spawn({
+      local a = wa.actors.spawn({
         sprite = sheet, x = x, y = y, gravity = false,
         collide = false, owner = worm, visibility = worm, on = function() end,
       })
+      a:gfx({ glow_of = worm })
+      return a
     end
 
     local function glider_drop_art(worm, g)

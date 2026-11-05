@@ -26,7 +26,11 @@ function weapon.definition()
           "sounds/balloon/pop1.wav", "sounds/balloon/pop2.wav", "sounds/balloon/pop3.wav",
           "sounds/balloon/pop4.wav",
         },
-    params = { gpu_prefix = "sprites/balloon/" },
+    params = {
+      gpu_prefix = "sprites/balloon/",
+      -- The worm is in its basket: it glows as the worm does (Worm glow).
+      worm_art = { "sprites/balloon/basket.png" },
+    },
   })
 end
 
@@ -127,7 +131,10 @@ function weapon.setup()
         })
       end
       b.balloon = b.balloon or art("sprites/balloon/balloon.png")
-      b.basket = b.basket or art("sprites/balloon/basket.png")
+      if not b.basket then
+        b.basket = art("sprites/balloon/basket.png")
+        b.basket:gfx({ glow_of = worm })
+      end
       local x = b.x + 6 * f
       b.balloon.x, b.balloon.y, b.balloon.vx, b.balloon.vy = x, b.y - 43, 0, 0
       -- Manifest ping-pong expands the 16/17 source frames to 30/32.

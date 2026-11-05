@@ -28,7 +28,11 @@ function weapon.definition()
           "sounds/helicopter/oops1.wav", "sounds/helicopter/oops2.wav", "sounds/helicopter/huh.wav",
           "sounds/helicopter/poop.wav", "sounds/helicopter/idiot.wav",
         },
-    params = { gpu_prefix = "sprites/helicopter/" },
+    params = {
+      gpu_prefix = "sprites/helicopter/",
+      -- The worm is in them: they glow as it does (Worm glow).
+      worm_art = { "sprites/helicopter/flying.png", "sprites/helicopter/jumpin.png" },
+    },
   })
 end
 
@@ -76,10 +80,12 @@ function weapon.setup()
   end
 
   local function heli_actor(worm, sheet)
-    return wa.actors.spawn({
+    local a = wa.actors.spawn({
       sprite = sheet, x = worm.x, y = worm.y, gravity = false,
       collide = false, owner = worm, visibility = worm, on = function() end,
     })
+    a:gfx({ glow_of = worm })
+    return a
   end
 
   local function heli_drop_art(h, worm)

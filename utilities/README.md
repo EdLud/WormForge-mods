@@ -137,7 +137,10 @@ round each pose (0 grows it with the radius), its gain, and its colour as
 red, green and blue. WA's poses without a weapon are copied with the match
 (`wa_sprites = { "worm" }`), and the placed weapons' own worm poses get their
 glows with it (`worm_glow`), so none is made mid-match; WA's own weapon poses
-are copied the first time they are drawn. Needs WA's D3D9 shader renderer and
+are copied the first time they are drawn. A vehicle that hides the worm and
+draws it in its own art (the Balloon, the Helicopter, the Hang-Glider) glows
+in its place: the weapon lists that art in `params.worm_art` and its actor
+says `a:gfx{ glow_of = worm }`. Needs WA's D3D9 shader renderer and
 a WormForge newer than 0.9.7. The Lua lives in `features/worm_glow.lua`.
 
 ## Cursor
