@@ -87,7 +87,7 @@ id = "tools.audit"
 diagnostics = true
 type = "feature"
 name = "Stock weapon slot audit"
-description = "Offline scripted firing and diagnostic log; requires the generated Audit map and saved scheme."
+description = "Offline scripted firing and diagnostic log; requires the generated Audit map and an Audit profile."
 entry = "audit/audit.lua"
 
 [[components.options]]

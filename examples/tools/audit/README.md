@@ -23,18 +23,15 @@ simulation callbacks. The engine logs a TEST BUILD banner. An ordinary release h
 Copy the `tools` bundle to `WormForge/Mods/`, preserving local edits. When
 installing by copying files, also copy its `profiles/Audit*.toml` files
 into `WormForge/Profiles/`; the profile dropdown reads that folder. In the
-WormForge loader, enable the `example.tools` bundle and select **Audit home**
-in the Profile dropdown. A WA scheme controls match settings; it does not
-select a WormForge profile or enable the audit add-on. Import
-`Audit.png` from `User/SavedLevels/` into WA's map editor. Save an **Audit**
-scheme with the settings below, and select this same saved map for every run.
-Use three human teams with three 100-health worms each, team 3
-reserved for Surrender. Disable random turn order, mines, oil drums, crate
-drops, sudden death and automatic utilities; choose a long round and turn
-time (90 seconds or longer). Keep the same teams, scheme, map, renderer and
-settings for every run. The 7680x5376 indexed map has 70 identical flat
-platforms, 768 pixels between station centres, plus a reserve platform for
-waiting worms. Its fixed seed is 20261015.
+WormForge loader, select **Audit home** in the Profile dropdown. The profile
+owns the match settings (its `[scheme]`: no mines, oil drums or crates, a
+95-second turn; worm health and the rest Intermediate's), whatever scheme
+the lobby shows. Import `Audit.png` from `User/SavedLevels/` into WA's map
+editor and select this same saved map for every run. Use three human teams
+with three worms each, team 3 reserved for Surrender. Keep the same teams,
+map, renderer and settings for every run. The 7680x5376 indexed map has 70
+identical flat platforms, 768 pixels between station centres, plus a
+reserve platform for waiting worms. Its fixed seed is 20261015.
 
 Restart WA after installing the DLL. Start **Audit home** offline. The add-on
 checks the roster and map dimensions/stations on a simulation frame after the
@@ -43,7 +40,7 @@ and runs automatically. Any team may start: the audit skips ordinary turns
 until team 1's first worm receives its turn, then begins the first case.
 Keep physical keys released during the test. Save
 `wkLua.log` after the HUD says `Audit complete`; a stopped/error audit is not
-a complete comparison. Then run **Audit copies past 70** from the same scheme,
+a complete comparison. Then run **Audit copies past 70** on the same map,
 with the same teams. Save each log separately.
 
 **Copies past 70.** The `tools` bundle also has a plain copy of each of WA's
@@ -159,7 +156,7 @@ counts, without inspecting the selected weapon's slot.
 ## Quick sheep check
 
 Select **Audit sheep** to run Sheep Launcher, Sheep, Super Sheep and Aqua Sheep with the
-same Audit map and scheme. It retains the full home weapon table, but runs
+same Audit map. It retains the full home weapon table, but runs
 four cases instead of 70. This takes roughly half a minute of simulation when
 each case settles normally, longer if a missile remains active. The `scope`
 option can also be set to `sheep` on the copies profile for a targeted comparison.

@@ -1,4 +1,4 @@
-description = "Offline stock weapon audit, every weapon at home. Use the generated Audit map and saved scheme; see tools/audit/README.md."
+description = "Offline stock weapon audit, every weapon at home. Use the generated Audit map; see tools/audit/README.md."
 features = ["tools.audit"]
 
 [weapons]
@@ -492,3 +492,12 @@ ammo = 0
 delay = 0
 after_use = "continue"
 crate = 0
+
+# The audit's match settings (formerly its saved Audit.wsc): no mines, oil
+# drums or crates, and a long turn. The rest is Intermediate's.
+[scheme]
+hazards = 0
+weapon_crate_weight = 0
+health_crate_weight = 0
+utility_crate_weight = 0
+turn_time = 95
