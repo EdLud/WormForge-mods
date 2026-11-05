@@ -39,6 +39,11 @@ return function(ctx)
     end
   end
   
+  if ctx.option("fast_aim") then
+    require("features/fast_aim")(ctx.option("fast_aim_speed"))
+    on[#on + 1] = "fast_aim"
+  end
+
   if ctx.option("damage_numbers") then
     require("features/damage_numbers")({
       side = ctx.option("damage_numbers_side"),

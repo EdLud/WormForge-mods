@@ -8,6 +8,7 @@ features = ["core.utilities", "specialists.rules"]
 [options."core.utilities"]
 live_hp = true
 ex_turn_side = true
+fast_aim = true
 
 [options."px.lightning_strike"]
 revive_health = 25

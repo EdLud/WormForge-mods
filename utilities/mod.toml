@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.12.3"
+version = "0.13.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -56,6 +56,22 @@ type = "bool"
 default = false
 label = "Parkour"
 description = "In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X."
+
+[[components.options]]
+key = "fast_aim"
+type = "bool"
+default = false
+label = "Fast aim"
+description = "Holding Shift changes how fast the up and down keys aim, at the speed below. Weapons that aim in coarse steps, like the Blow Torch, keep WA's own aim. From Project X. Needs a WormForge newer than 0.9.8."
+
+[[components.options]]
+key = "fast_aim_speed"
+type = "int"
+default = 200
+min = 1
+max = 400
+label = "Fast aim speed (%)"
+description = "The aim's speed with Shift held, as a percentage of WA's own: 200 is twice as fast, 50 half as fast, for finer aim."
 
 [[components.options]]
 key = "live_hp"

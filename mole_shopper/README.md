@@ -52,7 +52,8 @@ are disabled in the source; its native weapon tuning is kept in per-profile
 named record overrides. The original utilities category weight is zero.
 
 Exp. Rain remains Precipitator's internal payload. j-bomb and i-bomb retain
-the neutral names/artwork. Shift-assisted faster aiming is deferred. The
+the neutral names/artwork. PX's Shift-assisted faster aiming is Core
+utilities' Fast aim, which the profile switches on. The
 reused ports retain their existing rendering/physics adaptations; this is
 not a replacement for the PX engine. The four small test profiles remain
 available for focused checks.

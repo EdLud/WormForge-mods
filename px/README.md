@@ -891,8 +891,9 @@ Ctrl or Alt selects the other colour for a shot. New endpoints automatically
 select the other colour. Pause/Break toggles the current team's portals.
 Ground shots keep WA's charge bar; airborne shots fire at full power, using
 Up/Down and Left/Right for PX's eight aim choices. Flight momentum and WA's
-collisions continue. Normal stock aim speed is retained (PX's Shift aim-speed
-hack is not used).
+collisions continue. The Portal Gun has no Shift aim of its own (PX's); Core
+utilities' Fast aim, which Highlander Orange and Specialists 2.3 switch on,
+speeds its aim as any other weapon's.
 
 A team owns one persistent pair. Both endpoints are required for transport.
 Placement follows PX's terrain normals and partner exclusion; each two
