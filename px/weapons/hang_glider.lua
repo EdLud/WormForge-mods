@@ -377,7 +377,13 @@ function weapon.setup()
           glider_close(worm, g, false)
           return "eat"
         end
-      end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP } })
+        -- PX doesn't let the worm drill from the glider, where WA's parachute
+        -- would fire the drill by its record.
+        if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.super_drill" then
+          wa.sound.play(worm, 120) -- WA's can't-fire
+          return "eat"
+        end
+      end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP, wa.msg.FIRE_WEAPON } })
     end
   end
 end

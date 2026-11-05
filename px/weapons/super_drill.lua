@@ -8,10 +8,6 @@ weapon.record = {
   },
 }
 
-weapon.defaults = {
-  mid_air = false,
-}
-
 function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     copy_from = "stock.pneumatic_drill",
@@ -21,14 +17,10 @@ function weapon.definition()
 end
 
 function weapon.setup()
-  local shared = require("lib/shared")
-
-  -- The two with a script of their own. Both run from worm messages, which WA
-  -- sends in lockstep on every peer and in replays.
-
   -- Super Drill (PX weapon_super_drill): WA keeps drilling as it always does,
   -- and a hidden actor cuts a second hole at the worm each frame until WA's
-  -- drill stops. The same as the super_drill example.
+  -- drill stops. The same as the super_drill example. It runs from worm
+  -- messages, which WA sends in lockstep on every peer and in replays.
   local drills = {}
 
   local function follow_drill(worm, id)
@@ -49,8 +41,19 @@ function weapon.setup()
     end
   end
 
-  shared.drills = drills
-  shared.follow_drill = follow_drill
+  -- Here, not with the Fire Jump: a profile may place the drill alone.
+  wa.on.worm_message(function(worm, msg)
+    if worm.weapon == "px.super_drill" and not drills[worm.id]
+        and worm:ammo("px.super_drill") ~= 0 then
+      local id = worm.id
+      drills[id] = wa.actors.spawn({
+        sprite = false, x = worm.x, y = worm.y,
+        gravity = false, collide = false, owner = worm,
+        on = follow_drill(worm, id),
+      })
+    end
+    -- Not eaten: WA's drill still runs.
+  end, { msgs = { wa.msg.FIRE_WEAPON } })
 end
 
 return weapon

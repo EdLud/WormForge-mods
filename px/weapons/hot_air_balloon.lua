@@ -237,6 +237,12 @@ function weapon.setup()
         balloon_stop(worm, b, "jump key (Space in flight)")
         return "eat"
       end
+      -- PX doesn't let the worm drill from the balloon, where WA's parachute
+      -- would fire the drill by its record. Only here: mid-jump it drills.
+      if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.super_drill" then
+        wa.sound.play(worm, 120) -- WA's can't-fire
+        return "eat"
+      end
     end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP, wa.msg.FIRE_WEAPON, wa.msg.RELEASE_WEAPON } })
 
     -- M_TURNBEGIN: any balloon still up pops.

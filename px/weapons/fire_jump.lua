@@ -17,13 +17,7 @@ function weapon.definition()
   })
 end
 
-weapon.requires = { "weapons/super_drill" }
-
 function weapon.setup()
-  local shared = require("lib/shared")
-  local drills = shared.drills
-  local follow_drill = shared.follow_drill
-
   -- Fire Jump (PX Fire_Jump_script): WA's fire punch, whose speed then follows
   -- PX's timeline, counted in frames from the punch -- up at once, forward
   -- after half a second, a little higher at one second, and from 80 frames a
@@ -64,21 +58,13 @@ function weapon.setup()
 
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FIRE_WEAPON then
-      if worm.weapon == "px.super_drill" and not drills[worm.id]
-          and worm:ammo("px.super_drill") ~= 0 then
-        local id = worm.id
-        drills[id] = wa.actors.spawn({
-          sprite = false, x = worm.x, y = worm.y,
-          gravity = false, collide = false, owner = worm,
-          on = follow_drill(worm, id),
-        })
-      elseif worm.weapon == "px.fire_jump" and worm:ammo("px.fire_jump") ~= 0 then
+      if worm.weapon == "px.fire_jump" and worm:ammo("px.fire_jump") ~= 0 then
         winding[worm.id] = 0
       elseif worm.weapon == "px.sniper_rifle" and worm:ammo("px.sniper_rifle") ~= 0 then
         -- The Sniper Rifle's own shot, over WA's (PX's snipfiring).
         wa.sound.play(worm, "sounds/sniper_firing.wav")
       end
-      -- Neither eats the shot: WA's drill and fire punch still run.
+      -- Neither eats the shot: WA's fire punch still runs.
       return
     end
     if msg ~= wa.msg.FRAME_FINISH then return end
