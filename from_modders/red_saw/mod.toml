@@ -3,7 +3,7 @@
 # and report_saw.md for the source-verified behaviour.
 id = "px.saw"
 name = "Saw"
-version = "0.6.6"
+version = "0.6.8"
 author = "reddaz"
 api_version = 4
 format_version = 2
