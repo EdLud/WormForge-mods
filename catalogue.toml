@@ -10,6 +10,9 @@ packs = [
   "from_modders/px_fire_seq",
   "from_modders/red_saw",
   "from_modders/roaming_bees",
+  "from_modders/marked_for_death",
+  "from_modders/px_buffalo",
+  "from_modders/laser_reflect",
 ]
 
 # Exact source paths: a profile is published only when listed here.
