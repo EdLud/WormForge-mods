@@ -71,19 +71,27 @@ function zombie.install(is_soldier, soldier_name)
     return true
   end
 
-  -- A hit that would kill a Soldier who may still turn leaves it 1 HP and
-  -- its push; it turns on its next frame. Fall damage has no hurt message:
-  -- that Soldier is raised from 0 HP instead (worm:heal from_zero), and so
-  -- is one a blast kills: a blast reaches every worm on the map with its
-  -- power as the amount, and what it takes off for the distance is known
-  -- only after WA's handler (a Soldier at 42 HP far from a 50 blast turned).
+  -- A hit or blast that would kill a Soldier who may still turn leaves it
+  -- 1 HP and its push; it turns on its next frame. WA's own answer decides
+  -- (hit.expected, DLLs after 0.9.8: what WA will take, 0 for a hit it drops
+  -- or a worm the scheme's Phased Worms spares). Without it a hit's amount
+  -- does, and a blast is left to WA: its amount is its power, which reaches
+  -- every worm on the map (a Soldier at 42 HP far from a 50 blast turned).
+  -- Whatever still brings a Soldier to 0 HP (fall damage, which sends no
+  -- hurt; Double Damage on the cut; a blast on an older DLL) raises it from
+  -- 0 HP instead (worm:heal from_zero).
   wa.on.hurt(function(hit)
     local worm = hit.worm
     if hit.phase ~= "pre" or not worm or zombies[worm.id] or spent[worm.id] then return end
     if not is_soldier(worm) or not alive(worm) then return end
-    if hit.kind == "percent" or hit.kind == "poison" or hit.kind == "blast" then return end
-    if hit.amount and hit.amount >= worm.hp then
-      hit.amount = worm.hp - 1
+    if hit.kind == "percent" or hit.kind == "poison" then return end
+    local takes = hit.expected
+    if takes == nil then
+      if hit.kind == "blast" then return end
+      takes = hit.amount
+    end
+    if takes and takes >= worm.hp then
+      if hit.kind == "blast" then hit.damage = worm.hp - 1 else hit.amount = worm.hp - 1 end
       turning[worm.id] = true
     end
   end)

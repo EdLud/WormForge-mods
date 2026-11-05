@@ -1,5 +1,5 @@
 -- The Specialists Soldier zombie against a mock WA: turning (a cut lethal
--- hit, a blast, fall damage, drowning), walking, punching, leaping, a team out and
+-- hit, a blast, WA's own answer, fall damage, drowning), walking, punching, leaping, a team out and
 -- Lightning's restore.
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
@@ -89,11 +89,18 @@ local function step(frozen)
 end
 
 -- A blast reaches every worm with its power as the amount; WA takes off
--- `damage` for the distance (the amount itself by default).
-local function hurt(w, amount, kind, damage)
-  local hit = { phase = "pre", worm = w, amount = amount, kind = kind or "blast" }
+-- `damage` for the distance (the amount itself by default). `expected` is
+-- the DLL's answer (nil on older DLLs); `drops` is a hit WA takes nothing
+-- of (its lockout, Phased Worms).
+local function hurt(w, amount, kind, damage, expected, drops)
+  kind = kind or "blast"
+  local blast = kind == "blast"
+  local hit = { phase = "pre", worm = w, amount = amount, kind = kind,
+    damage = blast and (damage or amount) or nil, expected = expected }
   h.hurt(hit)
-  w.hp = w.hp - (hit.kind == "blast" and (damage or hit.amount) or hit.amount)
+  if not drops then
+    w.hp = w.hp - (blast and hit.damage or hit.amount)
+  end
   return hit
 end
 
@@ -126,10 +133,33 @@ hit = hurt(soldier, 50, "blast", 30)
 step()
 check("nor is a blast that leaves it alive cut", soldier.hp == 12 and not zombie.is_zombie(soldier), soldier.hp)
 
--- A lethal blast: 0 HP, raised from zero on its next frame.
+-- A lethal blast on an older DLL: 0 HP, raised from zero on its next frame.
 hurt(soldier, 50, "blast", 40)
 step()
 check("a Soldier a blast kills is raised from zero", soldier.hp == 100 and zombie.is_zombie(soldier), soldier.hp)
+
+-- With WA's answer (hit.expected): a blast WA says kills is cut to 1 HP.
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+soldier.hp = 42
+hit = hurt(soldier, 50, "blast", 0, 0)
+step()
+check("a blast WA says takes nothing leaves it alone", hit.damage == 0 and soldier.hp == 42 and not zombie.is_zombie(soldier))
+hit = hurt(soldier, 50, "blast", 45, 45)
+check("a blast WA says kills is cut to 1 HP", hit.damage == 41 and soldier.hp == 1, soldier.hp)
+step()
+check("and the Soldier turns", soldier.hp == 100 and zombie.is_zombie(soldier), soldier.hp)
+
+-- A hit WA drops (a second flame this frame, Phased Worms) never turns it.
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+soldier.hp = 3
+hit = hurt(soldier, 4, "fire", nil, 0, true)
+step()
+check("a hit WA takes nothing of doesn't turn the Soldier", hit.amount == 4 and soldier.hp == 3 and not zombie.is_zombie(soldier), soldier.hp)
+hit = hurt(soldier, 4, "fire", nil, 3)
+step()
+check("one it takes, lethal, does", zombie.is_zombie(soldier) and soldier.hp == 100, soldier.hp)
 
 -- Fall damage: no hurt message, 0 HP: raised from zero.
 zombie = reset()
