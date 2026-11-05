@@ -33,6 +33,11 @@ function weapon.setup()
   local WIND_STEP = 0.0317
   local wind_force = 0
   require("lib/turn_controls").register("px.wind_changer", {
+    -- Each selection starts at force 0, so Space without a digit calms the
+    -- wind: leaving the weapon or ending the turn forgets the force.
+    frame = function(worm)
+      if worm.turn and worm.weapon ~= "px.wind_changer" then wind_force = 0 end
+    end,
     choose = function(worm, digit)
       wind_force = digit
       wa.sound.play(worm, 107)
@@ -43,6 +48,7 @@ function weapon.setup()
         or f < 6 and "sounds/wind_changer/calm_wind.wav" or "sounds/wind_changer/strong_wind.wav")
       wa.world.set_wind((f * WIND_STEP) * worm.facing)
     end,
+    finish = function() wind_force = 0 end,
     hint = function()
       return string.format("Wind Changer: force %d\n0-9: force, then Space", wind_force)
     end,
