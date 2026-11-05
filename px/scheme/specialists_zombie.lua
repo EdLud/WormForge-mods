@@ -73,12 +73,15 @@ function zombie.install(is_soldier, soldier_name)
 
   -- A hit that would kill a Soldier who may still turn leaves it 1 HP and
   -- its push; it turns on its next frame. Fall damage has no hurt message:
-  -- that Soldier is raised from 0 HP instead (worm:heal from_zero).
+  -- that Soldier is raised from 0 HP instead (worm:heal from_zero), and so
+  -- is one a blast kills: a blast reaches every worm on the map with its
+  -- power as the amount, and what it takes off for the distance is known
+  -- only after WA's handler (a Soldier at 42 HP far from a 50 blast turned).
   wa.on.hurt(function(hit)
     local worm = hit.worm
     if hit.phase ~= "pre" or not worm or zombies[worm.id] or spent[worm.id] then return end
     if not is_soldier(worm) or not alive(worm) then return end
-    if hit.kind == "percent" or hit.kind == "poison" then return end
+    if hit.kind == "percent" or hit.kind == "poison" or hit.kind == "blast" then return end
     if hit.amount and hit.amount >= worm.hp then
       hit.amount = worm.hp - 1
       turning[worm.id] = true

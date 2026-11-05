@@ -1,5 +1,5 @@
 -- The Specialists Soldier zombie against a mock WA: turning (a cut lethal
--- hit, fall damage, drowning), walking, punching, leaping, a team out and
+-- hit, a blast, fall damage, drowning), walking, punching, leaping, a team out and
 -- Lightning's restore.
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
@@ -88,18 +88,20 @@ local function step(frozen)
   for _, w in ipairs(worms) do h.msg(w, 5) end
 end
 
-local function hurt(w, amount, kind)
+-- A blast reaches every worm with its power as the amount; WA takes off
+-- `damage` for the distance (the amount itself by default).
+local function hurt(w, amount, kind, damage)
   local hit = { phase = "pre", worm = w, amount = amount, kind = kind or "blast" }
   h.hurt(hit)
-  w.hp = w.hp - hit.amount
+  w.hp = w.hp - (hit.kind == "blast" and (damage or hit.amount) or hit.amount)
   return hit
 end
 
--- A lethal blast: cut to 1 HP, then a zombie with 100.
+-- A lethal hit: cut to 1 HP, then a zombie with 100.
 local zombie = reset()
 local soldier, gunner = worm(17, 0, 0), worm(18, 1000, 0)
 local enemy = worm(33, 2000, 0)
-local hit = hurt(soldier, 200)
+local hit = hurt(soldier, 200, "hit")
 check("a lethal hit on the Soldier is cut to 1 HP", hit.amount == 149 and soldier.hp == 1, soldier.hp)
 step()
 check("the Soldier comes back with 100 HP", soldier.hp == 100, soldier.hp)
@@ -110,6 +112,24 @@ hurt(soldier, 200)
 step()
 check("a zombie isn't cut short: it dies", soldier.hp <= 0 and zombie.is_zombie(soldier), soldier.hp)
 check("and doesn't turn again", soldier.healed == 1, soldier.healed)
+
+-- A blast far off: its power is more than the Soldier's health, its damage
+-- isn't. Left alone (it turned in a 2026-11-05 match).
+zombie = reset()
+soldier = worm(17, 0, 0); worm(18, 500, 0)
+soldier.hp = 42
+hit = hurt(soldier, 50, "blast", 0)
+step()
+check("a blast's power isn't its damage: a Soldier out of reach keeps its health",
+  hit.amount == 50 and soldier.hp == 42 and not zombie.is_zombie(soldier), soldier.hp)
+hit = hurt(soldier, 50, "blast", 30)
+step()
+check("nor is a blast that leaves it alive cut", soldier.hp == 12 and not zombie.is_zombie(soldier), soldier.hp)
+
+-- A lethal blast: 0 HP, raised from zero on its next frame.
+hurt(soldier, 50, "blast", 40)
+step()
+check("a Soldier a blast kills is raised from zero", soldier.hp == 100 and zombie.is_zombie(soldier), soldier.hp)
 
 -- Fall damage: no hurt message, 0 HP: raised from zero.
 zombie = reset()
