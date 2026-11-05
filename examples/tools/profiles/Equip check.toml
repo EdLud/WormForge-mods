@@ -1,0 +1,2 @@
+description = "worm:equip under WA's rules: four checks over team 1's first four turns, offline, any map, two teams. The lobby's weapons (Intermediate's scheme)."
+features = ["tools.equip_check"]

@@ -75,6 +75,14 @@ description = "One HUD line with the active worm's raw state, and every change l
 entry = "worm_state_logger.lua"
 
 [[components]]
+id = "tools.equip_check"
+diagnostics = true
+type = "feature"
+name = "worm:equip check"
+description = "Offline, team 1's first four turns: equip refused mid-use, no shot while WA has weapons off, a free shot fired and one taken back unused. Results in wkLua.log and on the HUD."
+entry = "equip_check.lua"
+
+[[components]]
 id = "tools.stress"
 diagnostics = true
 type = "feature"
