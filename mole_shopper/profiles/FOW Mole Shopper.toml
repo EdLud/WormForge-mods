@@ -2,7 +2,7 @@
 # Starting ammo, start-of-round delays, crates, panel and handling come from PX records;
 # WA options from its WSC (its weapon delays are WA defaults PX replaces).
 description = "Mole Shopper by popka and 0rang3: coalition fog, 199 HP, 40-second turns, the original weapon/crate loadout and Shift for fast aim."
-features = ["core.fog", "core.utilities"]
+features = ["core.fog", "core.utilities", "core.worm_glow"]
 
 [crates]
 health = 0
@@ -996,6 +996,7 @@ retreat = 3000
 [weapon_settings."stock.mole_bomb"]
 ammo = -1
 crate_pct = 0.0
+power = 3
 shots = 2
 
 [weapon_settings."stock.ninja_rope"]

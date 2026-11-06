@@ -16,7 +16,7 @@ and don't ship with the pack.
   terrain shadows. Disable it to place and reveal through terrain.
   The PX controller's 60-frame timer does not limit the reveal's lifetime.
 - **Two moles per use:** the full profile gives WA's own Mole Bomb two shots
-  (`shots = 2`), which also works mid-jump and after landing. The PX port's
+  (`shots = 2`) at WA's power 3, which also works mid-jump and after landing. The PX port's
   separate Mole Bombs weapon is retired.
 
 Vision uses the existing WormForge fog renderer: a 110px worm circle,
@@ -53,7 +53,7 @@ named record overrides. The original utilities category weight is zero.
 
 Exp. Rain remains Precipitator's internal payload. j-bomb and i-bomb retain
 the neutral names/artwork. PX's Shift-assisted faster aiming is Core
-utilities' Fast aim, which the profile switches on. The
+utilities' Fast aim, which the profile switches on, with its Worm glow. The
 reused ports retain their existing rendering/physics adaptations; this is
 not a replacement for the PX engine. The four small test profiles remain
 available for focused checks.
