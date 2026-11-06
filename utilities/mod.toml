@@ -5,7 +5,7 @@
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.13.0"
+version = "0.14.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -127,13 +127,16 @@ label = "FPS counter"
 description = "Each player's own frame rate at the top right of their screen. Shows only; it changes nothing in the match. Needs a WormForge newer than 0.9.7."
 
 # An instant utility of our own: configurable extra time, in utility crates.
-# Auto-Use is the profile's auto_use setting (the older on_collect = "use"/"keep" still reads).
+# Auto-Use, uses per turn, extra pickups and retreat pickups are its weapon
+# settings (auto_use, uses_per_turn, extra_pickups, retreat_collect), as for
+# WA's instant utilities; profiles' older bonus_mode and retreat_collect
+# options are read into them.
 [[components]]
 
 id = "utilities.plus_ten"
 type = "weapon"
 name = "+N Seconds"
-description = "Adds configurable turn time. Choose whether bonuses stack and how automatic pickups behave during retreat. Manual use does not end the turn."
+description = "Adds configurable turn time. Its weapon settings choose how many bonuses a turn gets and what extra and retreat pickups do. Manual use does not end the turn."
 entry = "weapons/plus_n.lua"
 icon = "sprites/plus_n.png"
 default_position = { row = "utility", column = 6 }
@@ -146,22 +149,6 @@ min = 1
 max = 500
 label = "Seconds added"
 description = "Time added by each activated unit."
-
-[[components.options]]
-key = "bonus_mode"
-type = "choice"
-choices = ["stack", "once_keep", "once_discard"]
-default = "once_keep"
-label = "Time bonus mode"
-description = "stack: every activated unit adds time. once_keep: one bonus per turn, banking extra pickups. once_discard: one bonus per turn, discarding surplus pickups. With Auto-Use off, all pickups stay in inventory."
-
-[[components.options]]
-key = "retreat_collect"
-type = "choice"
-choices = ["activate", "keep", "nothing"]
-default = "keep"
-label = "On collect during retreat"
-description = "With Auto-Use on: activate adds retreat time; keep saves for the next turn; nothing discards the pickup. With Auto-Use off, every pickup goes into inventory."
 
 # Fog of war (wkFOW's renderer): until 0.5.0 its own bundle, core.fog.
 [[components]]

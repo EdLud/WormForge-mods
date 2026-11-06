@@ -63,42 +63,59 @@ to check both switches independently and together.
 
 An instant utility that adds configurable time. Its stable ID remains
 `utilities.plus_ten`, so existing profiles keep their weapon and ammo settings.
+Its one option is the time added:
 
 | Option | Values | Default |
 |---|---|---|
 | Seconds added (`seconds`) | 1–500 | 10 |
-| Time bonus mode (`bonus_mode`) | `stack`, `once_keep`, `once_discard` | `once_keep` |
-| On collect during retreat (`retreat_collect`) | `activate`, `keep`, `nothing` | `keep` |
 
-With **Auto-Use on**, pickups activate immediately during normal turn time.
-`stack` gives a bonus for every activated unit and activates finite inventory
-at turn start. Infinite inventory uses one unit at turn start, plus each newly
-collected unit, without becoming finite. `once_keep` permits one bonus per turn
-and keeps extra pickups for later. `once_discard` permits one bonus per turn
-and discards surplus from that pickup and all later pickups during normal turn
-time. Previously held inventory and infinite ammo are preserved; turn start
-consumes just one held unit in either once mode.
+The rest are its weapon settings, as for WA's instant utilities (WormForge's
+`docs/instant-utilities.md`), in **Manage Weapon Panel**:
+
+| Setting | Values | Default |
+|---|---|---|
+| Uses per turn (`uses_per_turn`) | 1–255, `"unlimited"` | 1 |
+| Extra pickups (`extra_pickups`) | `keep`, `discard` | `discard` |
+| Collected during retreat (`retreat_collect`) | `activate`, `keep`, `discard` | `activate` |
+
+While worms are still being placed (manual placement), pickups wait for the
+team's first turn, as WA's Double Time does (`wa.world.placing()`, WormForge
+newer than 0.9.81; an older DLL refuses this pack's settings anyway).
+
+The defaults are WA's Double Time's. Until 0.14.0 +N kept extra and retreat
+pickups; a profile that wants that sets both to `keep`.
+
+With **Auto-Use on**, pickups activate immediately during normal turn time,
+each unit one bonus, up to the turn's uses; at turn start held units are
+used the same way. Infinite inventory uses one unit at turn start, plus each
+newly collected unit up to the turn's uses, without becoming finite. Units
+past the turn's uses are kept for later turns (`keep`) or, of that pickup,
+dropped (`discard`); previously held inventory and infinite ammo are never
+dropped.
 
 During retreat, `activate` extends the retreat countdown; `keep` saves the
-pickup for the next turn; `nothing` discards only the pickup. These choices
+pickup for the next turn; `discard` drops only the pickup. These choices
 apply only with Auto-Use on. **Auto-Use off** always keeps pickups in inventory,
-including during retreat, for manual use. The retreat collection setting takes
-precedence over the bonus mode: `keep` banks the whole pickup even in
-`once_discard`; `activate` follows the selected bonus mode. Manual use obeys
-the per-turn limit too; a second use in either once mode refunds the unit.
-Using this utility does not end the turn. Each countdown is capped at one hour.
+including during retreat, for manual use. The retreat setting takes
+precedence over extra pickups: `keep` banks the whole pickup even with
+`discard`; `activate` follows extra pickups. Manual use obeys the uses per
+turn too; a use past them refunds the unit. Using this utility does not end
+the turn. Each countdown is capped at one hour.
+
+Profiles saved before 0.14.0 gave these as options, `bonus_mode` (`stack`,
+`once_keep`, `once_discard`) and `retreat_collect` (`nothing` for discard);
+they are read as `uses_per_turn = "unlimited"`, 1 with `keep`, 1 with
+`discard`, and the same `retreat_collect`.
 
 ```toml
 [weapons]
 "utilities.plus_ten" = { row = "utility", column = 6 }
 
 [weapon_settings]
-"utilities.plus_ten" = { crate = 60, auto_use = true }
+"utilities.plus_ten" = { crate_pct = 60, auto_use = true, uses_per_turn = "unlimited", retreat_collect = "keep" }
 
 [options."utilities.plus_ten"]
 seconds = 15
-bonus_mode = "stack"
-retreat_collect = "keep"
 ```
 
 The Lua lives in `weapons/plus_n.lua`; the icon is `sprites/plus_n.png`.

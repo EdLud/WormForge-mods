@@ -2,12 +2,21 @@
 local definition = dofile((UTILITIES_ROOT or "mods/utilities/") .. "weapons/plus_n.lua")
 local id = "utilities.plus_ten"
 
+-- `options` gives the seconds, and the weapon settings by +N's older names:
+-- bonus_mode "stack" is uses_per_turn = "unlimited", "once_keep" 1 with
+-- extra_pickups = "keep", "once_discard" 1 with "discard"; a count as
+-- `uses` sets uses_per_turn directly.
 local function setup(policy, ammo, options)
   options = options or {}
-  if options.seconds == nil then options.seconds = 10 end
-  if options.bonus_mode == nil then options.bonus_mode = "once_keep" end
-  if options.retreat_collect == nil then options.retreat_collect = "keep" end
-  local hooks, clock, retreat, weapon = {}, 30000, 0, nil
+  local bonus = options.bonus_mode or "once_keep"
+  local data = {
+    auto_use = policy == "use",
+    uses_per_turn = options.uses or (bonus == "stack" and "unlimited" or 1),
+    extra_pickups = bonus == "once_discard" and "discard" or "keep",
+    retreat_collect = options.retreat_collect or "keep",
+  }
+  options = { seconds = options.seconds or 10 }
+  local hooks, clock, retreat, weapon, placing = {}, 30000, 0, nil, false
   local worm = { id = 17, ammo_group = 2, held = ammo, turn = true }
   function worm:ammo(weapon_id, change)
     assert(weapon_id == id)
@@ -21,6 +30,7 @@ local function setup(policy, ammo, options)
       turn_clock = function() return clock end,
       set_turn_clock = function(value) clock = value end,
       retreat = function() return retreat end,
+      placing = function() return placing end,
       set_retreat = function(value)
         if retreat <= 0 then return false end
         retreat = value
@@ -32,7 +42,7 @@ local function setup(policy, ammo, options)
       return function(fn) hooks[name] = fn end
     end }),
   }
-  definition.install({ id = id, data = { auto_use = policy == "use" }, option = function(key)
+  definition.install({ id = id, data = data, option = function(key)
     assert(options[key] ~= nil, key)
     return options[key]
   end })
@@ -64,6 +74,7 @@ local function setup(policy, ammo, options)
       if value ~= nil then retreat = value end
       return retreat
     end,
+    placing = function(value) placing = value end,
   }
 end
 
@@ -217,4 +228,26 @@ assert(t.clock() == 40000 and t.worm.held == 2, "saved retreat stock is retained
 t = setup("use", 2, { bonus_mode = "once_discard", retreat_collect = "nothing" })
 t.retreat(3000); t.collect(3)
 assert(t.retreat() == 3000 and t.worm.held == 2, "retreat nothing discards only the new pickup")
+-- While worms are being placed a pickup waits for the first turn, as WA's
+-- Double Time does, and a placement turn's start uses nothing.
+t = setup("use", 1)
+t.placing(true)
+t.start(); t.collect(2)
+assert(t.clock() == 30000 and t.worm.held == 3, "placement keeps every pickup")
+t.placing(false)
+t.next_turn()
+assert(t.clock() == 40000 and t.worm.held == 2, "the first turn uses one")
+
+-- Two bonuses a turn: a three-unit pickup gives two and keeps one.
+t = setup("use", 0, { uses = 2 })
+t.start(); t.collect(3)
+assert(t.clock() == 50000 and t.worm.held == 1, "uses_per_turn 2 adds two bonuses")
+t.collect(1)
+assert(t.clock() == 50000 and t.worm.held == 2, "the turn's uses are spent")
+t.next_turn()
+assert(t.clock() == 50000 and t.worm.held == 0, "the next turn uses two of the kept units")
+t = setup("keep", 3, { uses = 2 })
+t.fire(); t.fire(); t.fire()
+assert(t.clock() == 50000 and t.worm.held == 1, "manual use obeys uses_per_turn and refunds the third")
+
 print("PASS: +N seconds, all three bonus modes, finite/infinite inventory, manual use and retreat policies")
