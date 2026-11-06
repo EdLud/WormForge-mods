@@ -139,18 +139,21 @@ decides when it may be used): for a set time the world runs in slow motion
 while the worm that fired it keeps its own speed. What the worm fires belongs
 to the world and crawls with it. Once on, it runs out by itself; firing it
 again meanwhile gives the unit back. It ends with the turn, and a worm switch
-(Tab) hands it to the new worm. WA's sounds slow down with the world; WA's
-turn clock counts the world's frames, so the turn lasts longer in real time.
+(Tab) hands it to the new worm. The world eases into slow motion and back
+out of it (easeOutCirc, 2 seconds each way, within the duration), and the
+screen takes a blue tint as it does (drawn on the GPU layer, so it needs the
+shader renderer). WA's sounds slow down with the world; WA's turn clock counts
+the world's frames, so the turn lasts longer in real time.
 
 | Option | Default | |
 |---|---|---|
 | World speed (%) | 40 | The world's speed, of the scheme's engine speed. |
 | Worm speed (%) | 100 | The worm's, in real time: 100 is its normal speed. At most 8 times the world's. |
-| Duration (s) | 6 | How long it lasts, in real seconds. |
+| Duration (s) | 6 | How long it lasts, in real seconds, easing in and out included. |
 
 It uses `wa.world.set_speed` and `worm.time_scale`, so it needs a WormForge
 newer than 0.9.81. The Lua lives in `weapons/bullet_time.lua`; the icon is
-`sprites/bullet_time.png`.
+`sprites/bullet_time.png`, the tint's plain sheet `sprites/bullet_time_tint.png`.
 
 ## Fog of war
 

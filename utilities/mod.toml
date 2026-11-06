@@ -156,7 +156,7 @@ description = "Time added by each activated unit."
 id = "utilities.bullet_time"
 type = "weapon"
 name = "Bullet Time"
-description = "Fire it and the world slows down while your worm keeps its speed, for a set time. It can't be paused, and ends with the turn."
+description = "Fire it and the world eases into slow motion, tinted blue, while your worm keeps its speed, for a set time. It can't be paused, and ends with the turn."
 entry = "weapons/bullet_time.lua"
 icon = "sprites/bullet_time.png"
 default_position = { row = "utility", column = 7 }
@@ -186,7 +186,7 @@ default = 6
 min = 1
 max = 60
 label = "Duration (s)"
-description = "How long Bullet Time lasts, in real seconds."
+description = "How long Bullet Time lasts, in real seconds, easing in and out (2 s each) included."
 
 # Fog of war (wkFOW's renderer): until 0.5.0 its own bundle, core.fog.
 [[components]]
