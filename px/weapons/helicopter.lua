@@ -160,16 +160,24 @@ function weapon.setup()
     if not h then
       return
     end
-    if h.flying then
-      if state ~= "jetpacking" then
-        -- WA owns the landing and its resulting state. Only remove our art
-        -- and physics overrides when WA has ended the jet pack.
-        worm:jetpack_steer(false)
-        worm.gravity, worm.wind = 1, 0
-        h.flying = false
+    if h.flying and state ~= "jetpacking" then
+      -- WA owns the landing and its resulting state. Only remove our art
+      -- and physics overrides when WA has ended the jet pack.
+      worm:jetpack_steer(false)
+      worm.gravity, worm.wind = 1, 0
+      h.flying = false
+      if state ~= "standing" then
         heli_drop_art(h, worm)
         return
       end
+      -- WA takes its jet pack off the standing worm (wjetlnk backwards; the
+      -- turn's end goes straight from jetpacking to standing): the worm
+      -- climbs out of the helicopter instead, the climb-in backwards, whose
+      -- first frame is the worm alone.
+      if h.body then h.body:despawn(); h.body = nil end
+      h.climb_out, h.jump_phase = true, 1
+    end
+    if h.flying then
       local vx, vy = worm.vx, worm.vy
       -- Rotor and radio, while it moves.
       if vx ~= 0 or vy ~= 0 then
@@ -243,15 +251,18 @@ function weapon.setup()
       a:frame(h.frame)
       a:gfx({ angle = math.deg(wa.math.sin(worm.vx / 24)) % 360, depth = HELI_DEPTH })
       worm.body_visible = false
-    elseif h.jumpin and state == "prefiring" then
+    elseif (h.jumpin and state == "prefiring")
+        or (h.climb_out and state == "standing" and h.jump_phase > 0) then
+      if h.climb_out then h.jump_phase = h.jump_phase - 0.047 end
       h.climb = h.climb or heli_actor(worm, "sprites/helicopter/jumpin.png")
       local a = h.climb
       a.x = worm.x + (f > 0 and -11.5 or 12.5)
       a.y, a.vx, a.vy, a.facing = worm.y + 1, 0, 0, f
-      a:frame(math.min(math.floor(h.jump_phase * 23), 22))
+      a:frame(math.max(0, math.min(math.floor(h.jump_phase * 23), 22)))
       a:gfx({ depth = HELI_DEPTH })
       worm.body_visible = false
     elseif h.body or h.climb then
+      h.climb_out = false
       h.jumpin, h.jump_phase = false, 0
       heli_drop_art(h, worm)
     end

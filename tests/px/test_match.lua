@@ -4160,9 +4160,15 @@ do
   w.fuel, w.vy, w.vx = 50, 0, 0
   w.state = "standing"
   n = #M.spawned
+  local flown = M.spawned[#M.spawned]
   M.message(w, wa.msg.FRAME_FINISH)
-  check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing" and #M.spawned == n
-    and w.gravity == 1 and not w.steered and w.body_visible == true)
+  local out = M.spawned[#M.spawned]
+  check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing"
+    and #M.spawned == n + 1 and not out.explode.now and w.gravity == 1 and not w.steered)
+  check("the worm climbs out over WA's jet pack put-away: the climb-in backwards, the body hidden",
+    flown.dead and out.sprite == "sprites/helicopter/jumpin.png" and w.body_visible == false)
+  for _ = 1, 22 do M.message(w, wa.msg.FRAME_FINISH) end
+  check("then the climb-out is gone and the worm shown", out.dead and w.body_visible == true)
   -- A native sentry bullet puts the flying worm in WA's hit state. The
   -- Helicopter must release its steering/art without replacing the knock.
   w.state = "prefiring"
