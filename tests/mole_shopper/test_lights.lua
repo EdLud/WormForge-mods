@@ -54,6 +54,17 @@ for _, kind in ipairs({"worms", "missiles", "arrows", "mines", "actors", "bullet
   assert(hit_by[kind] == false, kind .. " pass through it")
 end
 assert(body.spec.persist and body.spec.drown and body.spec.owner == owner)
+-- Half of WA's rebound off a floor or wall; sliding and a landing stop are WA's.
+local bump = body.spec.on.bump
+local lamp = {vx = 2, vy = -3}
+bump(lamp, {other = "land", nx = 0, ny = -1})
+assert(lamp.vx == 2 and lamp.vy == -1.5, "a floor halves the upward rebound, not the slide")
+lamp = {vx = -4, vy = 1}
+bump(lamp, {other = "land", nx = -1, ny = 0})
+assert(lamp.vx == -2 and lamp.vy == 1, "a wall halves the rebound off it")
+lamp = {vx = 1, vy = 0}
+bump(lamp, {other = "land", nx = 0, ny = -1})
+assert(lamp.vx == 1 and lamp.vy == 0, "a lantern WA stopped stays stopped")
 assert(body.light.circle == 110 and body.light.cone.length == 0)
 assert(body.light.seen_by == "owner" and not body.light.discover)
 assert(body.gfx_values.tint == 0x0087E6)

@@ -2,6 +2,8 @@
 local holds = require("wf-lib/holds")
 local lights = require("lib/lights")
 local ART = "sprites/lantern/"
+-- Share of WA's mine rebound a lantern keeps: half, so it lands heavier.
+local REBOUND = 0.5
 
 return {
   defaults = {ammo = {round_start = 20}, delay = 0},
@@ -39,6 +41,12 @@ return {
             hit_by = {blasts = true, worms = false, missiles = false, arrows = false, mines = false,
               actors = false, bullets = false, melee = false, fire = false, dragon_ball = false},
           },
+          -- WA has already bounced it off the land on the axis it hit; keep
+          -- only part of that rebound. Sliding along the land is WA's own.
+          on = {bump = function(a, hit)
+            if hit.ny ~= 0 and a.vy * hit.ny > 0 then a.vy = a.vy * REBOUND end
+            if hit.nx ~= 0 and a.vx * hit.nx > 0 then a.vx = a.vx * REBOUND end
+          end},
         }
         actor:gfx{scale = 0.48, tint = lights.colour(worm), depth = wa.depth.OBJECTS}
         lights.attach(actor, 110)
