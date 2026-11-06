@@ -10,6 +10,8 @@
 -- seconds. WA's turn clock counts the world's frames, so slow motion
 -- stretches the turn in real time.
 
+local tooltip = require("wf-lib/tooltip")
+
 local RAMP = 2            -- seconds to ease in, and to ease out
 local TINT = 0x2060FF     -- the screen's tint at full slow motion
 local TINT_ALPHA = 0x48
@@ -94,7 +96,15 @@ return {
     wa.on.worm_message(function(worm)
       if not t or not worm.turn then return end
       t = t + 1 / (50 * speed)
-      if t >= total then stop() else apply() end
+      if t >= total then
+        stop()
+      else
+        apply()
+        -- The time left, in the weapon tooltip's window (bottom right, the
+        -- team's colour), over the held weapon's hint, which it gets back a
+        -- few frames after the end.
+        tooltip.notice(worm, string.format("Bullet Time: %.1f s", total - t), 0.1)
+      end
     end, { msgs = { wa.msg.FRAME_FINISH } })
 
     -- A worm switch (Tab) hands the turn on: the new worm takes it over.
@@ -103,12 +113,6 @@ return {
     end)
     wa.on.turn_end(stop)
     wa.on.turn_cleanup(stop)
-
-    wa.on.hud(function()
-      if t then
-        wa.hud.line(string.format("Bullet Time: %.1f s", total - t))
-      end
-    end)
 
     -- The tint over the whole screen, in front of the world and its water,
     -- behind the HUD; between world frames it eases on with the fraction.

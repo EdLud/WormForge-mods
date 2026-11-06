@@ -142,7 +142,9 @@ again meanwhile gives the unit back. It ends with the turn, and a worm switch
 (Tab) hands it to the new worm. The world eases into slow motion and back
 out of it (easeOutCirc, 2 seconds each way, within the duration), and the
 screen takes a blue tint as it does (drawn on the GPU layer, so it needs the
-shader renderer). WA's sounds slow down with the world; WA's turn clock counts
+shader renderer). The time left shows in the weapon tooltip's window at the
+bottom right (`wf-lib/tooltip`), for the firing team's side, over the held
+weapon's hint until it ends. WA's sounds slow down with the world; WA's turn clock counts
 the world's frames, so the turn lasts longer in real time.
 
 | Option | Default | |
