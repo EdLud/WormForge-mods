@@ -132,82 +132,82 @@ pool = "second"
 [weapon_settings."px.3_girder_pack"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.banana_express"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 1.0870
+crate_pct = 1.0753
 
 [weapon_settings."px.blaster_worm"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."stock.blow_torch"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.bowling_ball_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.burning_sheep_launcher"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.burst_rifle"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.chilli_bomb"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.cow_launcher"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.crate_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 1.0870
+crate_pct = 1.0753
 
 [weapon_settings."px.double_bazooka"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.electric_grenade"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.electromagnet"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.ferret"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.fire_jump"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.ghost_sheep"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.gravity_control"]
 crate_type = "utility"
@@ -217,12 +217,12 @@ crate_pct = 9.0909
 ammo = 0
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.gravler_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.hang_glider"]
 crate_type = "utility"
@@ -235,7 +235,7 @@ crate_pct = 18.1818
 [weapon_settings."px.hellish_hand_grenade"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.hot_air_balloon"]
 ammo = 3
@@ -248,17 +248,17 @@ mode = "replace"
 [weapon_settings."px.ice_arrow"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 1.0870
+crate_pct = 1.0753
 
 [weapon_settings."px.igniter"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.javelin"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.jump"]
 crate_type = "utility"
@@ -272,37 +272,37 @@ crate_pct = 0
 [weapon_settings."px.laser_gun"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.lightning_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.mortar_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.nuke_rocket"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.old_woman_launcher"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.pigeon_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.pogo_sheep"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.portal_gun"]
 crate_type = "utility"
@@ -311,40 +311,40 @@ crate_pct = 9.0909
 [weapon_settings."stock.ming_vase"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.real_shotgun"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.reinforcement"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 1.0870
+crate_pct = 1.0753
 
 [weapon_settings."px.remote_roller"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.s_m_a_r_t_bomb"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.sentry_gun"]
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.sentry_laser"]
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.shadow_bolt"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.skip_go_surrender"]
 crate_pct = 0
@@ -352,27 +352,27 @@ crate_pct = 0
 [weapon_settings."px.sniper_rifle"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.sticky_bomb"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.submarine_attack"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.super_drill"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.super_gravedigger"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.super_tele"]
 crate_type = "utility"
@@ -385,17 +385,17 @@ crate_pct = 18.1818
 [weapon_settings."px.thumper_nade"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.thumper_nade_strike"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.valyrian_fire"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."px.weapon_crate"]
 after_use = "continue"
@@ -414,17 +414,17 @@ mode = "replace"
 [weapon_settings."px.windy_cluster"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."stock.baseball_bat"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."stock.dynamite"]
 after_use = "continue"
 crate_type = "weapon"
-crate_pct = 2.1739
+crate_pct = 2.1505
 
 [weapon_settings."stock.fast_walk"]
 ammo = -1
@@ -445,6 +445,10 @@ crate_pct = 0
 [weapon_settings."stock.teleport"]
 ammo = 0
 crate_pct = 0
+
+[weapon_settings."utilities.bullet_time"]
+crate_type = "weapon"
+crate_pct = 1.0753
 
 [weapons."px.3_girder_pack"]
 column = 5
@@ -704,6 +708,10 @@ row = "F9"
 
 [weapons."stock.teleport"]
 column = 5
+row = "utility"
+
+[weapons."utilities.bullet_time"]
+column = 6
 row = "utility"
 
 [weapon_options."hl.rules"."stock.blow_torch"]

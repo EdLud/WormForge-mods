@@ -98,7 +98,7 @@ aim passes over it to what lies behind, for both the pull and the push.
 | Offensive (29) | Double Bazooka (bazooka), Igniter (homing missile), S.M.A.R.T Bomb (mortar), Blaster Worm (homing pigeon), Burning Sheep Launcher (sheep launcher), Sticky Bomb (grenade), Windy Cluster (cluster bomb), Super Gravedigger (banana bomb), Thumper Nade (battle axe), Electric Grenade (earthquake), Dynamite, Nuke Rocket (mine), Pogo Sheep (sheep), Ghost Sheep (aqua sheep), Chilli Bomb (super banana), Hellish Hand-Grenade (holy grenade), Valyrian Fire (petrol bomb), Remote Roller (skunk), Priceless Ming Vase (ming vase), Cow Launcher (mad cow), Old Woman Launcher (old woman), Ferret (salvation army), Mortar Strike (air strike), Pigeon Strike (mail strike), Submarine Attack (mine strike), Gravler Strike (mole squadron), Banana Express (mb bomb), Bowling Ball Strike (sheep strike), Thumper Nade Strike (carpet bomb) |
 | Second (19) | Fire Jump (fire punch), Sentry Laser (dragon ball), Sentry Gun (kamikaze), Javelin (prod), Baseball Bat (WA's own), Electromagnet (baseball bat), Real Shotgun (shotgun), Sniper Rifle (handgun), Laser Gun (uzi), Burst Rifle (minigun), Shadow-Bolt (longbow), BlowTorch, Super Drill (pneumatic drill), Portal Gun (scales of justice), Ice Arrow (armageddon), Flame Thrower, Reinforcement (nuclear test), Crate Strike (donkey), Lightning Strike (napalm strike) |
 | Movement (7) | 3 Girder Pack (girder pack), Jump (ninja rope), Hang-Glider (parachute), Super Tele (teleport), Helicopter (jet pack), Gravity Control (low gravity), Swim Suit (laser sight) |
-| Not pooled (11) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Fast Walk, Teleport (invisibility), Crate Spy, Crate Shower |
+| Not pooled (12) | Kamikaze Rocket (suicide bomber), Gravler (mole bomb), Hot Air Balloon (bungee), Skip Go/Surrender (skip go), Wind Changer (surrender), Muahaha 3 (select worm), Weapon Crate (freeze), Fast Walk, Teleport (invisibility), Crate Spy, Crate Shower, Bullet Time (Core utilities) |
 
 PX's scheme also puts a Cluster Bomb, Skunk and Mole Bomb on the panel, with
 no ammo: its oil drum code borrows their records by name
@@ -113,6 +113,9 @@ Changer to 1 each turn, as PX's GiveWeapons does, and each team gets one
 Weapon Crate a round, as in PX. The others keep whatever ammo the profile
 gives, so the profile decides whether Teleport or Skip Go is always
 available.
+
+Not from PX: Core utilities' Bullet Time comes in weapon crates only, as
+often as the Banana Express, and is never dealt.
 
 On cavern maps PX draws from the first 21 offensive and the first 16 second
 weapons only. That leaves out the Ferret and the strikes, and Reinforcement,

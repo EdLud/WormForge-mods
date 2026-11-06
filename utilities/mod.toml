@@ -182,7 +182,7 @@ description = "How fast your worm runs meanwhile, in real time: 100 keeps its no
 [[components.options]]
 key = "seconds"
 type = "int"
-default = 6
+default = 20
 min = 1
 max = 60
 label = "Duration (s)"

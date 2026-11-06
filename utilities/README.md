@@ -151,7 +151,7 @@ the world's frames, so the turn lasts longer in real time.
 |---|---|---|
 | World speed (%) | 40 | The world's speed, of the scheme's engine speed. |
 | Worm speed (%) | 100 | The worm's, in real time: 100 is its normal speed. At most 8 times the world's. |
-| Duration (s) | 6 | How long it lasts, in real seconds, easing in and out included. |
+| Duration (s) | 20 | How long it lasts, in real seconds, easing in and out included. |
 
 It uses `wa.world.set_speed` and `worm.time_scale`, so it needs a WormForge
 newer than 0.9.81. The Lua lives in `weapons/bullet_time.lua`; the icon is
