@@ -61,8 +61,16 @@ function weapon.setup()
   -- below the centre: the body is drawn this far from the traced point, away
   -- from the land, so the feet meet it.
   local LIFT = 13
-  -- What it runs into is its body: 8 pixels about the body's centre.
-  local BODY = 8
+  -- What it runs into is found where PX looks (frt_checkinteract's
+  -- CheckCollisionEx at the traced point): with its own shape there, WA's
+  -- missile shape, a 7x5 block about its hotspot (3, 2). WA tests that
+  -- against a worm's 9x16 box about (4, 9) and a mine's 7x5 block: they
+  -- touch while the centres are less than these apart, across and up/down.
+  local WORM_REACH_X, WORM_REACH_UP, WORM_REACH_DOWN = 8, 12, 9
+  local MINE_REACH_X, MINE_REACH_Y = 7, 5
+  -- The block's half-width, for what is tested as a circle (oil drums,
+  -- Bowling Balls).
+  local PROBE = 3
   local SCALE = 0.95          -- frt_sprscale
   local DEPTH = wa.depth.OBJECTS       -- in front of the terrain, as the Bowling Ball
   local WALK = "sprites/ferret/walk.png"
@@ -71,6 +79,11 @@ function weapon.setup()
   -- PX's record's explosion (ExplodeAt): power 50, push 100%, a Grenade's.
   -- WA's CreateExplosion takes the push first (id) and the power second.
   local BOOM = { damage = 50, id = 100, below = false }
+  -- The record's bias, 100. WA's missile ExplodeAt (0x509AC0) centres the
+  -- blast bias x power / 200 pixels below the point it is given: 25 here,
+  -- in the land under its feet, so the blast throws a worm on it upwards.
+  local BIAS = 100
+  local DROP = BIAS * BOOM.damage // 200
   -- A worm it runs into is thrown first (SpX = TurnSide, SpY = -5), a mine or a
   -- ball flicked (SpX = TurnSide, SpY = -7).
   local WORM_UP, MINE_UP = -5, -7
@@ -144,24 +157,37 @@ function weapon.setup()
     return x + (f.ux * LIFT), y + (f.uy * LIFT)
   end
 
-  -- frt_checkinteract, at a point of its way: what its body touches.
-  local function interact(f, x, y)
-    x, y = body(f, x, y)
-    local _, obj = wa.world.collides({ x = x, y = y, radius = BODY, with = { "worms", "mines", "oil" } })
-    if obj then
-      if obj.kind == "worm" then
-        local current = shared.current_worm()
-        if f.grace > 0 and current and current.id == obj.id then return end
-        obj.vx, obj.vy = f.side, WORM_UP
-        f.boom, f.walking, f.tracing, f.why = true, false, false, "a worm"
-      elseif obj.kind == "oil" then
-        f.boom, f.walking, f.tracing, f.why = true, false, false, "an oil drum"
-      elseif obj.kind == "mine" then
-        obj.vx, obj.vy = f.side, MINE_UP
+  -- What its shape at (x, y) touches: a living worm, a mine or an oil drum.
+  local function touching(x, y)
+    local near = { near = { x, y, WORM_REACH_UP + 1 } }
+    for _, w in ipairs(wa.worms.all(near)) do
+      local dx, dy = (x - w.x), (y - w.y)
+      if w.hp > 0 and math.abs(dx) < WORM_REACH_X and dy > -WORM_REACH_UP and dy < WORM_REACH_DOWN then
+        return w, "worm"
       end
     end
+    for _, m in ipairs(wa.mines.all(near)) do
+      if math.abs(x - m.x) < MINE_REACH_X and math.abs(y - m.y) < MINE_REACH_Y then return m, "mine" end
+    end
+    local _, obj = wa.world.collides({ x = x, y = y, radius = PROBE, with = { "oil" } })
+    if obj then return obj, "oil" end
+  end
+
+  -- frt_checkinteract, at a point of its way: what it touches there.
+  local function interact(f, x, y)
+    local obj, kind = touching(x, y)
+    if kind == "worm" then
+      local current = shared.current_worm()
+      if f.grace > 0 and current and current.id == obj.id then return end
+      obj.vx, obj.vy = f.side, WORM_UP
+      f.boom, f.walking, f.tracing, f.why = true, false, false, "a worm"
+    elseif kind == "oil" then
+      f.boom, f.walking, f.tracing, f.why = true, false, false, "an oil drum"
+    elseif kind == "mine" then
+      obj.vx, obj.vy = f.side, MINE_UP
+    end
     if shared.kick_bowling_balls then
-      shared.kick_bowling_balls(x, y, BODY, f.side, MINE_UP)
+      shared.kick_bowling_balls(x, y, PROBE, f.side, MINE_UP)
     end
   end
 
@@ -181,8 +207,9 @@ function weapon.setup()
   end
 
   -- frt_perform_trace: one step along the outline; at its end, trace on.
+  -- A worm met on the frame's first step doesn't stop the second (PX's
+  -- second call checks only frt_dead): it goes off from there next frame.
   local function walk(f)
-    if f.boom then return false end
     local p = f.outline[f.next]
     if not p then
       f.walking, f.tracing = false, true
@@ -237,8 +264,9 @@ function weapon.setup()
     f.dead = true
     forget(f)
     -- PX's ExplodeAt(PosX, PosY): the traced point at its feet, in the land,
-    -- not the body drawn LIFT above it, so a worm it walks into flies up.
-    a.x, a.y = f.x, f.y
+    -- not the body drawn LIFT above it, and WA moves the blast DROP lower
+    -- still, by the record's bias.
+    a.x, a.y = f.x, f.y + DROP
     a:explode(BOOM)
     if a.id ~= 0 then a:despawn() end
   end
@@ -261,12 +289,11 @@ function weapon.setup()
       explode(f, a)
       return
     end
+    -- PX tests frt_explode before it traces and walks: what they set off
+    -- (a worm, an oil drum, a dead end) goes off next frame, the worm it
+    -- threw having had a frame of WA's to move.
     if f.tracing then trace(f) end
     if f.walking and walk(f) then walk(f) end
-    if f.boom then
-      explode(f, a)
-      return
-    end
     f.grace = f.grace - 1
     local bx, by = f.x, f.y
     if f.planted then bx, by = body(f, f.x, f.y) end

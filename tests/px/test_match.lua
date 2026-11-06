@@ -3494,14 +3494,22 @@ do
   victim.x, victim.y, victim.vx, victim.vy = 260, 190, 0, 0
   spec.on_fire({ worm = thrower, x = 100, y = 120, vx = 0, vy = 0 })
   f = M.spawned[1]
-  run(120)
+  local thrown_at
+  for i = 1, 120 do
+    run(1)
+    if not thrown_at and victim.vy == -5 then thrown_at = { i, f.dead, #M.actor_booms } end
+  end
   check("it blows up on a worm, thrown up first (SpX = TurnSide, SpY = -5)",
     f.dead and #M.actor_booms == 1 and victim.vy == -5 and victim.vx == 1, #M.actor_booms)
+  check("the frame after it threw the worm, as PX tests frt_explode before it walks",
+    thrown_at and not thrown_at[2] and thrown_at[3] == 0, thrown_at and tostring(thrown_at[2]))
   local boom = M.actor_booms[1] or { opts = {} }
   check("a Grenade's blast (power 50, push 100%), PX's record's",
     boom.opts.damage == 50 and boom.opts.id == 100 and boom.opts.below == false)
-  check("at its feet on the floor, not at its body: PX's ExplodeAt(PosX, PosY)",
-    boom.y and boom.y > 195 and boom.y < 204, boom.y)
+  check("25 below its feet: PX's ExplodeAt(PosX, PosY), lowered by the record's bias (100 x 50 / 200)",
+    boom.y and boom.y > 220 and boom.y < 229, boom.y)
+  check("it meets the worm where its own shape touches the worm's box, under it, not 13 pixels out",
+    boom.x and boom.x > victim.x - 11 and boom.x < victim.x, boom.x)
   spec = setup(floor)
   thrower = worm(16)
   thrower.facing, thrower.turn = 1, true
