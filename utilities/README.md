@@ -3,7 +3,7 @@
 WormForge's own add-ons and tools (`core.utilities`, `format_version = 2`):
 **Utilities**, with the match settings the lobby scheme doesn't have and some
 players' favourite mods as switches; **Fog of war**; **Worm glow**; the **+N Seconds**
-utility; and the **Cursor** weapon. Fog of war and the Cursor were their own
+and **Bullet Time** utilities; and the **Cursor** weapon. Fog of war and the Cursor were their own
 packs (`core.fog`, `example.cursor_suite`) until 0.6.0; installing this pack
 from the catalogue moves those to `WormForge/Backups/Packs`, since their
 components are here now (`replaces` in `mod.toml`).
@@ -131,6 +131,26 @@ and in replays: the selection, options included, is frozen with the bundles.
 
 WA rolls a turn's wind after it starts the turn, so the wind is set at the
 first frame after `turn_start` rather than in it.
+
+## Bullet Time
+
+A utility fired like +N Seconds (it is built on WA's Double Time, so WA
+decides when it may be used): for a set time the world runs in slow motion
+while the worm that fired it keeps its own speed. What the worm fires belongs
+to the world and crawls with it. Once on, it runs out by itself; firing it
+again meanwhile gives the unit back. It ends with the turn, and a worm switch
+(Tab) hands it to the new worm. WA's sounds slow down with the world; WA's
+turn clock counts the world's frames, so the turn lasts longer in real time.
+
+| Option | Default | |
+|---|---|---|
+| World speed (%) | 40 | The world's speed, of the scheme's engine speed. |
+| Worm speed (%) | 100 | The worm's, in real time: 100 is its normal speed. At most 8 times the world's. |
+| Duration (s) | 6 | How long it lasts, in real seconds. |
+
+It uses `wa.world.set_speed` and `worm.time_scale`, so it needs a WormForge
+newer than 0.9.81. The Lua lives in `weapons/bullet_time.lua`; the icon is
+`sprites/bullet_time.png`.
 
 ## Fog of war
 

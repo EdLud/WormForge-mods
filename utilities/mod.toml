@@ -1,11 +1,11 @@
 # Core utilities (format_version 2): one feature with the match settings the
 # lobby scheme doesn't have and some players' favourite packs as switches,
-# fog of war, an instant utility of our own (+N Seconds) and the Cursor.
+# fog of war, utilities of our own (+N Seconds, Bullet Time) and the Cursor.
 # Nothing runs until a profile selects it (its card in the mod loader).
 # See README.md.
 id = "core.utilities"
 name = "Core utilities"
-version = "0.14.0"
+version = "0.15.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -149,6 +149,44 @@ min = 1
 max = 500
 label = "Seconds added"
 description = "Time added by each activated unit."
+
+# Bullet Time: the world in slow motion and the worm on its own time for a
+# set time, fired like +N Seconds.
+[[components]]
+id = "utilities.bullet_time"
+type = "weapon"
+name = "Bullet Time"
+description = "Fire it and the world slows down while your worm keeps its speed, for a set time. It can't be paused, and ends with the turn."
+entry = "weapons/bullet_time.lua"
+icon = "sprites/bullet_time.png"
+default_position = { row = "utility", column = 7 }
+
+[[components.options]]
+key = "world_speed"
+type = "int"
+default = 40
+min = 10
+max = 90
+label = "World speed (%)"
+description = "How fast the world runs during Bullet Time, as a percentage of the scheme's engine speed."
+
+[[components.options]]
+key = "worm_speed"
+type = "int"
+default = 100
+min = 10
+max = 400
+label = "Worm speed (%)"
+description = "How fast your worm runs meanwhile, in real time: 100 keeps its normal speed while the world crawls. At most 8 times the world's."
+
+[[components.options]]
+key = "seconds"
+type = "int"
+default = 6
+min = 1
+max = 60
+label = "Duration (s)"
+description = "How long Bullet Time lasts, in real seconds."
 
 # Fog of war (wkFOW's renderer): until 0.5.0 its own bundle, core.fog.
 [[components]]
