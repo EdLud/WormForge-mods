@@ -1,7 +1,8 @@
 local root = MOLE_SHOPPER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../mole_shopper/")
 package.path = root .. "?.lua;" .. package.path
 package.preload["wf-lib/holds"] = function()
-  return {PX_POSTURE = {}, PX_HANDS = {"hand.png"}}
+  return {PX_POSTURE = {weaponlnk = "aim.png", wthrow = "draw.png", wthrowu = "drawu.png", wthrowd = "drawd.png"},
+    PX_HANDS = {"hand.png"}}
 end
 
 -- Declarations must load with no native WA binding.
@@ -40,6 +41,10 @@ dofile(root .. "../tests/tooltip_mock.lua")(root)
 lantern.install()
 local spec = claims[1]
 assert(spec.copy_from == "stock.dynamite" and not spec.handling.ends_turn)
+local worm = spec.worm_sprites
+assert(worm.wdynlnk == "draw.png" and worm.wdynlnku == "drawu.png" and worm.wdynlnkd == "drawd.png",
+  "the worm takes it out empty-handed, not with the Dynamite's stick")
+assert(worm.weaponlnk == "aim.png" and worm.wthrow == "draw.png")
 local owner = {id = 42, x = 100, y = 80, vx = 3, vy = 2, facing = -1, alliance = 1}
 spec.on_fire{worm = owner}
 local body = actors[1]

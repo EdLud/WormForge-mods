@@ -4,6 +4,11 @@ local lights = require("lib/lights")
 local ART = "sprites/lantern/"
 -- Share of WA's mine rebound a lantern keeps: half, so it lands heavier.
 local REBOUND = 0.5
+-- WA's take-out shows the Dynamite's stick; take it out empty-handed (PX's
+-- draw) and draw the lantern in the hand.
+local P = holds.PX_POSTURE
+local WORM_SPRITES = {wdynlnk = P.wthrow, wdynlnku = P.wthrowu, wdynlnkd = P.wthrowd}
+for sheet, path in pairs(P) do WORM_SPRITES[sheet] = path end
 
 return {
   defaults = {ammo = {round_start = 20}, delay = 0},
@@ -15,7 +20,7 @@ return {
       panel_icon = ART .. "icon.png",
       is_weapon = true,
       handling = {remember_selection = false, ends_turn = false, shots = 1, retreat = 3000},
-      worm_sprites = holds.PX_POSTURE,
+      worm_sprites = WORM_SPRITES,
       sprites = {ART .. "body.png"},
       params = {gpu_prefix = ART},
       hold = {
