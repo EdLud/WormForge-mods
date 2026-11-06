@@ -4,8 +4,10 @@ local holds = require("wf-lib/holds")
 local weapon = {}
 local clouds = {}
 local ART = "sprites/toxic_grenade/"
+local SMOKE = ART.."smoke.png"
 local FINISH_TURN = 55 -- PX M_TURNEND; WA also sends it to a worm during Tab.
 local pending_end
+local abs = math.abs
 
 local function finish_candidate(worms,confirmed)
   local ending=pending_end
@@ -27,29 +29,41 @@ local function puff(x,y)
     vx=3*random_signed(),vy=3*random_signed()}
 end
 
-local function move(p,worms)
-  p.age=p.age+1
+-- The living worms of this step, read once, the first time a puff checks
+-- them: a worm's fields are engine reads, and every puff of a cloud checks
+-- on the same frame. Poison only records a dose, so they hold for the step.
+local wx,wy,ww,wn={}, {}, {}, nil
+local function gather(worms)
+  wn=0
+  for _,w in ipairs(worms) do
+    if w.hp>0 then wn=wn+1;wx[wn],wy[wn],ww[wn]=w.x,w.y,w end
+  end
+end
+
+local function move(p,worms,random,solid)
+  local x,y,vx,vy=p.x,p.y,p.vx,p.vy
+  local age=p.age+1
+  p.age=age
   -- Source redirects a blocked endpoint by 90 degrees, damping both axes.
   -- Each attempt shrinks speed; bound it as well for buried spawn points.
   for _=1,128 do
-    if not wa.land.solid(p.x+p.vx,p.y+p.vy) then break end
-    if wa.random(0,1)==0 then
-      p.vx=p.vy*-0.94;p.vy=p.vx*0.94
+    if not solid(x+vx,y+vy) then break end
+    if random(0,1)==0 then
+      vx=vy*-0.94;vy=vx*0.94
     else
-      p.vx=p.vy*0.94;p.vy=p.vx*-0.94
+      vx=vy*0.94;vy=vx*-0.94
     end
-    if math.abs(p.vx)<0.1 and math.abs(p.vy)<0.1 then break end
+    if abs(vx)<0.1 and abs(vy)<0.1 then break end
   end
-  if p.age%8==0 then
-    for _,w in ipairs(worms) do
-      if w.hp>0 and math.abs(w.x-p.x)<20 and math.abs(w.y-p.y)<20 then
-        w:poison(2)
-      end
+  if age%8==0 then
+    if not wn then gather(worms) end
+    for k=1,wn do
+      if abs(wx[k]-x)<20 and abs(wy[k]-y)<20 then ww[k]:poison(2) end
     end
   end
-  p.x,p.y=p.x+p.vx,p.y+p.vy
-  p.vx=p.vx*0.995+0.05*random_signed()
-  p.vy=(p.vy-0.02)*0.995+0.05*random_signed()
+  p.x,p.y=x+vx,y+vy
+  p.vx=vx*0.995+0.05*(random(-10000,10000)/10000)
+  p.vy=(vy-0.02)*0.995+0.05*(random(-10000,10000)/10000)
 end
 
 local function detonate(event)
@@ -65,19 +79,23 @@ local function detonate(event)
   local function step(a)
     local worms=wa.worms.all()
     finish_candidate(worms,false)
-    -- Existing particles get their frame before the emitter creates new ones.
-    local i=1
-    while i<=#s.puffs do
-      local p=s.puffs[i]
-      move(p,worms)
-      if p.age>p.life then table.remove(s.puffs,i) else i=i+1 end
+    -- Existing particles get their frame before the emitter creates new ones;
+    -- the survivors keep their order.
+    local puffs,random,solid=s.puffs,wa.random,wa.land.solid
+    local n,kept=#puffs,0
+    wn=nil
+    for i=1,n do
+      local p=puffs[i]
+      move(p,worms,random,solid)
+      if p.age<=p.life then kept=kept+1;puffs[kept]=p end
     end
+    for i=kept+1,n do puffs[i]=nil end
     if s.turns>=0 then
       if s.age%8==0 then
-        for _=1,6 do s.puffs[#s.puffs+1]=puff(s.x,s.y) end
+        for _=1,6 do puffs[#puffs+1]=puff(s.x,s.y) end
       end
       s.age=s.age+1
-    elseif #s.puffs==0 then
+    elseif #puffs==0 then
       for i,c in ipairs(clouds) do if c==s then table.remove(clouds,i);break end end
       a:despawn()
     end
@@ -114,24 +132,36 @@ function weapon.setup()
       for _,s in ipairs(clouds) do pending_end[#pending_end+1]=s end
     end
   end,{msgs={FINISH_TURN,wa.msg.TURN_STARTED}})
+  -- One quad table for every puff: the verb copies what it reads.
+  local c1,c2,c3,c4={0,0},{0,0},{0,0},{0,0}
+  local q={sprite=SMOKE,frame=0,color=0,depth=0,points={c1,c2,c3,c4}}
   wa.on.draw(function()
+    if not clouds[1] then return end
+    local quad,cos,sin,floor=wa.draw.quad,math.cos,math.sin,math.floor
+    q.depth=wa.depth.OBJECTS
     for _,s in ipairs(clouds) do
       if s.actor.id~=0 then
-        for _,p in ipairs(s.puffs) do
+        local puffs=s.puffs
+        for i=1,#puffs do
+          local p=puffs[i]
           local v=looks[p]
           if not v then
             v={rotation=wa.draw.random()*6,size=0.75+0.1*(wa.draw.random()*2-1)}
             looks[p]=v
           end
-          local t=math.min(1,p.age/p.life)
-          local half=16*(v.size+(1.75-v.size)*t)
-          local angle=v.rotation+p.age*0.05
-          local c,sn=math.cos(angle)*half,math.sin(angle)*half
-          local alpha=math.floor(255+(35-255)*t)
-          wa.draw.quad{sprite=ART.."smoke.png",frame=0,
-            color=alpha*0x1000000+0x80DC80,depth=wa.depth.OBJECTS,
-            points={{p.x-c+sn,p.y-sn-c},{p.x+c+sn,p.y+sn-c},
-              {p.x+c-sn,p.y+sn+c},{p.x-c-sn,p.y-sn+c}}}
+          local age,size=p.age,v.size
+          local t=age/p.life
+          if t>1 then t=1 end
+          local half=16*(size+(1.75-size)*t)
+          local angle=v.rotation+age*0.05
+          local c,sn=cos(angle)*half,sin(angle)*half
+          local x,y=p.x,p.y
+          c1[1],c1[2]=x-c+sn,y-sn-c
+          c2[1],c2[2]=x+c+sn,y+sn-c
+          c3[1],c3[2]=x+c-sn,y+sn+c
+          c4[1],c4[2]=x-c-sn,y-sn+c
+          q.color=floor(255-220*t)*0x1000000+0x80DC80
+          quad(q)
         end
       end
     end
