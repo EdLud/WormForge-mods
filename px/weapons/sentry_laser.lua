@@ -39,6 +39,9 @@ function weapon.definition()
           "sounds/sentry_laser/sentrylaserplace.wav", "sounds/sentry_laser/sentrylaserbeep.wav",
           "sounds/sentry_laser/sentrylaserstart.wav", "sounds/sentry_laser/sentrylaserloop.wav",
           "sounds/sentry_laser/sentrylaserend.wav", "sounds/sentry_laser/sentrylaserdisin.wav",
+          -- The Laser Gun's beam start and end, declared here too: a profile
+          -- without the Laser Gun would not load them.
+          "sounds/laser_gun/laser_start.wav", "sounds/laser_gun/laser_end.wav",
         },
     params = {
           sprite_columns = 1,
