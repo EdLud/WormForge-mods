@@ -9,6 +9,10 @@ weapon.record = {
   },
 }
 
+-- The Kamikaze soundbank's "Collect" (its crate pickup) as the click calls
+-- it in, the same for every team whatever bank it has.
+local COLLECT = "soundbank/Kamikaze/Collect"
+
 -- Gravity Control's error, declared here too: a profile without Gravity
 -- Control would not load it, and a refusal would be silent.
 local ERROR = "sounds/gravity_control/error.wav"
@@ -19,7 +23,7 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/nuclear_test.wep",
     panel_icon = "sprites/reinforcement/icon.png",
-    sounds = { ERROR },
+    sounds = { COLLECT, ERROR },
     on_select = { cursor = true },
     on_click = function(ev) fires.reinforcement(ev) end,
   })
@@ -109,6 +113,7 @@ function weapon.setup()
       wa.log("Reinforcement: " .. tostring(spawned))
       wa.sound.play(worm, ERROR)
     else
+      wa.sound.play(worm, COLLECT)
       local flying, on = pcall(spawned.use, spawned, "stock.jet_pack")
       if flying and on then
         spawned.selectable = false
