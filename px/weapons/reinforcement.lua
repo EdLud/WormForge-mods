@@ -9,12 +9,17 @@ weapon.record = {
   },
 }
 
+-- Gravity Control's error, declared here too: a profile without Gravity
+-- Control would not load it, and a refusal would be silent.
+local ERROR = "sounds/gravity_control/error.wav"
+
 function weapon.definition()
   local shared = require("lib/shared")
   local fires = shared.fires
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/nuclear_test.wep",
     panel_icon = "sprites/reinforcement/icon.png",
+    sounds = { ERROR },
     on_select = { cursor = true },
     on_click = function(ev) fires.reinforcement(ev) end,
   })
@@ -102,7 +107,7 @@ function weapon.setup()
     local ok, spawned = pcall(wa.worms.spawn, { team = worm.team, x = x, y = DROP_Y, name = NAME, health = HEALTH })
     if not ok then
       wa.log("Reinforcement: " .. tostring(spawned))
-      wa.sound.play(worm, "sounds/gravity_control/error.wav")
+      wa.sound.play(worm, ERROR)
     else
       local flying, on = pcall(spawned.use, spawned, "stock.jet_pack")
       if flying and on then

@@ -20,7 +20,9 @@ function weapon.definition()
           "sprites/electric_grenade/explosion.png", "sprites/electric_grenade/tazed1.png",
           "sprites/electric_grenade/tazed2.png",
         },
-    sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav" },
+    -- Gravity Control's error too, for a refused revive: declared here, or
+    -- a profile without Gravity Control would not load it.
+    sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav", "sounds/gravity_control/error.wav" },
     params = { gpu_prefix = "sprites/" },
     -- Click-only dispatch keeps the strike's cursor and turn handling.
         on_select = { cursor = true },
