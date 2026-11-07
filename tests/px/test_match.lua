@@ -3871,10 +3871,11 @@ do
     and spec.wep == "weps/mine_strike.wep" and spec.panel_icon == "sprites/submarine_attack/icon.png"
     and type(spec.on_click) == "function" and spec.on_select and spec.on_select.cursor)
   local SHEET = "sprites/submarine_attack/submarine.png"
-  local function attack(vx)
+  local function attack(vx, y)
     M.water, M.launched, M.sounds, M.quads = 600, {}, {}, {}
+    M.gravity = 15728 / 65536 -- the scheme's default
     local before = #(M.spawned or {})
-    spec.on_click({ worm = worm(16), x = 1000, y = 400, vx = vx, sky = wa.world.sky })
+    spec.on_click({ worm = worm(16), x = 1000, y = y or 400, vx = vx, sky = wa.world.sky })
     local a = M.spawned[#M.spawned]
     local r = { actor = #M.spawned == before + 1 and a, at = {}, sounds = M.sounds }
     M.draw()
@@ -3899,13 +3900,36 @@ do
   for i = 2, #r.at do even = even and r.at[i] - r.at[i - 1] == 3 end
   check("twenty missiles, one every three frames, from frame 132", even and r.at[1] == 132 and r.at[20] == 189,
     table.concat(r.at, ","))
+  -- How near a missile's arc, stepped as WA steps it under the world's
+  -- gravity, passes the click; PX scatters the missiles 15 pixels either way.
+  local function miss(l, cx, cy)
+    local x, y, vx, vy, best = l.x, l.y, l.vx, l.vy, math.huge
+    for _ = 1, 500 do
+      vy = vy + M.gravity
+      local nx, ny = x + vx, y + vy
+      local dx, dy = nx - x, ny - y
+      local t = math.max(0, math.min(1, ((cx - x) * dx + (cy - y) * dy) / (dx * dx + dy * dy)))
+      best = math.min(best, math.sqrt((x + t * dx - cx) ^ 2 + (y + t * dy - cy) ^ 2))
+      x, y = nx, ny
+    end
+    return best
+  end
+  local function aimed(at_y)
+    local ok, worst = #M.launched == 20, 0
+    for _, l in ipairs(M.launched) do
+      worst = math.max(worst, miss(l, 1000, at_y))
+      ok = ok and l.y == 598 and l.vy < 0 and l.x <= 1000 + 15
+    end
+    return ok and worst <= 15, string.format("%.1f px", worst)
+  end
   local ok = true
   for _, l in ipairs(M.launched) do
     ok = ok and l.weapon == "bazooka" and l.y == 598 and l.vx == 10 and l.vy == -15
-      and l.x >= 970 and l.x <= 1000 and l.missile.explosion.power == 20
+      and l.missile.explosion.power == 20
       and l.missile.sprite == "airmisl" and l.missile.ends_on_contact.water
   end
-  check("each WA's air-strike missile, fired as the Bazooka, up out of the water under the click", ok)
+  check("each WA's air-strike missile, fired as the Bazooka, up out of the water at PX's speed", ok)
+  check("their arcs pass through the click 200 pixels above the water", aimed(400))
   local bombs = 0
   for _, s in ipairs(r.sounds) do
     if s == "sounds/submarine_attack/substrikem.wav" then bombs = bombs + 1 end
@@ -3917,9 +3941,18 @@ do
     and q.depth == 0x20000 and q.color == 0xFF7878FF and q.points[1][1] < q.points[2][1])
   local left = attack(-1)
   ok = #M.launched == 20
-  for _, l in ipairs(M.launched) do ok = ok and l.vx == -10 and l.x >= 1000 and l.x <= 1030 end
+  for _, l in ipairs(M.launched) do ok = ok and l.vx == -10 and l.x > 1000 end
   check("from the right: the missiles go left, the submarine is mirrored", ok
     and left.first_quad.points[1][1] > left.first_quad.points[2][1])
+  attack(1, 598)
+  check("a click on the water: fired under it, as PX", aimed(598))
+  -- PX's -15 a frame tops out some 470 pixels above the water.
+  attack(1, 0)
+  check("a click 600 pixels up: faster and steeper, through the click", aimed(0))
+  ok = true
+  for _, l in ipairs(M.launched) do ok = ok and l.vy < -15 and l.vx < 10 and l.x >= 1000 - 250 - 15 end
+  check("no further back than 250 pixels", ok)
+  M.gravity = nil
 end
 
 print("chilli bomb: five more Chillis burst out")

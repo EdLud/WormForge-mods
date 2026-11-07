@@ -105,12 +105,33 @@ function weapon.setup()
     s.plane_x, s.drop, s.counter = x, drop, 0
   end
 
+  -- PX fires every missile 15 pixels behind the click, at BOMB_VX, BOMB_VY,
+  -- whatever the click's height: under WA's gravity that arc crosses the
+  -- click's x some 20 pixels above the water, and passes a higher click far
+  -- to the side (above ~470 pixels, never reaches it). Here the arc is solved
+  -- for the click: launched as far behind it as the missile travels while it
+  -- climbs there, faster where BOMB_VY would top out below it, and steeper
+  -- where the climb would put the submarine more than MAX_BACK away.
+  local MAX_BACK = 250
+  local APEX_MARGIN = 0.75 -- reach the click by 3/4 of the arc's height
+  local function aim(s, water)
+    local h = math.max(0, (water - 2) - s.ty)
+    local g = wa.world.gravity() * BOMB.gravity_pct / 100
+    local vy = -BOMB_VY
+    if 2 * g * h > APEX_MARGIN * vy * vy then vy = math.sqrt(2 * g * h / APEX_MARGIN) end
+    -- First frame at height h, in the form that holds as g goes to 0.
+    local t = 2 * h / (vy + math.sqrt(math.max(0, vy * vy - 2 * g * h)))
+    local vx, back = BOMB_VX, BOMB_VX * t
+    if back > MAX_BACK then vx, back = MAX_BACK / t, MAX_BACK end
+    s.bomb_vx, s.bomb_vy, s.back = vx, -vy, back
+  end
+
   -- SubStrike::DropBomb.
   local function drop_bomb(s, a)
-    local x = s.tx - 15 * s.dir + sign(wa.random(-10, 10)) * wa.random(0, 15)
+    local x = s.tx - s.back * s.dir + sign(wa.random(-10, 10)) * wa.random(0, 15)
     wa.weapons.launch({
       weapon = "stock.bazooka", owner = s.owner, x = x, y = wa.world.water() - 2,
-      vx = BOMB_VX * s.dir, vy = BOMB_VY, missile = BOMB,
+      vx = s.bomb_vx * s.dir, vy = s.bomb_vy, missile = BOMB,
     })
     wa.sound.play(a, BOMB_SOUND)
   end
@@ -156,7 +177,10 @@ function weapon.setup()
     local dir = (ev.vx or 0) < 0 and -1 or 1
     local s = { tx = ev.x, ty = ev.y, dir = dir, owner = ev.worm, water = water,
       tick = 0, before = BEFORE_ATTACK, after = AFTER_ATTACK, fade = 0 }
-    s.x0, s.y0 = ev.x - 125 * dir, water + 220
+    aim(s, water)
+    -- PX's submarine rises 125 pixels behind the click for missiles fired 15
+    -- behind it; it keeps that distance to where they are fired from.
+    s.x0, s.y0 = ev.x - (110 + s.back) * dir, water + 220
     s.x, s.y = s.x0, s.y0
     plane_start(s, water, wa.world.size().w)
     local a = wa.actors.spawn({
