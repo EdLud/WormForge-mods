@@ -40,13 +40,17 @@ function weapon.setup()
     return y
   end
 
-  -- A click places it: PX drops the worm at the click's x from 200 pixels
-  -- above the map on a jet pack with no fuel, and stands it up once it has
-  -- landed. Here it stands on the ground under the click straight away, so
-  -- it takes no fall damage either. Over the water it drops in at the
-  -- surface, as PX's falls in. It takes a dead worm's place, as PX's does;
-  -- with 8 living worms the team is full (PX: "Too many worms (8) in your
-  -- team!").
+  -- A click places it: as PX's, the worm drops in at the click's x from 200
+  -- pixels above the map on WA's own jet pack (`worm:use`), nobody flying
+  -- it, so it sinks slowly and lands without fall damage; it is stood up once
+  -- it has come to rest. Over the water it falls in, as PX's does. A DLL that
+  -- can't start the jet pack stands it on the ground under the click instead.
+  -- It takes a dead worm's place, as PX's does; with 8 living worms the team
+  -- is full (PX: "Too many worms (8) in your team!").
+  local DROP_Y = -200
+  -- PX's PrepareToLand: at rest after 5 frames on the jet pack (SpY < 0.1),
+  -- and here on something too, so a slow start high up is no landing.
+  local SETTLE, AT_REST = 5, 0.1
   -- It can't be used while the team has eight living worms, so it can't be
   -- picked then either: greyed on the panel and skipped by the F-keys
   -- (wa.weapons.set_selectable), rather than picked to be refused. Checked as
@@ -69,16 +73,44 @@ function weapon.setup()
   wa.on.turn_start(update_selectable)
   wa.on.death(update_selectable)
 
+  -- Worms coming down, by id: the frames each has been on the jet pack. Out
+  -- of turns while in the air.
+  local dropping = {}
+
+  wa.on.worm_message(function(w)
+    local frames = dropping[w.id]
+    if not frames then return end
+    if w.state ~= "jetpacking" then
+      -- WA has it: fuel gone, hit, in the water, or freed.
+      dropping[w.id] = nil
+      w.selectable = true
+    elseif frames >= SETTLE and w.vy < AT_REST and not w:fits(w.x, w.y + 1) then
+      -- Down: off the jet pack into WA's falling, which stands it up.
+      dropping[w.id] = nil
+      w:release(0, 0)
+      w.selectable = true
+    else
+      dropping[w.id] = frames + 1
+    end
+  end, { msgs = { wa.msg.FRAME_FINISH } })
+
   shared.fires.reinforcement = function(ev)
     local worm = ev.worm
     local x = ev.x // 1
     local y = ground(x)
     local at = y and (y - STAND) or wa.world.water() - STAND
-    local ok, spawned = pcall(wa.worms.spawn, { team = worm.team, x = x, y = at, name = NAME, health = HEALTH })
+    local ok, spawned = pcall(wa.worms.spawn, { team = worm.team, x = x, y = DROP_Y, name = NAME, health = HEALTH })
     if not ok then
       wa.log("Reinforcement: " .. tostring(spawned))
       wa.sound.play(worm, "sounds/gravity_control/error.wav")
     else
+      local flying, on = pcall(spawned.use, spawned, "stock.jet_pack")
+      if flying and on then
+        spawned.selectable = false
+        dropping[spawned.id] = 0
+      else
+        spawned.x, spawned.y = x, at
+      end
       if shared.fresh_hand then
         -- Highlander's rules: dealt a fresh hand, as a new worm.
         shared.fresh_hand(spawned)

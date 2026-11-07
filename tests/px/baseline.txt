@@ -66,7 +66,7 @@ missile_frame 6
 body_move 1
 turn_end 8
 turn_start 11
-worm_message 22
+worm_message 23
 
 # globals the pack defines
 

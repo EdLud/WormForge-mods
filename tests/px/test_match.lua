@@ -582,8 +582,22 @@ local function new_match(opts)
           return w
         end
         -- As the engine's: a worm, with the place it took (here its team's
-        -- eighth) for an id.
-        return { kind = "worm", id = spec.team * 16 + 8, team = spec.team, x = spec.x, y = spec.y, hp = spec.health }
+        -- eighth) for an id. With M.jet_pack_use, as a DLL whose worm:use
+        -- starts WA's jet pack; else as an older one's, which refuses it.
+        local w = { kind = "worm", id = spec.team * 16 + 8, team = spec.team, x = spec.x, y = spec.y, hp = spec.health,
+          state = "standing", vy = 0 }
+        function w:use(weapon)
+          if not M.jet_pack_use then error("worm:use: performs the Fire Punch family so far") end
+          assert(weapon == "stock.jet_pack", weapon)
+          self.state = "jetpacking"
+          return true
+        end
+        -- Its centre 12 pixels over the land it would stand on.
+        function w:fits(_, y) return not M.solid or not M.solid(self.x, y + 12) end
+        function w:release(vx, vy) self.released, self.vx, self.vy, self.state = true, vx, vy, "falling"; return true end
+        M.spawned_worms = M.spawned_worms or {}
+        M.spawned_worms[#M.spawned_worms + 1] = w
+        return w
       end,
       all = function()
         local live = {}
@@ -1275,26 +1289,53 @@ do
   check("a later hit cannot freeze a dead worm", target.state == "tumbling")
 end
 
-print("Reinforcement: a new worm for the team, on the ground under the click")
+print("Reinforcement: a new worm for the team, dropped in on WA's jet pack")
 do
   new_match()
     local click
   for _, spec in ipairs(replaced) do if spec.weapon == "nuclear_test" then click = spec.on_click end end
   local w = worm(16)
   M.solid = function(_, y) return y >= 300 end
-  M.worm_spawns, M.sounds = {}, {}
+  M.worm_spawns, M.spawned_worms, M.sounds = {}, {}, {}
+  M.jet_pack_use = true
   click({ worm = w, x = 250 + 0.25, y = 40 })
-  local s = M.worm_spawns[1]
-  check("PX's Reinforcement: the team's, 200 health, at the click's column, standing on the ground",
+  local s, r = M.worm_spawns[1], M.spawned_worms[1]
+  check("PX's Reinforcement: the team's, 200 health, at the click's column, 200 pixels above the map",
     s and s.team == w.team and s.name == "Reinforcement" and s.health == 200
-      and s.x == 250 and s.y == (300 - 12), s and (s.x .. "," .. s.y) or "none")
+      and s.x == 250 and s.y == -200, s and (s.x .. "," .. s.y) or "none")
+  check("on WA's jet pack, out of turns while it comes down", r and r.state == "jetpacking" and r.selectable == false)
+  local function frames(n) for _ = 1, n do M.message(r, wa.msg.FRAME_FINISH) end end
+  r.vy = 0
+  frames(8)
+  check("at rest in the air high up is no landing", not r.released and r.state == "jetpacking")
+  r.vy, r.y = 1.5, 200
+  frames(3)
+  check("sinking, it is left on the jet pack", not r.released)
+  r.vy, r.y = 0, 300 - 12
+  frames(1)
+  check("down on the ground: off the jet pack into WA's falling, back in turns",
+    r.released and r.vx == 0 and r.vy == 0 and r.selectable == true)
   M.solid = function() return false end
   M.water = 500
   click({ worm = w, x = 100, y = 40 })
-  check("over the water it drops in at the surface", M.worm_spawns[2] and M.worm_spawns[2].y == (500 - 12))
+  local sea = M.spawned_worms[2]
+  sea.state = "tumbling"
+  M.message(sea, wa.msg.FRAME_FINISH)
+  check("over the water WA has it once it falls in: back in turns, never released",
+    not sea.released and sea.selectable == true)
+  -- A DLL whose worm:use refuses the jet pack: on the ground under the click.
+  M.jet_pack_use = nil
+  M.solid = function(_, y) return y >= 300 end
+  click({ worm = w, x = 250, y = 40 })
+  local old = M.spawned_worms[3]
+  check("without the jet pack it stands on the ground under the click", old and old.x == 250 and old.y == 300 - 12
+    and old.selectable == nil, old and (old.x .. "," .. old.y) or "none")
+  M.solid = function() return false end
+  click({ worm = w, x = 100, y = 40 })
+  check("and over the water it drops in at the surface", M.spawned_worms[4] and M.spawned_worms[4].y == (500 - 12))
   M.team_full = true
   click({ worm = w, x = 100, y = 40 })
-  check("a full team gets no worm, and an error sound", #M.worm_spawns == 2
+  check("a full team gets no worm, and an error sound", #M.worm_spawns == 4
     and M.sounds[#M.sounds] == "sounds/gravity_control/error.wav")
   M.team_full, M.water, M.solid = nil, nil, nil
   -- With eight living worms it can't be used, so it can't be picked: greyed
