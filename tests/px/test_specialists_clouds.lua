@@ -94,5 +94,31 @@ toxic.definition.on_explode{x=100,y=100,worm={id=999}};cloud=bodies[4];blocked=t
 assert(cloud.spec.owner==target,"a grenade outliving its owner uses a valid current body")
 for _=1,10 do step()end
 assert(cloud.id~=0 and #bodies==4)
+-- wa.draw.quads draws the very quads one wa.draw.quad a puff draws.
+blocked=false
+toxic.definition.on_explode{x=300,y=100};cloud=bodies[#bodies]
+for _=1,20 do step()end
+-- The verb copies what it reads, as the hook relies on: so does this mock.
+local keep=wa.draw.quad
+wa.draw.quad=function(q)
+  local p=q.points
+  draws[#draws+1]={sprite=q.sprite,color=q.color,points={{p[1][1],p[1][2]},{p[2][1],p[2][2]},{p[3][1],p[3][2]},{p[4][1],p[4][2]}}}
+end
+render();local single=draws
+wa.draw.quad=keep
+assert(#single>6)
+wa.draw.quads=function(b)
+  assert(b.sprite==single[1].sprite and b.depth==wa.depth.OBJECTS and b.count<=4096)
+  for i=0,b.count-1 do
+    local n=b.quads;local k=i*9
+    draws[#draws+1]={color=n[k+9],points={{n[k+1],n[k+2]},{n[k+3],n[k+4]},{n[k+5],n[k+6]},{n[k+7],n[k+8]}}}
+  end
+end
+render();wa.draw.quads=nil
+assert(#draws==#single)
+for i,d in ipairs(draws) do
+  assert(d.color==single[i].color)
+  for c=1,4 do for a=1,2 do assert(d.points[c][a]==single[i].points[c][a]) end end
+end
 print("Platform geometry, fixed placement, damage art and one death blast passed")
 print("Toxic cloud simulation, native poison exposure, draw isolation, turn dedup and expiry passed")

@@ -132,13 +132,20 @@ function weapon.setup()
       for _,s in ipairs(clouds) do pending_end[#pending_end+1]=s end
     end
   end,{msgs={FINISH_TURN,wa.msg.TURN_STARTED}})
-  -- One quad table for every puff: the verb copies what it reads.
+  -- Every puff in one wa.draw.quads call, nine numbers each (a call takes
+  -- at most 4096). A DLL without the verb gets one wa.draw.quad a puff,
+  -- from one quad table: the verbs copy what they read.
+  local MAX=4096*9
+  local buf={}
+  local batch={sprite=SMOKE,frame=0,depth=0,quads=buf,count=0}
   local c1,c2,c3,c4={0,0},{0,0},{0,0},{0,0}
   local q={sprite=SMOKE,frame=0,color=0,depth=0,points={c1,c2,c3,c4}}
   wa.on.draw(function()
     if not clouds[1] then return end
-    local quad,cos,sin,floor=wa.draw.quad,math.cos,math.sin,math.floor
-    q.depth=wa.depth.OBJECTS
+    local quads,quad,cos,sin,floor=wa.draw.quads,wa.draw.quad,math.cos,math.sin,math.floor
+    batch.depth=wa.depth.OBJECTS
+    q.depth=batch.depth
+    local n=0
     for _,s in ipairs(clouds) do
       if s.actor.id~=0 then
         local puffs=s.puffs
@@ -156,15 +163,25 @@ function weapon.setup()
           local angle=v.rotation+age*0.05
           local c,sn=cos(angle)*half,sin(angle)*half
           local x,y=p.x,p.y
-          c1[1],c1[2]=x-c+sn,y-sn-c
-          c2[1],c2[2]=x+c+sn,y+sn-c
-          c3[1],c3[2]=x+c-sn,y+sn+c
-          c4[1],c4[2]=x-c-sn,y-sn+c
-          q.color=floor(255-220*t)*0x1000000+0x80DC80
-          quad(q)
+          local color=floor(255-220*t)*0x1000000+0x80DC80
+          if quads then
+            buf[n+1],buf[n+2],buf[n+3],buf[n+4]=x-c+sn,y-sn-c,x+c+sn,y+sn-c
+            buf[n+5],buf[n+6],buf[n+7],buf[n+8]=x+c-sn,y+sn+c,x-c-sn,y-sn+c
+            buf[n+9]=color
+            n=n+9
+            if n==MAX then batch.count=4096;quads(batch);n=0 end
+          else
+            c1[1],c1[2]=x-c+sn,y-sn-c
+            c2[1],c2[2]=x+c+sn,y+sn-c
+            c3[1],c3[2]=x+c-sn,y+sn+c
+            c4[1],c4[2]=x-c-sn,y-sn+c
+            q.color=color
+            quad(q)
+          end
         end
       end
     end
+    if n>0 then batch.count=n//9;quads(batch) end
   end)
 end
 return weapon
