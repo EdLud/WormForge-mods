@@ -106,7 +106,8 @@ function weapon.setup()
         sprite = sheet, x = x, y = y, gravity = false,
         collide = false, owner = worm, visibility = worm, on = function() end,
       })
-      a:gfx({ glow_of = worm })
+      -- Drawn as the worm is between frames, on its own time too (Bullet Time).
+      a:gfx({ glow_of = worm, follow = worm })
       return a
     end
 

@@ -126,10 +126,13 @@ function weapon.setup()
       -- in its basket, whose art faces left.
       local f = worm.facing
       local function art(sheet)
-        return wa.actors.spawn({
+        local a = wa.actors.spawn({
           sprite = sheet, x = b.x, y = b.y, gravity = false,
           collide = false, owner = worm, visibility = worm, on = function() end,
         })
+        -- Drawn as the worm is between frames, on its own time too (Bullet Time).
+        a:gfx({ follow = worm })
+        return a
       end
       b.balloon = b.balloon or art("sprites/balloon/balloon.png")
       if not b.basket then

@@ -348,10 +348,13 @@ function weapon.setup()
     -- RenderWorm: in the water, the swim or float animation in the worm's
     -- place (its art faces left). The bubble is drawn at render time below.
     local function art(sheet)
-      return wa.actors.spawn({
+      local a = wa.actors.spawn({
         sprite = sheet, x = worm.x, y = worm.y, gravity = false,
         collide = false, owner = worm, visibility = worm, on = function() end,
       })
+      -- Drawn as the worm is between frames, on its own time too (Bullet Time).
+      a:gfx({ follow = worm })
+      return a
     end
     if s.plopped then
       local sheet = s.floating and "sprites/swim_suit/float.png" or "sprites/swim_suit/swim.png"
