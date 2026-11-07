@@ -57,6 +57,11 @@ function weapon.setup()
   -- counter among them, stay, as with PX's RenderWorm override.
   --
   -- Speeds and factors use Lua floats; the engine rounds writes to WA fields.
+  --
+  -- Its frames are the worm's own: under Bullet Time (worm.time_scale) WA
+  -- steps the worm 2 or 3 times a world frame, and the flight's frame runs
+  -- that many times (own_time).
+  local own_time = require("wf-lib/own_time")
 
   -- Its fuel, PX's FuelAmount, is its record's (`jet_pack.fuel`, in
   -- this module's record): WA gives it the worm when the jet pack starts.
@@ -144,7 +149,7 @@ function weapon.setup()
     if worm.weapon == "px.helicopter" and state == "prefiring" and not (h and h.flying) then
       h = heli_of(worm)
       h.jumpin, h.armed = true, true
-      h.jump_phase = h.jump_phase + 0.047
+      h.jump_phase = h.jump_phase + 0.047 * own_time.frames(worm)
     end
     -- FireFinal: the jet pack it wound up has started.
     if h and h.armed and state == "jetpacking" and not h.flying then
@@ -178,63 +183,66 @@ function weapon.setup()
       h.climb_out, h.jump_phase = true, 1
     end
     if h.flying then
-      local vx, vy = worm.vx, worm.vy
-      -- Rotor and radio, while it moves.
-      if vx ~= 0 or vy ~= 0 then
-        if h.ticks % 47 == 0 then wa.sound.play(worm, "sounds/helicopter/helicopterloop.wav") end
-        local radio = wa.random(1, 200)
-        if radio % 20 == 0 and radio <= 80 then
-          wa.sound.play(worm, "sounds/helicopter/" .. (radio // 20) .. ".wav")
+      for i = 1, own_time.frames(worm) do
+        local vx, vy = worm.vx, worm.vy
+        -- Rotor and radio, while it moves.
+        if vx ~= 0 or vy ~= 0 then
+          if h.ticks % 47 == 0 then wa.sound.play(worm, "sounds/helicopter/helicopterloop.wav") end
+          local radio = wa.random(1, 200)
+          if radio % 20 == 0 and radio <= 80 then
+            wa.sound.play(worm, "sounds/helicopter/" .. (radio // 20) .. ".wav")
+          end
         end
-      end
-      h.ticks = h.ticks + 1
-      if worm.y >= wa.world.water() then
-        heli_crash(worm, h, vx, vy)
-        return
-      end
-      if h.launch then
-        h.jump_phase, h.jumpin, h.launch = 0, false, false
-        if HELI_REALISTIC then worm.wind = 0.2 end
-      end
-      local k = worm.keys
-      local up, down, left, right = k.up, k.down, k.left, k.right
-      if not up and not down then vy = vy / 1.105 end
-      if not left and not right then vx = vx / 1.105 end
-      if up and down then vy = vy / 1.095 end
-      if left and right then vx = vx / 1.095 end
-      -- Diagonals: PX's lines damp each pair twice.
-      for _, d in ipairs({ { up, right }, { up, left }, { down, right }, { down, left } }) do
-        if d[1] and d[2] then
-          vx, vy = vx * 0.99 * 0.99, vy * 0.99 * 0.99
+        h.ticks = h.ticks + 1
+        -- Where WA last moved it: in its world frame's first.
+        if i == 1 and worm.y >= wa.world.water() then
+          heli_crash(worm, h, vx, vy)
+          return
         end
-      end
-      h.frame = (h.frame + 1) % 3
-      local fuel = worm.fuel
-      local burn = wa.world.retreat() == 0
-      if burn then fuel = fuel - 0.020 end
-      local shift = wa.world.keys().shift
-      if up then
-        if burn then fuel = fuel - 0.2 end
-        vy = push(vy, -1)
-      end
-      if down then
+        if h.launch then
+          h.jump_phase, h.jumpin, h.launch = 0, false, false
+          if HELI_REALISTIC then worm.wind = 0.2 end
+        end
+        local k = worm.keys
+        local up, down, left, right = k.up, k.down, k.left, k.right
+        if not up and not down then vy = vy / 1.105 end
+        if not left and not right then vx = vx / 1.105 end
+        if up and down then vy = vy / 1.095 end
+        if left and right then vx = vx / 1.095 end
+        -- Diagonals: PX's lines damp each pair twice.
+        for _, d in ipairs({ { up, right }, { up, left }, { down, right }, { down, left } }) do
+          if d[1] and d[2] then
+            vx, vy = vx * 0.99 * 0.99, vy * 0.99 * 0.99
+          end
+        end
+        h.frame = (h.frame + 1) % 3
+        local fuel = worm.fuel
+        local burn = wa.world.retreat() == 0
         if burn then fuel = fuel - 0.020 end
-        vy = push(vy, 1)
-      end
-      if left then
-        if burn then fuel = fuel - 0.1 end
-        if not shift then worm.facing = -1 end
-        vx = push(vx, -1)
-      end
-      if right then
-        if burn then fuel = fuel - 0.1 end
-        if not shift then worm.facing = 1 end
-        vx = push(vx, 1)
-      end
-      worm.vx, worm.vy, worm.fuel = vx, vy, fuel
-      if worm.fuel <= 0.1 then
-        heli_crash(worm, h, worm.vx, worm.vy)
-        return
+        local shift = wa.world.keys().shift
+        if up then
+          if burn then fuel = fuel - 0.2 end
+          vy = push(vy, -1)
+        end
+        if down then
+          if burn then fuel = fuel - 0.020 end
+          vy = push(vy, 1)
+        end
+        if left then
+          if burn then fuel = fuel - 0.1 end
+          if not shift then worm.facing = -1 end
+          vx = push(vx, -1)
+        end
+        if right then
+          if burn then fuel = fuel - 0.1 end
+          if not shift then worm.facing = 1 end
+          vx = push(vx, 1)
+        end
+        worm.vx, worm.vy, worm.fuel = vx, vy, fuel
+        if worm.fuel <= 0.1 then
+          heli_crash(worm, h, worm.vx, worm.vy)
+          return
+        end
       end
       if HELI_EXPLODE_ON_TURN_END and not worm.turn then
         heli_crash(worm, h, worm.vx, worm.vy)
@@ -253,7 +261,7 @@ function weapon.setup()
       worm.body_visible = false
     elseif (h.jumpin and state == "prefiring")
         or (h.climb_out and state == "standing" and h.jump_phase > 0) then
-      if h.climb_out then h.jump_phase = h.jump_phase - 0.047 end
+      if h.climb_out then h.jump_phase = h.jump_phase - 0.047 * own_time.frames(worm) end
       h.climb = h.climb or heli_actor(worm, "sprites/helicopter/jumpin.png")
       local a = h.climb
       a.x = worm.x + (f > 0 and -11.5 or 12.5)

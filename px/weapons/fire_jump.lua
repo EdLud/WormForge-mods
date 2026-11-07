@@ -32,6 +32,10 @@ function weapon.setup()
   --
   -- WA keeps the worm in its punch state until it has stopped, so the punch
   -- itself cuts the way up and burns worms on it, all jump long: PX adds no cut.
+  --
+  -- The frames are the worm's own: under Bullet Time (worm.time_scale) a world
+  -- frame is 2 or 3 of them, and the timeline steps that many (own_time).
+  local own_time = require("wf-lib/own_time")
   local jumps = {}   -- worm id -> frames since the punch
   local winding = {} -- worm id -> frames since fire was pressed
   -- A wind-up never takes this long; give up rather than fire late.
@@ -75,15 +79,17 @@ function weapon.setup()
       winding[id], jumps[id] = nil, nil
       return
     end
+    local n = own_time.frames(worm)
     if winding[id] then
       if worm.state == "punching" and worm.vy < 0 then
         winding[id], jumps[id] = nil, 0
       else
-        local w = winding[id] + 1
+        local w = winding[id] + n
         winding[id] = w < WIND_UP_MAX and w or nil
       end
     end
-    if jumps[id] then
+    for _ = 1, n do
+      if not jumps[id] then break end
       local t = jumps[id] + 1
       fire_jump(worm, t)
       jumps[id] = t < 211 and t or nil

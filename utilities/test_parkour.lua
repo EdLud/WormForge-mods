@@ -29,6 +29,8 @@ local function setup()
     },
   }
   package.loaded["wf-lib/parkour"] = nil
+  package.loaded["own_time"] = nil
+  package.preload["own_time"] = function() return dofile(root .. "../sdk/own_time.lua") end
   package.preload["wf-lib/parkour"] = function() return dofile(root .. "../sdk/parkour.lua") end
   dofile(root .. "features/parkour.lua")
 end
@@ -113,6 +115,20 @@ check("not within 25 frames of a jump", w.vy == 0)
 frame(w)
 backspace(w)
 check("after them, it does", w.vy == -3)
+
+-- Bullet Time: the waits are the worm's own frames, 2.5 a world frame.
+setup()
+floor = 120
+w = worm("jump_prepare")
+w.time_scale = 2.5
+frame(w)
+w.state = "jumping"
+for _ = 1, 9 do frame(w) end
+backspace(w)
+check("Bullet Time: not within 25 of its own frames", w.vy == 0)
+frame(w)
+backspace(w)
+check("Bullet Time: after them (10 world frames), it does", w.vy == -3)
 
 setup()
 walls.right, floor = 110, 120

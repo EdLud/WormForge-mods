@@ -11,6 +11,11 @@
 --
 -- Either leaves the worm in WA's jumping state, as PX's SetState(WS_JUMP):
 -- WA's take-off (worm:jump) with PX's speed written over its own.
+--
+-- The waits are in the worm's own frames: under Bullet Time (worm.time_scale)
+-- a world frame is 2 or 3 of them (own_time).
+
+local own_time = require("own_time")
 
 local WALL_JUMP = 2 -- PX's WallJumpMultiplier
 local BHOP = 3 -- PX's BhopMultiplier
@@ -77,8 +82,9 @@ function parkour.new()
     if msg == wa.msg.FRAME_FINISH then
       if common.frames[id]==frame then return end
       common.frames[id]=frame
-      if (wall_delay[id] or 0) >= 1 then wall_delay[id] = wall_delay[id] - 1 end
-      if (bhop_delay[id] or 0) >= 1 then bhop_delay[id] = bhop_delay[id] - 1 end
+      local n = own_time.frames(worm)
+      wall_delay[id] = math.max(0, (wall_delay[id] or 0) - n)
+      bhop_delay[id] = math.max(0, (bhop_delay[id] or 0) - n)
       local state = worm.state
       if state == "jump_prepare" then bhop_delay[id] = 25 end
       if state == "parachuting" then wall_delay[id] = 10 end

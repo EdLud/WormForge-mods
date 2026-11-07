@@ -26,6 +26,7 @@ end
 
 function weapon.setup()
   local shared = require("lib/shared")
+  local own_time = require("wf-lib/own_time")
   local current_worm = shared.current_worm
 
   -- --------------------------------------------------------------- Swim Suit
@@ -208,14 +209,17 @@ function weapon.setup()
     local dive_into
     if s.dive then
       local d = s.dive
-      local blocked
-      d.vx, d.vy, d.x, d.y, blocked = dive_step(worm, d.x, d.y, d.vx, d.vy)
-      if blocked then
-        -- Land where the trace found none (it changed): WA's again, as it flies.
-        s.dive = nil
-        worm.x, worm.y = d.x, d.y
-        worm:release(d.vx, d.vy)
-        return
+      for _ = 1, own_time.frames(worm) do
+        local blocked
+        d.vx, d.vy, d.x, d.y, blocked = dive_step(worm, d.x, d.y, d.vx, d.vy)
+        if blocked then
+          -- Land where the trace found none (it changed): WA's again, as it flies.
+          s.dive = nil
+          worm.x, worm.y = d.x, d.y
+          worm:release(d.vx, d.vy)
+          return
+        end
+        if d.y >= water then break end
       end
       worm:carry(d.x, d.y)
       if d.y < water then
@@ -249,68 +253,76 @@ function weapon.setup()
       return
     end
     if s.plopped then
-      local vx, vy = math.min(s.vx, cap), math.min(s.vy, cap)
-      local held = s.keys
-      local still = math.abs(vx) <= SWIM_STILL * swim_speed and math.abs(vy) <= SWIM_STILL * swim_speed
-      if still and not (held.left or held.up or held.down or held.right) then
-        -- Floating: the float animation, back and forth.
-        s.floating = true
-        s.flophase = s.flophase + SWIM_FLOAT_STEP * s.fmult
-        if s.flophase >= 0.99 and s.fmult == 5 then
-          s.flophase, s.fmult = 0.99, -5
-        elseif s.flophase <= 0 and s.fmult == -5 then
-          s.flophase, s.fmult = 0, 5
-        end
-      elseif vx ~= 0 and vy ~= 0 then
-        -- Swimming: the stroke follows the faster of the two directions.
-        s.floating = false
-        if math.abs(vx) >= math.abs(vy) then
-          s.plophase = s.plophase + SWIM_FLOAT_STEP * vx * worm.facing
-        else
+      -- A frame of the worm's own each: under Bullet Time (worm.time_scale)
+      -- a world frame is 2 or 3 of them.
+      local out
+      for _ = 1, own_time.frames(worm) do
+        local vx, vy = math.min(s.vx, cap), math.min(s.vy, cap)
+        local held = s.keys
+        local still = math.abs(vx) <= SWIM_STILL * swim_speed and math.abs(vy) <= SWIM_STILL * swim_speed
+        if still and not (held.left or held.up or held.down or held.right) then
+          -- Floating: the float animation, back and forth.
+          s.floating = true
+          s.flophase = s.flophase + SWIM_FLOAT_STEP * s.fmult
+          if s.flophase >= 0.99 and s.fmult == 5 then
+            s.flophase, s.fmult = 0.99, -5
+          elseif s.flophase <= 0 and s.fmult == -5 then
+            s.flophase, s.fmult = 0, 5
+          end
+        elseif vx ~= 0 and vy ~= 0 then
+          -- Swimming: the stroke follows the faster of the two directions.
+          s.floating = false
+          if math.abs(vx) >= math.abs(vy) then
+            s.plophase = s.plophase + SWIM_FLOAT_STEP * vx * worm.facing
+          else
+            s.plophase = s.plophase - SWIM_FLOAT_STEP * vy
+          end
+        elseif vx ~= 0 then
+          s.floating = false
+          s.plophase = s.plophase + SWIM_FLOAT_STEP * vx
+        elseif vy ~= 0 then
+          s.floating = false
           s.plophase = s.plophase - SWIM_FLOAT_STEP * vy
         end
-      elseif vx ~= 0 then
-        s.floating = false
-        s.plophase = s.plophase + SWIM_FLOAT_STEP * vx
-      elseif vy ~= 0 then
-        s.floating = false
-        s.plophase = s.plophase - SWIM_FLOAT_STEP * vy
+        if s.plophase >= 1 or s.plophase <= -1 then
+          s.plophase = 0
+        end
+        local k = worm.keys
+        local up, down, left, right = k.up, k.down, k.left, k.right
+        if up == down then vy = vy / SWIM_DRAG end
+        if left == right then vx = vx / SWIM_DRAG end
+        if up then vy = swim_push(vy, -1, cap) end
+        if down then vy = swim_push(vy, 1, cap) end
+        local shift = wa.world.keys().shift
+        if left then
+          if not shift then worm.facing = -1 end
+          vx = swim_push(vx, -1, cap)
+        end
+        if right then
+          if not shift then worm.facing = 1 end
+          vx = swim_push(vx, 1, cap)
+        end
+        s.keys = { up = up, down = down, left = left, right = right }
+        -- The engine clears the keys after this hook. Move, stopping at land
+        -- on each axis (unless it is already in land, so it can swim free).
+        local stuck = swim_blocked(s.x, s.y)
+        local nx = s.x + vx
+        if not stuck and swim_blocked(nx, s.y) then vx = 0 else s.x = nx end
+        local ny = s.y + vy
+        if not stuck and swim_blocked(s.x, ny) then vy = 0 else s.y = ny end
+        s.vx, s.vy = vx, vy
+        -- Out of the water: on through the air, as from a jump.
+        if s.y < water then
+          s.floating = false
+          s.plopready, s.plopped = true, false
+          -- Where the swim took it: its last pin is still under the surface.
+          worm.x, worm.y = s.x, s.y
+          worm:release(vx, vy)
+          out = true
+          break
+        end
       end
-      if s.plophase >= 1 or s.plophase <= -1 then
-        s.plophase = 0
-      end
-      local k = worm.keys
-      local up, down, left, right = k.up, k.down, k.left, k.right
-      if up == down then vy = vy / SWIM_DRAG end
-      if left == right then vx = vx / SWIM_DRAG end
-      if up then vy = swim_push(vy, -1, cap) end
-      if down then vy = swim_push(vy, 1, cap) end
-      local shift = wa.world.keys().shift
-      if left then
-        if not shift then worm.facing = -1 end
-        vx = swim_push(vx, -1, cap)
-      end
-      if right then
-        if not shift then worm.facing = 1 end
-        vx = swim_push(vx, 1, cap)
-      end
-      s.keys = { up = up, down = down, left = left, right = right }
-      -- The engine clears the keys after this hook. Move, stopping at land
-      -- on each axis (unless it is already in land, so it can swim free).
-      local stuck = swim_blocked(s.x, s.y)
-      local nx = s.x + vx
-      if not stuck and swim_blocked(nx, s.y) then vx = 0 else s.x = nx end
-      local ny = s.y + vy
-      if not stuck and swim_blocked(s.x, ny) then vy = 0 else s.y = ny end
-      s.vx, s.vy = vx, vy
-      -- Out of the water: on through the air, as from a jump.
-      if s.y < water then
-        s.floating = false
-        s.plopready, s.plopped = true, false
-        -- Where the swim took it: its last pin is still under the surface.
-        worm.x, worm.y = s.x, s.y
-        worm:release(vx, vy)
-      else
+      if not out then
         worm:carry(s.x, s.y)
         -- Too deep: the suit gives out.
         local y, w = s.y, water
@@ -323,7 +335,7 @@ function weapon.setup()
           deep = y > 768
         end
         if deep then
-          suit_off(worm, s, true, vx, vy)
+          suit_off(worm, s, true, s.vx, s.vy)
           return
         end
       end

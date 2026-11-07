@@ -114,6 +114,7 @@ end
 
 function weapon.setup()
   local shared = require("lib/shared")
+  local own_time = require("wf-lib/own_time")
 
   -- ------------------------------------------------------------ Nuke Rocket
   do
@@ -206,7 +207,12 @@ function weapon.setup()
         nr_climbing[m.id] = { x = m.x, y = m.y, vx = m.vx, vy = m.vy }
         for _, w in ipairs(wa.worms.all()) do
           if near(w.x, w.y, m.x, m.y) then
-            w.vx, w.vy = m.vx, m.vy
+            -- A worm on its own time (Bullet Time's worm.time_scale) moves
+            -- its speed each of its frames: the rocket's world frame shared
+            -- out over them, so it rides along rather than ahead.
+            local k = own_time.scale(w)
+            if k <= 0 then k = 1 end
+            w.vx, w.vy = m.vx / k, m.vy / k
           end
         end
       else

@@ -2,6 +2,7 @@ local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px
 package.path = root .. "?.lua;" .. package.path
 package.preload["wf-lib/holds"] = function() return {PX_POSTURE={}} end
 package.preload["wf-lib/parkour"] = function() return dofile(root .. "../sdk/parkour.lua") end
+package.preload["own_time"] = function() return dofile(root .. "../sdk/own_time.lua") end
 local actions, hooks, sounds, banners = {}, {}, {}, {}
 package.loaded["lib/turn_controls"] = {register=function(id,callbacks) actions[id]=callbacks end}
 local clock,tick=30000,0

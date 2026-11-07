@@ -15,6 +15,12 @@
 --   * State check uses worm.state_id against the hex values from the state
 --     logger, not the string names, since that's the precise source here.
 --   * Keys follow the synchronized turn-player input in networked matches.
+--   * The nudge is per frame of the worm's own: under Bullet Time
+--     (worm.time_scale) WA steps the worm 2 or 3 times a world frame and
+--     this hook runs once, so it nudges that many times (wf-lib/own_time),
+--     each against the cap, as it would over that many frames.
+
+local own_time = require("wf-lib/own_time")
 
 local STEP      = 0.1   -- per-tick nudge, matches C's 0.1
 local STEP_LOWG = 0.03   -- up-nudge while the world's gravity is changed
@@ -48,18 +54,20 @@ wa.on.worm_message(function(worm)
   if not state or not ALLOWED[state] then return end
 
   local k = worm.keys
+  local up_step = wa.world.gravity() == match_gravity and STEP or STEP_LOWG
 
-  if k.up then
-    local step = wa.world.gravity() == match_gravity and STEP or STEP_LOWG
-    if worm.vy >= -LIMIT then worm.vy = worm.vy - step end
-  end
-  if k.down and worm.vy <= LIMIT then
-    worm.vy = worm.vy + STEP
-  end
-  if k.left and worm.vx >= -LIMIT then
-    worm.vx = worm.vx - STEP
-  end
-  if k.right and worm.vx <= LIMIT then
-    worm.vx = worm.vx + STEP
+  for _ = 1, own_time.frames(worm) do
+    if k.up and worm.vy >= -LIMIT then
+      worm.vy = worm.vy - up_step
+    end
+    if k.down and worm.vy <= LIMIT then
+      worm.vy = worm.vy + STEP
+    end
+    if k.left and worm.vx >= -LIMIT then
+      worm.vx = worm.vx - STEP
+    end
+    if k.right and worm.vx <= LIMIT then
+      worm.vx = worm.vx + STEP
+    end
   end
 end, { msgs = { wa.msg.FRAME_FINISH } })

@@ -16,6 +16,11 @@
 --     not at all keep WA's own aim, and a limit WA clamps to stops it.
 --   * Shift is the turn player's synchronized key; the step comes from the
 --     worm's own aim, so every peer writes the same.
+--   * A worm on its own time (Bullet Time's worm.time_scale) is stepped 2 or
+--     3 times a world frame and this hook runs once: the change is then that
+--     many of WA's steps, up to the most its scale gives, each scaled.
+
+local own_time = require("wf-lib/own_time")
 
 local STEP = 180 / 128  -- WA's aim step, degrees a frame (exact in binary)
 
@@ -42,31 +47,38 @@ return function(pct)
     end
 
     local t = worm.aim_target
+    local scale = own_time.scale(worm)
     local s = state[id]
     if not s then
-      state[id] = { last = t, dir = 0, acc = 0 }
+      state[id] = { last = t, dir = 0, acc = 0, scale = scale }
       return
     end
 
+    -- WA's steps since the last world frame: one at the world's pace, up to
+    -- the most the worm's scale gives it (this frame's or the last's).
     local d = t - s.last
-    if d ~= STEP and d ~= -STEP then
+    local most = math.ceil(math.max(scale, s.scale))
+    s.scale = scale
+    local n = math.abs(d) / STEP
+    if d == 0 or n ~= math.floor(n) or n > most then
       -- Still, at a limit, or moved by something else (a weapon switch,
       -- circular aim turning the worm round): wait for WA's next step.
       s.last, s.acc = t, 0
       if d ~= 0 then s.dir = 0 end
       return
     end
-    if d ~= s.dir then
+    local dir = d > 0 and STEP or -STEP
+    if dir ~= s.dir then
       -- A new direction, or WA clamping back what we pushed past its
       -- limit: take the direction on, scale from its next step.
-      s.last, s.dir, s.acc = t, d, 0
+      s.last, s.dir, s.acc = t, dir, 0
       return
     end
 
-    s.acc = s.acc + pct
+    s.acc = s.acc + pct * n
     local steps = s.acc // 100
     s.acc = s.acc % 100
-    local want = math.max(-90, math.min(90, t + (steps - 1) * d))
+    local want = math.max(-90, math.min(90, t + (steps - n) * dir))
     if want ~= t then worm:input{ aim = want } end
     s.last = want
   end, { msgs = { wa.msg.FRAME_FINISH } })

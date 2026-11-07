@@ -8,14 +8,16 @@ local function check(name, ok, detail)
   print("  FAIL " .. name .. (detail ~= nil and ("   [" .. tostring(detail) .. "]") or ""))
 end
 
-local handler, gravity
+local handler, gravity, tick
 local function setup()
-  gravity = 0.24
+  gravity, tick = 0.24, 0
   wa = {
-    world = { gravity = function() return gravity end },
+    world = { gravity = function() return gravity end, frame = function() return tick end },
     msg = { FRAME_FINISH = 2 },
     on = { worm_message = function(f) handler = f end },
   }
+  package.loaded["wf-lib/own_time"] = nil
+  package.preload["wf-lib/own_time"] = function() return dofile(root .. "../sdk/own_time.lua") end
   dofile(root .. "features/agility.lua")
 end
 
@@ -64,6 +66,29 @@ w = worm({ up = true })
 w.state_id = 0x65
 handler(w)
 check("not standing", w.vy == 0)
+
+-- Bullet Time: the worm lives 2.5 frames of its own a world frame (2, then
+-- 3) and the hook runs once a world frame: a nudge for each of its frames.
+gravity = 0.24
+w = worm({ up = true, right = true })
+w.id, w.time_scale = 7, 2.5
+handler(w)
+check("2 of its own frames, 2 nudges", close(w.vy, -0.2) and close(w.vx, 0.2), w.vx .. "," .. w.vy)
+tick = tick + 1
+handler(w)
+check("then 3", close(w.vy, -0.5) and close(w.vx, 0.5), w.vx .. "," .. w.vy)
+-- Each nudge against the cap, as over that many frames.
+tick = tick + 1
+w = worm({ left = true })
+w.id, w.time_scale, w.vx = 8, 3, -2.95
+handler(w)
+check("the cap holds each of its frames", close(w.vx, -3.05), w.vx)
+-- Frozen in time: no nudge.
+tick = tick + 1
+w = worm({ up = true })
+w.id, w.time_scale = 9, 0
+handler(w)
+check("time stopped, no nudge", w.vy == 0, w.vy)
 
 if failed > 0 then error(failed .. " FAILED") end
 print("Agility: the up nudge follows the world's gravity, as PX's ModulatedGravity: PASS")

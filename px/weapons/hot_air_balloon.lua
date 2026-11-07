@@ -36,6 +36,7 @@ end
 
 function weapon.setup()
   local shared = require("lib/shared")
+  local own_time = require("wf-lib/own_time")
   -- Shared with the Hang Glider, which leaves an active balloon alone.
   shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
@@ -182,38 +183,45 @@ function weapon.setup()
         balloon_stop(worm, b, "the engine let go (turn over or knocked flying)")
         return
       end
-      local vx, vy = b.vx, b.vy
       -- The arrow keys, as WA's parachute takes them (0x514AC0, 0x513EB0).
       local k = worm.keys or {}
       local left, right, up, down = k.left, k.right, k.up, k.down
       if left and right then left, right = false, false end
       if up and down then up, down = false, false end
-      local g = wa.world.gravity()
-      local push = g / 2
-      vx = vx + (right and push or 0) - (left and push or 0)
-      vy = vy + (down and push or 0) - (up and push or 0)
-      -- WA's parachute physics, gravity upside down (0x4FCB30).
-      vy = vy - g * worm.gravity
-      local side = wa.world.wind() >= 0 and 1 or -1
-      if worm:fits(b.x + side, b.y) then
-        vx = vx + wa.world.wind() * (BALLOON_WIND / 100)
+      -- A frame of the worm's own each: under Bullet Time (worm.time_scale)
+      -- a world frame is 2 or 3 of them. Popped after the first, the worm is
+      -- let go where they took it, not at this world frame's pin.
+      for i = 1, own_time.frames(worm) do
+        local vx, vy = b.vx, b.vy
+        local g = wa.world.gravity()
+        local push = g / 2
+        vx = vx + (right and push or 0) - (left and push or 0)
+        vy = vy + (down and push or 0) - (up and push or 0)
+        -- WA's parachute physics, gravity upside down (0x4FCB30).
+        vy = vy - g * worm.gravity
+        local side = wa.world.wind() >= 0 and 1 or -1
+        if worm:fits(b.x + side, b.y) then
+          vx = vx + wa.world.wind() * (BALLOON_WIND / 100)
+        end
+        vx, vy = vx * BALLOON_DAMP, vy * BALLOON_DAMP
+        b.vx, b.vy = vx, vy
+        local x, y = b.x + vx, b.y + vy
+        -- It pops on touching land, as WA's parachute closes there: where WA's
+        -- own test says the worm would touch it, so it never sits inside it.
+        if not worm:fits(x, y) then
+          if i > 1 then worm.x, worm.y = b.x, b.y end
+          balloon_stop(worm, b, "touched land", true)
+          return
+        end
+        if y >= wa.world.water() then
+          if i > 1 then worm.x, worm.y = b.x, b.y end
+          balloon_stop(worm, b, "reached the water")
+          return
+        end
+        b.x, b.y = x, y
+        b.ticks = b.ticks + 1
       end
-      vx, vy = vx * BALLOON_DAMP, vy * BALLOON_DAMP
-      b.vx, b.vy = vx, vy
-      local x, y = b.x + vx, b.y + vy
-      -- It pops on touching land, as WA's parachute closes there: where WA's
-      -- own test says the worm would touch it, so it never sits inside it.
-      if not worm:fits(x, y) then
-        balloon_stop(worm, b, "touched land", true)
-        return
-      end
-      if y >= wa.world.water() then
-        balloon_stop(worm, b, "reached the water")
-        return
-      end
-      b.x, b.y = x, y
-      worm:carry(x, y)
-      b.ticks = b.ticks + 1
+      worm:carry(b.x, b.y)
       balloon_draw(worm, b)
     end
 

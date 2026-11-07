@@ -11,15 +11,17 @@ end
 -- WA's worm, its aim target +0x24C as raw 0..0x10000, and control_aim
 -- (0x51D100) run after the Lua handler each frame: the step, the weapon's
 -- limits, and the round down to the 0x200 grid.
-local handler, shift
+local handler, shift, tick
 local function setup(pct)
-  shift = true
+  shift, tick = true, 0
   wa = {
-    world = { keys = function() return { shift = shift } end },
+    world = { keys = function() return { shift = shift } end, frame = function() return tick end },
     msg = { FRAME_FINISH = 2 },
     on = { worm_message = function(f) handler = f end },
     log = function() end,
   }
+  package.loaded["wf-lib/own_time"] = nil
+  package.preload["wf-lib/own_time"] = function() return dofile(root .. "../sdk/own_time.lua") end
   dofile(root .. "features/fast_aim.lua")(pct)
 end
 
@@ -148,6 +150,36 @@ w = worm(0x4000)
 w.aiming = false
 frames(w, 20, "up")
 check("not aiming: WA's speed", w.raw == 0x4000 + 20 * 0x200 and w.writes == 0, w.raw)
+
+-- Bullet Time: the worm on its own time at 2.5, WA's aim stepped 2 then 3
+-- times a world frame after the handler's one call. Each of its steps
+-- counts as at the world's pace.
+for _, case in ipairs({ { 200, "up", 1 }, { 300, "down", -1 }, { 50, "up", 1 } }) do
+  local pct, key, sign = case[1], case[2], case[3]
+  setup(pct)
+  w = worm(0x8000)
+  w.time_scale = 2.5
+  local carry, steps = 0, 0
+  local function world_frames(n)
+    for _ = 1, n do
+      handler(w)
+      carry = carry + 640
+      local k = carry // 256
+      carry = carry % 256
+      for _ = 1, k do
+        w.raw = w.raw + (key == "up" and 0x200 or -0x200)
+        w.raw = (w.raw // 0x200) * 0x200
+      end
+      steps = steps + k
+      tick = tick + 1
+    end
+  end
+  world_frames(2)
+  start, steps = w.raw, 0
+  world_frames(8)
+  check("Bullet Time " .. pct .. "% " .. key,
+    w.raw - start == sign * steps * 0x200 * pct // 100, (w.raw - start) / 0x200 .. " of " .. steps)
+end
 
 -- An older DLL without worm.aim_target: nothing, no error.
 setup(200)

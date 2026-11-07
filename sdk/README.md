@@ -31,6 +31,13 @@ is active. The Utilities global option and PX inventory utility both use it.
 Parkour cooldowns and deduplicate inputs/frames within the match, so enabling
 both forms cannot apply a movement input twice.
 
+`require("wf-lib/own_time")` counts a worm's own frames under `worm.time_scale`
+(Bullet Time's). A `FRAME_FINISH` hook runs once a world frame: what it does
+once a frame of the worm's (a push, a damping, a timer) it repeats
+`own_time.frames(worm)` times, an integer with the fraction carried, and a
+speed it hands the worm from something on the world's time it divides by
+`own_time.scale(worm)`. Both are 1 for a worm at the world's pace.
+
 These are public helpers, separate from Highlander's internal match state.
 Module tables and private globals are separate for each consuming bundle.
 

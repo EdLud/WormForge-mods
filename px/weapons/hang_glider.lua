@@ -25,6 +25,7 @@ end
 
 function weapon.setup()
   local shared = require("lib/shared")
+  local own_time = require("wf-lib/own_time")
   -- What stops the glider besides terrain, by radius in pixels: the Sniper
   -- Rifle's laser stoppers (PX's Trace).
   local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
@@ -255,22 +256,30 @@ function weapon.setup()
           glider_close(worm, g, false)
           return
         end
-        glider_keys(worm, g)
-        glider_think(worm, g)
-        if glider_blocked(worm, g.x, g.y, g.sx, g.sy) then
-          -- Onto land below it: the glider sets the worm down, however fast
-          -- it dived, and packs away.
-          local below = g.sy > 0 and not worm:fits(g.x, g.y + (1.1 * g.sy + 4))
-          if below then g.sy = math.min(g.sy, GLIDER_SET_DOWN_SPEED) end
-          glider_close(worm, g, below)
-          return
+        -- A frame of the worm's own each: under Bullet Time (worm.time_scale)
+        -- a world frame is 2 or 3 of them. Ended after the first, the worm is
+        -- let go where they took it, not at this world frame's pin.
+        for i = 1, own_time.frames(worm) do
+          glider_keys(worm, g)
+          glider_think(worm, g)
+          if glider_blocked(worm, g.x, g.y, g.sx, g.sy) then
+            -- Onto land below it: the glider sets the worm down, however fast
+            -- it dived, and packs away.
+            local below = g.sy > 0 and not worm:fits(g.x, g.y + (1.1 * g.sy + 4))
+            if below then g.sy = math.min(g.sy, GLIDER_SET_DOWN_SPEED) end
+            if i > 1 then worm.x, worm.y = g.x, g.y end
+            glider_close(worm, g, below)
+            return
+          end
+          local x, y = g.x + g.sx, g.y + g.sy
+          if y >= wa.world.water() then
+            if i > 1 then worm.x, worm.y = g.x, g.y end
+            glider_close(worm, g, false)
+            return
+          end
+          g.x, g.y = x, y
         end
-        local x, y = g.x + g.sx, g.y + g.sy
-        if y >= wa.world.water() then
-          glider_close(worm, g, false)
-          return
-        end
-        g.x, g.y = x, y
+        local x, y = g.x, g.y
         worm:carry(x, y)
         -- CWormGlider::Render, in the worm's place.
         local f = worm.facing
@@ -330,7 +339,7 @@ function weapon.setup()
             g.pack:frame(frame)
             g.pack:gfx({ depth = GLIDER_DEPTH })
             worm.body_visible = false
-            g.pack_t = g.pack_t + 1
+            g.pack_t = g.pack_t + own_time.frames(worm)
           end
         end
         -- Its speed carries over into the glide.
