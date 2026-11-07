@@ -64,7 +64,7 @@ hud 1
 hurt 1
 missile_frame 6
 body_move 1
-turn_end 7
+turn_end 8
 turn_start 11
 worm_message 22
 

@@ -4720,6 +4720,63 @@ do
   M.turn_start({ worm = w, active = w })
 end
 
+print("swim suit: knocked while it swims, pushed by half the knock")
+do
+  new_match()
+  frame()
+  M.water, M.solid = 500, nil
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:set_state() error("the Swim Suit takes and releases the worm; it sets no state") end
+  function w:clear_keys() self.keys = {} end
+  function w:ammo() end
+  local released = 0
+  local release = w.release
+  function w:release(...)
+    released = released + 1
+    release(self, ...)
+    self.state_id = 0x7E
+  end
+  M.spawned, M.sounds, M.quads = {}, {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.state, w.state_id, w.y = "sliding", 0x7E, 510
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("swimming", w.taken and M.sounds[#M.sounds] == 57)
+  for _ = 1, 120 do M.message(w, wa.msg.FRAME_FINISH) end
+  -- A blast: the engine lets go, WA's blast state and its knock kept.
+  local x0 = w.x
+  w.taken, w.state_id, w.vx, w.vy = nil, 0x81, 8, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("taken back to swim on, left in WA's blast state a frame for WA's turn to see",
+    w.taken and w.state_id == 0x81 and released == 0 and w.collision_mask & 0x400000 == 0)
+  check("pushed by half the knock", near(w.x - x0, 4), tostring(w.x - x0))
+  x0 = w.x
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("then back in WA's fall, still the pack's", w.taken and w.state_id == 0x7E and released == 1)
+  check("the push slowed by the water", near(w.x - x0, 4 / 1.05), tostring(w.x - x0))
+  -- Its strokes fight the push.
+  x0, w.keys = w.x, { left = true }
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("a stroke against it", near(w.x - x0, 4 / 1.05 / 1.05 - 0.2), tostring(w.x - x0))
+  w.keys = {}
+  for _ = 1, 200 do M.message(w, wa.msg.FRAME_FINISH) end
+  x0 = w.x
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the push spent", math.abs(w.x - x0) < 0.05 and w.taken, tostring(w.x - x0))
+  -- Loss of control ends the turn (the scheme's): the engine lets go at the
+  -- turn's end, and in the water it drowns; knocked after it, it isn't taken.
+  M.turn_end({ worm = w, active = w })
+  w.taken, w.state_id, w.vx, w.vy = nil, 0x80, 3, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("the turn over: out of control, the water's bit back", not w.taken and w.state == "tumbling"
+    and w.collision_mask & 0x400000 ~= 0 and w.body_visible == true)
+  M.turn_start({ worm = w, active = w })
+end
+
 print("swim suit: a fall into the water dives, kept in control")
 do
   new_match()

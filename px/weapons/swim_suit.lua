@@ -42,8 +42,11 @@ function weapon.setup()
   -- land, turned by left and right unless Shift is held. Enter and weapons do
   -- nothing while it swims (Fast Walk aside). Out of the water it is released
   -- as from a jump. Too deep (180 pixels under the water, or the bottom of a
-  -- cavern), knocked flying, or still in the water when the turn ends, the
-  -- suit gives out and it drowns. Fast Walk switches the swim speed between 2
+  -- cavern), or still in the water when the turn ends, the suit gives out and
+  -- it drowns. Knocked by a hit or a blast while it swims, it swims on, taking
+  -- half the knock as a push the water slows and its own strokes fight; WA
+  -- sees it lose control, so the scheme decides: with Loss of Control Doesn't
+  -- End Turn off WA ends the turn, and with it the swim. Fast Walk switches the swim speed between 2
   -- and 6 for the turn. Missiles in the water can hit a swimming worm: they
   -- blow up on it (damage 100, blast 50).
   --
@@ -66,6 +69,7 @@ function weapon.setup()
   local SWIM_PUSH = 0.1
   local SWIM_DRAG = 1.05
   local SWIM_STILL = 0.05
+  local SWIM_KNOCK = 0.5        -- of WA's knock, a swimmer's push
   local SWIM_FLOAT_STEP = 0.0099
   local SWIM_DEPTH = 180        -- how far under the water the suit holds
   local SWIM_SUIT_MASK = 134342 -- 0x20CC6: the worm's 0x420CC6 without SWIM_WATER
@@ -92,8 +96,9 @@ function weapon.setup()
 
   local swim_speed = 2          -- fastswim: Fast Walk switches 2 and 6
   local swim_in_game = false    -- SwimInGame: someone has worn the suit
+  local turn_over = false       -- between WA's turn end and the next turn's start
   local pending = nil           -- Auto-Use: worm id to put the suit on for at this turn's start
-  local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy, dive, dived }
+  local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy, px, py, knocked, dive, dived }
 
   local function swimmer_of(worm)
     local s = swimmers[worm.id]
@@ -241,14 +246,33 @@ function weapon.setup()
       s.plopready, s.plopped = false, true
       s.x, s.y = d.x, d.y
       s.vx, s.vy = math.min(d.vx, cap), math.min(d.vy, cap)
+      s.px, s.py, s.knocked = 0, 0, false
       -- Swimming, it fires nothing but Fast Walk (its swim speed); the suit's
       -- own use is this pack's hook.
       worm:take{ turn = "run", fire = { "stock.fast_walk" } }
       s.plophase = 0
     end
+    if s.plopped and not worm.taken and KNOCKED[worm.state_id] and not turn_over then
+      -- WA knocked it flying: it swims on where it was, pushed by half the
+      -- knock. Left in WA's hit state a frame, so WA's turn sees the loss of
+      -- control (0x56044C: the turn's worm hurt this turn, or in its hit or
+      -- blast state) and ends the turn unless the scheme says otherwise.
+      worm:take{ turn = "run", fire = { "stock.fast_walk" } }
+      s.px = s.px + worm.vx * SWIM_KNOCK
+      s.py = s.py + worm.vy * SWIM_KNOCK
+      s.knocked = true
+    elseif s.knocked and worm.taken then
+      -- WA has seen it: back in WA's fall, as a swimmer is, for the
+      -- release out of the water to land it.
+      s.knocked = false
+      if KNOCKED[worm.state_id] then
+        worm:release(0, 0)
+        worm:take{ turn = "run", fire = { "stock.fast_walk" } }
+      end
+    end
     if s.plopped and not worm.taken then
-      -- The engine let go: the turn ended, or WA knocked it flying. Still in
-      -- the water, the suit gives out.
+      -- The engine let go: the turn ended. Still in the water, the suit
+      -- gives out.
       suit_off(worm, s, true, worm.vx, worm.vy)
       return
     end
@@ -303,21 +327,28 @@ function weapon.setup()
           vx = swim_push(vx, 1, cap)
         end
         s.keys = { up = up, down = down, left = left, right = right }
-        -- The engine clears the keys after this hook. Move, stopping at land
-        -- on each axis (unless it is already in land, so it can swim free).
+        -- The engine clears the keys after this hook. Move by the strokes
+        -- and a knock's push, stopping at land on each axis (unless it is
+        -- already in land, so it can swim free).
+        local px, py = s.px, s.py
         local stuck = swim_blocked(s.x, s.y)
-        local nx = s.x + vx
-        if not stuck and swim_blocked(nx, s.y) then vx = 0 else s.x = nx end
-        local ny = s.y + vy
-        if not stuck and swim_blocked(s.x, ny) then vy = 0 else s.y = ny end
+        local nx = s.x + vx + px
+        if not stuck and swim_blocked(nx, s.y) then vx, px = 0, 0 else s.x = nx end
+        local ny = s.y + vy + py
+        if not stuck and swim_blocked(s.x, ny) then vy, py = 0, 0 else s.y = ny end
         s.vx, s.vy = vx, vy
+        -- The water slows the push as it slows a glide.
+        s.px, s.py = px / SWIM_DRAG, py / SWIM_DRAG
+        if math.abs(s.px) < SWIM_STILL then s.px = 0 end
+        if math.abs(s.py) < SWIM_STILL then s.py = 0 end
         -- Out of the water: on through the air, as from a jump.
         if s.y < water then
           s.floating = false
           s.plopready, s.plopped = true, false
+          s.px, s.py, s.knocked = 0, 0, false
           -- Where the swim took it: its last pin is still under the surface.
           worm.x, worm.y = s.x, s.y
-          worm:release(vx, vy)
+          worm:release(vx + px, vy + py)
           out = true
           break
         end
@@ -449,8 +480,15 @@ function weapon.setup()
   -- above); manually taking it off mid-turn does not bring it back until
   -- the next turn starts.
   wa.on.turn_start(function(ev)
+    turn_over = false
     swim_speed = fast_walk_auto_use and 6 or 2
     if automatic and ev.worm then pending = ev.worm.id end
+  end)
+
+  -- WA's turn end lets every held worm go: a swimmer knocked from here on
+  -- is not taken back.
+  wa.on.turn_end(function()
+    turn_over = true
   end)
 
   -- A missile in the water hits worms too, once anyone has worn the suit.
