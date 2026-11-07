@@ -210,6 +210,9 @@ function weapon.setup()
   end)
 
   if wa.on.draw then
+    -- The aiming gun's sparks are drawn alone, each peer its own: their own
+    -- stream, stepped once a sim frame by the draw.
+    local tip, tip_frame = Effects.new(), nil
     local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame)
       local c, s = wa.math.cos(angle or 0), wa.math.sin(angle or 0)
       local points = {}
@@ -239,13 +242,23 @@ function weapon.setup()
       end
       effects:draw(quad)
       local worm = shared.current_worm()
+      local now = wa.world.frame()
+      local step = now ~= tip_frame
+      tip_frame = now
+      if step then tip:tick(wa.world.gravity()) end
       if worm and worm.weapon == ID and worm.aiming then
         local keys = wa.world.keys()
         local colour = chosen[worm.team] or 1
         if keys.ctrl or keys.alt then colour = 3 - colour end
-        quad("portal_gun_glow.png", worm.x, worm.y, 80, 80,
-          worm.facing * (0.5 - worm.aim) * math.pi, (100 << 24) | (colours[colour] & 0xFFFFFF), "add", 0x000CFFFF)
+        -- The held gun's prongs are 20 px out along the aim WA draws. The
+        -- glow's prongs are its centre, its lens 22 px behind, pointing +x.
+        local angle = (1 - worm.aim) * math.pi
+        local dx, dy = math.sin(angle) * worm.facing, -math.cos(angle)
+        quad("portal_gun_glow.png", worm.x + dx * 18, worm.y + dy * 18, 80, 80,
+          math.atan(dy, dx), (100 << 24) | (colours[colour] & 0xFFFFFF), "add", 0x000CFFFF)
+        if step then tip:muzzle(worm.x + dx * 20, worm.y + dy * 20, colour, dx, dy) end
       end
+      tip:draw(quad)
     end)
   end
   shared.portal_air_aim = air_aim

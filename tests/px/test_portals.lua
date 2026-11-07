@@ -3,7 +3,7 @@
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
 local hooks, actors, keys, sounds, worms, draws = {}, {}, {}, {}, {}, {}
-local cut, obstruction, solid_exit = 0, false, false
+local cut, obstruction, solid_exit, frame = 0, false, false, 0
 local next_hit
 wa = {
     depth = { FRONT = 0x10000, EFFECTS = 0xC0000, WORMS = 0xD0000, OBJECTS = 0xE0000, TERRAIN = 0x180000, BEHIND_TERRAIN = 0x190000 },
@@ -11,7 +11,7 @@ wa = {
   math = { sin = math.sin, cos = math.cos, atan = math.atan },
   world = { keys = function() return keys end, water = function() return 1000 end,
     size = function() return {w=2000,h=1000} end, gravity = function() return (1 / 8) end,
-    trace = function() return next_hit end },
+    trace = function() return next_hit end, frame = function() return frame end },
   land = { trace = function() return obstruction and {hit=true} or nil end,
     cut = function(s) assert(s.shape=="circle" and s.radius==15); cut=cut+1 end },
   worms = { all = function() return worms end },
@@ -201,5 +201,24 @@ fx:trail(100,100,2); assert(#fx.particles==8)
 fx:impact(100,100,false); assert(#fx.particles==26)
 for _=1,40 do fx:tick((1 / 8)) end
 assert(#fx.particles==0, "PX effects expire instead of accumulating")
+-- Aiming: the gun's tip sparks in the colour the next shot opens, ahead of
+-- the worm along its aim, facing left too; once a sim frame, not a render.
+local function tip_sparks(colour)
+  local n = 0
+  for _, q in ipairs(draws) do
+    local x = (q.points[1][1]+q.points[3][1])/2
+    if q.sprite=="sprites/portal_gun/portal_glow.png" and math.abs(x-worm.x) < 40 then
+      assert(x < worm.x - 10, "ahead of a left-facing worm")
+      if (q.color >> 16 & 0xFF) == (colour==1 and 255 or 0) then n = n+1 end
+    end
+  end
+  return n
+end
+worm.aiming, worm.facing, worm.aim, keys = true, -1, .5, {}
+frame=frame+1; draws={}; hooks.draw(); draws={}; hooks.draw()
+assert(tip_sparks(1)==1, "orange tip sparks, once a frame")
+keys={ctrl=true}; frame=frame+1; draws={}; hooks.draw()
+assert(tip_sparks(2)==1 and tip_sparks(1)==1, "Ctrl shows blue at the tip")
+worm.aiming, keys = false, {}
 assert(#hooks.body_move_opts.kinds==7, "bolts and magnets excluded from transport")
 print("Portal Gun: placement, controls, air aim, transport, visibility across turns and PX effects passed")
