@@ -68,8 +68,10 @@ function weapon.setup()
     if keys.left then r.angle = r.angle + TURN end
     if keys.right then r.angle = r.angle - TURN end
     local a = r.angle * math.pi
-    r.x = r.x + (SPEED * wa.math.sin(a))
-    r.y = r.y + (SPEED * wa.math.cos(a))
+    -- Its speed kept for an icy drum, which lets the worm go at it.
+    r.vx, r.vy = SPEED * wa.math.sin(a), SPEED * wa.math.cos(a)
+    r.x = r.x + r.vx
+    r.y = r.y + r.vy
     worm.x, worm.y = r.x, r.y
     r.age = r.age + 1
     r.life = r.life - 20

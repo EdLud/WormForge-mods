@@ -11,8 +11,7 @@
 --
 -- Not ported: the bee drum (Keeper Bees are not ported) and PX's plane crash
 -- drum. The nuke drum fires the Nuke Rocket's rockets: px.oil_drums
--- launches it, placed or not. The icy drum's Kamikaze special case is not
--- ported.
+-- launches it, placed or not.
 --
 -- The Specialists Barrel Launcher (weapon_barrel_launchers: bl_script.txt)
 -- fires the same drums one at a time (M.launch): its napalm and mine drums
@@ -262,12 +261,27 @@ function M.install(opts)
     wa.sound.play(owner, 24)
     -- icybarrel_logic.txt: every worm within 150 pixels, alive and not
     -- sinking, dead or frozen already, frozen; a suited worm loses its suit.
+    -- The turn's worm in a Kamikaze flight (its own or the Kamikaze
+    -- Rocket's) is first taken out of it moving (PX's WS_JUMP: our
+    -- worm:release, at the rocket's speed), a hole of 25 dug round it so it
+    -- isn't frozen in its tunnel, and hit for 30 if it has more than 1 HP.
+    local cur = current_worm()
     local worms = wa.worms.all()
     table.sort(worms, function(a, b) return a.id < b.id end)
     for _, w in ipairs(worms) do
       local dx, dy = w.x - ev.x, w.y - ev.y
       if w.hp > 0 and dx * dx + dy * dy <= 150 * 150 then
         if shared.swim_suit_off then shared.swim_suit_off(w) end
+        if cur and cur.id == w.id and w.state == "kamikaze" then
+          local rocket = shared.kamikaze_rockets and shared.kamikaze_rockets[w.id]
+          if rocket and rocket.vx then
+            w:release(rocket.vx, rocket.vy)
+          else
+            w:release(w.vx, w.vy)
+          end
+          wa.land.cut({ x = w.x, y = w.y, shape = "circle", radius = 25 })
+          if w.hp > 1 then w:hurt(30) end
+        end
         w:freeze()
       end
     end
