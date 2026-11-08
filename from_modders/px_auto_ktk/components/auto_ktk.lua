@@ -11,8 +11,11 @@
 -- The king itself is PX's terrain stamp (land.Draw of *king.png), so its solid
 -- pixels are the win condition, counted every 5 frames as in the baseline.
 
-local SPRITE2 = "sprites/king/leftsmallking.png"
-local SPRITE1 = "sprites/king/rightsmallking.png"
+-- PX's king stamps, by size and by the side of the map they face out from.
+local SPRITES = {
+  small = { left = "sprites/king/leftsmallking.png", right = "sprites/king/rightsmallking.png" },
+  big = { left = "sprites/king/leftbigking.png", right = "sprites/king/rightbigking.png" },
+}
 
 local TEAM = { red = 1, blue = 2, green = 3, yellow = 4, purple = 5, cyan = 6 }
 
@@ -37,10 +40,6 @@ local KING_BOX = { small = { w = 20, h = 40 }, big = { w = 40, h = 80 } }
 local KING_NAME = "The King"
 
 return function(ctx)
-    wa.assets.load{
-    sprites = { SPRITE1, SPRITE2 },
-    gpu_prefix = "sprites/king/",
-  }
   -- ctx.option raises for a key mod.toml does not declare, so ask safely and
   -- fall back; a new setting works before it is added to mod.toml.
   local function opt(key, fallback)
@@ -50,8 +49,15 @@ return function(ctx)
     return fallback
   end
 
-  local box = KING_BOX[opt("king_size", "small")] or KING_BOX.small
-  local big = box == KING_BOX.big
+  local king_size = opt("king_size", "small")
+  if not KING_BOX[king_size] then king_size = "small" end
+  local box = KING_BOX[king_size]
+  local sprites = SPRITES[king_size]
+  -- Only the chosen size's pair: WA's sprite slots are shared by every mod.
+  wa.assets.load{
+    sprites = { sprites.left, sprites.right },
+    gpu_prefix = "sprites/king/",
+  }
   local side_mode = opt("side", "left")
   local allow_carve = opt("allow_carve", true)
   local move_worms = opt("move_worms", true)
@@ -259,13 +265,11 @@ return function(ctx)
   end
 
   local function place(spot)
-    local sprite = (spot.side == "right" and SPRITE1 or SPRITE2)
-    --  .. (big and "bigking" or "smallking")
     local kx = spot.x - math.floor(box.w / 2)
     local ky = spot.floorY - box.h
     if kx < 0 then kx = 0 end
     if kx + box.w > size.w then kx = size.w - box.w end
-    wa.land.stamp{ sprite = spot.side == "right" and SPRITE1 or SPRITE2, frame = 0,
+    wa.land.stamp{ sprite = sprites[spot.side], frame = 0,
       x = kx + STAMP_DX, y = ky + STAMP_DY }
     spot.kingX, spot.kingY = kx, ky
     -- Gap between the king's feet and the floor: first air below the king's
@@ -484,7 +488,7 @@ return function(ctx)
           eliminate(attackersTeam, defendersTeam, "attack timer expired")
           return
         end
-      elseif timerType and worm.team == defendersTeam then
+      elseif timerType == "DefendAndCompensate" and worm.team == defendersTeam then
         timerMs = timerMs + defenderGainMs
       end
     end
