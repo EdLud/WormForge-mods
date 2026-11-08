@@ -7,12 +7,24 @@ weapon.record = {
     remember_selection = true,
     ends_turn = true,
   },
+  -- PX's petrol_bomb.wep's contacts (0x2187E) and the water: its action is
+  -- none, so WA's missile constructor (0x508034) takes them as its mask
+  -- without the water bit stock Petrol Bomb's bounce hits add (0x400000),
+  -- and WA's water (0x4FDE20) neither skims nor slows the bottle. It sinks
+  -- now, as stock Petrol Bomb's does.
+  missile = {
+    ends_on_contact = {
+      land = true, worms = true, worms_frozen = true, crates = true,
+      donor_cards = true, objects = true, water = true,
+    },
+  },
 }
 
 weapon.missile_sprite = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapSprite speed)
     sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,
     spin = true, spin_speed = 0.35,
     hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
+    sink_tint = 0xA0B4FF, -- cooler and darker below the water, still its own green
   }
 
 function weapon.definition()

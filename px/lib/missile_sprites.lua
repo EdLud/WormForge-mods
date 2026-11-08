@@ -139,6 +139,13 @@ wa.on.missile_frame(function(m)
     -- WeapSprite::CalculateAngle, rotation 0.
     rot = -wa.math.atan(m.vx, m.vy) - math.pi
   end
+  -- `sink_tint`: the colour it is drawn in below the water line, back to
+  -- untinted if it skims out again.
+  local sunk = p.sink_tint ~= nil and m.y >= wa.world.water()
+  if sunk ~= (f.sunk or false) then
+    f.sunk = sunk
+    a:gfx({ tint = sunk and p.sink_tint or 0xFFFFFF })
+  end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
 end)
 end
