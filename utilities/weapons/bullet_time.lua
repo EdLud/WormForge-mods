@@ -7,7 +7,8 @@
 -- The world eases into slow motion and back out of it (easeOutCirc, 2 s
 -- each way, inside the duration), and the screen takes a blue tint with it.
 -- Firing it sends a ripple out from the worm (wa.view.ripple); the end has
--- none.
+-- none. The soundtrack slows with the world (wa.music.set_pitch) unless the
+-- profile turns that off.
 -- Time here is real time: a world frame lasts 1 / (50 x the world's speed)
 -- seconds. WA's turn clock counts the world's frames, so slow motion
 -- stretches the turn in real time.
@@ -41,6 +42,8 @@ return {
     local worm_speed = ctx.option("worm_speed") / 100
     local total = ctx.option("seconds")
     local ramp = math.min(RAMP, total / 2)
+    -- Presentation only, like the tint; a WormForge without it plays on.
+    local music = ctx.option("music") and wa.music and wa.music.set_pitch
 
     wa.assets.load({ sprites = { TINT_SPRITE } })
     local tint = wa.sprites.key(TINT_SPRITE)
@@ -59,6 +62,7 @@ return {
     local function apply()
       speed = 1 + (world - 1) * depth(t)
       wa.world.set_speed(speed)
+      if music then music(speed) end
       if slowed then slowed.time_scale = math.min(worm_speed / speed, 8) end
     end
 
@@ -74,6 +78,7 @@ return {
       if slowed then slowed.time_scale = 1 end
       slowed = nil
       wa.world.set_speed(1)
+      if music then music(1) end
     end
 
     wa.weapons.replace({
