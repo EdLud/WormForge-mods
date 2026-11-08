@@ -265,7 +265,7 @@ local function object_hit(s, obj, kind, damage, factor, cooldown, now)
   -- Set the push before hit: WorldHandle has no liveness test, and `hit` may
   -- free a mine/oil drum, so reading `obj.kind` afterwards is unsafe.
   obj.vx, obj.vy = fx_, fy_
-  obj:hit(damage, 0, 0, kind == "crate" and "projectile" or nil)
+  obj:hit(damage, 0, 0, kind == "crate" and "bullet" or nil)
   if kind == "crate" or kind == "mine" then play(s, CLANK) end
   spark(ox, oy, 255, 255, 255, s.controller)
 end

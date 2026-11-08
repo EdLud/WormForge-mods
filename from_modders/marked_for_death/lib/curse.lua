@@ -499,10 +499,11 @@ function curse.install()
         -- hit.damage can be set only on DLLs after 0.9.8, which also give
         -- hit.expected; older ones get the post fallback below.
         if hit.expected ~= nil then hit.damage = scaled(hit.damage, m.pct) end
-      elseif kind == "hit" or kind == "fire" then
-        hit.amount = scaled(hit.amount, m.pct)
       elseif kind == "percent" then
         hit.amount = math.min(100, scaled(hit.amount, m.pct))
+      elseif kind ~= "poison" and kind ~= "nonlethal" then
+        -- Every other kind is a hit (0x4B): its amount is the damage.
+        hit.amount = scaled(hit.amount, m.pct)
       end
     elseif kind == "blast" and hit.expected == nil and hit.lost > 0 then
       -- 0.9.8: the blast's extra share as damage alone, no second hit.

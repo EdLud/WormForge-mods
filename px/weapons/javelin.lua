@@ -150,7 +150,7 @@ function weapon.setup()
       if target then
         target.vx, target.vy = vx / 4, vy / 4
         if target.kind == "worm" then target:hurt(20)
-        else target:hit(20, vx / 2, vy / 2, "projectile") end
+        else target:hit(20, vx / 2, vy / 2, "bullet") end
         return
       end
       wa.land.stamp{

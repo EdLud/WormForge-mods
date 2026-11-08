@@ -205,10 +205,11 @@ end
 
 wa.on.hurt(function(hit)
   if applying then return end
-  if hit.kind == "hit" or hit.kind == "percent" then
-    taze_from(hit, armed_hit)
-  elseif hit.kind == "blast" then
+  if hit.kind == "blast" then
     taze_from(hit, armed_blast)
+  elseif hit.kind ~= "poison" and hit.kind ~= "nonlethal" then
+    -- Every other kind is a hit (0x4B), by what hit: "bullet", "percent", ...
+    taze_from(hit, armed_hit)
   end
 end)
 

@@ -262,7 +262,7 @@ end
 -- PX ignores hits from its own side's arrows (the Auto Ballista's). By
 -- colour: its arrows are fired for a living member of the coalition.
 local function ignore_hit(t, a, s, hit)
-  if hit.kind ~= "hit" or hit.hit_kind ~= 9 then return false end
+  if hit.kind ~= "arrow" then return false end
   for _, w in ipairs(wa.worms.all()) do
     if w.team == hit.team then return w.alliance == s.alliance end
   end

@@ -108,7 +108,7 @@ function weapon.setup()
     if o then
       o.vx,o.vy=vx/4,vy/4
       if o.kind=="worm" then o:hurt(3)
-      else o:hit(3,vx/2,vy/2,"projectile") end
+      else o:hit(3,vx/2,vy/2,"bullet") end
       return
     end
     wa.land.stamp{sprite="sprites/girder_launcher/mgirder.png",frame=frame,x=x,y=y}

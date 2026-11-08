@@ -40,9 +40,9 @@ local function run(live_first)
     return w
   end
   local w = worm(33, 75, false)
-  emit{ phase = "pre", kind = "hit", source_weapon = "px.ice_arrow", worm = w, lost = 0 }
+  emit{ phase = "pre", kind = "arrow", source_weapon = "px.ice_arrow", worm = w, lost = 0 }
   assert(w.commits == 0, "never commit before the hit")
-  emit{ phase = "post", kind = "hit", source_weapon = "px.ice_arrow", worm = w, lost = 25 }
+  emit{ phase = "post", kind = "arrow", source_weapon = "px.ice_arrow", worm = w, lost = 25 }
   assert(w.commits == 1 and w.display_target == 75 and w.hp == 75)
   for _, fn in ipairs(frame) do fn(w) end
   assert(w.state == "frozen" and w.vx == 6 and w.vy == -8, "Ice Arrow still freezes with original momentum")
@@ -57,22 +57,22 @@ local function run(live_first)
   end
   for _, damage in ipairs({ 3, 12 }) do
     local victim = worm(35, 0, false) -- a 3 HP worm after lethal damage
-    emit{ phase = "post", kind = "hit", source_weapon = "stock.bazooka", worm = victim, lost = 3, amount = damage }
+    emit{ phase = "post", kind = "bullet", source_weapon = "stock.bazooka", worm = victim, lost = 3, amount = damage }
     assert(victim.shows == 1 and victim.commits == 0 and victim.display_target == 0 and victim.hp == 0,
       "exact lethal damage and overkill show zero, WA keeping the damage it owes (its damage phase kills)")
     assert(victim.state == "hit" and victim.vx == 6 and victim.vy == -8,
       "the zero-HP victim keeps its normal movement and death sequence")
   end
   for _, v in ipairs({ worm(16, 75, true), worm(16, 0, true) }) do
-    emit{ phase = "post", kind = "hit", source_weapon = "stock.bazooka", worm = v, lost = 25 }
+    emit{ phase = "post", kind = "bullet", source_weapon = "stock.bazooka", worm = v, lost = 25 }
     assert(v.commits == 0, "active worms retain normal WA health timing")
   end
-  emit{ phase = "post", kind = "hit", worm = w, lost = 0 }
+  emit{ phase = "post", kind = "bullet", worm = w, lost = 0 }
   assert(w.commits == 2, "an eaten or cooldown-blocked hit does not commit")
   -- An older DLL without show_health: the lethal hit commits, as before.
   local old = worm(36, 0, false)
   old.show_health = nil
-  emit{ phase = "post", kind = "hit", worm = old, lost = 3 }
+  emit{ phase = "post", kind = "bullet", worm = old, lost = 3 }
   assert(old.commits == 1 and old.display_target == 0, "without show_health, a lethal hit still updates the label")
 end
 run(true)

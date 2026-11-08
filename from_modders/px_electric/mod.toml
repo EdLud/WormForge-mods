@@ -7,7 +7,7 @@
 # `wf-lib/effects/trail`).
 id = "px.electric"
 name = "Project X Electric Mine"
-version = "0.5.5"
+version = "0.5.6"
 author = "reddaz"
 api_version = 4
 format_version = 2

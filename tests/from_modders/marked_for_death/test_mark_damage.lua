@@ -19,7 +19,7 @@ local function setup()
   local w = { id = 3, x = 0, y = 0, vx = 0, vy = 0, hp = 100, state = "standing", hurts = {} }
   -- The engine runs the hurt hook for a react = false hurt too, as a hit.
   function w:hurt(o)
-    local h = { worm = self, kind = "hit", phase = "pre", amount = o.amount, expected = o.amount }
+    local h = { worm = self, kind = "bullet", phase = "pre", amount = o.amount, expected = o.amount }
     hooks.hurt(h)
     o.took = h.amount
     self.hurts[#self.hurts + 1] = o
@@ -38,7 +38,7 @@ end
 -- Unmarked: nothing changes.
 do
   local _, _, hurt = setup()
-  local hit = hurt{ kind = "hit", phase = "pre", amount = 20, expected = 20 }
+  local hit = hurt{ kind = "bullet", phase = "pre", amount = 20, expected = 20 }
   assert(hit.amount == 20)
 end
 
@@ -46,7 +46,7 @@ end
 do
   local curse, w, hurt = setup()
   curse.mark(w, 1.5)
-  assert(hurt{ kind = "hit", phase = "pre", amount = 25, expected = 25 }.amount == 38)
+  assert(hurt{ kind = "bullet", phase = "pre", amount = 25, expected = 25 }.amount == 38)
   assert(hurt{ kind = "fire", phase = "pre", amount = 1, expected = 1 }.amount == 2)
   assert(hurt{ kind = "percent", phase = "pre", amount = 50 }.amount == 75)
   curse.mark(w, 2.5)
@@ -62,7 +62,7 @@ do
   local hit = hurt{ kind = "blast", phase = "pre", amount = 50, power = 50, damage = 20, expected = 20 }
   assert(hit.damage == 23 and hit.amount == 50, tostring(hit.damage))
   -- WA takes nothing (Phased Worms, the hit lockout): left alone.
-  hit = hurt{ kind = "hit", phase = "pre", amount = 20, expected = 0 }
+  hit = hurt{ kind = "bullet", phase = "pre", amount = 20, expected = 0 }
   assert(hit.amount == 20)
   -- On a newer DLL, post adds nothing.
   hurt{ kind = "blast", phase = "post", amount = 50, damage = 23, expected = 23, lost = 23 }

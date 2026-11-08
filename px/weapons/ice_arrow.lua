@@ -44,7 +44,7 @@ function weapon.setup()
 
   wa.on.hurt(function(hit)
     if hit.phase == "post" and hit.source_weapon == "px.ice_arrow"
-      and hit.kind == "hit" then
+      and hit.kind == "arrow" then
       pending[hit.worm.id] = true
     end
   end)

@@ -1281,16 +1281,16 @@ do
   new_match()
   local target, other = worm(32), worm(17)
   target.state, target.vx = "tumbling", 3
-  M.hurt({ phase = "post", source_weapon = "longbow", kind = "hit", worm = other })
-  M.hurt({ phase = "pre", source_weapon = "armageddon", kind = "hit", worm = other })
-  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
+  M.hurt({ phase = "post", source_weapon = "longbow", kind = "arrow", worm = other })
+  M.hurt({ phase = "pre", source_weapon = "armageddon", kind = "arrow", worm = other })
+  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "arrow", worm = target })
   check("bow impulse remains until the target's next frame",
     target.state == "tumbling" and target.vx == 3 and other.state ~= "frozen")
   M.message(other, wa.msg.FRAME_FINISH)
   M.message(target, wa.msg.FRAME_FINISH)
   check("the hit target alone enters frozen state", target.state == "frozen" and other.state ~= "frozen")
   target.state, target.hp = "tumbling", 0
-  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "hit", worm = target })
+  M.hurt({ phase = "post", source_weapon = "armageddon", kind = "arrow", worm = target })
   M.message(target, wa.msg.FRAME_FINISH)
   check("a later hit cannot freeze a dead worm", target.state == "tumbling")
 end
@@ -1723,7 +1723,7 @@ do
   before = impacts()
   run(120)
   check("a blast disables it for the turn", impacts() == before)
-  body.hit(body, { kind = "hit", damage = 40 })
+  body.hit(body, { kind = "bullet", damage = 40 })
   check("at 0 of its 50 health it explodes, damage 50, blast 100, and its head goes",
     #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and M.actor_booms[1].opts.id == 100 and body.dead and turret.state[body.id] == nil)
   M.solid, M.gravity = nil, nil
@@ -2067,7 +2067,7 @@ do
     s.had_target, s.ammo = false, 0
     check(kind .. ": empty is grey", t.status(s) == 0x808080)
     M.message(enemy, wa.msg.START_TURN)
-    body.hit(body, { kind = "hit", damage = 0, vx = -8, vy = -2 })
+    body.hit(body, { kind = "bullet", damage = 0, vx = -8, vy = -2 })
     body.on(body)
     check(kind .. ": zero-damage push lifts without damage lockout", not s.planted and not s.disabled and s.vx < 0 and s.health == hp - 3)
     for _ = 1, 50 do body.on(body) end
@@ -2551,7 +2551,7 @@ do
         and #body.ignore_calls == 0 and body.hit_by == "all")
       owner.x, owner.y, owner.hp = body.x, body.y, 100
       body.on(body)
-      body.hit(body, { kind = "hit", damage = 0, vy = -1 })
+      body.hit(body, { kind = "bullet", damage = 0, vy = -1 })
       body.on(body)
       M.message(owner, wa.msg.START_TURN)
       body.on(body)
@@ -3843,14 +3843,14 @@ do
   run(200)
   check("the ball is an object to WA, and takes its hits", ball_actor.as_object == true
     and type(ball_actor.hit) == "function" and resting.asleep)
-  ball_actor.hit(ball_actor, { kind = "hit", hit_kind = 1, vx = 2, vy = -3, damage = 5, team = 0 })
+  ball_actor.hit(ball_actor, { kind = "fire", vx = 2, vy = -3, damage = 5, team = 0 })
   check("a fire's hit wakes it and pushes it at 0.7", not resting.asleep
     and math.abs(resting.vx - 1.4) < 1e-9 and math.abs(resting.vy + 2.1) < 1e-9,
     resting.vx .. "," .. resting.vy)
   local _, blasted = rolling(500, 0)
   run(200)
   local blasted_actor = M.spawned[1]
-  blasted_actor.hit(blasted_actor, { kind = "blast", hit_kind = 0, vx = -4, vy = -6, damage = 20, team = -1 })
+  blasted_actor.hit(blasted_actor, { kind = "blast", vx = -4, vy = -6, damage = 20, team = -1 })
   check("a blast's push is taken whole", not blasted.asleep and blasted.vx == -4 and blasted.vy == -6)
   local x_before = blasted.x
   run(5)
@@ -6036,7 +6036,7 @@ do
     nearby = { o }
     impact(-8, 4)
     check(kind .. " receives 20 projectile damage and thrust", o.hit_args[1] == 20
-      and o.hit_args[2] == -4 and o.hit_args[3] == 2 and o.hit_args[4] == "projectile"
+      and o.hit_args[2] == -4 and o.hit_args[3] == 2 and o.hit_args[4] == "bullet"
       and o.vx == -2 and o.vy == 1 and #M.stamps == 3)
   end
   -- The replay's lobbed throw: it burst on the crate's lid, 22px above its

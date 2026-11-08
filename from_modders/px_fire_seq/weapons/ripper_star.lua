@@ -283,7 +283,7 @@ function M.install(ctx)
         else
           -- A crate or oil drum: PX's `M_GUNEXP` force (half the star's
           -- speed, `:108`), through WA's own hit.
-          target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "projectile")
+          target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "bullet")
         end
         return
       end

@@ -228,7 +228,7 @@ function weapon.setup()
     if event.kind == "blast" and damage > 0 then
       local dx, dy = (a.x - (event.x or a.x)), (a.y - (event.y or a.y))
       damage = trunc((1 - (dx * dx + dy * dy) / (damage * damage * 4)) * damage)
-    elseif event.hit_kind == 10 then
+    elseif event.kind == "percent" then
       damage = trunc(m.health * damage / 100)
     end
     if damage > 0 then m.health = m.health - damage end

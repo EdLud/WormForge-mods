@@ -181,12 +181,12 @@ function electrical.context()
     release_taze(pending.key)
     if not obj then return end
     if obj.kind == "worm" then
-      obj:hurt(24)
+      obj:hurt({ amount = 24, kind = "taze" })
       obj.vx, obj.vy = pending.side * 1.2, -4
     elseif obj.kind == "mine" then
       obj:arm(400)
     elseif obj.kind == "crate" or obj.kind == "oil" then
-      obj:hit(12, pending.side * 1.2, -4)
+      obj:hit(12, pending.side * 1.2, -4, "taze")
     elseif obj.kind == "ball" then
       shared.zap_bowling_ball(obj.id)
     elseif obj.provider then

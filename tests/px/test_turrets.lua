@@ -272,9 +272,9 @@ end
 print("PyroMan's turrets: damage, its own arrows, the death blast")
 do
   local t, a, s, red = planted("auto_ballista")
-  a.on.hit(a, { kind = "hit", hit_kind = 9, team = 1, damage = 10 })
+  a.on.hit(a, { kind = "arrow", team = 1, damage = 10 })
   check("its own side's arrows do nothing", s.health == 50)
-  a.on.hit(a, { kind = "hit", hit_kind = 9, team = 2, damage = 10 })
+  a.on.hit(a, { kind = "arrow", team = 2, damage = 10 })
   check("an enemy's arrow hurts", s.health == 40)
   check("damage does not disable it, as it does a sentry", not s.disabled)
   a.on.hit(a, { kind = "blast", damage = 45 })

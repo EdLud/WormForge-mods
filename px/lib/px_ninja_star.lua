@@ -267,7 +267,7 @@ function M.install(ctx)
         -- some reason", :75 -- the Javelin passes it too, `javelin.lua:52`).
         target.vx, target.vy = trunc(vx / 4), trunc(vy / 4)
         if target.kind == "worm" then target:hurt(DAMAGE)
-        else target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "projectile") end
+        else target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "bullet") end
         return
       end
       -- No worm and nothing to bite: the star sticks in the land. Centred on the
