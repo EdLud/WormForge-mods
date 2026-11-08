@@ -1,0 +1,13 @@
+description = "The Ripple Grenade beside WA's Grenade, a Ninja Rope and Skip Go."
+
+[weapons]
+"ripple.grenade" = true
+"stock.grenade" = true
+"stock.ninja_rope" = true
+"stock.skip_go" = true
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1
+
+[weapon_settings."ripple.grenade"]
+ammo = -1
