@@ -3,9 +3,12 @@
 -- wklua_and_px/utils/custom_explosion.c:17-295. The caller silences WA's own
 -- blast (explosion.power = 0) and calls this from on_explode.
 --
--- Targets come from wa.world.electrical_nearby, PX's object list in one pass:
--- worms, mines, crates and oil drums. Mines take the same object:hit as drums,
--- so a mine can be set off by the blast.
+-- PX walks Env->Objs and sends M_GUNEXP to every object in range (:46-125).
+-- wa.world.blast is that walk: worms, mines, crates, oil drums, missiles,
+-- arrows, and Lua actors whose `body.hit_by` takes blasts. Objects receive an
+-- ordinary hit, so a mine can be set off by the blast, as in PX.
+-- `o.kind` names the hit the engine delivers ("taze", a bundle's own kind);
+-- left out, it is a plain blast.
 
 local M = {}
 
@@ -20,21 +23,6 @@ local function numbers(o)
   local hole = o.hole or o.destroy_radius or damage
   local effect = o.effect_radius or math.floor((damage + 2) / 2)
   return damage, push, radius, hole, effect
-end
-
--- The engine caps the query at 1000 px; bigger blasts walk the groups.
-local function targets(x, y, radius)
-  local nearby = wa.world and wa.world.electrical_nearby
-  if nearby and radius <= 1000 then
-    return nearby(x, y, math.max(1, math.ceil(radius)), false)
-  end
-  local out = {}
-  local groups = { wa.worms, wa.mines, wa.crates, wa.oil }
-  for i = 1, #groups do
-    local list = groups[i] and groups[i].all and groups[i].all() or {}
-    for j = 1, #list do out[#out + 1] = list[j] end
-  end
-  return out
 end
 
 local function dead(w)
@@ -61,10 +49,20 @@ function M.explode(o)
   play_sound(o)
 
   if damage > 0 and radius > 0 then
+    -- The engine's blast leaves out a worm already at 0 HP that WA has not
+    -- started killing; PX's object loop does not, and such a worm still
+    -- launches. Remember those before the blast, or a worm the blast kills
+    -- would be hit a second time here.
+    local zero = {}
+    for _, w in ipairs(wa.worms.all()) do
+      if w.hp <= 0 and not dead(w) then zero[w.id] = true end
+    end
+    hits = wa.world.blast{ owner = o.owner, x = x, y = y, damage = damage,
+      radius = math.ceil(radius), push_pct = push, kind = o.kind }
     local r2 = radius * radius
-    for _, obj in ipairs(targets(x, y, radius)) do
-      if obj.kind ~= "grave" and not (obj.kind == "worm" and dead(obj)) then
-        local dx, dy = obj.x - x, obj.y - y
+    for _, w in ipairs(wa.worms.all()) do
+      if zero[w.id] and not dead(w) then
+        local dx, dy = w.x - x, w.y - y
         local d2 = dx * dx + dy * dy
         if d2 < r2 then
           local dist = math.sqrt(d2)
@@ -75,13 +73,8 @@ function M.explode(o)
               local force = (dmg / 5) * (push / 100)
               px, py = dx / dist * force, dy / dist * force
             end
-            if obj.kind == "worm" then
-              obj:hurt{ amount = dmg, vx = px, vy = py }
-              hits = hits + 1
-            elseif obj.kind == "mine" or obj.kind == "crate"
-                or obj.kind == "oil" then
-              if obj:hit(dmg, px, py) then hits = hits + 1 end
-            end
+            w:hurt{ amount = dmg, vx = px, vy = py }
+            hits = hits + 1
           end
         end
       end

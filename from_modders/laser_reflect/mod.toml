@@ -6,7 +6,7 @@
 # then every hit at once). The art and sounds are the Laser Gun's, copied here
 # so the bundle does not depend on `px`.
 id = "px.laser_reflect"
-name = "Project X Reflective Laser"
+name = "Bouncy Laser"
 version = "0.8.0"
 author = "reddaz"
 api_version = 4

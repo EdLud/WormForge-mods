@@ -9,9 +9,13 @@ overwrite them; the effect manager and trail come from the shared `effects.sdk`:
 - `weapons/electric_mine.lua` -- WA's mine, with WA's own blast silenced and
   PX's custom electric explosion run in its place.
 - `lib/custom_explosion.lua` -- PX's `do_custom_explosion`: damage, push, hole,
-  chain arcs and effect, launching the effect itself. Its blast finds worms,
-  crates and oil drums through `wa.world.electrical_nearby`; crates and drums
-  take the falloff damage through `object:hit`.
+  chain arcs and effect, launching the effect itself. The radial damage is
+  PX's `Env->Objs` walk through `wa.world.blast`: worms, crates, oil drums,
+  mines and Lua actors whose `body.hit_by` takes blasts. It sends the hit as
+  the shared `kind = "taze"` (override with `kind`), so a recipient that reads
+  kinds sees the electric hit. The taze pass then holds every worm in range.
+  A 0 HP worm WA has not started killing is given the same falloff and push by
+  hand when the taze is off.
 - `lib/electric_damage.lua` -- the taze hold: the worm is taken, posed and
   shown `tazed1`/`tazed2` with the loop sound, then released with the push.
   WA's `dying`/`drowning`/`dead` states stay WA's: no new hold, and a hold that

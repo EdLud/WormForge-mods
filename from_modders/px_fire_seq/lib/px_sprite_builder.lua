@@ -1,31 +1,6 @@
--- px_sprite_builder.lua -- PX's sprite builder, re-implemented for WormForge API 4.
---
--- Two jobs, ported from PX's sources:
---
---   1. Missile flight drawing (red_sprite_builder.txt): hide WA's sprite
---      (`m.sprite = 0`, PX's `ldata->anim.spriteIndex = 0` at :39) and follow the
---      missile with a GPU actor that turns with PX's animation types.
---
---   2. The shared worm-hold library at the foot of this file: PX's weapon-less
---      worm aim and pick posture (`def_shot_aim_{p,u,d}`, `default_pick_{p,u,d}`,
---      `worms_anims_script.txt:31-37`) as `PX_POSTURE`, and PX's three hands as
---      `PX_HANDS`. A weapon claims both -- `worm_sprites = sb.PX_POSTURE` draws
---      the worm, and `hold` draws its own single weapon PNG and hand over the
---      worm exactly as PX's builder does (`:670-726`,
---      `crates/engine/src/worm_hold.rs`). Hundreds of weapons share the one
---      library and bring only their own PNG; no 32-frame aim folders are cut.
---
--- Each bundle carries its own copy of the library: API 4 `require` is
--- bundle-local and a `worm_sprites` sheet resolves only inside the claiming
--- bundle (`crates/lua-host/src/api.rs`). API 5.0 scoped `require` will let one
--- copy serve all bundles.
---
--- PX originals: PX_pending/p_sprite_builder/worms_anims_script.txt and
--- wklua_and_px/utils/red_sprite_builder.txt. The library and the single weapon
--- PNGs are cut by porting-analysis/tools/build_hold_library.py.
---
--- A component's file, and anything it requires, runs where `wa` does not exist
--- yet: this module is pure data at load and touches `wa` only in `sb.flight`.
+-- PX's sprite builder: draw a missile from a follower actor, and share PX's
+-- worm aim/pick posture and hands. Each bundle carries its own copy; `wa` is
+-- touched only inside `sb.flight`.
 
 local M = {}
 
@@ -165,47 +140,10 @@ function M.flight(ctx, opts)
 end
 
 -- ---------------------------------------------------------------------------
--- The shared worm-hold library, and PX's hands.
---
--- PX's sprite builder draws the worm's aim and pick posture with **no weapon in
--- it** -- `def_shot_aim_{p,u,d}` and `default_pick_{p,u,d}`, the sheets PX ships
--- with the builder (`worms_anims_script.txt:31-37`) -- and then draws the weapon
--- and the hand on top, where its `CalculateAngle` puts them (:569-629).
---
--- WormForge splits the same two halves between the engine and the pack: the
--- engine draws WA's worm from the claim's `worm_sprites`, then draws
--- `spec.hold`'s weapon and hand over it (`crates/engine/src/worm_hold.rs`). The
--- hold's fields are PX's `CWormAnimParams` verbatim -- `weap_radius`,
--- `weap_rotation`, `weap_radial_rotation`, `hand_radius`, `hand_rotation`,
--- `hand_radial_rotation`, `hand_type`, `hand_scale` -- read straight by the
--- engine's `HoldSpec` (`crates/lua-host/src/api.rs`).
---
--- So a weapon built from this library is one PNG and two lines:
---
---   worm_sprites = sb.PX_POSTURE,          -- the worm, weapon-less
---   hold = {
---     sheet = ART .. "hold",               -- the weapon, alone, once
---     hand  = sb.PX_HANDS[2],
---     weap_radius = 11.0, weap_rotation = 1.0, ...
---   },
---
--- Hundreds of weapons share the one library and bring only their own PNG, which
--- the engine rotates and places. Nothing is pre-composited: `(32*3 + 10*3)`
--- frames per weapon would be the alternative.
---
--- One hold field is PX's own rule: `keep_while_firing` is false for all five
--- weapons here, because PX draws no weapon in `WS_FIRED` unless the weapon names
--- a firing sprite (`spriteFiring = Params->FSprite`, `worms_anims_script.txt:101`,
--- :121, :263) -- none of these five does, so his own `else` sets `sprite = 0`
--- (:419-422) -- and the engine has no firing sprite to draw in its place
--- (`HoldSpec`, `crates/weapons/src/overlay.rs:33-49`; ASSUMPTIONS A14).
+-- Shared worm posture and hands: one weapon PNG and two lines per weapon.
+-- The engine draws the weapon-less worm (`worm_sprites`) and the hold; these
+-- tables are PX's `CWormAnimParams` and hand art. See README.md.
 -- ---------------------------------------------------------------------------
-
--- The weapon-less worm, in the six poses the engine's `worm_sprites` names:
--- `weaponlnk`/`-u`/`-d` are the aim posture (PX's `def_shot_aim_{p,u,d}`) and
--- `wthrow`/`-u`/`-d` the throwing posture (`default_pick_{p,u,d}`). The dev's
--- own mod uses the same split, `mods/px/lib/holds.lua` (`PX_POSTURE`), against
--- the same artwork under `mods/px/sprites/px_hold/`.
 M.PX_POSTURE = {
   weaponlnk = "sprites/px_hold/aim", weaponlnku = "sprites/px_hold/aimu",
   weaponlnkd = "sprites/px_hold/aimd",
@@ -213,10 +151,7 @@ M.PX_POSTURE = {
   wthrowd = "sprites/px_hold/drawd",
 }
 
--- PX's three hand sprites, indexed by `CWormAnimParams.hand_type`: 1 lower, 2
--- middle, 3 upper (`worms_anims_script.txt:24-29`, chosen at :138-140). Each PNG
--- carries its own offset inside the 60x60 canvas, as PX drew it, so the engine
--- places it exactly where PX did.
+-- PX's three hands: 1 lower, 2 middle, 3 upper.
 M.PX_HANDS = {
   "sprites/px_hold/hand_rad_lower", "sprites/px_hold/hand_rad",
   "sprites/px_hold/hand_rad_upper",

@@ -1,16 +1,7 @@
--- FAMAS -- Project X's weapon_gun_famas (PX_pending/weapon_gun_famas).
--- PX's FireFinal fires one 3-round burst per trigger pull, 3, 3, 3, then 2
--- on the fourth (fam_script.txt:56-102); each round is a straight 13-damage
--- bullet with a 5000 ms fuse, drawn from redWeapSheet. The hold is cell 2 of
--- PX's 90x90 gun sheet, the firing cell 3 (famas_spb.txt:25-30), over the
--- weapon-less PX posture.
---
--- The rounds are real WA missiles (the base's `fire_seq_mis`), not Lua actors:
--- WA does the flight, the collision with land, worms, mines, crates and oil, the
--- water, the fuse and the explosion (the record's own, famas.wep 0x54 / 0x50 =
--- 13 / 250). An actor that moves itself and traces its own steps can be moved
--- past a wall; a missile cannot. PX's rounds are straight, so gravity and wind
--- are zeroed on them from `wa.on.missile_frame`, as the Attack Helicopter's are.
+-- FAMAS: PX's 3-round bursts, 3, 3, 3, then 2 on the fourth.
+-- Rounds are real WA missiles (13 damage, 250 push, 5000 ms fuse); WA flies
+-- them, and Lua zeroes gravity/wind so they stay straight. The hold and firing
+-- cells are PX's gun sheet.
 local seq = require("lib/fire_seq")
 local sb = require("lib/px_sprite_builder")
 local trail = require("wf-lib/effects/trail")

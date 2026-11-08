@@ -66,7 +66,13 @@ game frames.
   widths are doubled in the module, and the `core_w`/`glow_w` overrides are
   full widths too. Small rings floor the core (and thin-spin maximum) at 6.4 px
   full, about 2 px visible through the beam texture, so tiny saws stay legible.
-- `libs/custom_explosion.lua` — PX's non-electric `do_custom_explosion`:
+- `libs/custom_explosion.lua` - PX's non-electric `do_custom_explosion`:
   falloff damage, push, crater and one effect burst. Call it from `on_explode`
-  after zeroing the record's own `explosion.power`; the electric variant stays
-  in `px.electric` because it also tazes and chains.
+  after zeroing the record's own `explosion.power`. The radial damage goes
+  through `wa.world.blast`, PX's `Env->Objs` walk, so worms, mines, crates,
+  drums, missiles, arrows and Lua actors whose `body.hit_by` takes blasts are
+  all hit; a 0 HP worm WA has not started killing gets the same falloff and
+  push by hand because the engine leaves it out. `kind = "taze"` (or a
+  bundle's own kind) names the hit the recipients read, otherwise it is a
+  plain blast. The electric variant stays in `px.electric` because it also
+  tazes and chains.
