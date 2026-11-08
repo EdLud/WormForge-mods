@@ -4740,6 +4740,33 @@ do
   M.turn_start({ worm = w, active = w })
 end
 
+print("swim suit: on the Ninja Rope or the Bungee, off it as it touches the water")
+for _, tool in ipairs({ "roping", "bungee" }) do
+  new_match()
+  frame()
+  M.water = 500
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:ammo() end
+  M.spawned, M.sounds, M.quads = {}, {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  local released
+  local release = w.release
+  function w:release(vx, vy, opts)
+    released = { state = self.state, vx = vx, vy = vy }
+    return release(self, vx, vy, opts)
+  end
+  w.state, w.y, w.vx, w.vy = tool, 510, 2, 1
+  M.message(w, wa.msg.FRAME_FINISH)
+  check(tool .. ": let go into WA's fall at the splash (its rope or cord taken down), then swimming",
+    released and released.state == tool and released.vx == 2 and released.vy == 1
+    and w.state == "sliding" and w.taken and M.sounds[#M.sounds] == 57)
+end
+
 print("swim suit: click weapons fire from the water, judged as from the bungee")
 do
   new_match()

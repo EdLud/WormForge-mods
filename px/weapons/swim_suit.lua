@@ -67,6 +67,9 @@ function weapon.setup()
   -- Drawn in the worm's place: the swim or, when still, the float animation,
   -- and a bubble around the worm while it wears the suit.
   --
+  -- A worm on the Ninja Rope or the Bungee comes off it as it touches the
+  -- water (PX's, by its state change to the bungee).
+  --
   -- Not ported: PX's ghost jet and battyswim interplay (other libraries), the
   -- Ninja Rope workaround after leaving the water (the Jump is on the rope's
   -- slot here), inverted controls, and the team message on putting it on.
@@ -278,6 +281,13 @@ function weapon.setup()
       s.x, s.y = d.x, d.y
       s.vx, s.vy = math.min(d.vx, cap), math.min(d.vy, cap)
       s.px, s.py, s.knocked = 0, 0, false
+      -- On the Ninja Rope or the Bungee: off it as it touches the water.
+      -- WA takes its rope or cord down as the worm leaves the state (the
+      -- release's SetState), which a hold never does: held, it swam on the
+      -- rope until it left the water.
+      if worm.state == "roping" or worm.state == "bungee" then
+        worm:release(s.vx, s.vy)
+      end
       -- Swimming, it fires Fast Walk (its swim speed) and the click weapons;
       -- the suit's own use is this pack's hook.
       swim_take(worm)

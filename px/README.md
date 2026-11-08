@@ -619,7 +619,8 @@ Worn, a worm that falls into the water swims instead of drowning:
 - **Swimming:** the pack holds it (`worm:take`) and moves it by its own four
   keys, up to 2.5 pixels a frame times the swim speed, and it glides to a stop
   when they are let go. Left and right turn it unless Shift is held. Enter
-  does nothing while it swims.
+  does nothing while it swims. On the Ninja Rope or the Bungee, it comes off
+  as it touches the water.
 - **Weapons:** it fires Fast Walk and the weapons fired by a click on the map:
   strikes (every cursor weapon of this pack is built on one), the Teleport and
   the Girder, judged as WA judges them from its bungee (`fire_as = "bungee"`),
