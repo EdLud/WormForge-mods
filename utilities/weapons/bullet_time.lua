@@ -6,6 +6,8 @@
 --
 -- The world eases into slow motion and back out of it (easeOutCirc, 2 s
 -- each way, inside the duration), and the screen takes a blue tint with it.
+-- Firing it sends a ripple out from the worm (wa.view.ripple); the end has
+-- none.
 -- Time here is real time: a world frame lasts 1 / (50 x the world's speed)
 -- seconds. WA's turn clock counts the world's frames, so slow motion
 -- stretches the turn in real time.
@@ -90,6 +92,20 @@ return {
         end
         t = 0
         hand_to(fire.worm)
+        -- Presentation only, so the firing (a simulation callback) may start
+        -- it on every machine. Its time is real time, so slow motion leaves
+        -- it alone.
+        if wa.view and wa.view.ripple then
+          wa.view.ripple{
+            x = fire.worm.x,
+            y = fire.worm.y,
+            amplitude = 10,
+            wavelength = 64,
+            speed = 60,
+            duration_ms = 4200,
+            falloff = 120,
+          }
+        end
       end,
     })
 
