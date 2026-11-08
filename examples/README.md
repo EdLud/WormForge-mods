@@ -22,10 +22,6 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
 - `turret` (`example.turret`) — Space plants a persistent Lua turret, placed
   as WA places a mine. Line of sight is `wa.land.trace`; rounds are
   `worm:hurt` and a shove, not explosions.
-- `ripple` (`example.ripple`) — `ripple.grenade`, WA's Grenade whose
-  burst sends a ripple through the world's picture, not the HUD
-  (`wa.view.ripple` from `on_explode`). `profiles/Ripple Grenade.toml` places
-  it beside WA's Grenade, with unlimited ammo.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
   - `tools.perf` — the profiler, which writes a `perf:` line to `wkLua.log`
