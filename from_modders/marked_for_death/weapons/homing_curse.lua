@@ -1,5 +1,5 @@
 -- Homing Curse: curses the worm in front, so loose mines, missiles, oil drums
--- and arrows home at it for two turns.
+-- and arrows home at it for two turns, and magnetic actors are pulled at it.
 local curse = require("lib/curse")
 
 local M = {}

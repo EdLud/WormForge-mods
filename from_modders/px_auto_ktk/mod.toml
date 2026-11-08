@@ -1,0 +1,113 @@
+# Auto Kill the King: one king, placed by the mod instead of a hand-made map.
+#
+# The rules are Project X's CKtkControl (scripts/ktk_control.txt, ported as
+# px.ports' ktk.control); the automatic placement is this port's own.
+id = "px.auto_ktk"
+name = "[ALPHA] Auto KTK"
+version = "0.0.01"
+author = "reddaz"
+api_version = 4
+format_version = 2
+
+# PX's kings are terrain stamps (files/*king.png, drawn with land.Draw).
+[sprites."sprites/king/leftsmallking.png"]
+[sprites."sprites/king/rightsmallking.png"]
+[sprites."sprites/king/leftbigking.png"]
+[sprites."sprites/king/rightbigking.png"]
+
+[[components]]
+id = "px.auto_ktk"
+type = "feature"
+name = "Auto Kill the King"
+description = "Finds or digs the defenders' king at the map edge before the first turn, then runs Project X's Kill the King: destroy the king before the attack timer runs out."
+entry = "components/auto_ktk.lua"
+
+[[components.options]]
+key = "side"
+type = "choice"
+choices = ["left", "right", "random"]
+default = "left"
+label = "Defenders' side"
+description = "The king is placed around the middle of the map's left or right fifth. Random rolls it once per round."
+
+[[components.options]]
+key = "king_size"
+type = "choice"
+choices = ["small", "big"]
+default = "small"
+label = "King size"
+description = "PX's small king is 20x40 px, the big one 40x80."
+
+[[components.options]]
+key = "allow_carve"
+type = "bool"
+default = true
+label = "Dig a cave when none is found"
+description = "Cuts a hall under 150 px of roof and a zig-zag exit to the surface. Off: only natural caves and the open fallback."
+
+[[components.options]]
+key = "move_worms"
+type = "bool"
+default = true
+label = "Move worms to the edges"
+description = "Defenders start on their king, attackers on the mirrored edge."
+
+[[components.options]]
+key = "attackers_team"
+type = "choice"
+choices = ["red", "blue", "green", "yellow", "purple", "cyan"]
+default = "red"
+label = "Attackers' team"
+
+[[components.options]]
+key = "defenders_team"
+type = "choice"
+choices = ["red", "blue", "green", "yellow", "purple", "cyan"]
+default = "blue"
+label = "Defenders' team"
+
+[[components.options]]
+key = "attack_time_seconds"
+type = "int"
+min = 10
+max = 3600
+default = 300
+label = "Attack time (seconds)"
+description = "Time the attackers have; the defenders win when it runs out."
+
+[[components.options]]
+key = "timer_mode"
+type = "choice"
+choices = ["attack_only", "defend_and_compensate"]
+default = "attack_only"
+label = "Timer runs during"
+description = "Attack only, or also refund defender_gain_ms on each defender turn."
+
+[[components.options]]
+key = "defender_gain_ms"
+type = "int"
+min = 0
+max = 1000
+default = 5
+label = "Defender turn gain (ms)"
+
+[[components.options]]
+key = "destruction_percent"
+type = "int"
+min = 1
+max = 100
+default = 70
+label = "King destruction (%)"
+description = "Share of the king's terrain that must be gone for the attackers to win."
+
+[[components.options]]
+key = "show_timer"
+type = "bool"
+default = true
+label = "Show the attack timer"
+
+[[components.options]]
+key = "show_king_hp"
+type = "bool"
+default = true
+label = "Show the king's health"

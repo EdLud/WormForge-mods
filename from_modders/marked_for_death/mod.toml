@@ -5,14 +5,14 @@
 # click strikes). Lua adds the mark, the curse, the homing pass and the two
 # overlays; the README carries the PX line citations and the departures.
 id = "px.curse_of_death"
-name = "Project X Curse of Death"
-version = "1.0.2"
+name = "Curse of Death"
+version = "1.0.3"
 author = "reddaz"
 api_version = 4
 format_version = 2
 dependencies = ["effects.sdk"]
-
 [[components]]
+
 id = "px.death_mark"
 type = "weapon"
 name = "Death Mark"
@@ -30,13 +30,13 @@ max = 500
 default = 150
 label = "Mark damage %"
 description = "Extra damage the mark adds, in percent: 150 = 1.5x (PX's value), 200 = double."
-
 [[components]]
+
 id = "px.homing_curse"
 type = "weapon"
 name = "Homing Curse"
 credits = "reddaz"
-description = "Curses the worm in front: loose mines, missiles, oil drums and arrows home at it for two turns."
+description = "Curses the worm in front: loose mines, missiles, oil drums and arrows home at it for two turns, and magnetic actors are pulled toward it."
 entry = "weapons/homing_curse.lua"
 icon = "sprites/curse/redprod_icon.png"
 default_position = { row = "F10", column = 2 }
@@ -48,9 +48,9 @@ min = 1
 max = 50
 default = 3
 label = "Max homing objects"
-description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3)."
-
+description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3). Magnetic actors are pulled by the curse magnet and do not use a lock."
 [[components]]
+
 id = "px.marked_for_death"
 type = "weapon"
 name = "Marked For Death"
@@ -68,13 +68,13 @@ max = 500
 default = 150
 label = "Mark damage %"
 description = "Extra damage the mark adds, in percent: 150 = 1.5x (PX's value), 200 = double."
-
 [[components]]
+
 id = "px.wish_of_death"
 type = "weapon"
 name = "Wish Of Death"
 credits = "reddaz"
-description = "Click a worm to curse it: nearby mines, missiles, oil drums and arrows home at it. Refunds the shot when the click finds nobody."
+description = "Click a worm to curse it: nearby mines, missiles, oil drums and arrows home at it, and magnetic actors are pulled toward it. Refunds the shot when the click finds nobody."
 entry = "weapons/wish_of_death.lua"
 icon = "sprites/curse/markicon.png"
 default_position = { row = "F10", column = 4 }
@@ -86,4 +86,4 @@ min = 1
 max = 50
 default = 3
 label = "Max homing objects"
-description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3)."
+description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3). Magnetic actors are pulled by the curse magnet and do not use a lock."

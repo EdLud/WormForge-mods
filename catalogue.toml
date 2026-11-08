@@ -13,6 +13,7 @@ packs = [
   "from_modders/marked_for_death",
   "from_modders/px_buffalo",
   "from_modders/laser_reflect",
+  "from_modders/px_auto_ktk",
 ]
 
 # Exact source paths: a profile is published only when listed here.

@@ -2,7 +2,8 @@
 -- two overlays. Source: utility_curse_of_death/scripts/curse_of_death_script.txt.
 --
 -- Marked worms take 50% more damage. Cursed worms are the homing target of
--- every loose mine, missile, oil drum and arrow, and wear PX's crosshair.
+-- every loose mine, missile, oil drum and arrow, wear PX's crosshair, and are
+-- a magnet for magnetic actors (the Bowling Ball, both Bunker Busters).
 -- `curse.install()` registers the shared hooks once, whichever of the four
 -- weapons is placed.
 local curse = {}
@@ -71,6 +72,64 @@ local function turn_worm()
   for _, w in ipairs(wa.worms.all()) do
     if w.turn then return w end
   end
+end
+
+-- PX's curse steers native mines, missiles, oil drums and arrows. A Lua actor
+-- that moves itself (the Bowling Ball, both Bunker Busters) reads magnetism
+-- instead, so the curse becomes a magnet at the cursed worm and lets
+-- wa.magnetism pull it: the actor's own movement does the homing. The field
+-- is the Cursor's 300 px attract magnet. `native = false` keeps it off the
+-- native objects the pass above already steers.
+local MAGNET_RANGE = 300
+local MAGNET_STRENGTH = 14000
+local MAGNET_FORCE = 12
+local MAGNET_SOFTENING = 10   -- attract softening (Electromagnet's)
+
+local magnets = {}   -- worm id -> { actor, field }
+
+local function stop_magnet(id)
+  local m = magnets[id]
+  if not m then return end
+  magnets[id] = nil
+  if m.field then pcall(function() m.field:remove() end) end
+  if m.actor and not m.actor.dead then
+    pcall(function() m.actor:despawn() end)
+  end
+end
+
+local function start_magnet(w)
+  if magnets[w.id] or not (wa.magnetism and wa.magnetism.field) then return end
+  local id = w.id
+  local ok, a = pcall(wa.actors.spawn, {
+    sprite = false, x = w.x, y = w.y - 5, gravity = false, collide = false,
+    solid = false, persist = true, drown = false, owner = w,
+    on = function(actor)
+      local v = live_worm(id)
+      if not v or not cursed[id] then
+        -- The field goes with its source.
+        magnets[id] = nil
+        actor:despawn()
+        return
+      end
+      actor.x, actor.y = v.x, v.y - 5
+      actor.vx, actor.vy = 0, 0
+    end,
+  })
+  if not ok or not a then
+    wa.log("curse magnet: " .. tostring(a))
+    return
+  end
+  local made, field = pcall(wa.magnetism.field, {
+    source = a, range = MAGNET_RANGE, strength = MAGNET_STRENGTH,
+    max_force = MAGNET_FORCE, softening = MAGNET_SOFTENING,
+    polarity = "attract", native = false,
+  })
+  if not made then
+    a:despawn()
+    wa.log("curse magnet: " .. tostring(field))
+    return
+  end
+  magnets[id] = { actor = a, field = field }
 end
 
 local function play(w, id, flags)
@@ -199,6 +258,7 @@ ensure_ticker = function()
           advance(c, f)
         else
           cursed[id] = nil
+          stop_magnet(id)
         end
       end
       if not any then
@@ -218,6 +278,7 @@ function curse.curse(w, cap)
   play(w, 31)
   play(w, 138)
   if not ticker then ensure_ticker() end
+  start_magnet(w)
   return true
 end
 
@@ -502,7 +563,9 @@ function curse.install()
       elseif kind == "percent" then
         hit.amount = math.min(100, scaled(hit.amount, m.pct))
       elseif kind ~= "poison" and kind ~= "nonlethal" then
-        -- Every other kind is a hit (0x4B): its amount is the damage.
+        -- Every other kind is a hit (0x4B): its amount is the damage. The
+        -- engine names WA's kinds, so this is what catches "bullet", "fire",
+        -- "arrow", the scripted "taze" and a bundle's own kind.
         hit.amount = scaled(hit.amount, m.pct)
       end
     elseif kind == "blast" and hit.expected == nil and hit.lost > 0 then
@@ -519,6 +582,10 @@ function curse.install()
     local w = ev.worm
     if not w then return end
     homing = {}
+    -- A magnet belongs to a live curse; drop any whose curse ended early.
+    for _, id in ipairs(wa.sorted(magnets)) do
+      if not cursed[id] then stop_magnet(id) end
+    end
     local team = w.team
     for _, id in ipairs(wa.sorted(marked)) do
       local m = marked[id]
@@ -532,11 +599,14 @@ function curse.install()
       local c = cursed[id]
       local victim = live_worm(id)
       if victim and victim.team == team then
-        if c.locks >= 2 then
-          cursed[id] = nil
-        else
+        local keep = c.locks < 2
+        if keep then
           c.left = c.left - 1
-          if c.left <= 0 then cursed[id] = nil end
+          keep = c.left > 0
+        end
+        if not keep then
+          cursed[id] = nil
+          stop_magnet(id)
         end
       end
     end
@@ -547,6 +617,7 @@ function curse.install()
     if not v then return end
     marked[v.id] = nil
     cursed[v.id] = nil
+    stop_magnet(v.id)
   end)
 
   -- Every missile, including the shooter's own. The engine reads vx/vy back

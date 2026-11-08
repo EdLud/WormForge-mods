@@ -1,51 +1,11 @@
--- px_hold_art.lua -- draw a held weapon during WA's repeated-fire frames.
---
--- Why this exists
--- ---------------
--- The engine's `spec.hold` owns the hold in every state it can: aiming
--- (0x67-0x69) with PX's grow-in pick animation, the put-away, and the firing
--- states when `h.firing` is set. `h.firing` comes from
--- `worm_hold::on_fire` on MSG_FIRE_WEAPON alone (`crates/engine/src/worm_hold.rs:139-145`,
--- called from `crates/engine/src/physics.rs:1243`). A burst that holds
--- `shots_fired`/`shots_to_fire` (`lib/fire_seq.lua`) makes WA fire the slot
--- again from its own loop, with no new fire message, so from the second shot
--- on `h.firing` is false: the firing frames (0x6A/0x6B) hide the sheet while
--- the aiming frames still show it. The gun blinks once per repeated shot.
---
--- This module draws only those two firing frames, through the same GPU queue
--- and at the same depth and transform. It is presentation only: it runs inside
--- `wa.on.draw`, reads worm state, and enqueues `wa.draw.quad`; it writes
--- nothing to the simulation and uses no clock or random number.
---
--- PX's firing branch sets `counter = 18` and `scale_pick = scale` before it
--- draws (`worms_anims_script.txt:280-283`), so the firing cell is always at
--- full size; there is no pick animation to reproduce here.
---
--- The transform is `worm_hold::draw` / `place`
--- (`crates/engine/src/worm_hold.rs:337-370, :268-300`) as `render::Sprite`
--- emits it (`crates/render/src/geom.rs:49-111`):
---
---   aim      0 straight down .. 1 straight up
---   rot      (1 - aim) * PI
---   centre   worm position + radial offset along rot
---   angle    (PI - PI*aim - PI*(1 - weap_rotation)) * facing, degrees clockwise
---   scale    1.0 -- PX's firing branch, `worms_anims_script.txt:283`
---   mirror   facing < 0
---
--- A quad carries the sheet's top-left at its first point and its corners
--- clockwise, so a mirrored sheet is drawn by giving the texture's top-left
--- the mirrored corner (a left/right swap of the point order), exactly as
--- `geom.rs:95-111` swaps the cell's x box and `u0/u1`.
+-- Draw a held weapon during WA's repeated-fire frames (0x6A/0x6B). The engine
+-- draws the aiming and put-away frames; from the second shot of a held burst
+-- `h.firing` is false, so this fills those two frames at full size.
+-- Presentation only: reads worm state and enqueues a quad.
 
 local M = {}
 
--- `worm_hold::visible`'s firing branch, by raw WA state (`worm_state.rs:30-34`).
--- The labels cannot be used here: `worm.state` returns nil for several raw
--- states because `worm_state_name` only names the states whose setup it
--- reproduces (`crates/lua-host/src/actor.rs:2189-2207`), while `state_id` is
--- the raw value even when it has no name (`:1469-1475`).
--- Aiming deliberately is not listed: the engine's `spec.hold` draws it,
--- including the pick animation (`worm_hold.rs:121-135, :351-355`).
+-- Raw WA states; `worm.state` is nil for some of them.
 local FIRING = {
   [0x6A] = true, -- firing
   [0x6B] = true, -- fired
@@ -57,9 +17,7 @@ local DEPTH = 0x10000
 local draws = {}
 local hooked = false
 
--- One quad spec, refilled per draw: `wa.draw.quad` copies its table into the
--- frame's draw list (the same reason the effects SDK trail reuses its ribbon table),
--- so no table is made inside the render callback.
+-- One quad spec, refilled per draw: no table in the render callback.
 local QUAD = { depth = DEPTH, points = { {}, {}, {}, {} } }
 
 -- `render::Sprite::emit`'s rotation: angle in radians, clockwise, y down.
@@ -68,11 +26,7 @@ local function corner(t, cx, cy, cos, sin, lx, ly)
   t.y = cy + lx * sin + ly * cos
 end
 
--- `w.aim`/`w.facing` are read on every frame, never captured: vanilla lets the
--- player micro-adjust the aim through a burst and a script can flip the worm,
--- and PX's `FireFinal` rebuilds its shot from that live state each loop. The
--- engine's own hold uses `live_aim` while aiming for the same reason
--- (`crates/engine/src/worm_hold.rs:338-344`).
+-- Read aim and facing live: the player can adjust them mid-burst.
 local function enqueue(art, w)
   local pi = math.pi
   local facing = w.facing < 0 and -1 or 1
@@ -104,10 +58,10 @@ end
 
 local function hook()
   hooked = true
-  -- The worms and their weapons, read once a draw: each field read is a call
-  -- into the engine, and the draw runs every rendered frame.
-  local weapons = {}
   wa.on.draw(function()
+    -- The worms and their weapons, read once a draw: each field read is a call
+    -- into the engine, and the draw runs every rendered frame.
+    local weapons = {}
     local worms = wa.worms.all()
     for j = 1, #worms do weapons[j] = worms[j].weapon end
     for i = 1, #draws do

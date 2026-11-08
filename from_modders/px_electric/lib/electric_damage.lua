@@ -131,9 +131,6 @@ local function finish(t)
   -- A worm WA has started killing keeps its death. release() only lets go;
   -- never write a push through a state WA owns.
   if not can_affect(worm) then
-    local s = t.push_scale or 1
-    local px, py = t.push_x * s, t.push_y * s
-    worm.vx, worm.vy = px, py 
     if worm.taken then worm:release(0, 0, { tumble = true }) end
     return
   end
@@ -169,7 +166,7 @@ local function tick()
       t.frames = t.frames - 1
       t.phase = (t.phase + 0.1) % 1
       -- WA's blast may re-show or release the worm after the hit; keep the
-      -- pose on it for the whole hold.
+      -- pose on it for the whole hold. A death state stops the hold instead.
       worm.body_visible = false
       if not worm.taken then worm:take{ turn = "freeze" } end
       worm.vx, worm.vy = 0, 0
@@ -208,7 +205,8 @@ wa.on.hurt(function(hit)
   if hit.kind == "blast" then
     taze_from(hit, armed_blast)
   elseif hit.kind ~= "poison" and hit.kind ~= "nonlethal" then
-    -- Every other kind is a hit (0x4B), by what hit: "bullet", "percent", ...
+    -- Every other kind is a hit (0x4B), by what hit: "bullet", "percent",
+    -- the engine's "taze", or a bundle's own kind.
     taze_from(hit, armed_hit)
   end
 end)

@@ -22,13 +22,19 @@
 # A component bundle (format_version 2): nothing runs until a profile selects
 # it; profiles/ holds one per weapon to load in the mod loader.
 id = "px.fire_seq"
-name = "Project X Sequential Fire"
-version = "1.3.2"
+name = "[Guns] Sequential Fire"
+version = "1.3.4"
 author = "reddaz"
 api_version = 4
 format_version = 2
 dependencies = ["effects.sdk"]
 mod_icon = "profiles/mod_icon.png"
+
+# The burst base on its own, for a pack that declares
+# `dependencies = ["px.fire_seq"]` and then `require("wf-lib/fire_seq")`.
+# See README.md, "When not to use it", before reaching for it.
+[exports]
+"wf-lib/fire_seq" = "lib/fire_seq.lua"
 
 [[components]]
 id = "px.ripper_star"

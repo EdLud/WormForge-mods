@@ -25,43 +25,49 @@ local function setup()
   local crates = {}
   local oil = {}
   local tazes, bursts, craters, arcs = {}, {}, {}, {}
-  local nearby_calls = {}
+  local blasts = {}
   local zap = { taze = function(w, opts) tazes[#tazes + 1] = { worm = w, opts = opts } end }
   local fx = {
     burst = function(o) bursts[#bursts + 1] = o; return {} end,
     crater = function(o) craters[#craters + 1] = o end,
     arc = function(o) arcs[#arcs + 1] = o; return {} end,
   }
-  local function nearby(x, y, radius, graves)
-    nearby_calls[#nearby_calls + 1] = {
-      x = x, y = y, radius = radius, graves = graves,
-    }
-    local out = {}
+  -- The engine's blast, as far as these tests need it: falloff damage to live
+  -- worms in range, object:hit to everything else. It leaves a 0 HP worm out.
+  local function blast(o)
+    blasts[#blasts + 1] = o
+    local n = 0
     local groups = { worms, mines, crates, oil }
     for i = 1, #groups do
       for j = 1, #groups[i] do
         local obj = groups[i][j]
-        local dx, dy = obj.x - x, obj.y - y
-        if dx * dx + dy * dy <= radius * radius then
-          out[#out + 1] = obj
+        local dx, dy = obj.x - o.x, obj.y - o.y
+        local dist = math.sqrt(dx * dx + dy * dy)
+        local dmg = math.floor(o.damage * (o.radius - dist) / o.radius)
+        if dist < o.radius and dmg > 0 then
+          if obj.kind == "worm" then
+            if obj.hp > 0 then obj:hurt(dmg); n = n + 1 end
+          elseif obj.hit and obj:hit(dmg, 0, 0) then
+            n = n + 1
+          end
         end
       end
     end
-    return out
+    return n
   end
   local wa = {
     worms = { all = function() return worms end },
     mines = { all = function() return mines end },
     crates = { all = function() return crates end },
     oil = { all = function() return oil end },
-    world = { electrical_nearby = nearby },
+    world = { blast = blast },
   }
   local env = setmetatable({ wa = wa }, { __index = _G })
   local M = assert(loadfile(path, "t", env))()
   return {
     M = M, wa = wa, worm = worm, zap = zap, fx = fx,
     tazes = tazes, bursts = bursts, craters = craters, arcs = arcs,
-    nearby_calls = nearby_calls,
+    blasts = blasts,
     set_mines = function(m) mines = m end,
     set_crates = function(c) crates = c end,
     set_oil = function(o) oil = o end,
@@ -78,12 +84,16 @@ local function object(kind, x, y)
   return obj
 end
 
--- Centre hit: full damage, no push, a 20-frame hold, PX's hole and radius.
+-- Centre hit: one engine blast with PX's numbers, a 20-frame hold with no
+-- push, PX's hole and radius.
 local a = setup()
 local hits = a.M.electric{ x = 100, y = 200, damage = 56, push = 56,
   zap = a.zap, fx = a.fx }
-assert(hits == 1 and a.worm.last.amount == 56 and not a.worm.last.push,
-  "centre damage lands without push")
+assert(#a.blasts == 1 and a.blasts[1].x == 100 and a.blasts[1].y == 200
+  and a.blasts[1].damage == 56 and a.blasts[1].radius == 116
+  and a.blasts[1].push_pct == 56 and a.blasts[1].kind == "taze",
+  "one wa.world.blast, a taze, with PX's radius")
+assert(hits == 1 and a.worm.last.amount == 56, "the blast's damage lands")
 assert(#a.tazes == 1 and a.tazes[1].opts.frames == 20
   and a.tazes[1].opts.push_x == 0 and a.tazes[1].opts.push_y == 0,
   "the hold takes over, with no push at the centre")
@@ -93,55 +103,49 @@ assert(#a.bursts == 1 and a.bursts[1].radius == 29
   "PX's effect radius: (damage + 2) / 2")
 assert(#a.arcs == 0, "no mine, no chain arc")
 
--- Off-centre: falloff damage, and the push the hold releases on its way out.
+-- Off-centre: the push the hold releases on its way out.
 local b = setup()
 b.worm.x = 158
 b.M.electric{ x = 100, y = 200, damage = 56, push = 56, zap = b.zap, fx = b.fx }
-assert(b.worm.last.amount == 28, "half the damage at half the radius")
 assert(#b.tazes == 1 and near(b.tazes[1].opts.push_x, 3.136)
   and near(b.tazes[1].opts.push_y, 0),
   "the push comes back on release, not into the hold")
 
--- Objects in the blast take the same falloff damage, through object:hit, from
--- one electrical_nearby pass. Mines are left to the chain arcs for now.
+-- A bundle's own kind replaces "taze".
+local k = setup()
+k.M.electric{ x = 100, y = 200, damage = 56, push = 56, kind = "shock",
+  zap = k.zap, fx = k.fx }
+assert(k.blasts[1].kind == "shock", "o.kind names the blast's hit")
+
+-- Objects are the blast's: crates, drums and mines take its hit, and its
+-- count is what electric returns.
 local j = setup()
 local crate = object("crate", 130, 200)
 local drum = object("oil", 150, 200)
-local mine = object("mine", 120, 200)
 local far = object("crate", 300, 200)
 j.set_crates({ crate, far })
 j.set_oil({ drum })
-j.set_mines({ mine })
 local jh = j.M.electric{ x = 100, y = 200, damage = 56, push = 56,
   zap = j.zap, fx = j.fx }
-assert(jh == 3, "worm, crate and oil drum all count as hits")
-assert(crate.hits == 1 and crate.damage == 41 and near(crate.vx, 4.592)
-  and near(crate.vy, 0), "the crate takes falloff damage and push")
-assert(drum.hits == 1 and drum.damage == 31 and near(drum.vx, 3.472)
-  and near(drum.vy, 0), "the oil drum takes falloff damage and push")
-assert(far.hits == 0, "an object outside the radius is untouched")
-assert(mine.hits == 0, "a mine is not object:hit in this change")
-assert(#j.nearby_calls == 1 and j.nearby_calls[1].x == 100
-  and j.nearby_calls[1].y == 200 and j.nearby_calls[1].radius == 116
-  and j.nearby_calls[1].graves == false,
-  "one electrical_nearby query, without graves")
+assert(jh == 3 and crate.hits == 1 and drum.hits == 1 and far.hits == 0,
+  "worm, crate and oil drum all count as hits")
+assert(#j.tazes == 1, "only worms are held")
 
--- No electrical_nearby (older host): the groups are walked instead.
-local k = setup()
-local kcrate = object("crate", 130, 200)
-k.set_crates({ kcrate })
-k.wa.world = nil
-local kh = k.M.electric{ x = 100, y = 200, damage = 56, push = 56,
-  zap = k.zap, fx = k.fx }
-assert(kh == 2 and kcrate.hits == 1 and kcrate.damage == 41,
-  "the fallback still hits objects")
-
--- No taze: the hit itself carries the push, as PX's non-taze branch does.
+-- No taze: the blast carries the push; a live worm is not hit twice.
 local c = setup()
 c.M.electric{ x = 100, y = 200, damage = 56, push = 56, taze = false,
   zap = c.zap, fx = c.fx }
-assert(c.worm.last.push and c.worm.last.amount == 56, "damage and push in one hit")
-assert(#c.tazes == 0, "no hold")
+assert(c.worm.hurts == 1 and #c.tazes == 0, "the blast's hit only, no hold")
+
+-- No taze and a worm already at 0 HP: the blast leaves it out, so the falloff
+-- hit pushes it, as PX's M_GUNEXP does.
+local z = setup()
+z.worm.x, z.worm.hp = 158, 0
+local zh = z.M.electric{ x = 100, y = 200, damage = 56, push = 56, taze = false,
+  zap = z.zap, fx = z.fx }
+assert(zh == 1 and z.worm.hurts == 1 and z.worm.last.push
+  and z.worm.last.amount == 28 and near(z.worm.last.vx, 3.136),
+  "a 0 HP worm gets PX's falloff push")
 
 -- Past the radius: nothing. The effect and hole still land.
 local d = setup()
@@ -172,7 +176,8 @@ local g = setup()
 g.worm.x = 130
 g.M.electric{ x = 100, y = 200, damage = 10, push = 0, radius = 50, hole = 7,
   effect_radius = 3, zap = g.zap, fx = g.fx }
-assert(g.worm.last.amount == 4, "the explicit radius sets the falloff")
+assert(g.blasts[1].radius == 50 and g.blasts[1].damage == 10,
+  "the explicit radius goes to the blast")
 assert(g.craters[1].radius == 7 and g.bursts[1].radius == 3, "explicit hole and effect radius")
 
 -- A lethal hit still tazes: the interaction is not gated by HP.
@@ -186,4 +191,4 @@ assert(#i.tazes == 1, "and the hold still starts")
 local h = setup()
 assert(h.M.electric{ damage = 56, push = 56, zap = h.zap, fx = h.fx } == 0, "no centre, no boom")
 
-print("custom_explosion: falloff, push, taze, objects, hole, chain, effect and options passed")
+print("custom_explosion: blast, push, taze, objects, hole, chain, effect and options passed")

@@ -6,11 +6,12 @@
 -- and 0 radius). PX applies the mine's damage twice (weapon_electric_mine.c:97
 -- and :98); this applies it once.
 --
--- The damage loop uses PX's object list, as electric grenade and lightning
--- strike do: wa.world.electrical_nearby finds worms, mines, crates and oil
--- drums in one pass. Crates and drums take the falloff damage through
--- obj:hit (custom_explosion.c:103-124); mines keep the separate chain arcs
--- below instead, until tazing one becomes its own change.
+-- Damage is PX's object walk (custom_explosion.c:46-125): M_GUNEXP to every
+-- object in range. wa.world.blast is that walk, so worms, crates, oil drums,
+-- mines, missiles, arrows and Lua actors whose `body.hit_by` takes blasts are
+-- all hit. The taze pass then holds every worm in range, as TazeArtificial
+-- does (:96-115); the hold drops the blast's own push and re-applies it on
+-- release.
 
 local M = {}
 
@@ -30,22 +31,6 @@ local function numbers(o)
   return damage, push, radius, hole, effect
 end
 
--- Everything electrical_nearby can see, in WA's entity order. The engine caps
--- its query at 1000 px, so a larger blast falls back to the groups themselves.
-local function targets(x, y, radius)
-  local nearby = wa.world and wa.world.electrical_nearby
-  if nearby and radius <= 1000 then
-    return nearby(x, y, math.max(1, math.ceil(radius)), false)
-  end
-  local out = {}
-  local groups = { wa.worms, wa.mines, wa.crates, wa.oil }
-  for i = 1, #groups do
-    local list = groups[i] and groups[i].all and groups[i].all() or {}
-    for j = 1, #list do out[#out + 1] = list[j] end
-  end
-  return out
-end
-
 -- effect = a px_effects burst spec (or false); it and the hole launch here.
 function M.electric(o)
   o = o or {}
@@ -57,11 +42,22 @@ function M.electric(o)
   local hits = 0
 
   if damage > 0 and radius > 0 then
+    -- A worm already at 0 HP is left out of the engine blast; remember it so
+    -- the push below reaches it without hitting a worm the blast just killed.
+    local zero = {}
+    for _, w in ipairs(wa.worms.all()) do
+      if w.hp <= 0 then zero[w.id] = true end
+    end
+    hits = wa.world.blast{ owner = o.owner, x = x, y = y, damage = damage,
+      radius = math.ceil(radius), push_pct = push, kind = o.kind or "taze" }
+    -- PX's taze pass (:96-115): the damage has landed, now hold every worm in
+    -- range. The hold takes the worm, so the blast's push is dropped and put
+    -- back on release with the same falloff push PX passes to TazeArtificial.
     local r2 = radius * radius
-    for _, obj in ipairs(targets(x, y, radius)) do
-      -- Mines are the chain arcs' business for now; graves are not PX
-      -- explosion targets.
-      if obj.kind ~= "mine" and obj.kind ~= "grave" then
+    for _, obj in ipairs(wa.worms.all()) do
+      -- WA owns a dying/drowning/dead worm; no hold or push through its death.
+      local live = not zap.can_affect or zap.can_affect(obj)
+      if live then
         local dx, dy = obj.x - x, obj.y - y
         local d2 = dx * dx + dy * dy
         if d2 < r2 then
@@ -73,27 +69,13 @@ function M.electric(o)
               local force = (dmg / 5) * (push / 100)  -- (:73-84)
               px, py = dx / dist * force, dy / dist * force
             end
-            if obj.kind == "worm" then
-              -- WA owns a dying/drowning/dead worm; no damage, hold or push
-              -- through its death. A zero-HP worm not yet in death is fair.
-              local live = not zap.can_affect or zap.can_affect(obj)
-              if live then
-                if o.taze ~= false then
-                  -- Land the damage first; a lethal hit may start the death,
-                  -- which the taze then leaves to WA.
-                  obj:hurt(dmg)
-                  zap.taze(obj, { frames = o.taze_frames or 20,
-                    push_x = px, push_y = py })
-                else
-                  obj:hurt{ amount = dmg, vx = px, vy = py }
-                end
-                hits = hits + 1
-              end
-            elseif obj.kind == "crate" or obj.kind == "oil" then
-              -- PX sends the same M_GUNEXP to every object (:103-124);
-              -- object:hit is WA's damage and knockback path for a crate or
-              -- oil drum.
-              if obj:hit(dmg, px, py) then hits = hits + 1 end
+            if o.taze ~= false then
+              zap.taze(obj, { frames = o.taze_frames or 20,
+                push_x = px, push_y = py })
+            elseif zero[obj.id] then
+              -- world.blast leaves a 0 HP worm out; PX's M_GUNEXP pushes it.
+              obj:hurt{ amount = dmg, vx = px, vy = py }
+              hits = hits + 1
             end
           end
         end

@@ -6,8 +6,8 @@
 # `effects.sdk` modules (`wf-lib/effects/px_effects` and
 # `wf-lib/effects/trail`).
 id = "px.electric"
-name = "Project X Electric Mine"
-version = "0.5.6"
+name = "[Electrical]"
+version = "0.5.7"
 author = "reddaz"
 api_version = 4
 format_version = 2
@@ -17,12 +17,12 @@ dependencies = ["effects.sdk"]
 # without copying the taze sheets or the loop sound, and any electric weapon
 # can mark a mine with `wf-lib/electric/taze_mine`.
 asset_namespace = "wf-lib/electric"
-
 [exports]
 "wf-lib/electric/damage" = "lib/electric_damage.lua"
 "wf-lib/electric/taze_mine" = "lib/taze_mine.lua"
 
 [[components]]
+
 id = "px.electric_mine"
 type = "weapon"
 name = "Electric Mine"
