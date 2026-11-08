@@ -616,18 +616,25 @@ so that every later Chilli Bomb flies with them.
 **Swim Suit.** PX's `swimsuit_SCRIPT` (StepS), with `fastswim_SCRIPT` and
 `swim_suit_diving_s` (PyroMan), on WA's laser sight, which never switches on.
 Worn, a worm that falls into the water swims instead of drowning:
-- **Swimming:** it is held in WA's bungee state with no gravity and moved by
-  its own four keys, up to 2.5 pixels a frame times the swim speed, and glides
-  to a stop when they are let go. Left and right turn it unless Shift is held.
-  Enter does nothing while it swims.
-- **Leaving the water:** out of the water it flies on as from a jump. Too deep,
-  or knocked out of those states, the suit gives out and it sinks.
+- **Swimming:** the pack holds it (`worm:take`) and moves it by its own four
+  keys, up to 2.5 pixels a frame times the swim speed, and it glides to a stop
+  when they are let go. Left and right turn it unless Shift is held. Enter
+  does nothing while it swims.
+- **Weapons:** it fires Fast Walk and the weapons fired by a click on the map:
+  strikes (every cursor weapon of this pack is built on one), the Teleport and
+  the Girder, judged as WA judges them from its bungee (`fire_as = "bungee"`),
+  as PX's swimmer in the bungee state fired them. Aimed weapons (the Homing
+  Missile, the Pigeon) are not. A Teleport takes it out of the water with the
+  suit on.
+- **Leaving the water:** out of the water it flies on as from a jump, the suit
+  still on, to swim again if it falls back in. Too deep, or still in the water
+  when the turn ends, the suit gives out and it drowns.
 - **Speed:** Fast Walk switches the swim speed between 2 and 6 for the turn.
 - **Missiles:** a missile in the water blows up on a swimming worm (100, 50).
 - **Looks:** the swim or float animation is drawn in its place, with a bubble
   drawn in `wa.on.draw` from live worm.x/y while the suit is worn (no ring actor).
-- **Engine pieces:** `worm.collision_mask` and `m.collision_mask`, and the
-  `bungee` and `sinking` states.
+- **Engine pieces:** `worm:take` (`fire`, `fire_as`), `worm:carry`,
+  `worm:release`, `worm.collision_mask` and `m.collision_mask`.
 - **Not ported:** PX's ghost-jet and battyswim interplay, the Ninja Rope
   workaround (the Jump is on that slot), inverted controls, and the team
   message.

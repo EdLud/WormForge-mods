@@ -181,9 +181,10 @@ function weapon.setup()
       if not b.active then
         return
       end
-      -- The engine let go: the turn ended, or WA knocked the worm flying.
+      -- The engine let go: the turn ended, WA knocked the worm flying, or it
+      -- teleports (WA's Teleport, fired from under the balloon).
       if not worm.taken then
-        balloon_stop(worm, b, "the engine let go (turn over or knocked flying)")
+        balloon_stop(worm, b, "the engine let go (turn over, knocked flying or teleporting)")
         return
       end
       -- The arrow keys, as WA's parachute takes them (0x514AC0, 0x513EB0).

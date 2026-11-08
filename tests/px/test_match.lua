@@ -195,7 +195,7 @@ end
 -- The engine's handoff verbs: what the worm looks like to the pack after.
 function Worm:take(opts)
   opts = opts or {}
-  self.taken = { hide = opts.hide or false, turn = opts.turn or "run" }
+  self.taken = { hide = opts.hide or false, turn = opts.turn or "run", fire = opts.fire, fire_as = opts.fire_as }
   if opts.hide then self.visible = false end
 end
 function Worm:release(vx, vy, opts)
@@ -801,6 +801,12 @@ local function new_match(opts)
       end,
     },
     weapons = {
+      -- A weapon's record as wa.weapons.data reads it: what a test gives.
+      data = function(id)
+        local d = M.weapon_data and M.weapon_data[id]
+        if not d then error("weapons.data: " .. id .. " not in this test") end
+        return d
+      end,
       -- Whether a team may select a weapon, as the engine keeps it.
       set_selectable = function(spec)
         assert(type(spec.weapon) == "string" and spec.team >= 1 and spec.team <= 6)
@@ -4732,6 +4738,53 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("and no longer the pack's", not w.taken)
   M.turn_start({ worm = w, active = w })
+end
+
+print("swim suit: click weapons fire from the water, judged as from the bungee")
+do
+  new_match()
+  frame()
+  M.water = 500
+  -- The fixture's placed weapons, by their records: strikes (PX's cursor
+  -- weapons are built on them) and the Girder (subtype 17; the Teleport is
+  -- 10) are click weapons. Any other record is not.
+  M.weapon_data = {
+    ["px.lightning_strike"] = { fires = { as = "strike" } },
+    ["px.crate_strike"] = { fires = { as = "strike" } },
+    ["px.3_girder_pack"] = { fires = { as = "special", subtype = 17 } },
+    ["px.swim_suit"] = { fires = { as = "special", subtype = 19 } },
+  }
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:ammo() end
+  M.spawned, M.sounds, M.quads = {}, {}, {}
+  M.message(w, wa.msg.FIRE_WEAPON)
+  w.state, w.y, w.vx, w.vy = "sliding", 510, 0, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  local fire = {}
+  for _, id in ipairs(w.taken and w.taken.fire or {}) do fire[id] = true end
+  check("swimming, it may fire Fast Walk and the click weapons, as from the bungee",
+    w.taken and w.taken.fire_as == "bungee" and fire["stock.fast_walk"] and fire["px.lightning_strike"]
+    and fire["px.crate_strike"] and fire["px.3_girder_pack"] and not fire["px.swim_suit"])
+  w.weapon = "bazooka"
+  check("an aimed weapon is eaten", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
+  w.weapon = "donkey" -- px.crate_strike's slot here
+  check("a click weapon goes on to WA", M.message(w, wa.msg.FIRE_WEAPON) == nil)
+  -- WA's Teleport: the engine lets go, WA's state kept.
+  w.taken, w.state = nil, "teleporting"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("teleporting: out of the water with the suit on, drawn as itself", w.state == "teleporting"
+    and w.collision_mask == 134342 and w.body_visible == true and not w.taken)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("no splash while WA teleports it", not w.taken)
+  -- Where it lands in the water, it swims again.
+  w.state, w.x, w.y = "sliding", 300, 520
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
 end
 
 print("swim suit: knocked flying into the water, it gives out")

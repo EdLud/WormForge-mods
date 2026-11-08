@@ -12,6 +12,7 @@ weapon.defaults = { auto_use = false, crate = { type = "utility" }, donor_card =
 -- Set by weapon.configure(ctx), read inside the closures weapon.setup() builds below.
 local automatic = false
 local fast_walk_auto_use = false -- whether stock.fast_walk's own Auto-Use is on in this profile
+local placed = {} -- every placed weapon's id, in slot order
 
 function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
@@ -39,8 +40,13 @@ function weapon.setup()
   -- falls into the water splashes and swims instead of drowning: the pack takes
   -- it (worm:take) and moves it by its own four keys (up to 2.5 pixels a frame
   -- times the swim speed, gliding to a stop when they are let go), stopping at
-  -- land, turned by left and right unless Shift is held. Enter and weapons do
-  -- nothing while it swims (Fast Walk aside). Out of the water it is released
+  -- land, turned by left and right unless Shift is held. Enter does nothing
+  -- while it swims, and it fires only Fast Walk and the weapons fired by a
+  -- click on the map: strikes (Project X's cursor weapons are built on them),
+  -- the Teleport and the Girder, judged as from WA's bungee (take's
+  -- fire_as), as PX's swimmer in the bungee state fired them; aimed weapons
+  -- (the Homing Missile, the Pigeon) not. A Teleport takes it out of the
+  -- water with the suit on, as swimming out does. Out of the water it is released
   -- as from a jump. Too deep (180 pixels under the water, or the bottom of a
   -- cavern), or still in the water when the turn ends, the suit gives out and
   -- it drowns. Knocked by a hit or a blast while it swims, it swims on, taking
@@ -98,6 +104,31 @@ function weapon.setup()
   local swim_in_game = false    -- SwimInGame: someone has worn the suit
   local turn_over = false       -- between WA's turn end and the next turn's start
   local pending = nil           -- Auto-Use: worm id to put the suit on for at this turn's start
+  -- What a swimmer may fire: Fast Walk and every placed click weapon, by its
+  -- record this round (worked out at the first swim, once the round's table
+  -- is there): `list` for worm:take, `set` by id.
+  local swim_fire = nil
+  local function clickable(id)
+    local ok, data = pcall(wa.weapons.data, id)
+    local f = ok and type(data) == "table" and data.fires or nil
+    return f ~= nil and (f.as == "strike" or f.as == "special" and (f.subtype == 10 or f.subtype == 17))
+  end
+  local function fireable()
+    if not swim_fire then
+      swim_fire = { list = { "stock.fast_walk" }, set = { ["stock.fast_walk"] = true } }
+      for _, id in ipairs(placed) do
+        if not swim_fire.set[id] and clickable(id) then
+          swim_fire.list[#swim_fire.list + 1] = id
+          swim_fire.set[id] = true
+        end
+      end
+    end
+    return swim_fire
+  end
+  local function swim_take(worm)
+    worm:take{ turn = "run", fire = fireable().list, fire_as = "bungee" }
+  end
+
   local swimmers = {} -- worm id -> { suit, plopready, plopped, floating, plophase, flophase, fmult, keys, body, x, y, vx, vy, px, py, knocked, dive, dived }
 
   local function swimmer_of(worm)
@@ -247,9 +278,9 @@ function weapon.setup()
       s.x, s.y = d.x, d.y
       s.vx, s.vy = math.min(d.vx, cap), math.min(d.vy, cap)
       s.px, s.py, s.knocked = 0, 0, false
-      -- Swimming, it fires nothing but Fast Walk (its swim speed); the suit's
-      -- own use is this pack's hook.
-      worm:take{ turn = "run", fire = { "stock.fast_walk" } }
+      -- Swimming, it fires Fast Walk (its swim speed) and the click weapons;
+      -- the suit's own use is this pack's hook.
+      swim_take(worm)
       s.plophase = 0
     end
     if s.plopped and not worm.taken and KNOCKED[worm.state_id] and not turn_over then
@@ -257,7 +288,7 @@ function weapon.setup()
       -- knock. Left in WA's hit state a frame, so WA's turn sees the loss of
       -- control (0x56044C: the turn's worm hurt this turn, or in its hit or
       -- blast state) and ends the turn unless the scheme says otherwise.
-      worm:take{ turn = "run", fire = { "stock.fast_walk" } }
+      swim_take(worm)
       s.px = s.px + worm.vx * SWIM_KNOCK
       s.py = s.py + worm.vy * SWIM_KNOCK
       s.knocked = true
@@ -267,8 +298,17 @@ function weapon.setup()
       s.knocked = false
       if KNOCKED[worm.state_id] then
         worm:release(0, 0)
-        worm:take{ turn = "run", fire = { "stock.fast_walk" } }
+        swim_take(worm)
       end
+    end
+    if s.plopped and not worm.taken and worm.state == "teleporting" then
+      -- The engine let go for WA's Teleport: out of the water with the suit
+      -- on, as swimming out is, to splash again where it lands in water.
+      s.floating = false
+      s.plopready, s.plopped = true, false
+      s.px, s.py, s.knocked = 0, 0, false
+      swim_drop_art(worm, s)
+      return
     end
     if s.plopped and not worm.taken then
       -- The engine let go: the turn ended. Still in the water, the suit
@@ -451,8 +491,8 @@ function weapon.setup()
       end
     elseif msg == wa.msg.FIRE_WEAPON then
       local s = swimmers[worm.id]
-      if s and s.plopped and worm.weapon ~= "stock.fast_walk" then
-        return "eat" -- no weapons while it swims
+      if s and s.plopped and not fireable().set[worm.weapon] then
+        return "eat" -- nothing else while it swims
       end
       if worm.weapon == "stock.fast_walk" then
         swim_speed = swim_speed ~= 6 and 6 or 2
@@ -517,6 +557,8 @@ end
 
 function weapon.configure(ctx)
   automatic = ctx.data.auto_use == true
+  placed = {}
+  for _, p in ipairs(ctx.placed or {}) do placed[#placed + 1] = p.id end
   local fast_walk = ctx.weapons["stock.fast_walk"]
   fast_walk_auto_use = fast_walk ~= nil and fast_walk.data.auto_use == true
 end

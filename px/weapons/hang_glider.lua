@@ -252,7 +252,8 @@ function weapon.setup()
         g = glider_of(worm)
       end
       if g.deployed then
-        -- The engine let go: the turn ended, or WA knocked the worm flying.
+        -- The engine let go: the turn ended, WA knocked the worm flying, or it
+        -- teleports (WA's Teleport; the unstand lapses long before it lands).
         if not worm.taken then
           glider_close(worm, g, false)
           return
