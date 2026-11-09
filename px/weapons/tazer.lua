@@ -10,9 +10,9 @@ weapon.definition = {
   gun={bullets=1,impact_effect=3,shot_interval_ms=0,spread_deg=25,
     explosion={bias=20,push_pct=100}},
   worm_sprites={
-    weaponlnk="sprites/tazer/wtazlnk.png",weaponlnku="sprites/tazer/wtazlnku.png",
-    weaponlnkd="sprites/tazer/wtazlnkd.png",wthrow="sprites/tazer/wtazer.png",
-    wthrowu="sprites/tazer/wtazeru.png",wthrowd="sprites/tazer/wtazerd.png",
+    weaponlnk="sprites/tazer/wtazer.png",weaponlnku="sprites/tazer/wtazeru.png",
+    weaponlnkd="sprites/tazer/wtazerd.png",wthrow="sprites/tazer/wtazlnk.png",
+    wthrowu="sprites/tazer/wtazlnku.png",wthrowd="sprites/tazer/wtazlnkd.png",
     weaponfire="sprites/tazer/wtazer.png",weaponfireu="sprites/tazer/wtazeru.png",
     weaponfired="sprites/tazer/wtazerd.png",
   },
@@ -32,9 +32,4 @@ weapon.definition = {
   end,
 }
 weapon.requires={"lib/electrical"}
-function weapon.setup()
-  require("lib/weapon_hint").register("px.tazer",function()
-    return "Tazer\nSpace: a chaining electric arc"
-  end)
-end
 return weapon

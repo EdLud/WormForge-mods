@@ -7,7 +7,6 @@ package.loaded["lib/weapon_hint"]={register=function()end}
 wa={msg={TURN_STARTED=56,FIRE_WEAPON=61},math={sin=math.sin,cos=math.cos},
   on={worm_message=function(f)hooks.worm=f end}}
 local tazer=require("weapons/tazer")
-tazer.setup()
 local w={id=17,x=100,y=100,aim=0.5,facing=1,turn=true,hp=100,weapon="px.tazer"}
 assert(hooks.worm==nil,"the Tazer no longer gates FIRE_WEAPON")
 tazer.definition.on_fire{worm=w}
