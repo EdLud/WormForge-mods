@@ -147,14 +147,26 @@ bottom right (`wf-lib/tooltip`), for the firing team's side, over the held
 weapon's hint until it ends. WA's sounds slow down with the world; WA's turn clock counts
 the world's frames, so the turn lasts longer in real time.
 
+Tab fires it too (an option, on by default), and the worm keeps the weapon it
+holds: one unit is spent and slow motion starts wherever the worm is, mid-jump,
+on the rope or charging a throw. Tab is WA's while WA picks worms (the
+scheme's worm select, until the worm moves), so there it switches worms as
+ever; under "worm select always" it switches worms all turn and never fires
+Bullet Time. Not in the retreat either, nor while the weapon's delay runs.
+
 | Option | Default | |
 |---|---|---|
 | World speed (%) | 40 | The world's speed, of the scheme's engine speed. |
 | Worm speed (%) | 100 | The worm's, in real time: 100 is its normal speed. At most 8 times the world's. |
 | Duration (s) | 20 | How long it lasts, in real seconds, easing in and out included. |
+| Music slows too | on | The soundtrack slows with the world. |
+| Tab fires it | on | Tab starts it too, the held weapon kept. |
 
 It uses `wa.world.set_speed` and `worm.time_scale`, so it needs a WormForge
-newer than 0.9.81. The Lua lives in `weapons/bullet_time.lua`; the icon is
+newer than 0.9.81; Tab needs `wa.world.keys().tab` and
+`wa.world.worm_selecting()` (newer than 0.9.83), and is off without them.
+Run `lua mods/tests/utilities/test_bullet_time.lua` from the repository root
+for its Tab checks. The Lua lives in `weapons/bullet_time.lua`; the icon is
 `sprites/bullet_time.png`, the tint's plain sheet `sprites/bullet_time_tint.png`.
 
 ## Fog of war

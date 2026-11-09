@@ -4,6 +4,13 @@
 -- own time (worm.time_scale). Projectiles the worm fires are the world's,
 -- so they crawl too. Once on it runs out; it cannot be paused.
 --
+-- Tab fires it too, unless the profile turns that off, without touching the
+-- weapon the worm holds: one unit is spent and it starts, mid-jump, on the
+-- rope or charging a throw. Only where WA does nothing with Tab: while WA
+-- picks worms (the scheme's worm select) Tab is WA's, and under "worm select
+-- always" that is the whole turn. Not in the retreat, nor while the weapon's
+-- delay runs.
+--
 -- The world eases into slow motion and back out of it (easeOutCirc, 2 s
 -- each way, inside the duration), and the screen takes a blue tint with it.
 -- Firing it sends a ripple out from the worm (wa.view.ripple); the end has
@@ -44,6 +51,7 @@ return {
     local ramp = math.min(RAMP, total / 2)
     -- Presentation only, like the tint; a WormForge without it plays on.
     local music = ctx.option("music") and wa.music and wa.music.set_pitch
+    local tab = ctx.option("tab") and wa.world.worm_selecting ~= nil
 
     wa.assets.load({ sprites = { TINT_SPRITE } })
     local tint = wa.sprites.key(TINT_SPRITE)
@@ -72,6 +80,25 @@ return {
       apply()
     end
 
+    -- Slow motion starts for `worm`; the ripple goes out from it.
+    local function start(worm)
+      t = 0
+      hand_to(worm)
+      -- Presentation only, so a simulation callback may start it on every
+      -- machine. Its time is real time, so slow motion leaves it alone.
+      if wa.view and wa.view.ripple then
+        wa.view.ripple{
+          x = worm.x,
+          y = worm.y,
+          amplitude = 10,
+          wavelength = 64,
+          speed = 60,
+          duration_ms = 4200,
+          falloff = 120,
+        }
+      end
+    end
+
     local function stop()
       if not t then return end
       t, speed = nil, 1
@@ -95,24 +122,27 @@ return {
           if fire.worm:ammo(id) >= 0 then fire.worm:ammo(id, 1) end
           return
         end
-        t = 0
-        hand_to(fire.worm)
-        -- Presentation only, so the firing (a simulation callback) may start
-        -- it on every machine. Its time is real time, so slow motion leaves
-        -- it alone.
-        if wa.view and wa.view.ripple then
-          wa.view.ripple{
-            x = fire.worm.x,
-            y = fire.worm.y,
-            amplitude = 10,
-            wavelength = 64,
-            speed = 60,
-            duration_ms = 4200,
-            falloff = 120,
-          }
-        end
+        start(fire.worm)
       end,
     })
+
+    -- Tab: the synchronized key, so every machine starts it on the same frame.
+    local tab_held = false
+    local retreating = false
+    if tab then
+      wa.on.worm_message(function(worm)
+        if not worm.turn then return end
+        local held = wa.world.keys().tab
+        local pressed = held and not tab_held
+        tab_held = held
+        if not pressed or t or retreating then return end
+        if wa.world.worm_selecting() then return end
+        -- A delay counting down, or -1, blocks it as it blocks the panel.
+        if worm:ammo(id) == 0 or worm:delay(id) ~= 0 then return end
+        worm:ammo(id, -1)
+        start(worm)
+      end, { msgs = { wa.msg.FRAME_FINISH } })
+    end
 
     wa.on.worm_message(function(worm)
       if not t or not worm.turn then return end
@@ -130,8 +160,10 @@ return {
 
     -- A worm switch (Tab) hands the turn on: the new worm takes it over.
     wa.on.turn_start(function(ev)
+      retreating = false
       if t and ev.worm then hand_to(ev.worm) end
     end)
+    wa.on.turn_retreat(function() retreating = true end)
     wa.on.turn_end(stop)
     wa.on.turn_cleanup(stop)
 
