@@ -1,6 +1,6 @@
 local root = MOLE_SHOPPER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../mole_shopper/")
 package.path = root .. "?.lua;" .. package.path
-package.preload["wf-lib/holds"] = function() return {PX_POSTURE = {}, PX_HANDS = {"hand.png"}} end
+package.preload["wf-lib/holds"] = function() return {PX_POSTURE = {}, PX_LEVEL = {weaponlnk = "level.png"}, PX_HANDS = {"hand.png"}} end
 local j, i = require("weapons/j_bomb"), require("weapons/i_bomb")
 local specs = {}
 wa = {weapons = {replace = function(spec) specs[#specs + 1] = spec end}}
@@ -12,6 +12,8 @@ assert(a.missile.fuse == 7000 and a.missile.explosion.power == 80)
 assert(a.clusters.count == 28 and a.clusters.bit.explosion.power == 30)
 assert(a.clusters.bit.fuse == 2000 and a.clusters.bit.gravity_pct == 100)
 assert(a.clusters.bit.ends_on_contact.land and a.clusters.bit.ends_on_contact.worms)
+assert(a.worm_sprites.weaponlnk == "level.png" and a.hold.static.weap == 0 and a.hold.static.hand == 0.5,
+  "placed, the j-bomb is held level, not at the worm's aim angle")
 assert(b.name == "i-bomb" and b.copy_from == "stock.grenade")
 assert(b.missile.fuse == 3000 and b.missile.explosion.power == 80)
 assert(b.clusters.count == 33 and b.clusters.launch_power_pct == 8)

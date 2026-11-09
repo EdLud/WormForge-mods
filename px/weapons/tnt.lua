@@ -66,9 +66,13 @@ function weapon.definition()
     name = "TNT",
     panel_icon = ART .. "ico_tnt.png",
     -- PX's builder takes the weapon out empty-handed (default_pick) and draws
-    -- the TNT in the hand; WA's take-out shows its own stick.
+    -- the TNT in the hand; WA's take-out shows its own stick. Taken out, the
+    -- worm holds it level (static): the aim sheet's level frame, where WA's
+    -- own pose for it showed the worm looking at the ground.
     worm_sprites = {
       wdynlnk = PX_POSTURE.wthrow, wdynlnku = PX_POSTURE.wthrowu, wdynlnkd = PX_POSTURE.wthrowd,
+      weaponlnk = sdk.PX_LEVEL.weaponlnk, weaponlnku = sdk.PX_LEVEL.weaponlnku,
+      weaponlnkd = sdk.PX_LEVEL.weaponlnkd,
     },
     sprites = { ART .. "tnt.png", ART .. "tnt_hold.png", ART .. "trail.png", ART .. "glow.png" },
     params = { gpu_prefix = ART },

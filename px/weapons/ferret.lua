@@ -17,7 +17,14 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/salvation_army.wep",
     panel_icon = "sprites/ferret/icon.png",
-    worm_sprites = PX_POSTURE,
+    -- PX's draw, then the aim sheet's level frame: the ferret is held still
+    -- (static), and the aim sheet at the worm's angle showed it looking at
+    -- the ground.
+    worm_sprites = {
+      weaponlnk = sdk.PX_LEVEL.weaponlnk, weaponlnku = sdk.PX_LEVEL.weaponlnku,
+      weaponlnkd = sdk.PX_LEVEL.weaponlnkd,
+      wthrow = PX_POSTURE.wthrow, wthrowu = PX_POSTURE.wthrowu, wthrowd = PX_POSTURE.wthrowd,
+    },
     sprites = { "sprites/ferret/walk.png" },
     sounds = { "sounds/ferret/walk.wav" },
     params = { gpu_prefix = "sprites/ferret/" },

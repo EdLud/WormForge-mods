@@ -11,7 +11,9 @@ weapon.record = {}
 function weapon.definition()
   local fires = require("lib/shared").fires
   return require("lib/weapon").merge(weapon.record, {
-    copy_from = "stock.mine",
+    -- PX's record is WA's Prod (its .wep: special, subtype 9), its fire
+    -- taken by the script: the worm holds the Prod, and its shot places the turret.
+    copy_from = "stock.prod",
     name = "Auto Ballista",
     panel_icon = "sprites/pyro_turrets/ballista_icon.png",
     is_weapon = true,

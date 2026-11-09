@@ -1,6 +1,6 @@
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
-package.preload["wf-lib/holds"] = function() return {PX_POSTURE={},PX_HANDS={"hand.png"}} end
+package.preload["wf-lib/holds"] = function() return {PX_POSTURE={},PX_LEVEL={},PX_HANDS={"hand.png"}} end
 local tele = require("weapons/tele_arrow").definition
 local dynamite = require("weapons/thrown_dynamite")
 local gatling = require("weapons/gatling_gun").definition

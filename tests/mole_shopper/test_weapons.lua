@@ -1,6 +1,6 @@
 local root = MOLE_SHOPPER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../mole_shopper/")
 package.path = root .. "?.lua;" .. package.path
-package.preload["wf-lib/holds"] = function() return {PX_POSTURE = {}, PX_HANDS = {"hand.png"}} end
+package.preload["wf-lib/holds"] = function() return {PX_POSTURE = {}, PX_LEVEL = {weaponlnk = "level.png"}, PX_HANDS = {"hand.png"}} end
 local shotgun, vase = require("weapons/power_shotgun"), require("weapons/thrown_ming_vase")
 local spec, message, draw, worms, chosen, sound = nil, nil, nil, {}, {}, 0
 wa = {

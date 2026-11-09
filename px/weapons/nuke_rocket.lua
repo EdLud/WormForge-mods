@@ -93,8 +93,14 @@ function weapon.definition()
     on_explode = function(ev) shared.nuke_rocket_explode(ev) end,
     -- The engine draws its PX sprite-builder hold from PX_HOLDS:
         -- the record's own sprite is PX-only, which left WA no sheet to draw
-        -- the worm with.
-        worm_sprites = PX_POSTURE,
+        -- the worm with. PX's draw, then the aim sheet's level frame: the
+        -- rocket is held level (static), and the aim sheet at the worm's
+        -- angle showed it looking at the ground.
+        worm_sprites = {
+          weaponlnk = sdk.PX_LEVEL.weaponlnk, weaponlnku = sdk.PX_LEVEL.weaponlnku,
+          weaponlnkd = sdk.PX_LEVEL.weaponlnkd,
+          wthrow = PX_POSTURE.wthrow, wthrowu = PX_POSTURE.wthrowu, wthrowd = PX_POSTURE.wthrowd,
+        },
     sprites = {
           "sprites/px_hold/nuke_rocket.png",
         },

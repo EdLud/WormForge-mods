@@ -11,13 +11,24 @@ weapon.definition = {
   name = "Bulldozer",
   panel_icon = "sprites/bulldozer/bdico.png",
   sprite = "sprites/bulldozer/bd.png",
-  worm_sprites = holds.PX_POSTURE,
+  -- Placed, it never aims: on the aim sheets the worm looked at the ground,
+  -- the Bulldozer turned with it. Held level: PX's draw, the aim sheets'
+  -- level frame, and the hold pinned where a level aim puts it.
+  worm_sprites = {
+    wthrow = holds.PX_POSTURE.wthrow, wthrowu = holds.PX_POSTURE.wthrowu,
+    wthrowd = holds.PX_POSTURE.wthrowd,
+    weaponlnk = holds.PX_LEVEL.weaponlnk, weaponlnku = holds.PX_LEVEL.weaponlnku,
+    weaponlnkd = holds.PX_LEVEL.weaponlnkd,
+  },
   -- bulldozer_spb's CWormAnimParams.
   hold = {
     sheet = "sprites/bulldozer/bd.png", frames = 20,
     hand = holds.PX_HANDS[1], hand_type = 1, hand_scale = 0.8,
     hand_radius = 28, hand_rotation = -1, hand_radial_rotation = 1.1,
     weap_radius = 16, weap_rotation = 0.3, weap_radial_rotation = 1.1,
+    -- At a level aim: the Bulldozer at (1 - 0.5 - (1 - 0.3)) pi, the hand at
+    -- (0.5 - 1) pi.
+    static = { weap = -0.2, hand = -0.5 },
   },
 }
 

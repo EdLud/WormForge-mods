@@ -24,6 +24,12 @@ function weapon.definition()
           weaponlnkd = "sprites/weapon_crate/take_outd.png",
           wthrow = "sprites/weapon_crate/put_away.png", wthrowu = "sprites/weapon_crate/put_awayu.png",
           wthrowd = "sprites/weapon_crate/put_awayd.png",
+          -- PX's record carries the Dynamite's sprite, so WA takes the crate
+          -- out, holds it and puts it away on the Dynamite's sheets (wdynlnk:
+          -- played forward, its last frame held, played back): PX's take-out
+          -- there, as the Lantern does. Its last frame is the hold.
+          wdynlnk = "sprites/weapon_crate/take_out.png", wdynlnku = "sprites/weapon_crate/take_outu.png",
+          wdynlnkd = "sprites/weapon_crate/take_outd.png",
         },
     params = { worm_sprites_animate = true },
     on_fire = function(fire) fires.weapon_crate(fire) end,

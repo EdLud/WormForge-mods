@@ -8,12 +8,21 @@ return {
       copy_from = "stock.dynamite", name = "j-bomb", panel_icon = ART .. "icon.png",
       sprite = ART .. "body.png",
       cluster = {sprite = ART .. "fragment.png", sprite_columns = 1},
-      worm_sprites = holds.PX_POSTURE,
+      -- Placed, it never aims: on the aim sheets the worm looked at the
+      -- ground with the bomb pointing down. Held level, as the TNT is: PX's
+      -- draw, the aim sheets' level frame, and the bomb at that frame's angle.
+      worm_sprites = {
+        wthrow = holds.PX_POSTURE.wthrow, wthrowu = holds.PX_POSTURE.wthrowu,
+        wthrowd = holds.PX_POSTURE.wthrowd,
+        weaponlnk = holds.PX_LEVEL.weaponlnk, weaponlnku = holds.PX_LEVEL.weaponlnku,
+        weaponlnkd = holds.PX_LEVEL.weaponlnkd,
+      },
       params = {sprite_columns = 1},
       hold = {sheet = ART .. "hold.png", frames = 1, thrown = true,
         hand = holds.PX_HANDS[1], hand_type = 1, hand_scale = 1,
         hand_radius = -9, hand_rotation = 0, hand_radial_rotation = 0,
-        weap_radial_rotation = 0, weap_rotation = 0.5, weap_radius = -11},
+        weap_radial_rotation = 0, weap_rotation = 0.5, weap_radius = -11,
+        static = {weap = 0, hand = 0.5}},
       handling = {
         remember_selection = false,
       },

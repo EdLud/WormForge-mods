@@ -2,7 +2,7 @@
 -- PX's numbers (PushBldzr_yellow.txt, bl_script.txt, trampolineDestr.txt).
 local root=HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "").."../../px/")
 package.path=root.."?.lua;"..package.path
-package.preload["wf-lib/holds"]=function()return {PX_POSTURE={},PX_HANDS={"hand1","hand2","hand3"}}end
+package.preload["wf-lib/holds"]=function()return {PX_POSTURE={},PX_LEVEL={},PX_HANDS={"hand1","hand2","hand3"}}end
 local turn_worm
 local shared={current_worm=function()return turn_worm end}
 package.preload["lib/shared"]=function()return shared end

@@ -1,6 +1,6 @@
 id = "wf.sdk"
 name = "WormForge shared helpers"
-version = "0.2.3"
+version = "0.2.4"
 author = "WormForge / Project X authors"
 api_version = 4
 format_version = 2
@@ -35,6 +35,18 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/px_hold/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/level.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/levelu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/px_hold/leveld.png"]
 fps = 15
 play = "loop"
 
