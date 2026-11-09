@@ -11,6 +11,10 @@
 -- always" that is the whole turn. Not in the retreat, nor while the weapon's
 -- delay runs.
 --
+-- With Tab on, the turn team's Bullet Time shows in the HUD tray at the top
+-- right (wa.hud.tray) with "Tab" under it while the team has any; lit, with
+-- the time left as a bar, while it runs.
+--
 -- The world eases into slow motion and back out of it (easeOutCirc, 2 s
 -- each way, inside the duration), and the screen takes a blue tint with it.
 -- Firing it sends a ripple out from the worm (wa.view.ripple); the end has
@@ -52,6 +56,9 @@ return {
     -- Presentation only, like the tint; a WormForge without it plays on.
     local music = ctx.option("music") and wa.music and wa.music.set_pitch
     local tab = ctx.option("tab") and wa.world.worm_selecting ~= nil
+    -- Presentation only; a WormForge without it plays on.
+    local tray = tab and wa.hud and wa.hud.tray
+    local cells = {}   -- team -> its tray entry
 
     wa.assets.load({ sprites = { TINT_SPRITE } })
     local tint = wa.sprites.key(TINT_SPRITE)
@@ -67,11 +74,25 @@ return {
       return 1
     end
 
+    -- The team's cell in the tray while it has any Bullet Time; the engine
+    -- drops it once the team has none (and it isn't lit).
+    local function cell(worm)
+      if not tray then return nil end
+      local e = cells[worm.team]
+      if e and e:is_open() then return e end
+      if worm:ammo(id) == 0 then return nil end
+      e = tray.add{ weapon = id, team = worm.team, key = "Tab" }
+      cells[worm.team] = e
+      return e
+    end
+
     local function apply()
       speed = 1 + (world - 1) * depth(t)
       wa.world.set_speed(speed)
       if music then music(speed) end
       if slowed then slowed.time_scale = math.min(worm_speed / speed, 8) end
+      local e = slowed and cells[slowed.team]
+      if e then e:set{ lit = true, progress = 1 - t / total } end
     end
 
     local function hand_to(worm)
@@ -83,6 +104,7 @@ return {
     -- Slow motion starts for `worm`; the ripple goes out from it.
     local function start(worm)
       t = 0
+      cell(worm)
       hand_to(worm)
       -- Presentation only, so a simulation callback may start it on every
       -- machine. Its time is real time, so slow motion leaves it alone.
@@ -102,7 +124,11 @@ return {
     local function stop()
       if not t then return end
       t, speed = nil, 1
-      if slowed then slowed.time_scale = 1 end
+      if slowed then
+        slowed.time_scale = 1
+        local e = cells[slowed.team]
+        if e then e:set{ lit = false, progress = false } end
+      end
       slowed = nil
       wa.world.set_speed(1)
       if music then music(1) end
@@ -132,6 +158,7 @@ return {
     if tab then
       wa.on.worm_message(function(worm)
         if not worm.turn then return end
+        cell(worm)
         local held = wa.world.keys().tab
         local pressed = held and not tab_held
         tab_held = held

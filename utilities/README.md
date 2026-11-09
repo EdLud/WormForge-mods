@@ -153,6 +153,10 @@ on the rope or charging a throw. Tab is WA's while WA picks worms (the
 scheme's worm select, until the worm moves), so there it switches worms as
 ever; under "worm select always" it switches worms all turn and never fires
 Bullet Time. Not in the retreat either, nor while the weapon's delay runs.
+With Tab on, the turn team's Bullet Time shows at the top right in the HUD
+tray (`wa.hud.tray`), as the weapon panel shows it, with its ammo and "Tab"
+under it, to that team's side only; it lights up, a bar running down, while
+it runs, and goes once the team has none left.
 
 | Option | Default | |
 |---|---|---|

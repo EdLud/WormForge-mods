@@ -4,7 +4,28 @@ package.preload["wf-lib/tooltip"] = function() return { notice = function() end 
 local keys, selecting, speeds = {}, false, {}
 local hooks = { frame = {}, start = {}, retreat = {}, stop = {} }
 local selected
+-- wa.hud.tray as the engine keeps it: one entry per team and weapon, and an
+-- unlit one dropped (`tray_tick`) once its team has none.
+local tray = {}
+local function tray_add(spec)
+  for _, e in ipairs(tray) do
+    if e.team == spec.team and e.weapon == spec.weapon then return e end
+  end
+  local e = { weapon = spec.weapon, team = spec.team, key = spec.key, lit = false, open = true }
+  function e:set(t)
+    if not self.open then return false end
+    for k, v in pairs(t) do
+      if v == false and k ~= "lit" then v = nil end
+      self[k] = v
+    end
+    return true
+  end
+  function e:is_open() return self.open end
+  tray[#tray + 1] = e
+  return e
+end
 wa = {
+  hud = { tray = { add = function(spec) return tray_add(spec) end } },
   world = {
     keys = function() return keys end,
     worm_selecting = function() return selecting end,
@@ -26,7 +47,7 @@ wa = {
   },
 }
 local ammo, delay = 2, 0
-local worm = { id = 7, x = 1, y = 2, turn = true, weapon = "stock.bazooka", time_scale = 1 }
+local worm = { id = 7, team = 1, x = 1, y = 2, turn = true, weapon = "stock.bazooka", time_scale = 1 }
 function worm:ammo(id, add)
   assert(id == "utilities.bullet_time")
   -- Adding leaves infinite (-1) alone, as the engine's does.
@@ -81,8 +102,39 @@ keys.tab = true; tick()
 assert(ammo == -1 and running())
 fire(hooks.stop)
 
+-- The tray: the team's cell while it has any, lit with the time left while
+-- it runs, dropped once the last unit's run ends.
+local function tray_tick()
+  for i = #tray, 1, -1 do
+    local e = tray[i]
+    if not e.lit and ammo == 0 then e.open = false; table.remove(tray, i) end
+  end
+end
+local function tick_all(n) for _ = 1, n or 1 do tick(); tray_tick() end end
+for k in pairs(hooks) do hooks[k] = {} end
+tray, speeds, ammo, delay = {}, {}, 0, 0
+keys.tab = false
+options.tab = true
+weapon.install({ id = "utilities.bullet_time", option = function(k) return options[k] end })
+tick_all()
+assert(#tray == 0, "no cell without any")
+ammo = 1
+tick_all()
+assert(#tray == 1 and tray[1].key == "Tab" and tray[1].team == 1 and not tray[1].lit, "the team's cell, Tab under it")
+tick_all(5)
+assert(#tray == 1, "one cell, however often it is seen")
+keys.tab = true; tick_all()
+local e = tray[1]
+assert(ammo == 0 and e and e.lit and e.progress < 1, "lit with the time left; the last unit spent")
+local before = e.progress
+tick_all(50)
+assert(e.open and e.progress < before, "the bar runs down, and lit holds it with none left")
+fire(hooks.stop); tray_tick()
+assert(not e.open and #tray == 0, "its run over and none left: dropped")
+
 -- Off in the profile: Tab does nothing, the panel still fires it.
 for k in pairs(hooks) do hooks[k] = {} end
+tray = {}
 speeds, ammo = {}, 2
 options.tab = false
 weapon.install({ id = "utilities.bullet_time", option = function(k) return options[k] end })
@@ -91,4 +143,5 @@ assert(ammo == 2 and not running(), "the option turns Tab off")
 selected.on_fire({ worm = worm })
 tick() -- it eases in from full speed
 assert(running(), "the panel fires it as before")
-print("Bullet Time: Tab press, worm selection, retreat, delay, ammo, option and panel passed")
+assert(#tray == 0, "no tray without Tab")
+print("Bullet Time: Tab press, worm selection, retreat, delay, ammo, tray, option and panel passed")
