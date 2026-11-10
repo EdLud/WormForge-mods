@@ -227,6 +227,7 @@ crate_pct = 2.1505
 [weapon_settings."px.hang_glider"]
 crate_type = "utility"
 crate_pct = 18.1818
+remembered = true
 
 [weapon_settings."px.helicopter"]
 crate_type = "utility"
@@ -240,6 +241,7 @@ crate_pct = 2.1505
 [weapon_settings."px.hot_air_balloon"]
 ammo = 3
 crate_pct = 0
+remembered = true
 
 [weapon_settings."px.hot_air_balloon".each_turn]
 amount = 3
