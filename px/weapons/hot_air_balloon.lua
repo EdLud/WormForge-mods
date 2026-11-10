@@ -55,10 +55,13 @@ function weapon.setup()
     -- So it rises at up to four times gravity and drifts with four times the
     -- wind. The arrow keys push it as they push WA's parachute (0x513EB0, run
     -- before that step): half of gravity a frame each way held (through the
-    -- worm's +0x44 push, divided by its mass, 1.0), opposite keys cancelling. It pops -- the worm given back to WA, falling -- on touching land,
-    -- in water, on the jump key (which closes WA's parachute), and when the
-    -- turn ends. The worm's body is hidden behind the balloon, drawn in its
-    -- team's colour, and the worm in its basket, as PX's RenderWorm override.
+    -- worm's +0x44 push, divided by its mass, 1.0), opposite keys cancelling.
+    -- Under a ceiling it stays up, stopped against it. It pops -- the worm
+    -- given back to WA, falling -- on landing, in water, on the jump key
+    -- (which closes WA's parachute), when WA closes its parachute (pinned
+    -- against a wall), and when the turn ends. The worm's body is hidden
+    -- behind the balloon, drawn in its team's colour, and the worm in its
+    -- basket, as PX's RenderWorm override.
     --
     -- It still opens as WA's parachute (the patched bungee, by hand or
     -- automatically); the pack takes the worm on the first frame of it.
@@ -92,7 +95,7 @@ function weapon.setup()
 
 
     -- How many frames after popping against land the worm is watched: WA may
-    -- stand it up there, in mid-air under a ceiling.
+    -- stand it up there.
     local BALLOON_UNSTAND = 3
 
     -- StopBalloon: a pop, and the worm back to WA, falling with its speed.
@@ -187,6 +190,14 @@ function weapon.setup()
         balloon_stop(worm, b, "the engine let go (turn over, knocked flying or teleporting)")
         return
       end
+      -- WA closed its parachute: it stands up a worm that stops (0x51617C),
+      -- as one pinned against a wall does. Out of it, Space is no longer the
+      -- jump key that pops the balloon, so it pops here, as PX's balloon_s
+      -- does when the worm leaves WS_PARACHUTE.
+      if state ~= "parachuting" then
+        balloon_stop(worm, b, "WA closed its parachute (" .. tostring(state) .. ")", true)
+        return
+      end
       -- The arrow keys, as WA's parachute takes them (0x514AC0, 0x513EB0).
       local k = worm.keys or {}
       local left, right, up, down = k.left, k.right, k.up, k.down
@@ -210,12 +221,25 @@ function weapon.setup()
         vx, vy = vx * BALLOON_DAMP, vy * BALLOON_DAMP
         b.vx, b.vy = vx, vy
         local x, y = b.x + vx, b.y + vy
-        -- It pops on touching land, as WA's parachute closes there: where WA's
-        -- own test says the worm would touch it, so it never sits inside it.
+        -- WA's parachute closes only once the worm stops (0x51617C: 0x4FB580
+        -- tests its speeds), not on touching land: under a ceiling or beside
+        -- a wall PX's balloon stays up. It stops across what it touches, where
+        -- WA's own test says the worm would, and goes on along it. Only land
+        -- beneath it, reached going down, pops it, as the parachute lands.
         if not worm:fits(x, y) then
-          if i > 1 then worm.x, worm.y = b.x, b.y end
-          balloon_stop(worm, b, "touched land", true)
-          return
+          if vy > 0 and not worm:fits(b.x, y) then
+            if i > 1 then worm.x, worm.y = b.x, b.y end
+            balloon_stop(worm, b, "landed", true)
+            return
+          end
+          if worm:fits(x, b.y) then
+            y, vy = b.y, 0
+          elseif worm:fits(b.x, y) then
+            x, vx = b.x, 0
+          else
+            x, y, vx, vy = b.x, b.y, 0, 0
+          end
+          b.vx, b.vy = vx, vy
         end
         if y >= wa.world.water() then
           if i > 1 then worm.x, worm.y = b.x, b.y end

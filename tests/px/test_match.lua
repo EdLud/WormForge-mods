@@ -4353,24 +4353,61 @@ do
     M.message(w, wa.msg.FRAME_FINISH)
     return w.taken
   end
-  -- Up again, into land above it: it pops there.
+  -- Up again, into land above it: as PX's, which WA's parachute flies, it
+  -- stays up there, stopped under it, and goes on along it.
   check("up again", up_again())
-  local top = w.y - 5
+  local top = w.y - 8
   M.solid = function(_, y) return y < top end
   for _ = 1, 20 do
     M.message(w, wa.msg.FRAME_FINISH)
+  end
+  local b = require("lib/shared").balloons[w.id]
+  check("a ceiling: still up, stopped under it, not pushed up into it", w.taken and b.active
+    and b.vy == 0 and w:fits(w.x, w.y) and not w:fits(w.x, w.y - 1), tostring(w.y - top))
+  local x0 = w.x
+  w.keys = { right = true }
+  for _ = 1, 5 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  w.keys = {}
+  check("along the ceiling with the arrow keys", w.taken and w.x > x0, tostring(w.x - x0))
+  -- Beside a wall it keeps rising along it.
+  local wall = w.x + 4.5
+  M.solid = function(x, _) return x > wall end
+  local y0 = w.y
+  w.keys = { right = true }
+  for _ = 1, 5 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  w.keys = {}
+  check("a wall: still up, rising along it", w.taken and w.y < y0 and b.vx == 0, tostring(w.y - y0))
+  -- Gravity that brings it down (as the worm's own factor turned over): it
+  -- lands on the land beneath it and pops there.
+  local floor = w.y + 8
+  M.solid = function(_, y) return y > floor end
+  w.gravity = -1
+  for _ = 1, 40 do
+    M.message(w, wa.msg.FRAME_FINISH)
     if not w.taken then break end
   end
-  check("land: popped, the worm back to WA, not pushed up into it", not w.taken
-    and w.state == "sliding" and w.vy >= 0 and M.sounds[#M.sounds]:find("pop"))
+  w.gravity = 1
+  check("land beneath: popped, the worm back to WA, not pushed into it", not w.taken
+    and w.state == "sliding" and M.sounds[#M.sounds]:find("pop") and w:fits(w.x, w.y))
   M.solid = nil
-  -- WA stands it up against the ceiling: released again, falling.
+  -- WA stands it up where it landed: released again, falling.
   w.state, w.vy = "standing", 0
   M.message(w, wa.msg.FRAME_FINISH)
-  check("stood up under the ceiling: released again", w.state == "sliding")
+  check("stood up where it landed: released again", w.state == "sliding")
   w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   check("only once", w.state == "standing")
+  -- Up again; WA closes its parachute (it stood the worm up against a wall,
+  -- replay 2026-11-10 09.27.50): Space no longer pops it, so it pops here.
+  check("up again", up_again())
+  w.state = "standing"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("WA's parachute closed: popped, the worm let go falling", not w.taken
+    and w.state == "sliding" and w.body_visible == true and M.sounds[#M.sounds]:find("pop"))
   -- Up again; the engine lets go at the turn's end: it pops.
   check("up again", up_again())
   w.taken = nil

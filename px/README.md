@@ -726,10 +726,14 @@ Here the pack takes the worm when that parachute opens and flies it with WA
   So it rises at up to four times gravity and drifts with four times the wind.
 - **Steering:** the arrow keys push it as they push WA's parachute (0x513EB0):
   half of gravity a frame in the key's direction, opposite keys cancelling.
-- **Pops:** on touching land, in water, on the jump key (which closes WA's
-  parachute), and when the turn ends. The worm then goes back to WA, falling
-  with the balloon's speed. Weapons fire from the basket as from WA's
-  parachute.
+- **Pops:** on landing, in water, on the jump key (which closes WA's
+  parachute), when WA closes its parachute, and when the turn ends. WA's
+  parachute closes only once the worm stops (0x51617C), not on touching
+  land, so under a ceiling the balloon stays up, as PX's does. Pinned
+  against a wall WA stands the worm up, and Space would no longer reach the
+  balloon, so it pops there, as PX's pops when the worm leaves
+  WS_PARACHUTE. The worm then goes back to WA, falling with the balloon's
+  speed. Weapons fire from the basket as from WA's parachute.
 - **Art:** the worm's body is hidden behind the balloon, drawn in its team's
   colour, and the worm in its basket, as PX's `RenderWorm` override draws them.
 
