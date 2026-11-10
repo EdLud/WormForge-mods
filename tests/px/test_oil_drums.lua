@@ -52,6 +52,8 @@ local function mock(opts)
     end },
     worms = { all = function() return M.worms end },
     actors = { spawn = function(spec)
+      -- As the engine: an actor needs an owner, or owner = "none" for no team.
+      if spec.owner == nil then error("spawn needs an owner worm or actor", 2) end
       local a = { id = #M.actors + 1, spec = spec }
       function a:despawn() self.dead = true end
       M.actors[#M.actors + 1] = a
@@ -186,7 +188,7 @@ do
   M.turn = nil
   burst(M.drums[1])
   check("electric between turns: the arc has an owner, the drum's no-team actor",
-    M.arc and M.arc.worm == nil and M.arc.owner ~= nil and M.arc.owner.spec.owner == nil)
+    M.arc and M.arc.worm == nil and M.arc.owner ~= nil and M.arc.owner.spec.owner == "none")
 
   drum_of("mine")
   M.rng = function(lo) return lo end
@@ -222,13 +224,21 @@ do
     #M.fires == 3 and #blasts() == 1 and owner ~= nil
     and M.fires[3].owner == owner and M.actors[#M.actors].spec.owner == owner)
   check("the owner is an actor of no worm, gone on its first frame",
-    owner.spec and owner.spec.owner == nil and owner.spec.sprite == false
+    owner.spec and owner.spec.owner == "none" and owner.spec.sprite == false
     and (owner.spec.on(owner) or owner.dead))
+  -- Online 2026-11-09: an icy drum set off after the turn froze nobody (the
+  -- engine refused its ownerless actor and WA's plain blast went off).
+  d = drum_of("icy")
+  local near = M.worm(2, 2, 600, 300)
+  M.turn = nil
+  check("icy between turns: the pack stands in for WA's blast", burst(d, 0) == true)
+  check("icy between turns: the worms near it frozen", M.frozen and #M.frozen == 2
+    and M.frozen[1] == near.id and M.frozen[2] == 16, M.frozen and table.concat(M.frozen, ","))
   d = drum_of("nuke")
   M.turn = nil
   burst(d, 0)
   check("nuke: both first rockets fly, for no team",
-    M.rockets and #M.rockets == 2 and M.rockets[1][1].spec and M.rockets[1][1].spec.owner == nil)
+    M.rockets and #M.rockets == 2 and M.rockets[1][1].spec and M.rockets[1][1].spec.owner == "none")
   d = drum_of("napalm")
   burst(d, 2)
   check("a team with no worm left: the turn's worm", M.fires[1].owner and M.fires[1].owner.id == 16)

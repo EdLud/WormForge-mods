@@ -182,10 +182,11 @@ function M.install(opts)
   end
 
   -- An owner for no team, as PX's blasts and shots of team 0: a Lua actor of
-  -- no worm, gone on its first frame. What it fires, launches and lays is no
-  -- team's (a missile's constructor skips its team for team 0).
+  -- no worm (owner = "none"), gone on its first frame. What it fires,
+  -- launches and lays is no team's (a missile's constructor skips its team
+  -- for team 0).
   shared.no_team_owner = function(x, y)
-    return wa.actors.spawn({ sprite = false, gravity = false, collide = false,
+    return wa.actors.spawn({ owner = "none", sprite = false, gravity = false, collide = false,
       x = x, y = y, on = function(a) a:despawn() end })
   end
 
