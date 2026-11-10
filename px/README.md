@@ -63,7 +63,9 @@ Active sentries blink on every turn, including the planter's turn; housing
 colour shows ownership. Both types display a small translucent health number
 above the head, green at full health, yellow at half and red near zero. The
 number stays at a fixed height above the head and barrel as they turn.
-Sentry Gun still holds fire during its own coalition's turns.
+Sentry Gun still holds fire during its own coalition's turns. It never aims
+at a frozen worm, though one sliding on its ice moves (PX's did), and a target
+that freezes is lost.
 Both sentry types take explosion damage while airborne and during placement.
 Passage for an overlapping planter does not protect them from blasts.
 
@@ -295,8 +297,9 @@ They place as the Sentry Gun does and share its body (`lib/turret.lua`:
 planting, the planter's passage, capture, the death blast), on an oil drum's
 radius-9 circle, PX's turret shape. Their brain is PyroMan's
 (`lib/pyro_turret.lua`, from `turretbase.txt`): while the turn clock runs, a
-turret takes a moving enemy worm 40 to 350 pixels from its head (each with a
-30% chance a frame, from WA's RNG), waits 15 frames, turns its head toward a
+turret takes a moving enemy worm 40 to 350 pixels from its head, never a
+frozen one (each with a 30% chance a frame, from WA's RNG; a target that
+freezes is dropped), waits 15 frames, turns its head toward a
 lobbed shot (PX's ballistic solve for a flight time that cycles from 32
 frames), traces that arc against the land with a 3-pixel circle and fires
 only over it, at the solved speed plus a random 0 to 63/96. Its reload grows
@@ -629,9 +632,10 @@ Worn, a worm that falls into the water swims instead of drowning:
   as PX's swimmer in the bungee state fired them. Aimed weapons (the Homing
   Missile, the Pigeon) are not. A Teleport takes it out of the water with the
   suit on.
-- **Leaving the water:** out of the water it flies on as from a jump, the suit
-  still on, to swim again if it falls back in. Too deep, or still in the water
-  when the turn ends, the suit gives out and it drowns.
+- **Leaving the water:** out of the water it flies on as from a jump with a
+  plop (WA's SnotPlop, 56; PX's was silent), the suit still on, to swim
+  again if it falls back in. Too deep, or still in the water when the turn
+  ends, the suit gives out and it drowns.
 - **Speed:** Fast Walk switches the swim speed between 2 and 6 for the turn.
 - **Missiles:** a missile in the water blows up on a swimming worm (100, 50).
 - **Looks:** the swim or float animation is drawn in its place, with a bubble

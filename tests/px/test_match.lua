@@ -1690,6 +1690,12 @@ do
   local head
   for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun.png" then head = q end end
   check("its head is drawn in its coalition colour", head and (head.color & 0xFFFFFF) == 0xFF6447 and head.depth == wa.depth.FRONT)
+  local ammo_left, fired = state.ammo, impacts()
+  enemy.state = "frozen"
+  run(30) -- still moving: a frozen worm slides on its ice
+  check("a target that freezes is lost, and no more rounds go at it",
+    state.tid == nil and impacts() == fired, "ammo=" .. ammo_left .. " shots=" .. (impacts() - fired))
+  enemy.state, enemy.x = nil, enemy.x - 30 -- thawed, back where it was
   M.message(owner, wa.msg.START_TURN)
   local before = impacts()
   run(61) -- first frame establishes positions, then acquisition starts its delay

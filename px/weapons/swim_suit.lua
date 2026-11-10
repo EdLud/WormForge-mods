@@ -47,7 +47,7 @@ function weapon.setup()
   -- fire_as), as PX's swimmer in the bungee state fired them; aimed weapons
   -- (the Homing Missile, the Pigeon) not. A Teleport takes it out of the
   -- water with the suit on, as swimming out does. Out of the water it is released
-  -- as from a jump. Too deep (180 pixels under the water, or the bottom of a
+  -- as from a jump, with a plop. Too deep (180 pixels under the water, or the bottom of a
   -- cavern), or still in the water when the turn ends, the suit gives out and
   -- it drowns. Knocked by a hit or a blast while it swims, it swims on, taking
   -- half the knock as a push the water slows and its own strokes fight; WA
@@ -88,6 +88,7 @@ function weapon.setup()
   local SWIM_WATER = 0x400000
   local SWIM_MISSILE_MASK = 0x40007C -- a missile in the water that hits worms
   local SWIM_SPLASH = 57        -- WA's sound
+  local SWIM_PLOP = 56          -- WA's SnotPlop, swimming out (orange's; PX's was silent)
   local SWIM_BODY_DEPTH = wa.depth.FRONT
   local SWIM_RING_DEPTH = wa.depth.FRONT + 1
   -- Ring sheet is 50×50; wa.draw.quad corners are centred on the worm like a:gfx.
@@ -399,6 +400,7 @@ function weapon.setup()
           -- Where the swim took it: its last pin is still under the surface.
           worm.x, worm.y = s.x, s.y
           worm:release(vx + px, vy + py)
+          wa.sound.play(worm, SWIM_PLOP)
           out = true
           break
         end

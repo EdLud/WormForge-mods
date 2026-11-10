@@ -258,11 +258,12 @@ function turret.new(cfg)
   end
 
   -- The Sentry Gun's targets: the worms, keyed by worm id; moving by
-  -- note_motion.
+  -- note_motion. A frozen worm is none (orange's rule; PX aimed at one
+  -- sliding on its ice), and a target that freezes is lost.
   local function worm_targets(_, _, s)
     local out = {}
     for _, w in ipairs(wa.worms.all()) do
-      if w.visible ~= false then
+      if w.visible ~= false and w.state ~= "frozen" then
       local p = s.seen[w.id]
         out[#out + 1] = { key = w.id, x = w.x, y = w.y, alliance = w.alliance, moving = p and p.moving, obj = w }
     end

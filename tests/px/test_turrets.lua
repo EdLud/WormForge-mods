@@ -161,6 +161,14 @@ do
   check("nor while the turn clock stands still", s.tid == nil and M.clock == clock)
   frames(a, 1)
   check("a moving enemy in range is taken (30% each, the RNG's)", s.tid == near_worm.id)
+  near_worm.state = "frozen"
+  frames(a, 1)
+  check("a target that freezes is dropped", s.tid == nil, s.tid)
+  frames(a, 5)
+  check("nor is a frozen worm taken, sliding on its ice", s.tid == nil, s.tid)
+  near_worm.state = nil
+  frames(a, 1)
+  check("thawed, it is taken again", s.tid == near_worm.id, s.tid)
   M.worm(3, 3, 0, 650, 300).vx = 1
   local before = s.tid
   frames(a, 1)

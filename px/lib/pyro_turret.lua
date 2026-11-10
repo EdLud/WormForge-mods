@@ -107,12 +107,13 @@ end
 
 -- CTurretBase::FindTarget: every living, moving enemy within range gets a 30%
 -- chance; the last taken wins. An invisible one ends the search (PX's break).
+-- A frozen worm is none (orange's rule; PX's took one sliding on its ice).
 local function find_target(t, a, s)
   local cx, cy = centre(a)
   local py = cy - t.tower_offset
   for _, w in ipairs(wa.worms.all()) do
     local seen = s.seen[w.id]
-    if w.alliance ~= s.alliance and seen and seen.moving and w.hp > 0 then
+    if w.alliance ~= s.alliance and seen and seen.moving and w.hp > 0 and w.state ~= "frozen" then
       if w.visible == false then break end
       local dx, dy = w.x - cx, w.y - py
       local d = math.sqrt(dx * dx + dy * dy)
@@ -193,6 +194,8 @@ local function think(t, a, s)
   note_motion(s)
   if s.reload > 0 then s.reload = math.max(0, s.reload - FRAME_MS) end
   local target = s.tid and worm_by_id(s.tid)
+  -- A target that freezes is lost, as one that is gone.
+  if target and target.state == "frozen" then target = nil end
   if s.tid and not target then s.tid = nil end
   -- The reticle glides toward the worm it fired at, 4 pixels a frame.
   if s.draw_aim and target then
