@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.17.0"
+version = "0.17.1"
 author = "WormForge"
 api_version = 4
 format_version = 2
