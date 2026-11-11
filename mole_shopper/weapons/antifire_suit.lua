@@ -1,6 +1,5 @@
--- PX Antifire Suit: one worm, until its team's next real turn (Tab is not a
--- turn), or as the profile sets it: for its team's next N turns, or for N
--- seconds and no longer than the turn, as WA's utilities.
+-- Antifire Suit: protect the wearer from flames and repel nearby fire until their team's next turn.
+
 local ART = "sprites/antifire_suit/"
 local SOUND = "sounds/antifire_suit/putting_on_suit.wav"
 local RADIUS, POWER = 28, 28
@@ -12,7 +11,6 @@ function M.install(ctx)
     if ctx and ctx.option then return ctx.option(key) end
     return default
   end
-  -- 0: turn-based, else this many seconds (50 frames each).
   local seconds = option("duration", 0)
   local turns = option("turns", 1)
   local suits, smoke = {}, {}
@@ -56,7 +54,6 @@ function M.install(ctx)
         end
         if now % 5 == 0 and s.smoked ~= now then
           s.smoked = now
-          -- Presentation data only. No actors, collision bodies or WA RNG.
           for i = #smoke, 1, -1 do
             if now - smoke[i].born >= 60 then table.remove(smoke, i) end
           end
@@ -66,14 +63,12 @@ function M.install(ctx)
           end
         end
       end
-      -- Eating the native hit prevents its knockback and interruption too.
       return "eat"
     end
   end)
   wa.on.worm_message(function(w, msg)
     if msg == wa.msg.TURN_STARTED then
       if not w.turn then return end
-      -- Turn-based: one of the team's turns has passed.
       for _, id in ipairs(wa.sorted(suits)) do
         local s = suits[id]
         if s.team == w.team and not s.ends then
@@ -89,7 +84,6 @@ function M.install(ctx)
     wa.fire.repel{x = w.x, y = w.y, radius = RADIUS, power = POWER}
   end, {msgs = {wa.msg.FRAME_FINISH, wa.msg.TURN_STARTED}})
   wa.on.death(function(ev) suits[ev.victim.id] = nil end)
-  -- Timed suits come off when the turn is cleaned up, as WA's utilities do.
   wa.on.turn_cleanup(function()
     for _, id in ipairs(wa.sorted(suits)) do
       if suits[id].ends then suits[id] = nil end

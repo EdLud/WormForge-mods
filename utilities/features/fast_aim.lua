@@ -1,34 +1,13 @@
--- Fast aim, from Project X: with Shift held, the aim keys move the
--- crosshair at another speed. Every PX Highlander, KAOS and Specialists
--- scheme carries it (its `fireangle` script).
---
--- PX added 0.002 to FireAngle each frame. WA 3.8.1 steps its aim target
--- (+0x24C, `worm.aim_target`) 0x200 a frame, 180/128 degrees, while an aim
--- key is held, and rounds it down to that grid (control_aim, 0x51D100),
--- which made PX's nudge twice the speed going down and nothing going up.
--- Here the speed is in whole native steps: above 100% WA's step is taken
--- more than once a frame, below it some of WA's steps are taken back.
---
--- Notes:
---   * The step is measured, not assumed: each frame the change since the
---     last frame must be exactly one WA step for anything to happen, so
---     weapons that aim in coarse steps (the Blow Torch's 45 degrees) or
---     not at all keep WA's own aim, and a limit WA clamps to stops it.
---   * Shift is the turn player's synchronized key; the step comes from the
---     worm's own aim, so every peer writes the same.
---   * A worm on its own time (Bullet Time's worm.time_scale) is stepped 2 or
---     3 times a world frame and this hook runs once: the change is then that
---     many of WA's steps, up to the most its scale gives, each scaled.
+-- Fast aim, from Project X: with Shift held, the aim keys move at another speed.
 
 local own_time = require("wf-lib/own_time")
 
-local STEP = 180 / 128  -- WA's aim step, degrees a frame (exact in binary)
+local STEP = 180 / 128 -- WA's aim step, degrees a frame (exact in binary)
 
 return function(pct)
-  local state = {}  -- by worm id: { last = degrees, dir = +-STEP or 0, acc = 0..99 }
-  local supported   -- this DLL has worm.aim_target
+  local state = {}
+  local supported -- this DLL has worm.aim_target
 
-  -- Once per worm per frame: the msgs filter skips Lua for every other message.
   wa.on.worm_message(function(worm)
     if not worm.turn then return end
     if supported == nil then
@@ -54,23 +33,17 @@ return function(pct)
       return
     end
 
-    -- WA's steps since the last world frame: one at the world's pace, up to
-    -- the most the worm's scale gives it (this frame's or the last's).
     local d = t - s.last
     local most = math.ceil(math.max(scale, s.scale))
     s.scale = scale
     local n = math.abs(d) / STEP
     if d == 0 or n ~= math.floor(n) or n > most then
-      -- Still, at a limit, or moved by something else (a weapon switch,
-      -- circular aim turning the worm round): wait for WA's next step.
       s.last, s.acc = t, 0
       if d ~= 0 then s.dir = 0 end
       return
     end
     local dir = d > 0 and STEP or -STEP
     if dir ~= s.dir then
-      -- A new direction, or WA clamping back what we pushed past its
-      -- limit: take the direction on, scale from its next step.
       s.last, s.dir, s.acc = t, dir, 0
       return
     end

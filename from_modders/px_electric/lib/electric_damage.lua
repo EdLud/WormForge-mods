@@ -1,14 +1,4 @@
 -- PX custom_taze: hold a worm in the tazed pose, then release it with a push.
--- hurt_electric(worm, damage, opts), taze(worm, opts),
--- set_message_electric(frames, push_x, push_y, retain), set_message_electric_missile(frames).
--- taze's opts.damage is applied on release, like PX's ReceiveDmg; opts.push_scale
--- multiplies the release push (the tazed mine uses it for 116/100).
--- set_message arms the next hit for 8 frames; the hit's own damage still applies.
--- Arm a blast before it explodes; an on_explode callback runs after the damage.
--- WA's death states are on `worm.state` (dying/drowning/dead): a dying worm
--- stays static and worm:take/release refuse it. A 0 HP worm WA has not
--- started killing is still fair game, so test the state, not HP.
--- The caller loads tazed1/2, lightning/glow.png and tazer_loop.wav.
 
 local M = {}
 
@@ -16,15 +6,12 @@ local DEFAULT_FRAMES = 25
 local DEFAULT_PUSH_X, DEFAULT_PUSH_Y = 0, -4
 local HIT_WINDOW = 8
 local BLAST_WINDOW = 10
--- Exported through `wf-lib/electric`; the qualified paths resolve through
--- this bundle's asset namespace, so consumers do not copy the art/sound.
 local SHEET1 = "wf-lib/electric/sprites/electric_grenade/tazed1"
 local SHEET2 = "wf-lib/electric/sprites/electric_grenade/tazed2"
 local GLOW = "wf-lib/electric/sprites/lightning/glow.png"
 local LOOP = "wf-lib/electric/sounds/lightning/tazer_loop.wav"
 local DEPTH = wa.depth and (wa.depth.WORMS or wa.depth.BEHIND_TERRAIN) or 0x80000
 
--- The caller's catalogue usually lists these; load them if it did not.
 if wa.assets and wa.assets.load then
   pcall(wa.assets.load, {
     sprites = { SHEET1, SHEET2, GLOW },
@@ -33,8 +20,8 @@ if wa.assets and wa.assets.load then
   })
 end
 
-local active = {}       -- array, for the tick and the draw
-local by_worm = {}      -- worm id -> taze
+local active = {} -- array, for the tick and the draw
+local by_worm = {} -- worm id -> taze
 local armed_hit, armed_blast
 local spawned = false
 local applying = false
@@ -43,8 +30,6 @@ local function now()
   return wa.world.frame() or 0
 end
 
--- `worm.state` is WA's game-logic name, not the diagnostics label. A dying,
--- drowning or dead worm belongs to WA's death sequence.
 local DEATH_STATES = { dying = true, drowning = true, dead = true }
 local function can_affect(worm)
   return worm ~= nil and not DEATH_STATES[worm.state]
@@ -79,7 +64,6 @@ local function begin(worm, opts, damage)
   local id = worm.id
   local t = by_worm[id]
   if t then
-    -- A second link extends the hold and adds damage; the first push stays.
     t.frames = math.max(t.frames, opts.frames)
     if damage > 0 then
       if opts.damage_now then
@@ -98,8 +82,6 @@ local function begin(worm, opts, damage)
     applying = false
     damage = 0
   end
-  -- The damage may have started WA's death. If it did, take() also refuses;
-  -- create no hold and leave the worm to WA.
   if not can_affect(worm) then return end
   local vx, vy = worm.vx or 0, worm.vy or 0
   if worm:take{ turn = "freeze" } == false then return end
@@ -128,8 +110,6 @@ local function finish(t)
   remove(t)
   local worm = t.worm
   worm.body_visible = true
-  -- A worm WA has started killing keeps its death. release() only lets go;
-  -- never write a push through a state WA owns.
   if not can_affect(worm) then
     if worm.taken then worm:release(0, 0, { tumble = true }) end
     return
@@ -139,9 +119,6 @@ local function finish(t)
     worm:hurt(t.damage)
     applying = false
   end
-  -- A zero-HP worm WA has not started killing still gets its push.
-  -- `push_scale` lets a caller raise the captured blast push (the tazed
-  -- mine's 116/100).
   local s = t.push_scale or 1
   local px, py = t.push_x * s, t.push_y * s
   if worm.taken then
@@ -157,16 +134,10 @@ local function tick()
     local t = active[i]
     local worm = t.worm
     if not can_affect(worm) or (worm.hp or 1) <= 0 then
-      -- WA started its death, or the worm was killed while held: the engine
-      -- lets go of a dead worm every frame so WA can start its death, and
-      -- taking it again each frame only let the turn clock run through the
-      -- rest of the hold. Hand it back now.
       finish(t)
     else
       t.frames = t.frames - 1
       t.phase = (t.phase + 0.1) % 1
-      -- WA's blast may re-show or release the worm after the hit; keep the
-      -- pose on it for the whole hold. A death state stops the hold instead.
       worm.body_visible = false
       if not worm.taken then worm:take{ turn = "freeze" } end
       worm.vx, worm.vy = 0, 0
@@ -205,8 +176,6 @@ wa.on.hurt(function(hit)
   if hit.kind == "blast" then
     taze_from(hit, armed_blast)
   elseif hit.kind ~= "poison" and hit.kind ~= "nonlethal" then
-    -- Every other kind is a hit (0x4B), by what hit: "bullet", "percent",
-    -- the engine's "taze", or a bundle's own kind.
     taze_from(hit, armed_hit)
   end
 end)
@@ -234,8 +203,6 @@ function M.set_message_electric(frames, push_x, push_y, retain_speed, window)
   armed_hit.expires = now() + (window or HIT_WINDOW)
 end
 
--- `owner` narrows it to that worm's blasts; `window` covers a stock missile's
--- flight when the pack cannot arm just before the explosion.
 function M.set_message_electric_missile(frames, owner, window)
   armed_blast = options({
     frames = frames or DEFAULT_FRAMES,

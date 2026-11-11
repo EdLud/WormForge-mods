@@ -1,13 +1,10 @@
--- Electromagnet: record, art and behaviour.
+-- Electromagnet: a placed magnet that pulls or pushes mines and missiles for four turns.
+
 local weapon = {}
 
--- The "mine_push" option: the share of WA's momentum exchange the magnet
--- keeps when a mine runs into it (body.pushed_by). Not PX's: at full a pulled
--- mine knocks it away, it pulls the mine back, and so on.
 local MINE_PUSH = { none = 0, light = 0.2, full = 1 }
 local mine_push = MINE_PUSH.light
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     remember_selection = true,
@@ -20,14 +17,8 @@ function weapon.definition()
   local fires = shared.fires
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/baseball_bat.wep",
-    -- PX's red icon is attract mode; ours, recoloured to the blue magnet's
-        -- colours, repel (the HUD hook in electromagnet.lua shows the mode).
         panel_icon = "sprites/electromagnet/ico_magnet.png",
     panel_icons = { "sprites/electromagnet/ico_magnet_blue.png" },
-    -- WA takes it out and puts it away with the Dynamite's draw (334-336);
-        -- PX swaps in the magnet's (CSpriteAnim::SetAnimEx): blue repelling,
-        -- red once + switched the worm to attracting (the engine reads + as the
-        -- module does, and plays the take-out again in the new colour).
         worm_sprites = {
           wdynlnk = "sprites/electromagnet/wmag2lnk.png",
           wdynlnku = "sprites/electromagnet/wmag2lnku.png",
@@ -54,48 +45,27 @@ function weapon.configure(ctx)
 end
 
 function weapon.setup()
-  -- Highlander's Electromagnet, on the Baseball Bat slot (PX weapon_magnet:
-  -- magnet.txt's CMagnet). Placed, it stays: for four of its owner's turns
-  -- its field pushes (repel) or pulls (attract) WA's own mines and missiles
-  -- and opted-in actors across all packs; it triggers the mines it catches. The objects
-  -- it moves stay WA's, so their own flight, collisions and fuses run. It is
-  -- an object in the oil-drum layer: blasts, guns and fires hit it, and at
-  -- 0 health it explodes.
-  -- Squares by multiplication: `^` calls the C runtime's pow, whose last bit
-  -- may differ between machines.
   local function sq(v) return v * v end
 
   local shared = require("lib/shared")
-  local RANGE2 = 170 * 170           -- MaxRange
-  local SYNC2 = RANGE2 // 4          -- MaxSyncRange: MaxRange * 0.25
+  local RANGE2 = 170 * 170 -- MaxRange
+  local SYNC2 = RANGE2 // 4 -- MaxSyncRange: MaxRange * 0.25
   local TURNS, HEALTH, LOW_HEALTH = 4, 80, 30
   local BOOM = { id = 100, damage = 50, below = false } -- ExplosionBlast, ExplosionDamage
-  -- Not PX's: PX explodes the missiles still in a field 300 frames after the
-  -- turn ended, so none circles a magnet for ever. With no way to burst a
-  -- stock missile from Lua, the field lets go of them instead, and each ends
-  -- on its own fuse or impact. It lets go of the mines then too: a dud mine
-  -- (the scheme's) never goes off, and held against a magnet it never comes
-  -- to rest either, so WA would wait for it and the turn would never end.
   local RELEASE_AFTER = 300
-  -- The grenades that go off only once they stop slow down in a field (PX
-  -- damps its Hellish Hand-Grenade there by 0.985 a frame).
   local DAMPED = { ["px.hellish_hand_grenade"] = true }
   local DAMPING = 0.985
-  -- Native mine motion, collision response and impact audio; Lua owns policy.
-  local RADIUS = 8                   -- conservative planter clearance around the art
-  local PLANTER_GRACE = 13           -- 250 ms rounded up at 50 simulation frames/s
-  local SINK = (1 / 2)                -- in the water it sinks half a pixel a frame
-  local SUNK = 200                -- and is gone this far below the surface
+  local RADIUS = 8 -- conservative planter clearance around the art
+  local PLANTER_GRACE = 13 -- 250 ms rounded up at 50 simulation frames/s
+  local SINK = (1 / 2) -- in the water it sinks half a pixel a frame
+  local SUNK = 200 -- and is gone this far below the surface
   local BODY = "sprites/electromagnet/"
   local magnets = {}
-  local polarity = {} -- worm id -> +1 repel, -1 attract (PX's MagnetPolarity)
+  local polarity = {}
   local plus_held = {} -- worm id -> the synchronized + key last frame
 
   local function trunc(x) return x >= 0 and math.floor(x) or -math.floor(-x) end
 
-  -- PX's TriggerMine: a random-fuse mine gets 1 to 5 seconds; an attracting
-  -- magnet sets it close to the longest fuse among the mines it already holds,
-  -- so they go off together. Then the mine is armed.
   local function trigger_mine(m, mine, mines)
     local fuse = mine.fuse
     if fuse < 0 then
@@ -114,8 +84,6 @@ function weapon.setup()
     mine:arm(fuse)
   end
 
-  -- Force calculation and application belong to the match-wide field service.
-  -- The weapon retains PX's mine arming/fuse policy, including its final pulse.
   local function trigger_mines(m)
     if not (m.ended_at and m.age - m.ended_at > RELEASE_AFTER) then
       local mines = wa.mines.all()
@@ -148,8 +116,6 @@ function weapon.setup()
     m.turns = 0
   end
 
-  -- Placement correction only: use the inherited native shape to find a clear
-  -- point below/along a ceiling. Subsequent motion belongs entirely to WA.
   local function clear_spawn(a)
     if a:fits(a.x, a.y) then return end
     for d = 1, 24 do
@@ -160,8 +126,6 @@ function weapon.setup()
     end
   end
 
-  -- The same conservative worm clearance used for placed sentry feet, expanded
-  -- by the magnet's radius. Keep passage while either end of this move overlaps.
   local function overlaps_planter(x, y, worm)
     return x + RADIUS >= worm.x - 10 and x - RADIUS <= worm.x + 10
       and y + RADIUS >= worm.y - 20 and y - RADIUS <= worm.y + 6
@@ -186,7 +150,6 @@ function weapon.setup()
     local previous_x, previous_y = m.x, m.y
     if not m.sinking then m.x, m.y, m.vx, m.vy = a.x, a.y, a.vx, a.vy end
     if m.y >= wa.world.water() then
-      -- In the water: it stops working and sinks out of sight.
       discharge(m)
       if not m.sinking then m.sinking = true; a.hits = {} end
       m.vx, m.vy, m.y = 0, 0, m.y + SINK
@@ -207,13 +170,10 @@ function weapon.setup()
     end
     planter_grace(m, a, previous_x, previous_y)
     if m.turns > 0 then
-      -- Settings enter the next step's snapshot. Releasing at age 300 means
-      -- the first step without native force is 301, as in the original port.
       m.field.native = not (m.ended_at and m.age - m.ended_at >= RELEASE_AFTER)
       trigger_mines(m)
       m.spark = (m.spark + 0.02) % 1.4
     end
-    -- PX's UpdateRotation: spun by its speed, at most half a radian a frame.
     local speed = math.sqrt(sq(m.vx) + sq(m.vy))
     m.angle = m.angle + (m.vx < 0 and -1 or 1) * math.min(0.5, 0.04 * speed)
     local s = sprite(m)
@@ -221,8 +181,6 @@ function weapon.setup()
     a:gfx({ angle = math.deg(m.angle + math.pi) % 360, depth = wa.depth.OBJECTS })
   end
 
-  -- PX's TakeExplosionDamage (less the further off: dmg * (1 - (d * d) / (4 (dmg * dmg))))
-  -- and TakeDamage (type 10, the Battle Axe's, takes that share of its health).
   local function hit(m, a, event)
     local damage = math.max(0, event.damage or 0)
     if event.kind == "blast" and damage > 0 then
@@ -238,17 +196,12 @@ function weapon.setup()
     end
   end
 
-  -- CMagnet::Recharge: a spent magnet works again, its four turns new.
   local function recharge(m)
     if not m.alive or m.sinking then return end
     if m.turns <= 0 then m.field.enabled = true end
     m.turns = TURNS
   end
 
-  -- PX's electricity on magnets (lib/electrical's registry). The Tazer's arc
-  -- (tazer.txt) destroys a working magnet, its health set to 1 before the
-  -- arc's 12-damage hit, and recharges a spent one; Lightning Strike
-  -- (lightningstrike.txt) recharges it either way.
   require("lib/electrical").register({
     kind = "magnet",
     targets = function()
@@ -270,10 +223,6 @@ function weapon.setup()
     strike = function(obj) recharge(obj.m) end,
   })
 
-  -- CWorm::FireFinal's Electromagnet: dropped where it is fired (at the
-  -- worm), nudged the way the worm faces (0.3) and up (0.15), in the worm's
-  -- mode. A script firing it (wa.weapons.fire, the stress test) may choose
-  -- the mode with `polarity` (1 repel, -1 attract).
   shared.fires.electromagnet = function(fire)
     local worm = fire.worm
     local pol = (fire.polarity == 1 or fire.polarity == -1) and fire.polarity or polarity[worm.id] or 1
@@ -300,10 +249,6 @@ function weapon.setup()
     magnets[#magnets + 1] = m
   end
 
-  -- PX's OnTurnBegin: each start of its owner's team's turn uses one up; the
-  -- last wakes and triggers what is in range. WA starts a turn again when Tab
-  -- selects another worm (wa.on.turn_start runs then too): only the first
-  -- start after a turn's end counts.
   local turn_open = false
   wa.on.turn_start(function(event)
     if turn_open then return end
@@ -323,7 +268,6 @@ function weapon.setup()
     for _, m in ipairs(magnets) do m.ended_at = m.age end
   end)
 
-  -- The Hellish Hand-Grenade slows down in a live field.
   wa.on.missile_frame(function(missile)
     if missile.phase ~= "pre" or not DAMPED[missile.weapon] then return end
     for _, m in ipairs(magnets) do
@@ -334,10 +278,6 @@ function weapon.setup()
     end
   end)
 
-  -- PX switches with WA's bounce keys; here the synchronized + key toggles
-  -- the turn's worm between repel and attract, kept per worm. The engine
-  -- flips the worm's red/blue magnet by the same rule (worm_sprites_toggle in
-  -- the claim), so the two stay in step.
   wa.on.worm_message(function(worm)
     local id = worm.id
     local pressed = worm.turn and worm.weapon == "px.electromagnet" and wa.world.keys().plus_key or false
@@ -345,17 +285,13 @@ function weapon.setup()
     plus_held[id] = pressed
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  -- The panel's icon shows the turn worm's mode, as the magnet it drops will
-  -- be: red attracting (icon 0, PX's), blue repelling (icon 1). Only the
-  -- panel changes, so this runs in the HUD hook, every frame; showing the
-  -- icon already shown does nothing.
   local icon_shown = true
   local function show_mode_icon(worm)
     if not (icon_shown and wa.weapons.panel_icon and shared.owns("px.electromagnet")) then return end
     local attract = worm and (polarity[worm.id] or 1) < 0
     local ok, err = pcall(wa.weapons.panel_icon, "px.electromagnet", attract and 0 or 1)
     if not ok then
-      icon_shown = false -- no icons of ours on the slot: say so once, then leave it
+      icon_shown = false
       wa.log("electromagnet: mode icon: " .. tostring(err))
     end
   end
@@ -372,10 +308,8 @@ function weapon.setup()
   end)
 
   if wa.on.draw and wa.draw.quad then
-    -- The sentries' health digits, upright over the spinning magnet.
     local health_label = require("lib/sentry_health")
     health_label.install()
-    -- Refill one spec; the engine copies it before the next submission.
     local QUAD = { blend = "add", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
     local RING_IN, RING_OUT, SPARKS = BODY .. "ring_in.png", BODY .. "ring_out.png", BODY .. "magnetsparks.png"
     local function square(sprite, frame, color, depth, x, y, h, angle)
@@ -396,8 +330,6 @@ function weapon.setup()
         if m.alive and m.turns > 0 then
           local x, y = m.x, m.y
           local ring = m.pol < 0 and RING_IN or RING_OUT
-          -- PX starts a ring every 65 frames, 5 to 120 pixels, 0.8 a frame:
-          -- outwards repelling, inwards attracting, fading as it grows.
           for phase = 0, 2 do
             local t = (m.age - phase * 65) % 195
             local radius = m.pol < 0 and 120 - 0.8 * t or 5 + 0.8 * t

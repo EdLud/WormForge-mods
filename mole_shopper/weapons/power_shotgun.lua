@@ -1,4 +1,5 @@
--- Power Shotgun: source settings and weapon-scoped art.
+-- Power Shotgun: Five simultaneous shotgun shots with the Mole Shopper damage, spread and push.
+
 local holds = require("wf-lib/holds")
 local ART = "sprites/power_shotgun/"
 

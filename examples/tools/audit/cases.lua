@@ -1,4 +1,5 @@
--- Stable audit order, independent of panel placement. Destructive tests last.
+-- Stable audit order, independent of panel placement.
+
 return {
   "stock.bazooka",
   "stock.homing_missile",

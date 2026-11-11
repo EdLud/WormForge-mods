@@ -1,6 +1,5 @@
--- PX's saw grenade record (saw_grenade_wep.wep). The record already flies and
--- explodes; PX's CMissile::ExplodeAt then plants the saw. We spawn it from
--- on_explode, not on_fire.
+-- Saw: a spinning blade planted where it lands, slicing and pushing whatever touches it.
+
 local saw = require("lib/saw")
 local sprites = require("wf-lib/px_sprite_builder")
 
@@ -25,7 +24,6 @@ return {
         "sounds/saw/clank-sound.wav",
         "sounds/saw/electric-shock.wav",
       },
-      --params = { gpu_prefix = "sprites/saw/" },
       hold = {
         thrown = true,
         sheet = "sprites/saw/foldedblades.png",

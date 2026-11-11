@@ -1,43 +1,23 @@
--- The Soldier's zombie: Project X's script_random_zombies (zomb.txt,
--- FirePunch.txt, wormanim.txt), narrowed to the Soldier by Specialists'
--- script_overrides. Behaviour, not PX's object loops: see
--- docs/px-reverse-engineering.md, "Specialists phase 5".
---
--- A Soldier brought to 0 HP, not drowning, comes back once with 100 HP as a
--- zombie: WA's turns and Tab pass it over (worm.selectable), and while a
--- turn's clock runs it goes for the worm being played, any team's: it walks
--- to it and punches, or leaps at it from further off. A team whose living
--- worms are all zombies is out. Lightning makes a zombie a Soldier again,
--- which may turn once more.
+-- The Soldier's zombie: PX's random zombies, narrowed to the Soldier.
+
 local zombie = {}
 
 local HP = 100
 local NAME = "Zombie"
--- PX's RenderWorm colours a zombie with SetColorMod(RGB(0, 180, 0), 4), a
--- smooth add. On WA's pink worm that is a pale peach, not a green: a green
--- multiply, lit by the green and glowing in it, reads as PX's zombie art.
 local TINT = { color = 0x60FF60, light = 0.35, glow = 0.8 }
 local ATTACK_COOLDOWN = 60
 local LEAP_RANGE = 400
--- The punch is WA's own Fire Punch, used without firing it (worm:use): its
--- uppercut, flames, hit, hole and sound. PX's script fired the real one
--- (weapon 16, then Space) until online games made it fall back to PunchIt, a
--- hop of the same -6 with its own hits, which worm:use makes unneeded. The
--- profile's Fire Punch record sets the damage and knock (WA's: 30).
 local PUNCH = "stock.fire_punch"
 
--- The worm states PX lets punch (WS_IDLE, WS_JUMP, WS_WALKING, WS_SLIDING,
--- WS_JUMPPREPARE).
 local CAN_PUNCH = { standing = true, walking = true, sliding = true, jumping = true, jump_prepare = true }
 
--- is_soldier(worm), soldier_name: from the Specialists rules.
 function zombie.install(is_soldier, soldier_name)
   local shared = require("lib/shared")
-  local zombies, spent = {}, {}         -- by worm id; spent: may not turn again
-  local turning = {}                    -- a lethal hit was cut to 1 HP
+  local zombies, spent = {}, {} -- by worm id; spent: may not turn again
+  local turning = {} -- a lethal hit was cut to 1 HP
   local attack_cd = {}
-  local out = {}                        -- zombies of a team that is out
-  local target                          -- the worm being played
+  local out = {} -- zombies of a team that is out
+  local target -- the worm being played
   local last_frame, last_clock, running
 
   function zombie.is_zombie(worm) return zombies[worm.id] == true end
@@ -59,8 +39,6 @@ function zombie.install(is_soldier, soldier_name)
     wa.log("Specialists: worm " .. worm.id .. " comes back as a zombie")
   end
 
-  -- Lightning (PX's LightningHit override): a zombie is a Soldier again, no
-  -- HP added, and may turn once more. True: the strike adds no health.
   shared.lightning_restores_worm = function(worm)
     if not zombies[worm.id] or out[worm.id] then return false end
     zombies[worm.id], spent[worm.id] = nil, nil
@@ -71,15 +49,6 @@ function zombie.install(is_soldier, soldier_name)
     return true
   end
 
-  -- A hit or blast that would kill a Soldier who may still turn leaves it
-  -- 1 HP and its push; it turns on its next frame. WA's own answer decides
-  -- (hit.expected, DLLs after 0.9.8: what WA will take, 0 for a hit it drops
-  -- or a worm the scheme's Phased Worms spares). Without it a hit's amount
-  -- does, and a blast is left to WA: its amount is its power, which reaches
-  -- every worm on the map (a Soldier at 42 HP far from a 50 blast turned).
-  -- Whatever still brings a Soldier to 0 HP (fall damage, which sends no
-  -- hurt; Double Damage on the cut; a blast on an older DLL) raises it from
-  -- 0 HP instead (worm:heal from_zero).
   wa.on.hurt(function(hit)
     local worm = hit.worm
     if hit.phase ~= "pre" or not worm or zombies[worm.id] or spent[worm.id] then return end
@@ -112,9 +81,6 @@ function zombie.install(is_soldier, soldier_name)
     end
     for _, worm in ipairs(theirs) do
       if not humans[worm.team] then
-        -- zomb.txt's destroyTeam: health to 0; WA ends them with the turn.
-        -- WA's accounting takes one hit per worm a frame: tried again
-        -- each frame until it has.
         worm:hurt({ amount = worm.hp, react = false })
         if not out[worm.id] then
           wa.log("Specialists: team " .. worm.team .. " has only zombies left")
@@ -124,7 +90,6 @@ function zombie.install(is_soldier, soldier_name)
     end
   end
 
-  -- Once a frame: cooldowns, the turn clock, teams out.
   local function each_frame()
     for _, id in ipairs(wa.sorted(attack_cd)) do
       attack_cd[id] = attack_cd[id] > 1 and attack_cd[id] - 1 or nil
@@ -137,11 +102,6 @@ function zombie.install(is_soldier, soldier_name)
 
   local function face(worm, x) worm.facing = worm.x < x and 1 or -1 end
 
-  -- A Soldier that turns on its own team's turn is no longer the player's:
-  -- Tab hands the turn to the team's next worm, which WA's turn order now
-  -- picks past the zombie (worm.selectable). Specialists keeps worm
-  -- selection open all turn (world +0x5EC); where the scheme has none, Tab
-  -- can't, and the turn's clock is run out instead.
   local function hand_over(worm)
     worm:input({ key = "tab" })
     if worm.turn then
@@ -159,8 +119,6 @@ function zombie.install(is_soldier, soldier_name)
     local dx, dy = t.x - z.x, t.y - z.y
     local l = math.sqrt(dx * dx + dy * dy)
     if l > LEAP_RANGE or wa.land.trace(z.x, z.y, t.x, t.y) then return end
-    -- PX's MakeLeap: an arc reaching the target in l / 10 + 1 frames
-    -- (SolveBallistic), its force plus 0..63/96 at random, less 0.1.
     local frames = l / 10 + 1
     local g = wa.world.gravity() * t.gravity
     local rx = dx / frames
@@ -200,9 +158,6 @@ function zombie.install(is_soldier, soldier_name)
       each_frame()
     end
     if zombies[worm.id] and worm.name ~= NAME and alive(worm) then
-      -- Its grave brought back (the Health Zone, Lightning): a new body WA
-      -- builds from the team's lobby record, which WA's turns pick and
-      -- nothing tints. A Soldier again, one that has had its turn.
       zombies[worm.id], out[worm.id], attack_cd[worm.id] = nil, nil, nil
       wa.log("Specialists: worm " .. worm.id .. " comes back from its grave a Soldier")
     end

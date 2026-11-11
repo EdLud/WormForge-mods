@@ -1,4 +1,5 @@
--- Trade fifty HP for five seconds per selected step, always keeping one HP.
+-- Sacrifice: trades 50 HP for five seconds of turn time per step, keeping one HP.
+
 local weapon = {
   definition = {
     copy_from = "stock.double_turn_time",
@@ -23,7 +24,7 @@ function weapon.setup()
     fire = function(worm)
       if not choice then
         wa.sound.play(worm, "sounds/sacrifice/sacrifice_error.wav")
-        return "eat" -- No choice: do not consume ammo or fire the placeholder.
+        return "eat"
       end
       local requested = choice
       choice = nil

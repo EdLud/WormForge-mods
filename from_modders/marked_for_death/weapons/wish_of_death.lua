@@ -1,5 +1,5 @@
--- Wish Of Death: click a worm to curse it. PX refunds the shot and shows
--- "Nothing found!" when the click finds nobody.
+-- Wish Of Death: click a worm to curse it.
+
 local curse = require("lib/curse")
 
 local M = {}

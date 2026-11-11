@@ -1,4 +1,5 @@
--- Specialists' stationary, destructible 140x20 platform, planted below the worm.
+-- Platform: a fixed platform with 40 health.
+
 local weapon = {}
 local platforms = {}
 local ART = "sprites/platform/"
@@ -13,12 +14,10 @@ local function place(shot)
     if event.kind=="blast" then
       local power=event.blast_damage
       local dx,dy=event.x-s.x,event.y-s.y
-      -- PX's centre-based quadratic falloff, rather than WA's linear falloff.
       damage=power>0 and math.max(0,math.floor((1-(dx*dx+dy*dy)/(power*power*4))*power)) or 0
     end
     s.health = s.health-damage
     if s.health<=0 then
-      -- Stop accepting hits before the blast can re-enter this callback.
       s.alive=false
       a:explode{damage=10,id=100}
       a:despawn()
@@ -29,7 +28,6 @@ local function place(shot)
     gravity=false,drown=false,
     body={shape=ART.."body.png",hits={},hit_by="all"},
     on={frame=function(a)
-      -- PX fixes the platform in place each frame, even after body pushes.
       a.x,a.y,a.vx,a.vy=s.x,s.y,0,0
     end,hit=hit},
   }
@@ -51,8 +49,6 @@ function weapon.setup()
       if s.alive and s.actor.id~=0 then
         local x,y=s.actor.x,s.actor.y
         wa.draw.quad{sprite=ART..(s.health>20 and "platform_sprite.png" or "platform_broken.png"),
-          -- Behind native worms (including their per-worm depth offsets),
-          -- but still in front of the landscape.
           frame=0,color=s.colour,depth=wa.depth.TERRAIN-1,
           points={{x-70,y-10},{x+70,y-10},{x+70,y+10},{x-70,y+10}}}
       end

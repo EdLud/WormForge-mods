@@ -1,4 +1,5 @@
--- Thrown Ming Vase: source settings and weapon-scoped art.
+-- Thrown Ming Vase: a charged throw that breaks into explosive fragments.
+
 local holds = require("wf-lib/holds")
 local ART = "sprites/thrown_ming_vase/"
 

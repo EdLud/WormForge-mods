@@ -1,11 +1,11 @@
--- The source's expanding, terrain-deflected toxic puffs carry native poison.
--- Their movement/exposure is simulation state; drawing cannot change it.
+-- Toxic Grenade: a grenade that releases a lingering poison cloud.
+
 local holds = require("wf-lib/holds")
 local weapon = {}
 local clouds = {}
 local ART = "sprites/toxic_grenade/"
 local SMOKE = ART.."smoke.png"
-local FINISH_TURN = 55 -- PX M_TURNEND; WA also sends it to a worm during Tab.
+local FINISH_TURN = 55
 local pending_end
 local abs = math.abs
 
@@ -29,9 +29,6 @@ local function puff(x,y)
     vx=3*random_signed(),vy=3*random_signed()}
 end
 
--- The living worms of this step, read once, the first time a puff checks
--- them: a worm's fields are engine reads, and every puff of a cloud checks
--- on the same frame. Poison only records a dose, so they hold for the step.
 local wx,wy,ww,wn={}, {}, {}, nil
 local function gather(worms)
   wn=0
@@ -44,8 +41,6 @@ local function move(p,worms,random,solid)
   local x,y,vx,vy=p.x,p.y,p.vx,p.vy
   local age=p.age+1
   p.age=age
-  -- Source redirects a blocked endpoint by 90 degrees, damping both axes.
-  -- Each attempt shrinks speed; bound it as well for buried spawn points.
   for _=1,128 do
     if not solid(x+vx,y+vy) then break end
     if random(0,1)==0 then
@@ -67,8 +62,6 @@ local function move(p,worms,random,solid)
 end
 
 local function detonate(event)
-  -- A delayed grenade may outlive its thrower. Choose a current live body,
-  -- rather than passing a stale owner to the native actor constructor.
   local owner
   for _,w in ipairs(wa.worms.all()) do
     owner=owner or w
@@ -79,8 +72,6 @@ local function detonate(event)
   local function step(a)
     local worms=wa.worms.all()
     finish_candidate(worms,false)
-    -- Existing particles get their frame before the emitter creates new ones;
-    -- the survivors keep their order.
     local puffs,random,solid=s.puffs,wa.random,wa.land.solid
     local n,kept=#puffs,0
     wn=nil
@@ -100,7 +91,6 @@ local function detonate(event)
       a:despawn()
     end
   end
-  -- One non-colliding driver per cloud; particles do not consume WA body slots.
   s.actor=wa.actors.spawn{sprite=false,owner=owner,x=s.x,y=s.y,gravity=false,collide=false,
     persist=true,drown=false,light=false,on=step}
   clouds[#clouds+1]=s
@@ -110,7 +100,6 @@ weapon.definition = {
   copy_from="stock.grenade",name="Toxic Grenade",
   panel_icon=ART.."img_toxicgren.png",sprite="grenade",
   handling={remember_selection=false},
-  -- ExplodeAt is replaced by the emitter: no native blast, crater or clusters.
   missile={explosion={power=0,push_pct=0},burst="nothing"},on_explode=detonate,
   worm_sprites=holds.PX_POSTURE,
   sprites={ART.."poisongren.png",ART.."smoke.png"},params={gpu_prefix=ART},
@@ -123,18 +112,12 @@ weapon.missile_sprite={sheet=ART.."poisongren.png",frames=1,hide=true}
 function weapon.setup()
   wa.on.worm_message(function(_,msg)
     if msg==wa.msg.TURN_STARTED then
-      -- A real next team turn can start before a cloud's next frame.
       finish_candidate({},true)
     elseif not pending_end then
-      -- Defer until Tab has completed. Another selected worm means this was
-      -- only a switch. Snapshot existing clouds, so later throws don't age.
       pending_end={}
       for _,s in ipairs(clouds) do pending_end[#pending_end+1]=s end
     end
   end,{msgs={FINISH_TURN,wa.msg.TURN_STARTED}})
-  -- Every puff in one wa.draw.quads call, nine numbers each (a call takes
-  -- at most 4096). A DLL without the verb gets one wa.draw.quad a puff,
-  -- from one quad table: the verbs copy what they read.
   local MAX=4096*9
   local buf={}
   local batch={sprite=SMOKE,frame=0,depth=0,quads=buf,count=0}

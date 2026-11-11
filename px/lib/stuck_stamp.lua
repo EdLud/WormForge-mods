@@ -1,15 +1,7 @@
--- Where a stamp stuck in the land (the Javelin's spear, the Girder Launcher's
--- girder) may go without holding a worm inside new land.
---
--- The stamp is a bar along its frame's axis: frame f points f * 11.25 degrees
--- clockwise from up (both sheets, measured), `half_length` px each way from
--- its centre and `half_width` px either side. The engine plots it around the
--- pixel its position rounds down to. WA's worm shape is 9x16, hotspot (4,9);
--- a pixel more on every side absorbs a pixel's error in the measurements.
+-- Where a stamp stuck in the land may go without trapping a worm in new land.
+
 local stuck_stamp = {}
 
--- The bar's pixels, as offsets from its centre pixel, per frame and size.
--- Half-pixel steps along and across leave no pixel out on a slant.
 local bars = {}
 local function pixels(frame, bar, dx, dy)
   local key = frame .. ":" .. bar.half_length .. ":" .. bar.half_width
@@ -37,17 +29,11 @@ local function holds(w, px, py, list, solid)
   local y0, y1 = math.floor(w.y) - 10, math.floor(w.y) + 7
   for _, o in ipairs(list) do
     local x, y = px + o[1], py + o[2]
-    -- Land already there gains nothing: the stamp's buried part.
     if x >= x0 and x <= x1 and y >= y0 and y <= y1 and not solid(x, y) then return true end
   end
   return false
 end
 
--- The stamp centred at the impact (x, y), else as little deeper into the land
--- along its flight (its front end in land) as clears every worm, its back end
--- at most 10px past the impact (an impact on the last free pixel above a
--- worm's ground lies in its bottom row). Returns the centre and the depth, or
--- nil and the worm it cannot clear.
 function stuck_stamp.place(x, y, frame, bar)
   local rad = math.rad(frame * 11.25)
   local dx, dy = wa.math.sin(rad), -wa.math.cos(rad)

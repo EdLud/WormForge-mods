@@ -1,6 +1,5 @@
--- PX p_portalgun2 DoTrailEffects/DoSpark/DoFlash and p_portal2
--- DoPortalEffects/DoTeleportationEffects, using the existing GPU draw API.
--- This local random stream drives looks only, never WA's gameplay RNG.
+-- The Portal Gun's effects: trails, sparks, flashes and teleport bursts, from PX.
+
 local Effects = {}
 Effects.__index = Effects
 local TAU = 2 * math.pi
@@ -22,8 +21,6 @@ function Effects:random(lo, hi)
   return lo + (hi-lo) * (s / 0x100000000)
 end
 function Effects:particle(x, y, spec)
-  -- Twelve endpoints emit at most 180 ambient particles at once. Bound
-  -- bursts too, so repeated transport cannot accumulate an unbounded list.
   if #self.particles >= 1024 then return end
   local angle, speed = self:random(0, TAU), self:random(spec.speed[1], spec.speed[2])
   self.particles[#self.particles+1] = {
@@ -50,7 +47,6 @@ function Effects:transport(p)
   end
 end
 function Effects:impact(x, y, failed)
-  -- PX's ExplodeAt emits 7 + 10 sparks; a rejected portal adds 30.
   for _=1,(failed and 47 or 17) do
     local shift = math.floor(self:random(0,51))
     self:particle(x, y, { sprite="portal_glow.png", pixels=32, life=40,
@@ -72,8 +68,6 @@ function Effects:trail(x, y, colour)
     start=last, finish={0,0,0} })
 end
 function Effects:muzzle(x, y, colour, dx, dy)
-  -- The gun's tip while aiming: sparks of the colour the next shot opens,
-  -- drifting out along the aim (dx, dy), round a soft halo.
   local first, last = palette(colour, math.floor(self:random(0, 51)))
   local push = self:random(0.4, 1.2)
   self:particle(x, y, { sprite="portal_glow.png", pixels=32, life=14,

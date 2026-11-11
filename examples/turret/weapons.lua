@@ -1,5 +1,5 @@
--- Dynamite slot, mine placement. Space plants a persist LuaActor.
--- LOS with wa.land.trace, hitscan with worm:hurt. No stock blast.
+-- Dynamite slot, mine placement.
+
 return {
   install = function()
     local SENSOR_PX = 360
@@ -41,7 +41,6 @@ return {
       return math.floor((angle % 360) / (360 / steps) + 0.5) % steps
     end
 
-    -- 0 = down, 90 = right: source art faces right, screen y grows down.
     local function angle_to(ax, ay, tx, ty)
       local dx = (tx - ax) // 1
       local dy = (ty - ay) // 1
@@ -74,7 +73,6 @@ return {
       return w.alliance ~= s.alliance
     end
 
-    -- WA walks by stepping position with vx/vy still 0, so motion is last-tick pos.
     local function note_motion(s, w)
       local p = s.seen[w.id]
       if p then

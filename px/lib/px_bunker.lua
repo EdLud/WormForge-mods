@@ -1,4 +1,5 @@
 -- Bunker Buster and Super Bunker Buster: a digging air strike.
+
 local function placed(ctx)
   local informed = false
   if type(ctx.weapons) == "table" then
@@ -29,29 +30,26 @@ function M.install(ctx)
   local LOOP_SOUNDS   = { "bunkbustdrill_loop1.wav", "bunkbustdrill_loop2.wav",
                           "bunkbustdrill_loop3.wav", "bunkbustdrill_loop4.wav",
                           "bunkbustdrill_loop5.wav" }
-  local IMPACT_FRAMES = 88 -- the impact piece's length, and the wait before the loop
-  local LOOP_FRAMES   = 88 -- every loop piece is the same 1.76 s, so the same wait
-  local R          = 8      -- the collision circle, PX's CColMask(8, 8, MakeCircleMask(8))
-  local SKY        = -128   -- the drop height above the level
+  local IMPACT_FRAMES = 88
+  local LOOP_FRAMES   = 88
+  local R          = 8
+  local SKY        = -128 -- the drop height above the level
   local DIG_SPEED  = 1.15
   local MAGNET_SHARE, MAX_DRILL_FORCE, DIG_MAGNET_FACTOR = 0.4, 0.1, 3
   local DIG_FRAMES = super_buster and 450 or 300
-  -- The drill mask, cut every MASK_EVERY frames whether the body is drilling or still falling.
   local MASK_EVERY = 3
-  local EDGE       = 6      -- the two probe lines, within the tunnel's edge
+  local EDGE       = 6 -- the two probe lines, within the tunnel's edge
   local LOOKAHEAD  = 13
-  local ANIM_SPEED = 0.08   -- AnimSpeed over AnimCycleDuration 1.0
-  local FRAMES     = 3      -- each sheet is a 3-frame strip
+  local ANIM_SPEED = 0.08 -- AnimSpeed over AnimCycleDuration 1.0
+  local FRAMES     = 3 -- each sheet is a 3-frame strip
   local SINK, SUNK = 2, 200 -- sinking out of sight in the water
-  local FIRE_MIN, FIRE_MAX = 4, 10    -- DrillFireMinDelta/MaxDelta
-  local EXPL_DIST  = 40     -- ExplosionDistance
-  local EXPL_DELTA = 8      -- ExplosionDeltaTime
-  local NUM        = super_buster and 5 or 1    -- NumExplosions
+  local FIRE_MIN, FIRE_MAX = 4, 10 -- DrillFireMinDelta/MaxDelta
+  local EXPL_DIST  = 40 -- ExplosionDistance
+  local EXPL_DELTA = 8 -- ExplosionDeltaTime
+  local NUM        = super_buster and 5 or 1 -- NumExplosions
   local BLAST      = super_buster and 80 or 100 -- ExplosionBlast
-  local DAMAGE     = super_buster and 26 or 38  -- ExplosionDamage
+  local DAMAGE     = super_buster and 26 or 38 -- ExplosionDamage
   local FIRE       = { duration = 1000, up_power = 15, damage = 1 } -- CFireDesc
-  -- The drilling flame's toss, pixels a frame: up 1..2, drifting at most 0.5
-  -- either way. PX's throw (5..15) is far stronger.
   local FIRE_TOSS  = { up_min = 100, up_max = 200, drift = 50 } -- hundredths
 
   local busters = {} -- body actor id -> state
@@ -101,7 +99,6 @@ function M.install(ctx)
 
   local function frame_of(m)
     return function(a)
-      -- ------------------------------------------------------------- blasts
       if m.boom then
         if m.num >= NUM then remove(m) return end
         if m.timer <= 0 then
@@ -114,7 +111,6 @@ function M.install(ctx)
         return
       end
 
-      -- -------------------------------------------------------------- water
       if m.y >= wa.world.water() then
         m.sunk = true
         m.y = m.y + SINK
@@ -124,7 +120,6 @@ function M.install(ctx)
         return
       end
 
-      -- ------------------------------------------------------ drill or fall
       local px, py = m.x, m.y
       local fx, fy, inside = wa.magnetism.sample(m.x, m.y, a)
       fx, fy = fx * MAGNET_SHARE, fy * MAGNET_SHARE
@@ -137,18 +132,14 @@ function M.install(ctx)
         direction(m, 10 * m.dir_x + DIG_MAGNET_FACTOR * fx,
           10 * m.dir_y + DIG_MAGNET_FACTOR * fy)
         if not land_ahead(m, -EDGE) and not land_ahead(m, EDGE) then
-          -- No land ahead at either edge: fall again
           m.dig = false
           local speed = DIG_SPEED * (1 + 2 * (1 - m.dir_y)) -- PX's exit nudge
           m.vx, m.vy = m.dir_x * speed, m.dir_y * speed
         else
           m.vx, m.vy = m.dir_x * DIG_SPEED, m.dir_y * DIG_SPEED
           m.x, m.y = m.x + m.vx, m.y + m.vy
-          m.dig_time = m.dig_time - 1                  -- the drill's clock, ticking (see DIG_FRAMES)
-          if m.dig_time <= 0 then boom(m) return end   -- PX: out of fuel -> explode
-          -- PX's StartDigging sound, in the two halves the wav is made of: the loop
-          -- piece under the drill, one piece per LOOP_FRAMES so the audio is continuous
-          -- through a drill and nothing is heard to stop when it ends.
+          m.dig_time = m.dig_time - 1 -- the drill's clock, ticking (see DIG_FRAMES)
+          if m.dig_time <= 0 then boom(m) return end -- PX: out of fuel -> explode
           m.snd_timer = m.snd_timer - 1
           if m.snd_timer <= 0 then
             a:sound(SND .. LOOP_SOUNDS[m.piece])
@@ -169,8 +160,6 @@ function M.install(ctx)
           end
         end
       else
-        -- Falling: normal gravity while no land is detected.
-        -- Starts digging when the trace hits land.
         m.vx, m.vy = m.vx + fx, m.vy + wa.world.gravity() + fy
         direction(m, m.vx, m.vy)
         local nx, ny = m.x + m.vx, m.y + m.vy
@@ -186,8 +175,6 @@ function M.install(ctx)
         end
       end
 
-      -- The drill mask, on every MASK_EVERY frames and whether or not the body is drilling
-      -- (see the constant).
       m.mask_timer = m.mask_timer - 1
       if m.mask_timer <= 0 then
         m.mask_timer = MASK_EVERY
@@ -196,10 +183,8 @@ function M.install(ctx)
         end
       end
 
-      -- Anything else it touched on the way blows it up.
       if (px ~= m.x or py ~= m.y) and touched(px, py, m.x, m.y) then boom(m) return end
 
-      -- ------------------------------------------------------------- drawing
       a.x, a.y = m.x, m.y
       local sheet = m.dig and (ART .. "digging.png") or (ART .. "idle.png")
       if sheet ~= m.sheet then
@@ -211,16 +196,12 @@ function M.install(ctx)
       local angle = -math.deg(wa.math.atan(m.dir_x, m.dir_y)) -- PX's UpdateRotation
       a:gfx({ angle = angle, depth = wa.depth.OBJECTS + 2 }) -- PX's z 10.01, behind the worms
       if m.glow then
-        -- PX's glow (SpriteGlow): PX's z 10, in front of the body,
-        -- additive, tinted RGB(255, 70, 0).
         m.glow.x, m.glow.y = m.x, m.y
         m.glow:gfx({ angle = angle, depth = wa.depth.OBJECTS + 1, blend = "add", tint = 0xFF4600 })
       end
     end
   end
 
-  -- PX's plane drop, less the plane: one buster at the click's x, standing
-  -- still above the level, on WA's gravity.
   local function drop(worm, x, y)
     wa.sound.play(worm, SND .. "bunkbustfall.wav") -- PX's fall sound
     local m = { x = x, y = SKY, vx = 0, vy = 0, dir_x = 0, dir_y = 1,
@@ -243,11 +224,9 @@ function M.install(ctx)
   local sprites = { ART .. "idle.png", ART .. "digging.png" }
   if super_buster then sprites[#sprites + 1] = ART .. "glow.png" end
 
-  -- The registration. Built in a local first: the `handling` line below then
-  -- reads as the Highlander's own claims do (`the weapon module's record.handling.ends_turn`).
   local spec = {
     wep = super_buster and "weps/super_bunker_buster.wep" or "weps/bunkerbuster_wep1.wep",
-    panel_icon = ART .. "icon.png", -- PX's own icon (ico_bunkerbuster.png / ico_superbunkerbuster.png)
+    panel_icon = ART .. "icon.png",
     sprites = sprites,
     params = { gpu_prefix = "sprites/" },
     sounds = { SND .. IMPACT_SOUND, SND .. LOOP_SOUNDS[1], SND .. LOOP_SOUNDS[2],

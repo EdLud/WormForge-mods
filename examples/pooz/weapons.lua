@@ -1,6 +1,5 @@
--- Shotgun is only the panel slot. Selecting it turns the owner into the POOZ
--- runner (Lua actor). A/D move, W jumps (again in air for the flip), Shift sprints.
--- Switch weapon to drop out.
+-- Shotgun is only the panel slot.
+
 return {
   install = function()
     local HW = 6
@@ -96,7 +95,6 @@ return {
       return x, y
     end
 
-    -- Glue to dirt within SLOPE pixels so gentle grades do not pop into air.
     local function snap_floor(x, y)
       if blocked(x, y) then
         return x, y, false
@@ -113,8 +111,6 @@ return {
       return x, y, false
     end
 
-    -- PNG strips are 15fps. Ground clips step every other tick so Walk/Run/Land
-    -- actually read. FrontFlip stays at 15fps (matches POOZ ~3 ticks/frame).
     local function set_clip(a, st, name)
       if st.anim ~= name then
         st.anim = name

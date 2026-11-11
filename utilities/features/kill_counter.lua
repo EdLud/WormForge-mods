@@ -1,35 +1,20 @@
--- Kill counter, from Project X's `script_kill_counter` (Orange's Highlander
--- loads it): a numbered badge behind each worm that has killed, 1 to 9, then
--- an infinity sign. A kill is the worm whose turn it is (whatever did the
--- killing, friend or foe, as Highlander's loot), and it takes the victim's
--- own count with it: killing a worm that had 2 kills adds 3. A burst of
--- glow sparks leaves the killer.
---
--- Where this differs from the source, on purpose: the victim's count is
--- cleared, since it has passed to the killer and a worm the Reinforcement
--- brings in the dead one's place is a new worm. A PX worm died with its count.
---
--- Presentation only: the counts change in `wa.on.death`, every draw reads
--- them, nothing reaches the simulation and no roll touches WA's RNG.
+-- Kill counter, from Project X: a badge behind each worm counts its kills.
 
--- PX: AddSpriteEx(5, PosX - 15 * TurnSide, PosY - 10, digit, 0, 0, 0.75).
 local BADGE_BEHIND = 15
 local BADGE_ABOVE = 10
 local BADGE_SIZE = 50 * 0.75
 
--- PX's DoSpark(25), one PxParticle each.
 local SPARKS = 25
-local SPARK_LIFE = 40          -- frames
+local SPARK_LIFE = 40 -- frames
 local SPARK_SPEED = { 1.5, 3.8 } -- pixels/frame, in a random direction
 local SPARK_GRAVITY = 0.25 * 0.24 -- GravityFactor(0.25) of WA's gravity
-local SPARK_DRAG = 0.05        -- SetAirResistance: speed lost a frame
-local SPARK_JITTER = 0.2       -- SetMotionRandomness
+local SPARK_DRAG = 0.05 -- SetAirResistance: speed lost a frame
+local SPARK_JITTER = 0.2 -- SetMotionRandomness
 local SPARK_SIZE = { 0.2, 0.4 } -- of the 128-pixel glow, shrinking to 0.005
 local SPARK_GLOW = 128
 local SPARK_ALPHA = 180
 
 local SPRITE_DIR = "sprites/kill_counter/"
--- 0.png is PX's sign for ten and more.
 local NAMES = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "kill_glow" }
 
 local paths = {}
@@ -39,9 +24,9 @@ local badge = {}
 for n = 1, 10 do badge[n] = wa.sprites.key(paths[n]) end
 local glow = wa.sprites.key(paths[11])
 
-local kills = {}   -- [worm id] = count
-local bursts = {}  -- { x, y, born, sparks }
-local shooter      -- PX's ShootingOne: the last worm whose turn it was
+local kills = {} -- [worm id] = count
+local bursts = {} -- { x, y, born, sparks }
+local shooter -- PX's ShootingOne: the last worm whose turn it was
 
 wa.on.turn_start(function(event)
   if event.worm then shooter = event.worm.id end
@@ -68,7 +53,6 @@ end)
 
 local function lerp(a, b, t) return a + (b - a) * t end
 
--- Rolled at the first draw, with the draw's own random: looks only.
 local function launch(burst)
   local sparks = {}
   for i = 1, SPARKS do
@@ -85,14 +69,12 @@ local function launch(burst)
   burst.sparks, burst.age = sparks, 0
 end
 
--- One game frame of a spark's flight.
 local function step(s)
   s.vx = (s.vx + (wa.draw.random() - 0.5) * SPARK_JITTER) * (1 - SPARK_DRAG)
   s.vy = (s.vy + SPARK_GRAVITY + (wa.draw.random() - 0.5) * SPARK_JITTER) * (1 - SPARK_DRAG)
   s.x, s.y = s.x + s.vx, s.y + s.vy
 end
 
--- wa.draw.quad copies its table, so one spec is reused.
 local QUAD = {
   points = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } },
   sprite = "", color = 0xFFFFFFFF, blend = "alpha", depth = wa.depth.FRONT,

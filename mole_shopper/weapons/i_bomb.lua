@@ -1,4 +1,5 @@
--- A thrown, three-second bomb with 33 gravity-free, penetrating children.
+-- i-bomb: throw a three-second bomb that releases 33 gravity-free, penetrating fragments.
+
 local holds = require("wf-lib/holds")
 local ART = "sprites/i_bomb/"
 

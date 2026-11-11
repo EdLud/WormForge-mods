@@ -1,6 +1,5 @@
--- Marked For Death: click a worm to mark it; the mark's damage multiplier is
--- the `dmg_percent` option (150% by default). PX refunds the shot when the
--- click finds nobody.
+-- Marked For Death: click a worm to mark it: 50% more damage for three turns.
+
 local curse = require("lib/curse")
 
 local M = {}
@@ -21,7 +20,6 @@ function M.install(ctx)
       if w then
         curse.mark(w, mult)
       else
-        -- finish_click_shot takes the ammo after this returns; add it back.
         ev.worm:ammo(ctx.id, 1)
         curse.nothing_found(ev.worm)
       end

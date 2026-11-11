@@ -1,6 +1,5 @@
--- PX's saw place record (saw_place_wep.wep). It is the weak-throw/mine-style
--- version; the record's own explosion is power 0, and the saw still comes from
--- on_explode. Size is the component option, default 50%.
+-- Saw (place): the same blade, thrown weakly.
+
 local saw = require("lib/saw")
 local sprites = require("wf-lib/px_sprite_builder")
 
@@ -25,7 +24,6 @@ return {
         "sounds/saw/clank-sound.wav",
         "sounds/saw/electric-shock.wav",
       },
-      --params = { gpu_prefix = "sprites/saw/" },
       hold = {
         thrown = true,
         sheet = "sprites/saw/foldedblades.png",

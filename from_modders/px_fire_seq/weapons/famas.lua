@@ -1,7 +1,5 @@
--- FAMAS: PX's 3-round bursts, 3, 3, 3, then 2 on the fourth.
--- Rounds are real WA missiles (13 damage, 250 push, 5000 ms fuse); WA flies
--- them, and Lua zeroes gravity/wind so they stay straight. The hold and firing
--- cells are PX's gun sheet.
+-- FAMAS: three-round bursts of straight 13-damage bullets.
+
 local seq = require("lib/fire_seq")
 local sb = require("lib/px_sprite_builder")
 local trail = require("wf-lib/effects/trail")
@@ -14,14 +12,13 @@ local LAST_BURST_SHOTS = 2
 local BURSTS = 4
 local SHOT_GAP = 4
 local LOW_AIM = 0.167
-local SPEED = 23  -- PX's 20 px/frame at 115% (famas.wep 0x78)
-local MIN_SPAWN_OFFSET = 18 -- Minimum pixel distance from worm center to prevent self-hit (min 7px clearance)
+local SPEED = 23 -- PX's 20 px/frame at 115% (famas.wep 0x78)
+local MIN_SPAWN_OFFSET = 18
 local TRAIL = { max = 12, every = 1, core_w = 4.0, glow_w = 8.0,
   r = 255, g = 64, b = 32 }
 
-local bursts = {}  -- worm id -> bursts fired in this magazine (0..3)
+local bursts = {} -- worm id -> bursts fired in this magazine (0..3)
 
--- The shooter is the turn's worm: the missile handler is given no owner.
 local function current_worm()
   for _, w in ipairs(wa.worms.all()) do
     if w.turn then return w end
@@ -34,8 +31,6 @@ function M.install(ctx)
   local ART = "sprites/famas/"
   local SND = "sounds/famas/"
 
-  -- Straight rounds, with the trail registered on each one's first frame (WA
-  -- launches them itself, so there is no launch return value to hand it).
   wa.on.missile_frame(function(m)
     if m.weapon ~= SLOT then return end
     m.gravity_scale = 0
@@ -43,9 +38,6 @@ function M.install(ctx)
     if not trail.has(m.id) then trail.add(m.id, current_worm(), TRAIL) end
   end)
 
-  -- The round in flight: WA's missile is hidden and a follower draws the bullet,
-  -- turned along its flight by PX's track angle (as the actor build did with
-  -- `a:gfx`).
   sb.flight(ctx, {
     weapon = SLOT,
     sheet = ART .. "bullet",
@@ -60,7 +52,6 @@ function M.install(ctx)
     sheet = ART .. "hold",
     size = 90,
     keep_while_firing = false,
-    -- Swing the gun down and shrink it over the worm's put-away.
     put_away = true,
     weap_rotation = 1.0,
     weap_radial_rotation = 1.0,
@@ -110,13 +101,11 @@ function M.install(ctx)
         standoff = 8,
         x = function(i, ww)
           local dx, _ = dir(ww)
-          -- Push out along aim vector to guarantee clearance past the worm's collision box
           local offset_dist = math.max(MIN_SPAWN_OFFSET, math.abs(ev.x - ww.x) + 3.0)
           return ww.x + (dx * offset_dist)
         end,
         y = function(i, ww)
           local _, dy = dir(ww)
-          -- Calculate vertical spawn position dynamically from aim angle instead of static ev.y
           local offset_dist = math.max(MIN_SPAWN_OFFSET, math.abs(ev.y - ww.y) + 3.0)
           return ww.y + (dy * offset_dist) - 3
         end,
@@ -144,8 +133,6 @@ function M.install(ctx)
       })
     end,
   }
-  -- PX keeps the worm aiming between bursts; the turn ends when the player
-  -- ends it, after the fourth burst's dry fire.
   spec.handling = { ends_turn = false }
   spec.fires = { subtype = 4 }
   hold_art.add(firing)

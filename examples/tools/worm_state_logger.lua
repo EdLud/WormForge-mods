@@ -1,9 +1,5 @@
 -- Show one live state line for the active worm, and log transitions to file.
---
--- A debugging pack: it only reads. `worm.state_id` is WA's raw state number
--- and `worm.state_label` its name from the engine's one state table
--- (crates/game/src/worm_state.rs, which lists the evidence for each and
--- marks a provisional name with `?`). Name a state there, not here.
+
 return function()
   local last = {}
 

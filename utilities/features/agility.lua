@@ -1,51 +1,23 @@
 -- From the Agility pack 1.1 (Zed / 0rang3, port by reddaz), as it was.
--- Agility (air control), ported from Zed's RPG Wars mod, edited by 0rang3.
---
--- 1:1 port now that vx/vy are directly writable during jump and other
--- airborne states. No workaround needed -- this just nudges worm.vx/vy
--- per frame, the same as the original SpX/SpY increments.
---
--- Notes:
---   * PX's `GetCurrentWorm() == this` is `worm.turn`.
---   * PX's ModulatedGravity is Gravity Control's factor on the world's
---     gravity (Env->Gravity), not the worm's own (worm.gravity, PX's
---     GravityFactor), so ModulatedGravity == 1 is wa.world.gravity() still
---     at the match's: Very Low Gravity (0.3) is under the 0.1 nudge, and
---     with it held up the worm rose.
---   * State check uses worm.state_id against the hex values from the state
---     logger, not the string names, since that's the precise source here.
---   * Keys follow the synchronized turn-player input in networked matches.
---   * The nudge is per frame of the worm's own: under Bullet Time
---     (worm.time_scale) WA steps the worm 2 or 3 times a world frame and
---     this hook runs once, so it nudges that many times (wf-lib/own_time),
---     each against the cap, as it would over that many frames.
 
 local own_time = require("wf-lib/own_time")
 
-local STEP      = 0.1   -- per-tick nudge, matches C's 0.1
-local STEP_LOWG = 0.03   -- up-nudge while the world's gravity is changed
-local LIMIT     = 3                  -- matches C's SpX/SpY <= 3 cap
+local STEP      = 0.1 -- per-tick nudge, matches C's 0.1
+local STEP_LOWG = 0.03 -- up-nudge while the world's gravity is changed
+local LIMIT     = 3 -- matches C's SpX/SpY <= 3 cap
 
--- Allowed states, by worm.state_id, mirroring the C allowlist:
--- WS_JUMP, WS_SLIDING, WS_FLYING2, WS_POWERFLY, WS_DRILLING, WS_FLYING.
--- Only JUMP and DRILLING are a confident 1:1 match to the logger's names;
--- the rest are my best guess at which hex id corresponds to which C state.
--- Confirm with the state logger and correct any that are wrong.
 local ALLOWED = {
-  [0x6E] = true,  -- WS_DRILLING      
-  [0x73] = true,  -- WS_AFTERROPE     
-  [0x79] = true,  -- WS_JUMP      
-  --[0x7A] = true,  -- Landing Jump     
-  [0x7E] = true,  -- WS_JUMP   
-  [0x7F] = true,  -- WS_SLIDING
-  [0x80] = true,  -- WS_FLYING
-  [0x81] = true,  -- WS_POWERFLY
+  [0x6E] = true, -- WS_DRILLING
+  [0x73] = true, -- WS_AFTERROPE
+  [0x79] = true, -- WS_JUMP
+  [0x7E] = true, -- WS_JUMP
+  [0x7F] = true, -- WS_SLIDING
+  [0x80] = true, -- WS_FLYING
+  [0x81] = true, -- WS_POWERFLY
 }
 
-local match_gravity  -- the world's gravity at the match's first frame
+local match_gravity -- the world's gravity at the match's first frame
 
--- Runs once per worm per frame: the msgs filter makes the engine skip Lua
--- for every other message a worm gets (thousands a frame in a busy match).
 wa.on.worm_message(function(worm)
   match_gravity = match_gravity or wa.world.gravity()
   if not worm.turn then return end

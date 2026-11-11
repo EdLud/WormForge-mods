@@ -1,4 +1,5 @@
--- Selected profile options are the fog scheme; unselected, nothing runs.
+-- Fog of war: select this add-on in a profile to play with fog.
+
 local KEYS = {
   "circle_radius",
   "cone_width",

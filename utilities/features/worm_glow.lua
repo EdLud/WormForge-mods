@@ -1,9 +1,5 @@
--- Worm glow: every worm's body drawn with WA's own colours (a white
--- multiply) and a glow behind it in the add-on's colour, so a worm reads as the light the
--- fog draws round it. WA's poses without a weapon are copied with the
--- match, and the glows of the placed weapons' own worm poses made with it
--- (worm_glow), so none is made mid-match. A worm another pack tints keeps
--- that pack's tint, and gets this one back once the pack clears it.
+-- Worm glow: a soft glow round every worm.
+
 return function(ctx)
   local pad = ctx.option("pad")
   wa.assets.load({

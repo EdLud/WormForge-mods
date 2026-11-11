@@ -1,4 +1,5 @@
--- Four mini-girders: push a struck body, otherwise become permanent terrain.
+-- Girder Launcher: fires four mini-girders that push what they strike or become terrain.
+
 local holds = require("wf-lib/holds")
 local weapon = {}
 local launch, impact
@@ -35,12 +36,8 @@ weapon.definition = {
 weapon.missile_sprite={sheet="sprites/girder_launcher/mgirderspb.png",hide=true,
   frames=8,animate=true,anim_speed=3}
 
--- The girder: a 22 x 8 bar centred where the shell stops, along its flight
--- (mgirder.png's 32 frames, measured: 11 px each way along, 4 across).
 local GIRDER = { half_length = 11, half_width = 4 }
 
--- What the shell does where it stops: a body within 20 px is pushed and no
--- girder is laid (the shooter excepted); else the girder is laid.
 local function pushed(x, y, shooter)
   for _, o in ipairs(wa.world.electrical_nearby(x, y, 29, false)) do
     if (o.kind == "worm" or o.kind == "mine" or o.kind == "crate" or o.kind == "oil")
@@ -74,7 +71,6 @@ function weapon.setup()
   local function orientation(vx,vy)
     if vx==0 then return vy>0 and 16 or 0 end
     if vy==0 then return vx>0 and 8 or 24 end
-    -- PX's ratio bins; these do not divide the circle into equal angles.
     if vx>0 and vy<0 then return math.min(math.floor(3*vx/-vy),7) end
     if vx>0 then return math.min(math.floor(8+3*vy/vx),15) end
     if vy>0 then return math.min(math.floor(16+3*-vx/vy),23) end
@@ -90,9 +86,6 @@ function weapon.setup()
       local sentry=turrets.projectile_target(ev.x,ev.y)
       if sentry and turrets.projectile_hit(sentry,3,vx/4,vy/4,flight and flight.uid) then return end
     end
-    -- The girder must not become land around a worm (the shooter beside a
-    -- wall): as the Javelin's spear, it goes deeper into the land, or hits
-    -- that worm instead of being laid.
     local frame=orientation(vx,vy)
     local x,y,deeper
     if not o then

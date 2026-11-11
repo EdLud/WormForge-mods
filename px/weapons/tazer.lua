@@ -1,5 +1,5 @@
--- A chain-lightning shot, sharing the existing electrical arc; it never ends
--- the turn, so a worm may fire it again while ammo lasts.
+-- Tazer: a chain-lightning shot that arcs between worms; it doesn't end the turn.
+
 local weapon = {}
 weapon.definition = {
   copy_from="stock.handgun",

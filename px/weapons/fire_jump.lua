@@ -1,7 +1,7 @@
--- Fire Jump: record, art and behaviour.
+-- Fire Jump: a fire punch that carries the worm high up, then forward.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fire_punch = {
     damage = 45,
@@ -18,30 +18,10 @@ function weapon.definition()
 end
 
 function weapon.setup()
-  -- Fire Jump (PX Fire_Jump_script): WA's fire punch, whose speed then follows
-  -- PX's timeline, counted in frames from the punch -- up at once, forward
-  -- after half a second, a little higher at one second, and from 80 frames a
-  -- fall cut back to 4 pixels a frame whenever it passes 5, until 210. PX
-  -- speeds are pixels per frame; WA's are 16.16. See
-  -- docs/px-reverse-engineering.md.
-  --
-  -- PX counts from FireFinal, which WA calls only once the punch's wind-up has
-  -- played, not when fire is pressed. FireFinal starts the punch at -6 pixels
-  -- a frame; the worm stood still until then. So the count starts on the
-  -- first frame after fire is pressed that the worm is rising.
-  --
-  -- WA keeps the worm in its punch state until it has stopped, so the punch
-  -- itself cuts the way up and burns worms on it, all jump long: PX adds no cut.
-  --
-  -- The frames are the worm's own: under Bullet Time (worm.time_scale) a world
-  -- frame is 2 or 3 of them, and the timeline steps that many (own_time).
   local own_time = require("wf-lib/own_time")
-  local jumps = {}   -- worm id -> frames since the punch
+  local jumps = {} -- worm id -> frames since the punch
   local winding = {} -- worm id -> frames since fire was pressed
-  -- A wind-up never takes this long; give up rather than fire late.
   local WIND_UP_MAX = 100
-  -- Ready/charging, the firing sequence, then the native punch. A hit, fall,
-  -- freeze or other loss of control must not become a delayed Fire Jump.
   local WIND_UP_STATES = {
     [0x67] = true, [0x68] = true, [0x69] = true,
     [0x6A] = true, [0x6B] = true, [0x6C] = true,
@@ -65,14 +45,11 @@ function weapon.setup()
       if worm.weapon == "px.fire_jump" and worm:ammo("px.fire_jump") ~= 0 then
         winding[worm.id] = 0
       end
-      -- It doesn't eat the shot: WA's fire punch still runs.
       return
     end
     if msg ~= wa.msg.FRAME_FINISH then return end
     local id = worm.id
     if not (winding[id] or jumps[id]) then return end
-    -- Once WA ends the punch, its collisions and knockback own the speed.
-    -- Forget the timeline permanently; regaining control cannot resume it.
     if not worm.turn or worm.hp <= 0 or worm.taken
         or (winding[id] and not WIND_UP_STATES[worm.state_id])
         or (jumps[id] and worm.state ~= "punching") then

@@ -1,51 +1,37 @@
--- Specialists' Gravity Gun (PX p_gravity_gun: gravity_gun_s.txt and
--- gravity_gun_animations.txt). Fire arms it (the shot costs nothing): hold
--- Space to pull the object the aim points at; near enough, it is held in
--- front of the worm along the aim. Space again drops it; Shift or Ctrl with
--- Space throws whatever the aim meets (an object, or land: the worm recoils).
--- Not ported: the Lightning Strike's "superworm" gun, missiles as targets (the trace finds worms, mines, crates,
--- oil drums and graves), the arrow-key aim while jumping, and the muted
--- fire speech. Not PX's: the component's options say which of those it
--- takes (worms by colour); what it can't take is no obstacle to the aim.
+-- Gravity Gun: pulls the object it aims at, holds it in front of the worm and throws it.
+
 local holds = require("wf-lib/holds")
 local weapon = {}
 local ID = "px.gravity_gun"
 local ART = "sprites/gravity_gun/"
 local SND = "sounds/gravity_gun/"
 
--- CWorm's gg_ parameters.
-local STOP_RADIUS = 40      -- gg_stop_radius: where it holds things
-local PUSH = 8.5            -- gg_push_powa: a throw's speed
-local SUCK = 5.0            -- gg_suck_speed
-local UNHOLD = 75           -- gg_unhold_timer: frames stuck before it lets go
-local REACH = 250           -- gg_throw_distance
-local COOLDOWN = 15         -- gg_canfire_timer: frames after a throw or drop
-local WALL_PUSH = 5.0       -- gg_wall_push_miltiplier
--- PX's MaskIndex as the API's body circles.
+local STOP_RADIUS = 40 -- gg_stop_radius: where it holds things
+local PUSH = 8.5 -- gg_push_powa: a throw's speed
+local SUCK = 5.0 -- gg_suck_speed
+local UNHOLD = 75 -- gg_unhold_timer: frames stuck before it lets go
+local REACH = 250 -- gg_throw_distance
+local COOLDOWN = 15 -- gg_canfire_timer: frames after a throw or drop
+local WALL_PUSH = 5.0 -- gg_wall_push_miltiplier
 local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, grave = 8 }
 local TARGETS = { "terrain", "worms", "mines", "crates", "oil", "graves" }
--- What the aim meets and which worms, from the options (configure).
 local grabs = TARGETS
 local grab_worms = "all"
 
-local states = {}           -- worm id -> its gun
-local claws = 0             -- the held art shown: 0 closed, 1 open
-local effects = {}          -- simulation's requests for the draw: { kind, x, y, ... }
+local states = {} -- worm id -> its gun
+local claws = 0 -- the held art shown: 0 closed, 1 open
+local effects = {}
 
 local function sound(worm, name) wa.sound.play(worm, SND .. name .. ".wav") end
 
--- PX's RandomFloat, from WA's generator.
 local function between(lo, hi) return lo + wa.random(0, 65536) * (hi - lo) / 65536 end
 
--- GG_calculate_angle: FireAngle 0 down .. 1 up, mirrored for TurnSide.
 local function aim_dir(worm)
   local ang = (1 - worm.aim) * math.pi
   if worm.facing < 0 then ang = 2 * math.pi - ang end
   return wa.math.sin(ang), -wa.math.cos(ang)
 end
 
--- TraceLine from the worm along the aim; the first object or land the gun
--- may take.
 local function trace(worm, distance)
   local dx, dy = aim_dir(worm)
   local ignore = { worm }
@@ -60,7 +46,6 @@ end
 
 local function radius(obj) return RADIUS[obj.kind] or 6 end
 
--- The held thing is still there (CheckObjExist).
 local function exists(obj)
   if obj.kind == "worm" then
     for _, w in ipairs(wa.worms.all()) do if w.id == obj.id then return w.hp > 0 end end
@@ -87,23 +72,18 @@ local function state(worm)
   return s
 end
 
--- DisableGGun.
 local function disable(s)
   s.used, s.holder, s.hold, s.ghost, s.just_opened, s.held = false, false, false, false, false, nil
 end
 
--- GG_ResetFireCounter.
 local function reset_cooldown(s) if s.cooldown == COOLDOWN then s.cooldown = 0 end end
 
--- Only the draw empties this; without one (a headless replay) it stops at
--- a bound rather than growing.
 local EFFECTS_LIMIT = 256
 local function effect(kind, x, y, a, b, c)
   if #effects >= EFFECTS_LIMIT then return end
   effects[#effects + 1] = { kind = kind, x = x, y = y, a = a, b = b, c = c }
 end
 
--- SuckObject: pull what the aim meets, 750 pixels out.
 local function suck(worm, s)
   local hit = trace(worm, REACH * 3)
   if not hit or not hit.obj then return end
@@ -131,14 +111,12 @@ local function suck(worm, s)
     end
     s.holder = near
   end
-  -- Stuck where it was a frame ago: a random nudge.
   if obj.x == before_x and obj.y == before_y then
     obj.vy = obj.vy + between(-5, 0)
     obj.vx = obj.vx + between(-5, 5)
   end
 end
 
--- HoldObject: keep it in front of the worm along the aim.
 local function hold(worm, s, obj)
   if not exists(obj) then
     disable(s)
@@ -188,18 +166,12 @@ local function hold(worm, s, obj)
   end
 end
 
--- PX's int / int: C's division, truncating toward zero (as lib/oil_drums
--- reads PX's dent frame, (4 * Dmg) / 50).
 local function div(a, b)
   local q = a // b
   if q < 0 and q * b ~= a then q = q + 1 end
   return q
 end
 
--- ReadAliveWorms: the wall recoil's scale by how many worms there are,
--- exp((24 - n) / 24) + (k - (48 - n) / 48) * 4 in PX's integer divisions.
--- The exponent is 1, 0 or -1, so its power of e is a constant here (CRT exp
--- would not be the same on every machine).
 local E = { [1] = 2.718281828459045, [0] = 1.0, [-1] = 0.36787944117144233 }
 local function worms_multi()
   local n = #wa.worms.all()
@@ -208,7 +180,6 @@ local function worms_multi()
   return E[deg] + (k - div(48 - n, 48)) * 4
 end
 
--- ThrowObject: throw what the aim meets within 250 pixels; land recoils.
 local function throw(worm, s)
   local dx, dy = aim_dir(worm)
   local hit = trace(worm, REACH)
@@ -218,7 +189,6 @@ local function throw(worm, s)
   end
   local ox, oy = worm.x - hit.x, worm.y - hit.y
   local dist = math.sqrt(ox * ox + oy * oy)
-  -- PX's loop meets the landscape object on the way: its dry click plays too.
   sound(worm, "gg_dryfire")
   if hit.obj then
     worm:ammo(ID, -1)
@@ -233,7 +203,6 @@ local function throw(worm, s)
   end
 end
 
--- CheckPossibleSuck: something within 750 pixels on the aim lights it up.
 local function probe(worm, s)
   local hit = trace(worm, REACH * 3)
   if hit and hit.obj then
@@ -262,16 +231,12 @@ local function fire(ev)
 end
 
 weapon.definition = {
-  -- PX's record from the Specialists scheme (the Old Woman's slot): a
-  -- full-power launch that never leaves the gun, and doesn't end the turn.
   wep = "weps/gravity_gun.wep",
   name = "Gravity Gun",
   panel_icon = ART .. "gravity_gun_ico.png",
   worm_sprites = holds.PX_POSTURE,
-  -- gravity_gun_animations' CWormAnimParams.
   hold = {
     sheet = ART .. "gravity_gun_aiming.png", frames = 1,
-    -- gravity_gun_aiming2: the claws open (GGOpenHolder), hold sheet 1.
     sheets = { ART .. "gravity_gun_aiming2.png" },
     hand = holds.PX_HANDS[1], hand_type = 1, hand_scale = 0.8,
     hand_radius = -6, hand_rotation = 0.5, hand_radial_rotation = 0.9,
@@ -286,7 +251,6 @@ weapon.definition = {
   on_fire = fire,
 }
 
--- The turn's worm, once a frame (CWorm::Message, M_FRAME and M_SPACE).
 local function frame(worm)
   local s = state(worm)
   local keys = wa.world.keys()
@@ -298,7 +262,6 @@ local function frame(worm)
       s.cooldown = s.cooldown + 1
       return
     end
-    -- M_SPACE with Shift or Ctrl: throw.
     if space_now and (keys.shift or keys.ctrl) and not engaged(worm) then
       throw(worm, s)
       disable(s)
@@ -308,13 +271,10 @@ local function frame(worm)
     s.ungg, s.ghost = 2, false
     local dx, dy = aim_dir(worm)
     if keys.space and worm.aiming then effect("light", worm.x + dx * 25, worm.y + dy * 25, 0.35, 2, 240) end
-    -- GGOpenHolder: the pull's glow at the muzzle every 10 frames.
     if s.holder and worm.aiming and wa.world.frame() % 10 == 0 then
       effect("grav", worm.x + dx * 25, worm.y + dy * 25, 1)
     end
     if worm.aiming then probe(worm, s) end
-    -- The claws open while the aim has something to take (PX swaps
-    -- GG_WS's sprite each frame); the art is the weapon's, as PX's is.
     local open = s.holder and worm.aiming and 1 or 0
     if open ~= claws then
       claws = open
@@ -323,7 +283,6 @@ local function frame(worm)
     if s.hold then
       if s.held then
         hold(worm, s, s.held)
-        -- GGPlayHoldingSound: the loop every few frames.
         if s.loop == 4 then sound(worm, "gg_hold_loop") end
         s.loop = s.loop > -1 and s.loop - 1 or 4
         if not worm.aiming then s.ghost = true end
@@ -349,7 +308,6 @@ local function frame(worm)
       end
     end
   elseif s.used_gg then
-    -- Another weapon out: a hurt worm lets go; a held object stays held.
     if s.hp and worm.hp < s.hp then
       s.used_gg = false
       disable(s)
@@ -372,11 +330,8 @@ local function frame(worm)
   s.hp = worm.hp
 end
 
--- Drawing only: the glows, sparks and beam (PxParticle), and the gun left
--- floating while the worm holds something with another weapon out.
 local particles, previous = {}, nil
 
--- DoGGLightEffect.
 local function add_light(x, y, size, life, alpha)
   particles[#particles + 1] = { sheet = "lightning_glow.png", px = 128, x = x, y = y, vx = 0, vy = 0,
     g = 0, life = life, age = 0, size = size, end_size = 0.1, alpha = alpha, end_alpha = 0,
@@ -401,7 +356,6 @@ local function spawn_particles(e)
         end_color = spark and { 255, 80 - d, 0 } or { 200, 80 - d, 30 } }
     end
   elseif e.kind == "trail" then
-    -- DoGGTrailBeam: a light every 10 pixels, fading along the throw.
     local n = math.max(2, math.floor(math.abs(e.c / 10)))
     for i = 1, n do
       local px, py = e.x + e.a * i * 10, e.y + e.b * i * 10
@@ -444,7 +398,6 @@ local function render_gun()
       points = { { p.x - half, p.y - half }, { p.x + half, p.y - half },
         { p.x + half, p.y + half }, { p.x - half, p.y + half } } })
   end
-  -- DrawDimmedGG.
   for _, w in ipairs(wa.worms.all()) do
     local s = states[w.id]
     if s and s.ghost and s.ax then
@@ -472,7 +425,6 @@ function weapon.setup()
   wa.on.worm_message(function(worm)
     if worm.turn then frame(worm) end
   end, { msgs = { wa.msg.FRAME_FINISH } })
-  -- M_TURNEND: the gun lets go.
   wa.on.turn_end(function()
     for _, s in pairs(states) do
       s.used_gg = false
@@ -480,7 +432,6 @@ function weapon.setup()
     end
   end)
   wa.on.draw(function() render_gun() end)
-  -- Not PX's (its gun shows nothing): the weapon tooltip, its state first.
   require("lib/weapon_hint").hint(ID, function(worm)
     local s = states[worm.id]
     local now = s and s.hold and s.held and "holding" or s and s.used and "armed" or "ready"

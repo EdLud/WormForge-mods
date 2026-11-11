@@ -1,16 +1,12 @@
--- Petrol Turret: PyroMan's (Project X's p_turrets library: customturret.txt,
--- weapon type 15). A turret (lib/pyro_turret.lua) that lobs WA's own Petrol
--- Bombs at moving enemies, six a turn, their blast 15.
+-- Petrol Turret: a turret that lobs Petrol Bombs at moving enemies, over the land in their way.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {}
 
 function weapon.definition()
   local fires = require("lib/shared").fires
   return require("lib/weapon").merge(weapon.record, {
-    -- PX's record is WA's Prod (its .wep: special, subtype 9), its fire
-    -- taken by the script: the worm holds the Prod, and its shot places the turret.
     copy_from = "stock.prod",
     name = "Petrol Turret",
     panel_icon = "sprites/pyro_turrets/petrol_icon.png",
@@ -28,7 +24,6 @@ function weapon.setup()
   local function shoot(t, a, s, shot)
     if not pyro.muzzle_clear(a, shot) then return false end
     local force = pyro.force(s)
-    -- WA's missile needs a worm to fire for: a living member of its colour.
     local owner = t.owner(a, s)
     if owner == a then return false end
     a:sound(LAUNCH_SOUND)

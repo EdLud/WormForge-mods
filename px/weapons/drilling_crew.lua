@@ -1,5 +1,5 @@
--- Native roaming drill, followed by one bouncing worker. Purely visual
--- worker particles are maintained only from the draw callback.
+-- Drilling Crew: a roaming drill followed by a bouncing worker.
+
 local holds = require("wf-lib/holds")
 local weapon = {}
 weapon.definition = {
@@ -134,7 +134,6 @@ weapon.definition = {
 
 function weapon.setup()
   local parent_sprite
-  -- Identification only. Particle emission, aging and randomness stay in draw.
   local seen = {}
   wa.on.missile_frame(function(m)
     if m.weapon ~= "px.drilling_crew" then seen[m.id]=nil; return end
@@ -145,7 +144,6 @@ function weapon.setup()
     seen[m.id]={worker=not parent,frame=wa.world.frame()}
     if m.phase~="pre" or not parent then return end
     wa.land.cut{x=m.x,y=m.y-7,shape="circle",radius=7}
-    -- PX's 20x20 pusher, queried against the API's 6-pixel worm body circle.
     for _,worm in ipairs(wa.worms.all()) do
       if not worm.turn and worm.hp>0 then
         local dx,dy=worm.x-m.x,worm.y-m.y

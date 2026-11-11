@@ -1,10 +1,5 @@
--- The utilities feature: match settings the lobby scheme doesn't have, and
--- some players' favourite packs as switches. Every setting is an option of
--- this one component, read once at install.
+-- Utilities: a collection of features that could fit a diverse set of schemes
 
--- The packs, by option: each module installs its hooks when loaded, so only
--- a switched-on one is loaded. A `choice` pack is a function of its choice,
--- "off" not loading it.
 local PACKS = {
   { "ex_turn_side", "features/ex_turn_side" },
   { "agility", "features/agility" },
@@ -18,8 +13,6 @@ local PACKS = {
 return function(ctx)
   local heal = ctx.option("heal_per_turn")
   if heal > 0 then
-    -- The turn's first worm only: a worm switch within the turn (Tab,
-    -- Select Worm) runs turn_start again, with no turn_end before it.
     local healed = false
     wa.on.turn_start(function(ev)
       if healed then return end
@@ -51,8 +44,6 @@ return function(ctx)
     on[#on + 1] = "damage_numbers"
   end
 
-  -- This machine's frame rate, drawn by the engine: a DLL up to 0.9.7
-  -- has no counter, and the rest of the feature runs without it.
   if ctx.option("fps_counter") and wa.hud.fps_counter then
     wa.hud.fps_counter()
     on[#on + 1] = "fps_counter"

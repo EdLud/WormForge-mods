@@ -1,12 +1,5 @@
--- Let each zero-HP victim die without waiting for the battlefield. Frame
--- polling also covers falls and direct HP writes. WA owns the death
--- animation, explosion and grave; repeat requests are inert.
---
--- "settled": WA's own death, once the worm's own movement stops (its death
--- permission). "in_flight": WA's death started at once, wherever the worm
--- is, and it flies on while it dies (worm:die, Project X's fast death); a
--- worm WA won't start one for (the Kamikaze's flight) still dies when
--- settled. `true` is "settled", as the switch this was.
+-- Let each zero-HP victim die without waiting for the battlefield.
+
 return function(mode)
   local in_flight = mode == "in_flight"
   wa.on.worm_message(function(worm)

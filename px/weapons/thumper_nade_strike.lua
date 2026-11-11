@@ -1,7 +1,7 @@
--- Thumper Nade Strike: record, art and behaviour.
+-- Thumper Nade Strike: a carpet bomb of Thumper Nades.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     retreat = 3000,

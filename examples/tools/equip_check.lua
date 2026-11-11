@@ -1,23 +1,11 @@
--- worm:equip under WA's rules, offline, in four turns of team 1's worm (the
--- other team's turns are skipped). Each check logs "equip check: ... PASS"
--- or "... FAIL" to wkLua.log and the HUD:
---   1. mid-use: after the Shotgun's first shot WA refuses another weapon,
---      so equip returns 0 and the Shotgun stays selected;
---   2. weapons off: after its second shot (the turn goes to retreat) an
---      equipped Bazooka must not fire;
---   3. a free shot fired: a weapon the team has none of is given one, and
---      firing it leaves 0;
---   4. a free shot unused: given again, the turn skipped, it is 0 at the
---      next turn.
+-- worm:equip check: four checks over team 1's first four turns, offline.
+
 return function()
   local ID_SHOTGUN, ID_BAZOOKA, ID_SKIP = "stock.shotgun", "stock.bazooka", "stock.skip_go"
-  -- The first of these the team has none of carries the free-shot checks.
   local CANDIDATES = { "stock.super_banana", "stock.holy_grenade", "stock.banana_bomb",
     "stock.mortar", "stock.cluster_bomb", "stock.homing_missile", "stock.grenade" }
   local status = "equip check: waiting for team 1"
   local results, step, frame, team1, gift, turn_worm = {}, 0, 0, nil, nil, nil
-  -- Whether the free shot was really given: the later checks mean nothing
-  -- without it (a weapon this match lacks reads 0 ammo too).
   local given = false
   local bazookas, retreating, seen = 0, false, {}
 
@@ -28,7 +16,6 @@ return function()
     status = line
   end
 
-  -- Outside the turn WA may refuse input altogether; that is a pass too.
   local function press(w, at, f)
     if f == at then pcall(w.input, w, { fire = "press" })
     elseif f == at + 15 then pcall(w.input, w, { fire = "release" }) end
@@ -62,7 +49,6 @@ return function()
   end)
 
   wa.on.worm_message(function(w)
-    -- The turn's worm, through its retreat too, where w.turn may be false.
     if not team1 or w.id ~= turn_worm then return end
     if not w.turn and not retreating and frame < 100 then return end
     frame = frame + 1
@@ -70,7 +56,6 @@ return function()
     if w.team ~= team1 then skip(w, f); return end
 
     if step == 1 then
-      -- 1. mid-use refusal.
       if f == 20 then
         local ammo = w:equip(ID_SHOTGUN)
         wa.log(("equip check: shotgun equipped, ammo %d"):format(ammo))
@@ -82,7 +67,6 @@ return function()
           ("equip returned %d, holding %s"):format(got, tostring(w.weapon)))
       end
       press(w, 110, f)
-      -- 2. weapons off: from the retreat (frame set to 1000 there).
       if f == 1010 then
         local ok, got = pcall(w.equip, w, ID_BAZOOKA)
         got = ok and got or -1
@@ -93,7 +77,6 @@ return function()
         report("no shot while WA has weapons off", bazookas == 0, ("bazooka missiles in the retreat: %d"):format(bazookas))
       end
     elseif step == 2 then
-      -- 3. a free shot, fired.
       if f == 20 then
         for _, id in ipairs(CANDIDATES) do
           if w:ammo(id) == 0 then gift = id; break end
@@ -111,8 +94,6 @@ return function()
         end
       end
     elseif step == 3 then
-      -- 4. a free shot, unused: the fired one must not have been taken
-      -- again (still 0), then a new gift is skipped.
       if f == 15 and gift then
         report("fired gift not taken again", given and w:ammo(gift) == 0, ("%s ammo: %d"):format(gift, w:ammo(gift)))
         local got = w:equip(gift)

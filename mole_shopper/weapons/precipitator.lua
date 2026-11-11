@@ -1,4 +1,5 @@
--- Minigun timing drives a separate cloud/stone launch record, as PX FireFinal did.
+-- Precipitator: fire 25 clouds that release falling explosive stones.
+
 local ART = "sprites/precipitator/"
 local payload = {
   copy_from = "stock.grenade", sprite = ART .. "body.png",
@@ -105,12 +106,10 @@ return {
     wa.weapons.replace{
       copy_from = "stock.minigun", name = "Precipitator", panel_icon = ART .. "icon.png",
       handling = {remember_selection = false},
-      -- Keep the Minigun subtype: it selects its native held/firing poses.
       gun = {bullets = 25, explosion = {bias = 0}},
       projectile = payload,
       on_fire = function(ev)
         local worm = ev.worm
-        -- PX deliberately uses a triangular horizontal component, not trig.
         local aim = worm.aim
         wa.weapons.launch{weapon = ctx.id, owner = worm, x = ev.x, y = ev.y,
           vx = worm.facing * (0.5 - math.abs(0.5 - aim)) * 20,

@@ -1,7 +1,4 @@
--- Hold-to-fire Megashark: the fixed Megashark on its own slot, firing the
--- inventory's ammo (20 at most) while Space is held.
--- The shot, homing, trail and blast are the same as `megashark.lua`; only the
--- burst length and the stop condition differ. See README.md for the source.
+-- Megashark (hold to fire): the Megashark firing while Space is held, up to 20 bullets.
 
 local seq = require("lib/fire_seq")
 local sb = require("lib/px_sprite_builder")
@@ -36,23 +33,20 @@ function M.install(ctx)
   local ART = "sprites/megashark/"
   local SND = "sounds/megashark/"
 
-  -- Register callbacks from install: `wa` does not exist at require time.
   trail.install()
   targetting.install()
   local target_group = targetting.group()
 
-  -- PX's numbers.
-  local MAX_BURST = 20    -- finite ammo and infinite ammo both stop here
-  local SHOT_DELAY = 4    -- WA's fire interval for this record
-  local SPEED = 15.5      -- missileSpeed
-  local TURN = 0.53       -- homingStrength
-  local ARM_DIST = 90     -- activation distance
-  local COOLDOWN = 2      -- homingCooldown
-  local SENSOR2 = 199900  -- sensorRadiusSqr
-  local PER_TARGET = 4    -- bulletsPerTarget
-  local LOW_AIM = 0.164   -- low-angle extra offset
+  local MAX_BURST = 20 -- finite ammo and infinite ammo both stop here
+  local SHOT_DELAY = 4 -- WA's fire interval for this record
+  local SPEED = 15.5 -- missileSpeed
+  local TURN = 0.53 -- homingStrength
+  local ARM_DIST = 90 -- activation distance
+  local COOLDOWN = 2 -- homingCooldown
+  local SENSOR2 = 199900 -- sensorRadiusSqr
+  local PER_TARGET = 4 -- bulletsPerTarget
+  local LOW_AIM = 0.164 -- low-angle extra offset
 
-  -- PX has no trail on this record; this is the request's long green streak.
   local TRAIL = { max = 26, every = 1, core_w = 5.0, glow_w = 10.0,
     r = 90, g = 255, b = 120 }
 
@@ -62,11 +56,9 @@ function M.install(ctx)
     end
   end
 
-  -- Worms whose hold-burst this weapon started.
   local holding = {}
   wa.on.worm_message(function(worm)
     if not holding[worm.id] then return end
-    -- Clear the flag when the base's own cancel check would also end it.
     if not worm.turn or worm.weapon ~= ID then
       holding[worm.id] = nil
       seq.cancel(worm)
@@ -78,8 +70,6 @@ function M.install(ctx)
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  -- PX's homing: arm after ARM_DIST, then steer toward the nearest visible
-  -- enemy every COOLDOWN frames. PX caps four bullets on one worm.
   wa.on.missile_frame(function(m)
     if m.weapon ~= ID then return end
     local entry = targetting.get(m.id)
@@ -96,10 +86,8 @@ function M.install(ctx)
       entry.on_target = target_group
       if owner and not trail.has(m.id) then trail.add(m.id, owner, TRAIL) end
     end
-    -- The shared targetting hook steers on the same post phase.
   end)
 
-  -- Hide WA's missile and draw the bullet from a follower actor.
   sb.flight(ctx, {
     weapon = ID,
     sheet = ART .. "bullet",
@@ -109,14 +97,11 @@ function M.install(ctx)
     mirror = false,
   })
 
-  -- PX's 90x90 gun cell, arms baked in. The engine draws the aiming frames;
-  -- `px_hold_art` covers the two firing frames it drops.
   local hold = {
     weapon = ID,
     sheet = ART .. "hold",
     size = 90,
     keep_while_firing = false,
-    -- Swing the gun down and shrink it over the worm's put-away.
     put_away = true,
     weap_rotation = 1.0,
     weap_radial_rotation = 1.0,
@@ -134,20 +119,15 @@ function M.install(ctx)
 
     on_fire = function(ev)
       local w = ev.worm
-      -- Inventory count before the burst; WA's infinite is -1.
       local ammo = w:ammo(ID)
       if ammo == 0 then return end
       local shots = ammo < 0 and MAX_BURST or math.min(ammo, MAX_BURST)
       if shots < 1 then return end
-      -- Keep WA's muzzle distance, but re-apply it with the current facing:
-      -- PX does that on every shot, and a script can turn the worm mid-burst.
       local ox = math.abs(ev.x - w.x)
       local oy = ev.y - w.y
-      -- Keep WA's launch speed when it is usable; the homing pulls to 15.5.
       local speed = math.sqrt(ev.vx * ev.vx + ev.vy * ev.vy)
       if speed < 1 then speed = SPEED end
 
-      -- Live aim, as PX's rebuilt Desc is: 0 straight down, 1 straight up.
       local function dir(ww)
         local ang = (1 - ww.aim) * math.pi
         if ww.facing < 0 then ang = 2 * math.pi - ang end
@@ -157,13 +137,11 @@ function M.install(ctx)
       local timer = seq.fire_seq_mis({
         weapon = ID,
         cancel_weapon = ID,
-        -- The muzzle is inside the worm's collision circle; start clear of it.
         standoff = 12,
         owner = w,
         count = shots,
         delay = SHOT_DELAY,
         x = function(i, ww)
-          -- PX's forward offset, plus the low-angle extra.
           local low = ww.aim < LOW_AIM and 2.0 or 0
           return ww.x + ww.facing * (ox + 1.3 + low)
         end,
@@ -182,8 +160,6 @@ function M.install(ctx)
         on_shot = function(i, ww)
           wa.sound.play(ww, SND .. "shot.wav")
         end,
-        -- Every end reaches here with the shots that actually left. Write the
-        -- absolute remainder, as Highlander does; adding would break infinite.
         on_done = function(ww, fired)
           holding[ww.id] = nil
           if ammo >= 0 then
@@ -194,7 +170,6 @@ function M.install(ctx)
       if timer then holding[w.id] = true end
     end,
 
-    -- The blast is the record's; here we release the target and the trail.
     on_explode = function(ev)
       local id = ev.missile
       if not id then return end

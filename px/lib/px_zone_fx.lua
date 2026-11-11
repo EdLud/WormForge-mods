@@ -1,8 +1,5 @@
--- Visuals from weapon_zones, p_animation and pxparticles in the supplied
--- 28.09.2026 PX build. These particles are Lua drawing data, with a private
--- random stream: they neither consume WA's RNG nor create collision bodies.
--- Sprite Packs/Misc exports use palette index 0 for transparency. mcrate0
--- actually contains 61 frames (utils_pyroman's NUM_FRAMES table says 64).
+-- The zones' visuals, from PX's art and particles.
+
 local zone = require("lib/px_zone")
 local M = { ROOT = "sprites/zone_fx/", FADE = 150 }
 M.HEAL, M.DAMAGE, M.AIM_DAMAGE, M.GLOW = M.ROOT .. "mcrate0.png",
@@ -20,8 +17,6 @@ local function colour(alpha, value)
   return (math.floor(alpha) << 24) | (v << 16) | (v << 8) | v
 end
 
--- CAnimation's speed is a normalized phase increment, speed / 1000 per
--- game frame, not frames per second. Its backwards flag plays out and back.
 function M.frame(timer, speed, frames)
   local phase = (timer * speed / 1000) % 2
   if phase > 1 then phase = 2 - phase end
@@ -54,9 +49,6 @@ end
 local function emit(sheet, x, y, aim, glow, owner)
   if y >= wa.world.water() or #particles >= LIMIT then return end
   if not driver then
-    -- Worm-message and missile callbacks do not inherit a spawn owner. Start
-    -- the updater before adding any particles: a rejected spawn must not leave
-    -- frozen quads that accumulate until LIMIT blocks later shots.
     if not owner then return end
     driver = wa.actors.spawn({ sprite = false, x = x, y = y, owner = owner,
       gravity = false, collide = false,
@@ -89,8 +81,6 @@ local function flight_owner()
   for _, worm in ipairs(worms) do
     if worm.turn then return worm end
   end
-  -- Missiles may still fly during retreat, after the active-turn flag clears.
-  -- This invisible updater only needs a live parent; it never deals damage.
   return worms[1]
 end
 
@@ -108,9 +98,6 @@ function M.install()
   end)
 end
 
--- utils_pyroman/trail_effects: animated stock sprite each frame, plus the
--- tazer's lightning glow (the same original sheet used by Portal Gun) every
--- other frame. No gameplay RNG is advanced by either effect.
 function M.flight(weapon, healing)
   local count = 0
   wa.on.missile_frame(function(m)
@@ -122,8 +109,6 @@ function M.flight(weapon, healing)
   end)
 end
 
--- health_zone_anim::OverrideDefaultWeapAnims, only while aiming/charging.
--- Drop the aim particles still in the air (a mode switch's old colour).
 function M.clear_aim()
   for i = #particles, 1, -1 do
     if particles[i].aim then table.remove(particles, i) end

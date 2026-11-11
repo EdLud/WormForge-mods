@@ -1,7 +1,7 @@
--- Ferret: record, art and behaviour.
+-- Ferret: a ferret that walks the land's outline and explodes on a worm, a drum or the water.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     remember_selection = true,
@@ -17,9 +17,6 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/salvation_army.wep",
     panel_icon = "sprites/ferret/icon.png",
-    -- PX's draw, then the aim sheet's level frame: the ferret is held still
-    -- (static), and the aim sheet at the worm's angle showed it looking at
-    -- the ground.
     worm_sprites = {
       weaponlnk = sdk.PX_LEVEL.weaponlnk, weaponlnku = sdk.PX_LEVEL.weaponlnku,
       weaponlnkd = sdk.PX_LEVEL.weaponlnkd,
@@ -29,8 +26,7 @@ function weapon.definition()
     sounds = { "sounds/ferret/walk.wav" },
     params = { gpu_prefix = "sprites/ferret/" },
     on_fire = function(fire) fires.ferret(fire) end,
-    hold = { -- Ferret (ferret_s's WormSprite): held still, not at the
-        -- aim's angle (dont_rotate_with_angle), and thrown.
+    hold = {
         thrown = true,
         sheet = "sprites/ferret/hold.png", hand_type = 2, hand_radius = -8.0,
         hand_rotation = 0.0, hand_radial_rotation = -0.13, hand_scale = 1.0,
@@ -42,62 +38,31 @@ function weapon.definition()
 end
 
 function weapon.setup()
-  -- Highlander: Ferret (PX weapon_ferrets: ferret_s.txt, rafa``2's CFerret).
   local shared = require("lib/shared")
   local fires = shared.fires
 
-  -- Thrown, a Ferret falls until the land is 3 pixels under it, then follows
-  -- the terrain's outline and never falls off it: PX's square contour tracing,
-  -- 3-pixel steps, up to 12 traced a frame and 2 walked. It explodes on a worm
-  -- (the turn's worm is spared for its first 60 frames), on an oil drum, at the
-  -- water, or when its trace finds no land 4 steps running. It flicks mines
-  -- and Bowling Balls up (PX's ball is a mine) and walks on. At most 10 walk:
-  -- a new one makes the oldest vanish. PX's IsMoving says no, so WA doesn't
-  -- wait for a Ferret, and Ferrets walk on through later turns.
-  local STEP = 3           -- frt_maxdist
-  local MAX_FAILS = 4         -- frt_maxfails
-  local MAX_OPS = 12          -- frt_maxoper
-  local GRACE = 60            -- frt_framesdam
-  local TURN_EVERY = 6        -- frt_pixrotat: steps between turns of the sprite
-  local MAX_ALIVE = 10        -- frt_maxfrtalw
-  -- Not PX's: a Ferret goes off by itself 15 seconds after it was placed,
-  -- if nothing set it off before (750 of WA's 50 frames a second).
+  local STEP = 3 -- frt_maxdist
+  local MAX_FAILS = 4 -- frt_maxfails
+  local MAX_OPS = 12 -- frt_maxoper
+  local GRACE = 60 -- frt_framesdam
+  local TURN_EVERY = 6 -- frt_pixrotat: steps between turns of the sprite
+  local MAX_ALIVE = 10 -- frt_maxfrtalw
   local FUSE = 15 * 50
-  -- It touches the land with WA's missile shape, the Skunk's (shape =
-  -- "missile", a:fits). PX draws its 64-pixel frame centred with the feet 16
-  -- below the centre: the body is drawn this far from the traced point, away
-  -- from the land, so the feet meet it.
   local LIFT = 13
-  -- What it runs into is found where PX looks (frt_checkinteract's
-  -- CheckCollisionEx at the traced point): with its own shape there, WA's
-  -- missile shape, a 7x5 block about its hotspot (3, 2). WA tests that
-  -- against a worm's 9x16 box about (4, 9) and a mine's 7x5 block: they
-  -- touch while the centres are less than these apart, across and up/down.
   local WORM_REACH_X, WORM_REACH_UP, WORM_REACH_DOWN = 8, 12, 9
   local MINE_REACH_X, MINE_REACH_Y = 7, 5
-  -- The block's half-width, for what is tested as a circle (oil drums,
-  -- Bowling Balls).
   local PROBE = 3
-  local SCALE = 0.95          -- frt_sprscale
-  local DEPTH = wa.depth.OBJECTS       -- in front of the terrain, as the Bowling Ball
+  local SCALE = 0.95 -- frt_sprscale
+  local DEPTH = wa.depth.OBJECTS -- in front of the terrain, as the Bowling Ball
   local WALK = "sprites/ferret/walk.png"
   local FRAMES = 10
   local SOUND = "sounds/ferret/walk.wav"
-  -- PX's record's explosion (ExplodeAt): power 50, push 100%, a Grenade's.
-  -- WA's CreateExplosion takes the push first (id) and the power second.
   local BOOM = { damage = 50, id = 100, below = false }
-  -- The record's bias, 100. WA's missile ExplodeAt (0x509AC0) centres the
-  -- blast bias x power / 200 pixels below the point it is given: 25 here,
-  -- in the land under its feet, so the blast throws a worm on it upwards.
   local BIAS = 100
   local DROP = BIAS * BOOM.damage // 200
-  -- A worm it runs into is thrown first (SpX = TurnSide, SpY = -5), a mine or a
-  -- ball flicked (SpX = TurnSide, SpY = -7).
   local WORM_UP, MINE_UP = -5, -7
 
   local UP, RIGHT, DOWN, LEFT = 1, 2, 4, 8
-  -- frt_moveto: from where it looks, a turn left or right is a step and a new
-  -- direction to look in.
   local MOVES = {
     [DOWN] = { [LEFT] = { 1, 0, RIGHT }, [RIGHT] = { -1, 0, LEFT } },
     [UP] = { [LEFT] = { -1, 0, LEFT }, [RIGHT] = { 1, 0, RIGHT } },
@@ -106,10 +71,6 @@ function weapon.setup()
   }
 
   local alive = {} -- the Ferrets walking, oldest first
-  -- WA places a Ferret at its worm, where its circle overlaps the ground:
-  -- traced from inside the land, it would turn on the spot for ever. It rises
-  -- until its circle is clear of the land, at most this far, and walks from
-  -- the surface.
   local MAX_RISE = 64
 
   local function land_at(f, x, y)
@@ -128,9 +89,6 @@ function weapon.setup()
     f.ax, f.ay, f.looking = f.ax + m[1] * STEP, f.ay + m[2] * STEP, m[3]
   end
 
-  -- frt_square_tracing: from the last outline point, turn towards the land
-  -- while there is land, away from it while there is none, adding each new
-  -- land point to the outline to walk.
   local function trace(f)
     f.ax, f.ay = f.px, f.py
     f.looking = f.looking_bk
@@ -159,12 +117,10 @@ function weapon.setup()
     end
   end
 
-  -- Its body's centre, LIFT from the traced point along the land's normal.
   local function body(f, x, y)
     return x + (f.ux * LIFT), y + (f.uy * LIFT)
   end
 
-  -- What its shape at (x, y) touches: a living worm, a mine or an oil drum.
   local function touching(x, y)
     local near = { near = { x, y, WORM_REACH_UP + 1 } }
     for _, w in ipairs(wa.worms.all(near)) do
@@ -180,7 +136,6 @@ function weapon.setup()
     if obj then return obj, "oil" end
   end
 
-  -- frt_checkinteract, at a point of its way: what it touches there.
   local function interact(f, x, y)
     local obj, kind = touching(x, y)
     if kind == "worm" then
@@ -198,9 +153,6 @@ function weapon.setup()
     end
   end
 
-  -- frt_calc_rotation: every few steps, the Ferret turns to the way walked
-  -- since its last turn, its up the land's normal (from the steps, one square
-  -- root: the same on every machine; the angle is only drawn).
   local function turn(f, x, y)
     f.steps = f.steps + 1
     if f.steps % TURN_EVERY ~= 0 then return end
@@ -213,9 +165,6 @@ function weapon.setup()
     f.rx, f.ry = x, y
   end
 
-  -- frt_perform_trace: one step along the outline; at its end, trace on.
-  -- A worm met on the frame's first step doesn't stop the second (PX's
-  -- second call checks only frt_dead): it goes off from there next frame.
   local function walk(f)
     local p = f.outline[f.next]
     if not p then
@@ -232,8 +181,6 @@ function weapon.setup()
     return true
   end
 
-  -- Before it lands, it falls (or flies as thrown), a pixel at a time, and
-  -- stops where its shape would touch the land.
   local function fly(f)
     f.vy = f.vy + wa.world.gravity()
     local n = math.min(64, math.max(math.abs(f.vx), math.abs(f.vy)) // 1 + 1)
@@ -247,8 +194,6 @@ function weapon.setup()
     end
   end
 
-  -- frt_firstcollision: land 3 pixels under it plants it, and its outline
-  -- starts there.
   local function try_plant(f, a)
     local x, y = f.x, f.y + STEP
     if land_at(f, x, y) then
@@ -270,9 +215,6 @@ function weapon.setup()
       f.why or "?", f.x // 1, f.y // 1, f.age))
     f.dead = true
     forget(f)
-    -- PX's ExplodeAt(PosX, PosY): the traced point at its feet, in the land,
-    -- not the body drawn LIFT above it, and WA moves the blast DROP lower
-    -- still, by the record's bias.
     a.x, a.y = f.x, f.y + DROP
     a:explode(BOOM)
     if a.id ~= 0 then a:despawn() end
@@ -296,9 +238,6 @@ function weapon.setup()
       explode(f, a)
       return
     end
-    -- PX tests frt_explode before it traces and walks: what they set off
-    -- (a worm, an oil drum, a dead end) goes off next frame, the worm it
-    -- threw having had a frame of WA's to move.
     if f.tracing then trace(f) end
     if f.walking and walk(f) then walk(f) end
     f.grace = f.grace - 1
@@ -311,7 +250,6 @@ function weapon.setup()
 
   fires.ferret = function(fire)
     local worm = fire.worm
-    -- PX lets at most 10 walk: the oldest goes, without a bang.
     while #alive >= MAX_ALIVE do
       local oldest = table.remove(alive, 1)
       oldest.gone = true

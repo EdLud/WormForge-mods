@@ -1,19 +1,4 @@
--- Parkour, from Project X's script_parkour_no_slide (parkour.txt): the turn's
--- worm wall-jumps on Enter and bunny-hops on Backspace, both in the air.
---
--- Wall jump (Enter): jumping, sliding or tumbling with land within 20 pixels
--- to the right or left, the worm kicks off the nearer wall: up by 2 plus its
--- sideways speed, away by 3 plus that, facing away. Not again for 15 frames,
--- nor for 10 after a parachute.
--- Bunny hop (Backspace): jumping, sliding, tumbling, hit or blasted with land
--- within 30 pixels below, it hops: up by 3, and 2 more the way it faces. Not
--- for 25 frames after a jump is prepared.
---
--- Either leaves the worm in WA's jumping state, as PX's SetState(WS_JUMP):
--- WA's take-off (worm:jump) with PX's speed written over its own.
---
--- The waits are in the worm's own frames: under Bullet Time (worm.time_scale)
--- a world frame is 2 or 3 of them (own_time).
+-- Parkour, from PX: the turn's worm wall-jumps on Enter and bunny-hops on Backspace.
 
 local own_time = require("own_time")
 
@@ -27,9 +12,6 @@ local BHOP_STATES = { jumping = true, sliding = true, tumbling = true, hit = tru
 local parkour = {}
 
 function parkour.new()
-  -- Both bundles can enable Parkour in one match. Coordinate only this
-  -- movement feature through the match's shared wa table; library modules
-  -- otherwise retain their consumer-private state.
   wa._wf_parkour = wa._wf_parkour or {wall={},hop={},frames={},inputs={}}
   local common=wa._wf_parkour
   local wall_delay,bhop_delay=common.wall,common.hop
@@ -41,7 +23,6 @@ function parkour.new()
     worm.vx, worm.vy = vx, vy
   end
 
-  -- How far the land is, tracing from the worm towards (dx, dy); nil for none.
   local function land(worm, dx, dy)
     local hit = wa.land.trace(worm.x, worm.y, worm.x + dx, worm.y + dy)
     if hit and hit.hit then
@@ -53,7 +34,6 @@ function parkour.new()
     if not WALL_STATES[worm.state] then return end
     local right, left = land(worm, WALL_REACH, 0), land(worm, -WALL_REACH, 0)
     if not right and not left then return end
-    -- Away from the nearer wall; from the right one when both are as near.
     local side
     if right and left then
       side = right < left and -1 or 1
@@ -105,7 +85,6 @@ function parkour.new()
   end
 end
 
--- Whether an airborne input belongs to Parkour instead of a native jump.
 function parkour.air_input(worm, msg)
   return (msg == wa.msg.JUMP and WALL_STATES[worm.state])
     or (msg == wa.msg.JUMP_UP and BHOP_STATES[worm.state]) or false

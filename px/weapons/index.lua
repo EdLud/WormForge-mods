@@ -1,4 +1,5 @@
--- Weapon IDs and their owning modules. No weapon settings or match state.
+-- Weapon IDs and their owning modules.
+
 return {
   ["px.3_girder_pack"] = "weapons/3_girder_pack",
   ["px.auto_ballista"] = "weapons/auto_ballista",

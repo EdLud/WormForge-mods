@@ -1,28 +1,10 @@
--- Project X's oil drums (script_other_drums: oildrums.txt, icybarrel_logic.txt):
--- every oil drum WA puts on the map is one of PX's kinds, drawn as that
--- kind and bursting into it.
---
--- PX overrides COilDrum's constructor (a kind from RandomInt(0, 8), 8 the
--- teleport drum on cavern maps), Render and Explosion. Here a drum gets its
--- kind on the first simulation frame it is seen, in uid order, from
--- wa.random, so every peer and replay deals the same kinds. WA stops
--- drawing it (drum.visible) and the pack draws it; wa.on.oil_explode stands
--- in for WA's blast with the kind's.
---
--- Not ported: the bee drum (Keeper Bees are not ported) and PX's plane crash
--- drum. The nuke drum fires the Nuke Rocket's rockets: px.oil_drums
--- launches it, placed or not.
---
--- The Specialists Barrel Launcher (weapon_barrel_launchers: bl_script.txt)
--- fires the same drums one at a time (M.launch): its napalm and mine drums
--- burst with that script's numbers, its other three as these do.
+-- Project X's oil drums: every oil drum on the map is one of PX's kinds.
+
 local M = {}
 
 local SHEETS = "sprites/oil_drums/"
--- PX's z: lower nearer. The drum at 16, its extras in front of it.
 local function z(n) return math.floor(n * 0x10000) end
 
--- name -> { frame size in pixels, frames }
 local SIZES = {
   drum = { 90, 20 },
   fallout = { 60, 32 }, petrol2 = { 50, 20 }, petrol3 = { 40, 20 }, clustlet = { 60, 6 },
@@ -30,8 +12,6 @@ local SIZES = {
   nuke_rocket_bullet = { 40, 1 }, magnetsparks = { 26, 10 },
 }
 
--- Each kind: its drum's scale, and its extras: (sheet, dx, dy, z, scale,
--- opacity, frame(a, sparks), angle(a)), `a` PX's animcycle (frame * 0.02).
 local function phase(p) return p end
 local function back(p) return -p end
 local KINDS = {
@@ -58,15 +38,10 @@ local KINDS = {
   teleport = { scale = 1.0, extras = {
     { "wteltlk", 1, 0, 15, 0.6, 230, phase } } },
 }
--- Sheets a kind draws when it bursts: the icy drum's 400 specks (PX's
--- particle sprite 611), which show how far its freeze reaches.
 local BURST_SHEETS = { icy = { "smklt75" } }
 
--- PX's deal, 0..6 in its order, then its cavern-only teleport drum.
 local DEAL = { "explosive", "napalm", "nuke", "cluster", "icy", "electric", "mine" }
 
--- The Electric Grenade's arc, which the electric drum fires: loaded with the
--- drums whether or not the grenade is placed.
 M.ARC = {
   sprites = {
     "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
@@ -95,8 +70,6 @@ function M.sprites()
   return out
 end
 
--- Load the drums' sheets and the arc's art once, whichever of the add-on and
--- the Barrel Launcher asks first.
 local assets_loaded = false
 function M.load_assets()
   if assets_loaded then return end
@@ -106,9 +79,6 @@ function M.load_assets()
   wa.assets.load({ sprites = sprites, sounds = M.ARC.sounds })
 end
 
--- Set up once, by the px.oil_drums add-on (opts.deal: every map drum is
--- dealt a kind) and/or the Barrel Launcher (its drums only). A second call
--- only adds what it asks for.
 local installed, settings = false, { deal = false }
 
 function M.install(opts)
@@ -118,10 +88,10 @@ function M.install(opts)
   installed = true
   local shared = require("lib/shared")
   local current_worm = shared.current_worm
-  local kinds = {}     -- drum uid -> its kind
-  local launched = {}  -- drum uid -> true: a Barrel Launcher's
+  local kinds = {} -- drum uid -> its kind
+  local launched = {} -- drum uid -> true: a Barrel Launcher's
   local particles = {} -- the icy drums' bursts, drawn only
-  local seed = 1       -- their own generator: they never touch wa.random
+  local seed = 1 -- their own generator: they never touch wa.random
   local last_frame
 
   local function deal()
@@ -137,8 +107,6 @@ function M.install(opts)
     return all
   end
 
-  -- Each new drum its kind, WA's draw of it off. Without the add-on's deal a
-  -- map drum stays WA's own.
   local function take(drum)
     if kinds[drum.uid] then return kinds[drum.uid] end
     if not settings.deal then return nil end
@@ -160,7 +128,6 @@ function M.install(opts)
       if p.age >= p.life then
         table.remove(particles, i)
       else
-        -- SetMotionRandomness(0.4), SetAirResistance(0.02).
         p.vx = (p.vx + (rand() * 2 - 1) * 0.4) * 0.98
         p.vy = (p.vy + (rand() * 2 - 1) * 0.4) * 0.98
         p.x, p.y = p.x + p.vx, p.y + p.vy
@@ -176,23 +143,15 @@ function M.install(opts)
     tick_particles()
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  -- PX's RandomFloat(lo, hi), from WA's generator.
   local function between(lo, hi)
     return lo + wa.random(0, 65536) * (hi - lo) / 65536
   end
 
-  -- An owner for no team, as PX's blasts and shots of team 0: a Lua actor of
-  -- no worm (owner = "none"), gone on its first frame. What it fires,
-  -- launches and lays is no team's (a missile's constructor skips its team
-  -- for team 0).
   shared.no_team_owner = function(x, y)
     return wa.actors.spawn({ owner = "none", sprite = false, gravity = false, collide = false,
       x = x, y = y, on = function(a) a:despawn() end })
   end
 
-  -- A worm of the team whose shot set the drum off, as PX's blasts are its
-  -- OwnerTeam's; else the turn's worm; else, between turns (a drum set off
-  -- by fire, another drum or a mine after the shot), no team, as PX's.
   local function owner_for(team)
     if team and team > 0 then
       local found
@@ -204,7 +163,6 @@ function M.install(opts)
     return current_worm()
   end
 
-  -- PX's DoExplosion(x, y, kind, damage, 0, team).
   local function blast(owner, x, y, damage, kind)
     wa.actors.spawn({ sprite = false, x = x, y = y, owner = owner,
       explode = { damage = damage, id = kind or 100, now = true } })
@@ -232,7 +190,6 @@ function M.install(opts)
 
   BURST.nuke = function(ev, owner)
     blast(owner, ev.x, ev.y, 20, 80)
-    -- Two of the Nuke Rocket's first rockets; PX draws each's SpY first.
     local vy = between(-0.5, -2.5)
     local vx = between(-1.1, 1.1)
     shared.nuke_rocket_first(owner, ev.x, ev.y, vx, vy)
@@ -243,7 +200,6 @@ function M.install(opts)
 
   BURST.cluster = function(ev, owner)
     blast(owner, ev.x, ev.y, 10)
-    -- The Cluster Bomb's, bursting into its clustlets at once.
     wa.weapons.launch({ weapon = "stock.cluster_bomb", owner = owner, x = ev.x, y = ev.y,
       missile = { explosion = { power = 20, push_pct = 0, bias = 0 }, fuse = 0, countdown = 0,
         explode_on_space = false, burst = "clusters", wind_pct = 0 } })
@@ -260,12 +216,6 @@ function M.install(opts)
         age = 0, life = 70, size = s }
     end
     wa.sound.play(owner, 24)
-    -- icybarrel_logic.txt: every worm within 150 pixels, alive and not
-    -- sinking, dead or frozen already, frozen; a suited worm loses its suit.
-    -- The turn's worm in a Kamikaze flight (its own or the Kamikaze
-    -- Rocket's) is first taken out of it moving (PX's WS_JUMP: our
-    -- worm:release, at the rocket's speed), a hole of 25 dug round it so it
-    -- isn't frozen in its tunnel, and hit for 30 if it has more than 1 HP.
     local cur = current_worm()
     local worms = wa.worms.all()
     table.sort(worms, function(a, b) return a.id < b.id end)
@@ -289,14 +239,11 @@ function M.install(opts)
   end
 
   BURST.electric = function(ev, owner)
-    -- PX's tazer shot, the Electric Grenade's, searching 30 frames; the turn's
-    -- worm is not a target.
     require("lib/electrical").context().grenade_arc({ x = ev.x, y = ev.y, worm = current_worm(), owner = owner, life = 30 })
     blast(owner, ev.x, ev.y, 10)
   end
 
   BURST.mine = function(ev, owner)
-    -- Seven of WA's mines for no team (PX's SDesc.Team 0): laid by an actor.
     local layer = wa.actors.spawn({ sprite = false, gravity = false, collide = false,
       owner = owner, x = ev.x, y = ev.y, on = function(a) a:despawn() end })
     for _ = 1, 7 do
@@ -318,8 +265,6 @@ function M.install(opts)
     end
   end
 
-  -- bl_script.txt's NapalmDrum and MinesDrum: three fires and a blast of 30;
-  -- five of WA's mines (40 damage) and a blast of 10.
   local LAUNCHED = {}
 
   LAUNCHED.napalm = function(ev, owner)
@@ -339,9 +284,6 @@ function M.install(opts)
     blast(owner, ev.x, ev.y, 10)
   end
 
-  -- A drum of `kind` (napalm, mine, electric, icy, teleport) at x, y moving
-  -- vx, vy, as bl_script's drums are built (Snap false). Nil when WA builds
-  -- none.
   M.launch = function(kind, x, y, vx, vy)
     assert(KINDS[kind], "oil drums: no kind " .. tostring(kind))
     local drum = wa.oil.spawn({ x = x, y = y, snap = false })
@@ -395,7 +337,6 @@ function M.install(opts)
             quad(SHEETS .. kind .. "_" .. e[1] .. ".png", size[1], size[2], ex, ey,
               e[7](a, sparks), e[8] and e[8](a) or 0, e[5], e[6], z(e[4]))
           end
-          -- WA's dent, as WA's own draw: 0..3 by the damage taken.
           local dent = 0
           if drum.max_damage and drum.max_damage > 0 then
             dent = math.min(3, (drum.damage * 4) // drum.max_damage)

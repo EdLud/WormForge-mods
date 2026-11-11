@@ -1,3 +1,5 @@
+-- Cursor: Press + to cycle through Light, Magnet attract, Magnet repel, Revive, Freeze, Fire and Hurt.
+
 local cursor = require("lib/cursor")
 local tooltip = require("wf-lib/tooltip")
 local MODES = {
@@ -37,8 +39,6 @@ return {
           softening = mode == 2 and 10 or 5,
         }
       elseif mode == 6 then
-        -- Round 50 ms up to 3 simulation frames. Also require releasing
-        -- any click held while selecting the weapon or entering Fire mode.
         next_fire, ready_at, waiting_release = 0, wa.world.frame() + 3, true
       end
     end
@@ -97,7 +97,6 @@ return {
         end
       end,
     })
-    -- Each worm's own mode, while it holds the Cursor.
     tooltip.hint(ctx.id, function(worm)
       local m = MODES[remembered[worm.id] or 1]
       return "Cursor: " .. m.name .. "\n" .. m.hint .. "\n+ next mode"

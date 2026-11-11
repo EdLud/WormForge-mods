@@ -1,23 +1,14 @@
--- Shared target queries, the Tazer's arc and beam rendering for the
--- electrical weapons. Each weapon owns its own callbacks; this module owns
--- the arc, the tazed worms and their renderer.
+-- Shared target queries, the Tazer's arc and beam rendering for the electrical weapons.
+
 local electrical = {}
 local context, installed
 
--- PX's electrical special cases (tazer.txt's CTazerShot::IsValidTarget and
--- CTazerDamage::Zap, lightningstrike.txt's LightningHit): objects a pack owns
--- that the Tazer's arc (the Tazer, the Electric Grenade, electric drums)
--- chains through and acts on, and that Lightning Strike stops at and acts on.
--- A provider, by `kind`: `targets()`, a list of { id, x, y, radius } in an
--- order the same on every machine; `zap(obj, side)`, the arc's zap (`side`
--- -1 or 1, the way it pushes); `strike(obj, alliance)`, Lightning's.
 local providers, order = {}, {}
 function electrical.register(provider)
   if not providers[provider.kind] then order[#order + 1] = provider.kind end
   providers[provider.kind] = provider
 end
 
--- Every registered object, each with its `kind` and `provider`.
 function electrical.special_targets()
   local out = {}
   for _, kind in ipairs(order) do
@@ -30,7 +21,6 @@ function electrical.special_targets()
   return out
 end
 
--- The registered object an arc's `kind:id` key names, if it is still there.
 function electrical.special(key)
   local kind, id = key:match("^([^:]+):(.+)$")
   if not (kind and providers[kind]) then return nil end
@@ -42,8 +32,6 @@ function electrical.special(key)
   end
 end
 
--- The nearest registered object a ray from (x0, y0) along unit (dx, dy)
--- meets within `length`: where it meets its circle, and the object.
 function electrical.special_on_beam(x0, y0, dx, dy, length)
   local best, hit
   for _, obj in ipairs(electrical.special_targets()) do
@@ -96,9 +84,6 @@ function electrical.context()
     return 9
   end
 
-  -- A ray against terrain and the objects PX's collision mask names. Projection
-  -- and the chosen endpoint both use world pixels.
-  -- Equal-distance objects retain the engine's entity traversal order.
   local function electrical_trace(x0, y0, dx, dy)
     local far = 10000
     if wa.world.electrical_trace then
@@ -120,8 +105,6 @@ function electrical.context()
     end
     return hit
   end
-  -- The Tazer's arc, as the Tazer, the Electric Grenade and the electric drum
-  -- fire it: it searches for the nearest target, links to it and zaps it.
   local function target_key(obj)
     return obj.kind .. ":" .. obj.id
   end
@@ -151,11 +134,9 @@ function electrical.context()
       end
     end
     for _, obj in ipairs(targets) do consider(obj) end
-    -- PX's Tazer takes Bowling Balls too.
     if shared.bowling_ball_targets then
       for _, obj in ipairs(shared.bowling_ball_targets()) do consider(obj) end
     end
-    -- And PX's Electromagnets and turrets (lib/electrical's registry).
     for _, obj in ipairs(electrical.special_targets()) do consider(obj) end
     return best, distance
   end
@@ -165,12 +146,7 @@ function electrical.context()
     if not hold then return end
     hold.count = hold.count - 1
     if hold.count > 0 then return end
-    -- The worm the hold took, not a fresh lookup: an earlier zap may have
-    -- killed it, and the worm lists leave dead worms out. Left held, a dead
-    -- worm never comes to rest, so WA never runs its death and the turn,
-    -- frozen by the hold, never ends.
     local worm = hold.worm
-    -- Knocked flying meanwhile, the engine has already let it go.
     if worm.taken then worm:release(0, 0) end
     worm.body_visible = true
     tazed[key] = nil
@@ -194,9 +170,6 @@ function electrical.context()
     end
   end
 
-  -- The arc keeps every point it passed, from the grenade to where it ends,
-  -- links included: the whole chain stays drawn until the arc dies.
-  -- wa.draw.ribbon draws at most 256.
   local ARC_MAX_POINTS = 256
   local function add_point(arc)
     arc.points[#arc.points + 1] = { arc.x, arc.y }
@@ -225,8 +198,6 @@ function electrical.context()
     if target then
       local dx, dy = target.x - arc.x, target.y - arc.y
       local d = math.sqrt(distance)
-      -- PX's link (tazer.txt): sqrt(segment / distance) >= 0.9, so within
-      -- 10 / 0.81, about 12.35 pixels, not the 10 of a segment.
       if d <= LINK_DISTANCE then
         local key = target_key(target)
         arc.ignore[key] = true
@@ -239,7 +210,6 @@ function electrical.context()
               sheet = wa.random(1, 2) == 1 and "sprites/electric_grenade/tazed1.png" or "sprites/electric_grenade/tazed2.png" }
           end
           target.body_visible = false
-          -- Held where it stands, the turn stopped, until the zap.
           target:take{ turn = "freeze" }
         end
         arc.x, arc.y = target.x, target.y
@@ -261,7 +231,6 @@ function electrical.context()
     local land = wa.land.trace(arc.x, arc.y, nx, ny)
     if land then
       if land.starts_solid then arc.life = 0; return end
-      -- Follow the tangent that moves closer to the target, as PX's arc does.
       local tx, ty = land.tx or 1, land.ty or 0
       if target then
         local a = sq(target.x - (land.x + tx * 10)) + sq(target.y - (land.y + ty * 10))
@@ -278,15 +247,11 @@ function electrical.context()
   end
 
   local function start_arc(ev)
-    -- `ev.life`: frames the arc searches, PX's TazerLifeTime (the drum's 30).
     local arc = { x = ev.x, y = ev.y, dx = ev.dx or 0, dy = ev.dy or -1, life = ev.life or 16, pause = 0,
       points = { { ev.x, ev.y } }, ignore = {}, pending = {}, explosion = 0,
       burst_x = ev.x, burst_y = ev.y, sound_age = 0, burst = ev.burst ~= false }
     for _,obj in ipairs(ev.ignore or {}) do arc.ignore[target_key(obj)] = true end
     arcs[#arcs + 1] = arc
-    -- An explosion without a worm would leave the driver owned by the exploding
-    -- grenade: the turn's worm owns it then, as every other effect's. Between
-    -- turns there is none: `ev.owner`, the caller's (an oil drum's no-team owner).
     local driver = effect_actor(ev.x, ev.y, ev.worm or shared.current_worm() or ev.owner, function(a)
       arc.sound_age = arc.sound_age + 1
       if arc.life > 0 and arc.sound_age % 46 == 0 then
@@ -303,10 +268,6 @@ function electrical.context()
     wa.sound.play(driver, "sounds/lightning/tazer_loop.wav")
   end
 
-
-  -- The Electric Grenade's burst (and the electric drum's): an arc that
-  -- never zaps the worm that last threw the grenade (`context.thrower`, the
-  -- grenade's to set) or the burst's own worm.
   local function grenade_arc(ev)
     local ignore = {}
     if context.thrower then ignore[#ignore+1] = context.thrower end
@@ -337,13 +298,10 @@ function electrical.setup()
   local target_radius = c.target_radius
   local electrical_trace = c.electrical_trace
   local find_target = c.find_target
-  -- A tazed worm is the pack's (worm:take): the engine eats its moves and
-  -- jumps; it cannot start a shot either.
   wa.on.worm_message(function(worm, msg)
     if tazed[c.target_key(worm)] then return "eat" end
   end, { msgs = { wa.msg.FIRE_WEAPON } })
   if wa.on.draw and wa.draw.ribbon then
-    -- Resolve the pack namespace once for the many glow/beam submissions.
     local beam_sprite = wa.sprites.key(BEAM)
     local glow_sprite = wa.sprites.key(GLOW)
     local cloud_sprite = wa.sprites.key(CLOUD)
@@ -351,12 +309,7 @@ function electrical.setup()
     local function colour(a, r, g, b)
       return (math.floor(a) << 24) | (r << 16) | (g << 8) | b
     end
-    -- wa.draw.quad and wa.draw.ribbon copy their table before returning, so
-    -- one spec is refilled for every quad and every ribbon. A frame with
-    -- dozens of arcs draws about a thousand glows: new tables for each made
-    -- enough garbage to run Lua's GC inside the draw on most frames.
     local QUAD = { points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
-    -- An axis-aligned square of half size hw by hh around x, y.
     local function square(sprite, frame, blend, color, depth, x, y, hw, hh)
       QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sprite, frame, blend, color, depth
       local p = QUAD.points
@@ -370,10 +323,7 @@ function electrical.setup()
       local h = size / 2
       square(glow_sprite, 0, "add", color, ELECTRIC_DEPTH, x, y, h, h)
     end
-    -- One ribbon's points, refilled: point(i, ...) sets the i-th, ribbon(n)
-    -- draws the first n.
     local RIBBON = { sprite = beam_sprite, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
-    -- Keep shortened ribbons' point tables: the next arc may be longer again.
     local POINTS = {}
     local function point(i, x, y, width, u, color)
       local p = POINTS[i]
@@ -386,10 +336,6 @@ function electrical.setup()
       for i = #pts, n + 1, -1 do pts[i] = nil end
       wa.draw.ribbon(RIBBON)
     end
-    -- PX's lightningstrike RenderLightning. Its shape is fractal noise, made
-    -- afresh each game frame while the beam holds: each point is the middle of
-    -- its two neighbours plus a random nudge, halving the span each pass. A
-    -- look, so from wa.draw.random, never WA's generator.
     local LR, LG, LB = 120, 140, 255
     local function lerp(t, a, b) return a + (b - a) * t end
     local function noise_span(noise, off, divs, scale, first, last)
@@ -405,7 +351,6 @@ function electrical.setup()
         l = k >> 1
       end
     end
-    -- The main beam's 9 points, and 6 branches of 9 at random points on it.
     local function new_shape(s)
       s.noise, s.attach = s.noise or {}, s.attach or {}
       for i = 1, 8 do s.attach[i] = nil end
@@ -419,9 +364,6 @@ function electrical.setup()
       s.ground = 0.5 + wa.draw.random() * 0.3
       s.shape_tick = s.ticks
     end
-    -- PX's RenderBeam: one textured strip through the noise, `width` (a half
-    -- width, as PX's) tapering to `endwidth`, and a glow at every point fading
-    -- towards the end.
     local function beam(noise, off, divs, width, endwidth, scale, x1, y1, x2, y2, glowalpha)
       if divs < 2 then return end
       local dx, dy = (x2 - x1), (y2 - y1)
@@ -441,7 +383,6 @@ function electrical.setup()
       ribbon(divs)
     end
     local function draw_strike(s)
-      -- The cloud, dark and alpha-blended over the sky.
       for _, p in ipairs(s.cloud) do
         local t = p.age / p.life
         local size = lerp(t, p.s0, p.s1)
@@ -453,7 +394,6 @@ function electrical.setup()
       end
       if s.life <= 0 or s.delay >= 8 then return end
       if not s.noise or (s.delay == 0 and s.shape_tick ~= s.ticks) then new_shape(s) end
-      -- Before it lands the beam grows down from the cloud over 8 frames.
       local divs, ex, ey = 9, s.ex, s.ey
       if s.delay > 0 then
         local fr = (8 - s.delay) / 8
@@ -485,13 +425,7 @@ function electrical.setup()
           square(burst_sprite, arc.explosion, "add", 0x551E14EB, ELECTRIC_DEPTH, arc.burst_x, arc.burst_y, h, h)
         end
         if #arc.points >= 2 then
-          -- PX's CTazerShot: one strip through the arc's points, thickest in
-          -- the middle (9, a half width, as PX's), wobbling up to 10 px across
-          -- its path by fractal noise made afresh each game frame, a glow at
-          -- every point and a big one at the tip; all fading as the arc dies.
           if arc.shape_tick ~= arc.sound_age then
-            -- One noise value per point; PX's fractal noise needs a power of
-            -- two plus one values.
             local divs = 33
             while divs < #arc.points do divs = 2 * divs - 1 end
             arc.noise = arc.noise or {}
@@ -521,8 +455,6 @@ function electrical.setup()
           ribbon(num + 1)
         end
       end
-      -- PX's CTazerDamage glow on a linked Bowling Ball, Electromagnet or
-      -- turret until it is zapped.
       for _, arc in ipairs(arcs) do
         for _, p in ipairs(arc.pending) do
           if p.key:sub(1, 5) == "ball:" or electrical.special(p.key) then
@@ -537,7 +469,6 @@ function electrical.setup()
           local x, y = worm.x, worm.y
           local h = 30
           square(hold.sheet, math.floor(wa.draw.random() * 4), "alpha", 0xFFFFFFFF, ELECTRIC_DEPTH, x, y, h, h)
-          -- PX's tazed worm: a glow 0.4 to 0.7 of the sheet, flickering.
           glow(x, y, 128 * (0.4 + 0.3 * wa.draw.random()), colour(255, 80, 100, 255))
         end
       end

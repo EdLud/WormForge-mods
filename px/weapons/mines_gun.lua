@@ -1,4 +1,5 @@
--- Six native-timed shots, each launching a triggered mine along WA's shot vector.
+-- Mines Gun: launches six mines with delayed fuses.
+
 return {
   definition = {
     copy_from = "stock.uzi",

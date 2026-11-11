@@ -1,81 +1,20 @@
--- Stress test: four batches of projectiles in the first turn of the match, to
--- measure WA's own projectiles against WormForge's, and to record into a
--- replay that can be played back again and again for sync and performance.
---
--- Nothing happens for START_DELAY frames after the first turn starts (a
--- second), so the match can fade in from black first.
---
--- First, START_DELAY frames into the first turn: MAGNETS of Highlander's Electromagnet
--- (its claim on the Baseball Bat slot), spread evenly across the map's
--- width, each dropped just above the ground under its point, each at random
--- repelling or attracting. Their fields push and pull everything the
--- batches below throw for the rest of the test (four of their owner's
--- turns). Fired through `wa.weapons.fire`, as a worm firing it would;
--- without Highlander no pack claims the slot, which is logged, not fatal.
---
--- Batch 1, with the magnets: STOCK. Real WA missiles
--- (wa.weapons.launch) that WA flies, draws and explodes itself: mortar shells
--- that burst into clustlets on impact (drawn by WormForge as particles), and
--- cluster bombs on a 3 s fuse.
--- Batch 2, BATCH_GAP frames later in the same turn: CUSTOM. Lua actors with
--- this pack's truecolor orb, falling under the actor physics and exploding
--- with WA's explosion where they hit, drawn on the GPU in four styles:
---
---   alpha    spun and tinted, normal blending
---   add      additive, at 1.6x
---   pulse    its scale breathing
---   behind   behind the terrain, so the land hides it where they overlap
---
--- and, every rendered frame (wa.on.draw), a large additive halo with a colour
--- per corner and a white-hot core, a trail of eight fading glows behind each
--- orb (one every fourth frame, so it lingers), and an additive flash, growing to about 320 pixels across, for a
--- second where each one explodes.
---
--- Batch 3, BATCH_GAP frames after batch 2: BOWLING_STRIKES of Highlander's
--- Bowling Ball Strike (its claim on the Sheep Strike slot), spread evenly
--- across the map's width, alternately from the left and the right, each on
--- the ground under its point: three balls each, rolling on Highlander's
--- physics, hitting what they meet. Fired through `wa.weapons.click`, as a
--- click there would; without Highlander no pack claims the slot, which is
--- logged, not fatal.
---
--- Batch 4, BATCH_GAP frames after batch 3: ELECTRIC_GRENADES of Highlander's
--- Electric Grenade (its claim on the Earthquake slot), launched as real WA
--- missiles at random open-air points across the map, with short staggered
--- fuses. Highlander's own hooks treat them as its grenades: its art draws
--- them and its chaining arc runs where each one blows. The Stress profile
--- places the three Highlander weapons it uses (the magnets and batches 3 and
--- 4), wherever on the panel; without them leave MAGNETS, BOWLING_STRIKES and
--- ELECTRIC_GRENADES at 0. A launch WA refuses (its object pool full) is
--- counted and logged, not fatal.
---
--- Batches 1 and 2 start from the same positions and speeds, so the two halves
--- of the turn compare like for like. Everything that decides what happens runs
--- in simulation callbacks, from a private generator with a fixed seed: the
--- same on every machine, and again in every replay of the match. The drawing
--- only reads it.
---
--- With PROFILE on, the pack also turns on the FPS counter and the profiler
--- (see tools/perf.lua). wkLua.log gets a "stress:" line when each batch
--- goes, between the profiler's "perf:" lines.
---
--- Its two sheets go into the GPU atlas as assets (`wa.assets.load`,
--- `gpu_prefix`): an add-on claims no weapon.
+-- Stress test: four batches of projectiles in the first turn, to record and replay.
+
 return function()
-  local START_DELAY = 50  -- frames from the first turn's start to the magnets and batch 1: 1 s
-  local COUNT = 40        -- projectiles per batch
-  local BATCH_GAP = 400   -- frames from batch 1 to batch 2: 8 s at WA's 50 a second
-  local DAMAGE = 15       -- each explosion's damage
-  local BLAST = 40        -- each custom explosion's size (CreateExplosion's id)
+  local START_DELAY = 50
+  local COUNT = 40 -- projectiles per batch
+  local BATCH_GAP = 400
+  local DAMAGE = 15 -- each explosion's damage
+  local BLAST = 40
   local PROFILE = true
   local SEED = 12345
-  local MAGNETS = 6            -- first; needs Highlander's Electromagnet placed
+  local MAGNETS = 6 -- first; needs Highlander's Electromagnet placed
   local MAGNET = "px.electromagnet"
-  local BOWLING_STRIKES = 7    -- batch 3; needs its Bowling Ball Strike placed
+  local BOWLING_STRIKES = 7 -- batch 3; needs its Bowling Ball Strike placed
   local BOWLING = "px.bowling_ball_strike"
   local ELECTRIC_GRENADES = 50 -- batch 4; needs its Electric Grenade placed
   local ELECTRIC = "px.electric_grenade"
-  local ELECTRIC_FUSE = 3000   -- ms, plus up to ELECTRIC_SPREAD
+  local ELECTRIC_FUSE = 3000 -- ms, plus up to ELECTRIC_SPREAD
   local ELECTRIC_SPREAD = 1500
   local ORB, GLOW = "stress/sprites/orb", "stress/sprites/glow"
   local TINTS = { 0xFF4040, 0xFFA030, 0xF0F040, 0x50E060, 0x40C0FF, 0xA070FF }
@@ -85,9 +24,9 @@ return function()
     { name = "pulse", blend = "normal", pulse = true },
     { name = "behind", blend = "normal", depth = wa.depth.BEHIND_TERRAIN }, -- terrain is 0x180000
   }
-  local TRAIL = 8         -- glows behind each orb
-  local TRAIL_EVERY = 4   -- frames between them, so the trail lingers
-  local FLASH = 50        -- frames an explosion's flash lasts
+  local TRAIL = 8 -- glows behind each orb
+  local TRAIL_EVERY = 4 -- frames between them, so the trail lingers
+  local FLASH = 50 -- frames an explosion's flash lasts
 
   wa.assets.load({ sprites = { ORB, GLOW }, gpu_prefix = "stress/sprites/" })
 
@@ -96,19 +35,12 @@ return function()
     wa.hud.fps_counter()
   end
 
-  -- A linear congruential generator: the same numbers on every machine, and
-  -- without touching WA's RNG, so WA's own random draws are left as they were.
-  -- 0 to n - 1 from the seed's high bits: its low bits repeat in short cycles
-  -- (the lowest just alternates), so `seed % n` gave every magnet the same
-  -- polarity, two draws a magnet apart.
   local seed = SEED
   local function rand(n)
     seed = (seed * 1103515245 + 12345) % 0x80000000
     return seed * n // 0x80000000
   end
 
-  -- Where each projectile starts, and how fast: spread across the map, from
-  -- the first open air under its top (on a cavern, under the roof).
   local function plan()
     local size = wa.world.size()
     local shots = {}
@@ -128,8 +60,6 @@ return function()
     return shots
   end
 
-  -- Random open-air points across the whole map, above the water: a few tries
-  -- each, so a point inside land is drawn again.
   local function electric_points()
     local size = wa.world.size()
     local water = wa.world.water() // 1
@@ -166,8 +96,6 @@ return function()
       ELECTRIC_GRENADES, refused > 0 and (", " .. refused .. " refused: " .. reason) or ""))
   end
 
-  -- The ground under x: the first land from the top (on a cavern, the roof's
-  -- underside is not ground, so the first land below open air).
   local function ground(x)
     local size = wa.world.size()
     local y = 20
@@ -191,8 +119,6 @@ return function()
       reason and (", " .. reason) or ""))
   end
 
-  -- The Electromagnets: evenly across the map, 30 pixels above the ground
-  -- under each point, each repelling or attracting at random.
   local function magnet_batch(owner)
     local size = wa.world.size()
     local fired, attract, reason = 0, 0, nil
@@ -225,10 +151,8 @@ return function()
     end
   end
 
-  -- Simulation state the drawing reads: the frame count, the live orbs (with
-  -- their last positions) and the explosions still flashing.
   local now = 0
-  local orbs = {}    -- actor id -> { a, id, tint, style, trail = { {x, y}, ... } }
+  local orbs = {}
   local flashes = {} -- { x, y, tint, born }
 
   local function orb_brain(o)
@@ -270,13 +194,11 @@ return function()
         gravity = false, collide = false, owner = owner,
         on = orb_brain(o),
       })
-      -- Registered here, not on its first tick: the clock may run first.
       o.id = o.a.id
       orbs[o.id] = o
     end
   end
 
-  -- A worm to fire batch 2 for: the first turn's, or any worm still alive.
   local function live_owner(first)
     if first and first.hp > 0 then
       return first
@@ -296,9 +218,6 @@ return function()
     started = true
     local owner = ev.worm
     local shots = plan()
-    -- The clock: an invisible actor whose brain counts frames, fires every
-    -- batch and lets the flashes go. It runs every frame whatever the worms
-    -- do, and in lockstep.
     wa.actors.spawn({
       sprite = false, x = shots[1].x, y = shots[1].y,
       gravity = false, collide = false, owner = owner,
@@ -353,12 +272,10 @@ return function()
     })
   end)
 
-  -- Drawing: reads the state above, never writes it.
   local function argb(alpha, rgb)
     return (alpha << 24) | rgb
   end
 
-  -- The engine copies each submission, so all glows share one refilled spec.
   local QUAD = { sprite = GLOW, blend = "add", colors = {0, 0, 0, 0},
     points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
   local function glow(x, y, half, c1, c2, c3, c4)
@@ -374,8 +291,6 @@ return function()
   wa.on.draw(function()
     for _, o in pairs(orbs) do
       local x, y, t = o.a.x, o.a.y, o.tint
-      -- The halo: a colour per corner, the orb's own at the top left, and a
-      -- white-hot core over it.
       local c = TINTS[(o.a.id % #TINTS) + 1]
       glow(x, y, 48, argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t))
       glow(x, y, 16, argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF))

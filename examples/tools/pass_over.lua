@@ -1,7 +1,5 @@
--- Pass-over test: worm.selectable and worm:input, as Specialists' zombies
--- will use them. The chosen worms are renamed "Passed over", WA's turns and
--- Tab skip them, and (walk option) they walk toward the worm whose turn it
--- is while its turn clock runs, whatever its team.
+-- Pass-over test: worm.selectable and worm:input, as Specialists' zombies will use them.
+
 return function(ctx)
   local which = ctx.option("worms")
   local walk = ctx.option("walk")
@@ -27,8 +25,6 @@ return function(ctx)
   end)
   wa.on.turn_end(function() target, last_clock, running = nil, nil, false end)
 
-  -- One frame message per worm. The turn clock counts down only once the
-  -- turn runs (not in the hot-seat delay): the walkers wait for it.
   wa.on.worm_message(function(worm)
     mark(worm)
     if not target then return end

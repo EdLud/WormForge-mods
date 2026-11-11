@@ -1,6 +1,5 @@
--- Death Mark: marks the worm in front; the mark's damage multiplier is the
--- `dmg_percent` option (150% by default). PX's record does not end the turn,
--- so the shooter still has their move.
+-- Death Mark: marks the worm in front: it takes 50% more damage for three turns.
+
 local curse = require("lib/curse")
 
 local M = {}

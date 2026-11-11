@@ -1,23 +1,16 @@
--- PX's random_saws.txt: one hidden spawner creates one saw per frame until
--- `quantity` is reached, one per vertical slice of the map. This is the
--- substitute for PX's editor map object, which API 4 cannot register.
+-- Random saws: seeds the map with teamless saws, one per vertical slice, on the first turn.
+
 local saw = require("lib/saw")
 
 local function size() return wa.random(17, 65) / 100 end
 local function retry_size() return wa.random(162, 642) / 1000 end
 
--- PX's SDesc.Delay is the z-plane: 25 behind the map, 10.1 in front. The
--- random component splits them evenly.
 local function random_depth()
   return wa.random(1, 2) == 1
     and wa.depth.OBJECTS + 1 or wa.depth.BEHIND_TERRAIN + 2
 end
 
 local function clear_at(x, y, size)
-  -- PX CheckSpawnPoint: the search radius is 0.32*R, but the tested mask is
-  -- the full saw circle (R+3). The engine caps wa.world.trace at 64 px, so
-  -- saws above ~0.61 are under-fitted. The mask only covers worms/mines/oil;
-  -- the second diagonal trace covers terrain/oil.
   local radius = math.max(1, size * 100)
   local search = math.max(1, radius * 0.32)
   local fit = math.min(64, math.max(1, math.ceil(radius + 3)))
@@ -90,7 +83,6 @@ local function attempt(a, st)
     local sx, sy = clear_at(hit.x, hit.y - 5, st.size)
     if sx then
       local depth = random_depth()
-      -- PX's 1-in-7 is 14%; the profile option is a percentage.
       local electric = wa.random(1, 100) <= st.electric_chance
       local s = saw.spawn{
         x = sx, y = sy - 1, size = st.size, team = nil,

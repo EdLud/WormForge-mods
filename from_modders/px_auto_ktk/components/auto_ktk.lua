@@ -1,17 +1,5 @@
--- Auto Kill the King: places one king before the first turn, then runs
--- Project X's CKtkControl (scripts/ktk_control.txt).
---
--- Placement is this port's own. The map is cut into fifths; the king goes
--- around the middle of the defenders' edge fifth. It wants a cave: a floor and
--- 150 px of roof over it, measured with two traces (one down for the roof top,
--- one up from the map bottom for the ground's underside). With no cave, the
--- roof is dug; with no room for one, the mirrored edge is tried; a flat map
--- gets the king on the open surface.
---
--- The king itself is PX's terrain stamp (land.Draw of *king.png), so its solid
--- pixels are the win condition, counted every 5 frames as in the baseline.
+-- Auto Kill the King: places the king before the first turn, then plays Kill the King.
 
--- PX's king stamps, by size and by the side of the map they face out from.
 local SPRITES = {
   small = { left = "sprites/king/leftsmallking.png", right = "sprites/king/rightsmallking.png" },
   big = { left = "sprites/king/leftbigking.png", right = "sprites/king/rightbigking.png" },
@@ -20,28 +8,23 @@ local SPRITES = {
 local TEAM = { red = 1, blue = 2, green = 3, yellow = 4, purple = 5, cyan = 6 }
 
 local FIFTHS = 5
-local ROOF_MIN = 150        -- PX's cave roof
-local CARVE_EXTRA = 140     -- a dug cave sits this much deeper than the 150 px roof
-local WORM_RAISE = 20       -- worms are placed this far above their spot, not in the land
-local CAVE_SIDE = 40        -- dug cave: air either side of the king
-local CAVE_HEADROOM = 56    -- dug cave: air above the king, where defenders start
-local FLOOR_MIN = 24        -- land left under a dug cave
-local CORRIDOR_R = 9        -- floor corridor out of the cave: roomy enough to walk
-local TUNNEL_R = 7          -- zig-zag exit radius
-local TUNNEL_STEP = 3       -- one dig circle every 3 px
-local CHECK_INTERVAL = 5    -- PX checks the king every 5 frames
-local MS_PER_FRAME = 20     -- 50 fps lockstep
--- If the king hangs above (or sinks below) its floor, the log line after the
--- stamp says by how much; set the stamp offset here. A sprite anchored at its
--- centre needs DX = box.w / 2 and DY = box.h / 2.
+local ROOF_MIN = 150 -- PX's cave roof
+local CARVE_EXTRA = 140
+local WORM_RAISE = 20
+local CAVE_SIDE = 40 -- dug cave: air either side of the king
+local CAVE_HEADROOM = 56
+local FLOOR_MIN = 24 -- land left under a dug cave
+local CORRIDOR_R = 9
+local TUNNEL_R = 7 -- zig-zag exit radius
+local TUNNEL_STEP = 3 -- one dig circle every 3 px
+local CHECK_INTERVAL = 5 -- PX checks the king every 5 frames
+local MS_PER_FRAME = 20 -- 50 fps lockstep
 local STAMP_DX, STAMP_DY = 0, 0
-local LAYOUT_FRAME = 5      -- lay out the round once WA has placed its worms
+local LAYOUT_FRAME = 5 -- lay out the round once WA has placed its worms
 local KING_BOX = { small = { w = 20, h = 40 }, big = { w = 40, h = 80 } }
 local KING_NAME = "The King"
 
 return function(ctx)
-  -- ctx.option raises for a key mod.toml does not declare, so ask safely and
-  -- fall back; a new setting works before it is added to mod.toml.
   local function opt(key, fallback)
     if not (ctx and ctx.option) then return fallback end
     local ok, value = pcall(ctx.option, key)
@@ -53,7 +36,6 @@ return function(ctx)
   if not KING_BOX[king_size] then king_size = "small" end
   local box = KING_BOX[king_size]
   local sprites = SPRITES[king_size]
-  -- Only the chosen size's pair: WA's sprite slots are shared by every mod.
   wa.assets.load{
     sprites = { sprites.left, sprites.right },
     gpu_prefix = "sprites/king/",
@@ -67,7 +49,7 @@ return function(ctx)
     and "DefendAndCompensate" or "AttackOnly"
   local defenderGainMs = opt("defender_gain_ms", 5)
   local destroyPercent = opt("destruction_percent", 70)
-  local defenderInset = opt("defender_inset_px", 250) or 250  -- king and defenders, from the edge fifth
+  local defenderInset = opt("defender_inset_px", 250) or 250 -- king and defenders, from the edge fifth
   local showTimer = opt("show_timer", true)
   local showKingHp = opt("show_king_hp", true)
 
@@ -80,19 +62,12 @@ return function(ctx)
 
   local function px(v) return math.floor(v + 0.5) end
 
-  -- ---------------------------------------------------------------------------
-  -- Terrain measurements at one column.
-  -- ---------------------------------------------------------------------------
-
-  -- Trace 1, downward: the first solid pixel is the roof top.
   local function surface_at(x)
     local hit = wa.land.trace(x, 0, x, size.h - 1)
     if not hit then return nil end
     return px(hit.y)
   end
 
-  -- Trace 2, upward from the map bottom: the first solid is the ground's
-  -- underside, so `bottom - surface` is the whole column's thickness.
   local function ground_bottom(x, top)
     local hit = wa.land.trace(x, size.h - 1, x, top + 1)
     if not hit then return nil end
@@ -145,10 +120,6 @@ return function(ctx)
       and floorY + FLOOR_MIN <= size.h - 1 and dry(floorY)
   end
 
-  -- ---------------------------------------------------------------------------
-  -- Digging.
-  -- ---------------------------------------------------------------------------
-
   local function dig_line(x0, y0, x1, y1, rad)
     local dx, dy = x1 - x0, y1 - y0
     local steps = math.max(1, math.ceil(math.sqrt(dx * dx + dy * dy) / TUNNEL_STEP))
@@ -161,8 +132,6 @@ return function(ctx)
     end
   end
 
-  -- PX's map has a winding way in; this one zig-zags up from the hall's edge so
-  -- the 150 px of roof over the king itself stays whole.
   local function dig_exit(x0, fromY)
     local x, y = x0, fromY
     local offs = { -10, 8, -12, 10, -6, 12 }
@@ -193,18 +162,10 @@ return function(ctx)
       wa.land.cut{ x = cx, y = midY, shape = "circle", radius = radius }
       lastCx = cx
     end
-    -- The way out starts at the floor, on the edge of the last circle: a flat
-    -- corridor along the cave floor out through the end wall, then the zig-zag
-    -- climbs from its end. (From the roof it was out of reach.)
     local corridorY = floorY - CORRIDOR_R - 1
     local endX = lastCx + radius + 6
     dig_line(lastCx, corridorY, endX, corridorY, CORRIDOR_R)
     dig_exit(endX, corridorY)
-    -- Check the hall from the world itself, not from the roof above it. A map
-    -- with air pockets over the cut has a thin "roof" by measure() even though
-    -- the hall was dug exactly where planned, and rejecting it left the dug
-    -- hall empty while the king and the worms went somewhere else. The king
-    -- column needs a floor near the planned one, with open air above it.
     local fs = first_solid(r.x, caveTop + 8)
     if not fs or math.abs(fs - floorY) > 4 or fs - caveTop < box.h + 8 then
       wa.log(string.format("[AutoKTK] carve check failed at x=%d: floor %s, planned %d, cave top %d",
@@ -216,12 +177,6 @@ return function(ctx)
     return after
   end
 
-  -- ---------------------------------------------------------------------------
-  -- Choosing the spot.
-  -- ---------------------------------------------------------------------------
-
-  -- Centre of a side's edge fifth, moved `inset` px toward the middle of the
-  -- map (never past 40% of the width).
   local function slice_centre(side, inset)
     local fifth = math.floor(size.w / FIFTHS)
     local c = math.floor(fifth / 2) + (inset or 0)
@@ -272,24 +227,16 @@ return function(ctx)
     wa.land.stamp{ sprite = sprites[spot.side], frame = 0,
       x = kx + STAMP_DX, y = ky + STAMP_DY }
     spot.kingX, spot.kingY = kx, ky
-    -- Gap between the king's feet and the floor: first air below the king's
-    -- top is the king's bottom edge when something stands under it.
     local feet = first_air(kx + math.floor(box.w / 2), ky + 2)
     wa.log(string.format("[AutoKTK] king bottom edge at %s, floor at %s (gap %s)",
       tostring(feet), tostring(spot.floorY),
       feet and tostring(spot.floorY - feet) or "?"))
-    -- Diagnostics: the pixel under the king's feet should be solid, and the
-    -- stamp should have put solid pixels in the box.
     wa.log(string.format("[AutoKTK] stamp at (%d,%d) frame %d; ground under feet: %s; floorY %s",
       kx, ky, wa.world.frame() or -1,
       tostring(wa.land.solid(kx + math.floor(box.w / 2), ky + box.h)),
       tostring(spot.floorY)))
     return kx, ky
   end
-
-  -- ---------------------------------------------------------------------------
-  -- Worm spawn points: defenders above the king, attackers on the far edge.
-  -- ---------------------------------------------------------------------------
 
   local function team_worms(team)
     local list = {}
@@ -299,7 +246,6 @@ return function(ctx)
     return list
   end
 
-  -- Free air span around x on row y, so the defenders stay inside the cave.
   local function span_at(x, y)
     local x0, x1 = x, x
     while x0 > 0 and not wa.land.solid(x0 - 1, y) do x0 = x0 - 1 end
@@ -323,7 +269,6 @@ return function(ctx)
     local row = spot.kingY - 2 - WORM_RAISE
     local cx = spot.kingX + math.floor(box.w / 2)
     local x0, x1 = span_at(cx, row)
-    -- Only the cave (or a little around the king in the open), never the map.
     local near0, near1 = spot.kingX - 20, spot.kingX + box.w + 20
     if x0 < near0 then x0 = near0 end
     if x1 > near1 then x1 = near1 end
@@ -346,10 +291,6 @@ return function(ctx)
       list[i]:warp{ x = x, y = top - 2 - WORM_RAISE, facing = face }
     end
   end
-
-  -- ---------------------------------------------------------------------------
-  -- King health (the baseline's half-open box scan).
-  -- ---------------------------------------------------------------------------
 
   local function count_solid(x1, y1)
     local n = 0
@@ -390,10 +331,6 @@ return function(ctx)
     return false
   end
 
-  -- ---------------------------------------------------------------------------
-  -- Win, timer, HUD.
-  -- ---------------------------------------------------------------------------
-
   local function eliminate(losingTeam, winner, reason)
     if matchOver then return end
     matchOver = true
@@ -410,10 +347,6 @@ return function(ctx)
     local s = math.floor(ms / 1000)
     return string.format("%02d:%02d", math.floor(s / 60), s % 60)
   end
-
-  -- ---------------------------------------------------------------------------
-  -- Round start: pick the ground, stamp the king, move the worms.
-  -- ---------------------------------------------------------------------------
 
   local function layout()
     size = wa.world.size()
@@ -468,8 +401,6 @@ return function(ctx)
   end
 
   wa.on.worm_message(function(worm)
-    -- Not on the very first frames: WA is still placing its worms and the
-    -- map, so a layout done then can be undone by the engine afterwards.
     if not initialized and (wa.world.frame() or 0) >= LAYOUT_FRAME then
       initialized = true
       local ok, err = pcall(layout)

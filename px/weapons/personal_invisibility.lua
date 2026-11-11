@@ -1,13 +1,8 @@
--- Specialists' Personal Invisibility (PX utility_personal_invisibility and
--- wosc_lib PersonalInvisibility): WA's Invisibility for the worm that uses
--- it, not its team. WA hides and ghosts it, and keeps the camera off it, for
--- whoever WA wouldn't show an invisible team to (worm.invisibility), and a
--- weapon that ends a team's Invisibility (each weapon's ends_invisibility)
--- ends it, as PX's M_AFTERSHOOT does for the weapons its list doesn't keep.
+-- Personal Invisibility: invisibility for one worm, for three turns or until it attacks.
+
 local weapon = {}
 local ID = "px.personal_invisibility"
 local DING = "sounds/personal_invisibility/ding.wav"
--- PX's invisibilityturns: team turns it lasts.
 local TURNS = 4
 
 weapon.definition = {
@@ -21,8 +16,6 @@ weapon.definition = {
 weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
-  -- Per worm, as PX's invisibilitycount: set at the start, back to TURNS
-  -- only when it runs out, so a worm that turned it off early keeps the rest.
   local left = {}
   local last_turn
   require("lib/turn_controls").register(ID, {
@@ -35,7 +28,6 @@ function weapon.setup()
     end,
   })
   wa.on.worm_message(function()
-    -- Broadcast to every worm: count each team's turn once (SetCurrentTeam).
     local frame = wa.world.frame()
     if frame == last_turn then return end
     last_turn = frame

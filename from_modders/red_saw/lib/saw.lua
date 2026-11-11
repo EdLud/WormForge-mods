@@ -1,14 +1,10 @@
--- Project X's CSaw: stationary and invincible. One controller actor per saw,
--- hidden behind a mask disc; collision is a Lua circle. Numbers and line
--- references are in report_saw.md. No terrain cut on spawn.
+-- Project X's CSaw: stationary and invincible.
 
 local M = {}
 
 local SHEET = "sprites/saw/sawsheet.png"
 local BLADE = "sprites/saw/foldedblades.png"
 
--- Engine mask actors use the sprite's pixel size; a:gfx{scale} only changes
--- the picture. Pick the largest disc that still fits inside the Lua circle.
 local MASKS = {
   { r = 8,  path = "sprites/saw/mask_08.png" },
   { r = 16, path = "sprites/saw/mask_16.png" },
@@ -44,7 +40,6 @@ local SHOCK = "sounds/saw/electric-shock.wav"
 
 local TWO_PI = 2 * 3.141592653589793
 
--- PX uses the visible worm colour (GetTeamColor), not the team identity.
 local TEAM_COLOUR = {
   [0] = 0xFFFF6060, -- red
   [1] = 0xFF6080FF, -- blue
@@ -59,8 +54,6 @@ local current_turn_worm = nil
 local WORM_RADIUS = 7
 local OBJECT_RADIUS = { mine = 6, crate = 10, oil = 12 }
 local MISSILE_RADIUS = 4
--- Frames a missile may sit inside the Lua check circle before the fallback
--- shove. A real mask bounce leaves in one or two frames.
 local MISSILE_FRAMES = 4
 
 local installed = false
@@ -68,13 +61,9 @@ local fx, electric, taze_mine
 local saws = {}
 local turn_active = false
 
--- PX stores timesSliced/hitFrame on the worm and sawhitlimit/hitFrame on the
--- object, so every saw shares them. Keep the same maps module-wide.
 local worm_slices, worm_next, worm_taze = {}, {}, {}
 local obj_hits, obj_next = {}, {}
 
--- WA owns its death states (dying/drowning/dead); a dying worm stays static
--- and take/release refuse it. A zero-HP worm not yet in death is fair game.
 local DEATH_STATES = { dying = true, drowning = true, dead = true }
 local function can_affect(w)
   return w ~= nil and not DEATH_STATES[w.state]
@@ -84,21 +73,16 @@ local function frame()
   return wa.world.frame() or 0
 end
 
--- The turn's worm.
 local function current_worm()
   return current_turn_worm
 end
 
--- Any live worm can lend the mask actor its collision helper; the saw belongs
--- to the map, not to whoever fired it.
 local function fetchWorm()
   for _, w in ipairs(wa.worms.all()) do
     if w and w.kind == "worm" then return w end
   end
 end
 
--- The saw's owner. `ev.worm` need not be a worm (a Javelin, for example), so
--- use the turn's worm; a missile cannot outlive its turn anyway.
 local function shooter_of(ev)
   return current_worm()
 end
@@ -111,8 +95,6 @@ local function spark(x, y, r, g, b, owner)
   if not fx then return end
   local s = fx.spark{ x = x, y = y, cell = 20, frames = 1, size = 0.5,
     rate = 1, pause = 0, r = r, g = g, b = b, owner = owner }
-  -- fx.spark has no `life` in its key list; without one it never leaves the
-  -- draw list. This is a one-shot blood/spark, not a persistent emitter.
   if s then s.life = 1 end
 end
 
@@ -165,7 +147,6 @@ local function knockback(s, target, factor, is_worm)
   if dmg < 15 then dmg = 15 end
   if s.electric then dmg = dmg * 1.5 end
 
-  -- PX's visual kick, opposite the normal spin.
   s.angle = s.angle + s.rotation * 3.0
   s.stop_rotation = false
   return dmg, out_x, out_y
@@ -194,12 +175,8 @@ local function hit_worm(s, w, now)
       spark(w.x, w.y, 190, 20, 20, s.controller)
     end
   else
-    -- CSawCollission only calls ApplySawKnockback for the first 19 slices;
-    -- later slices keep the initial damage value of 15.
     dmg = 15
     if w.state == "frozen" or w.drilling then
-      -- The clank/particle branch in processSawCollission runs after the
-      -- first-19 sound gate, so it also runs on later slices.
       play(s, CLANK)
       spark(w.x, w.y, 255, 255, 255, s.controller)
     else
@@ -220,14 +197,11 @@ local function hit_worm(s, w, now)
       w:hurt(math.floor(dmg))
     end
   elseif s.electric then
-    -- After slice 19 there is no taze or knockback, but PX still damages a
-    -- frozen/drilling worm when the saw is supercharged.
     w:hurt(math.floor(dmg))
   elseif w.state ~= "frozen" and w.state ~= "drilling" then
     if out_x then w.vx, w.vy = out_x, out_y end
     w:hurt(math.floor(dmg))
   elseif out_x then
-    -- Frozen/drilling worms are pushed but not damaged by a normal saw.
     w.vx, w.vy = out_x, out_y
   end
 end
@@ -240,7 +214,6 @@ local function object_hit(s, obj, kind, damage, factor, cooldown, now)
     obj_hits[id] = count
     if count > 5 then return end
     if not turn_active then
-      -- PX pushes crates outside turns but does not break them.
       play(s, CLANK)
       local _, fx_, fy_ = knockback(s, obj, factor, false)
       obj.vx, obj.vy = fx_, fy_
@@ -249,8 +222,6 @@ local function object_hit(s, obj, kind, damage, factor, cooldown, now)
   elseif kind == "mine" then
     if count >= 20 or now < (obj_next[id] or 0) then return end
     obj_hits[id] = count + 1
-    -- PX calls TazeMine before the mine's own hit message. Mark it first:
-    -- obj:hit can free the mine, and then its id/uid can no longer be read.
     if s.electric and taze_mine then
       taze_mine.taze(obj, { owner = s.controller })
     end
@@ -262,8 +233,6 @@ local function object_hit(s, obj, kind, damage, factor, cooldown, now)
   obj_next[id] = now + (cooldown or 1)
   local ox, oy = obj.x, obj.y
   local _, fx_, fy_ = knockback(s, obj, factor, false)
-  -- Set the push before hit: WorldHandle has no liveness test, and `hit` may
-  -- free a mine/oil drum, so reading `obj.kind` afterwards is unsafe.
   obj.vx, obj.vy = fx_, fy_
   obj:hit(damage, 0, 0, kind == "crate" and "bullet" or nil)
   if kind == "crate" or kind == "mine" then play(s, CLANK) end
@@ -278,19 +247,12 @@ local function missile_push(s, m, now)
   s.hits_this_turn = s.hits_this_turn + 1
   obj_next[id] = now + 5
   local _, fx_, fy_ = knockback(s, m, 0.88, false)
-  -- The engine mask handles a normal bounce. This is the fallback for a
-  -- missile that stayed inside the check circle for MISSILE_FRAMES frames.
   m.vx = (m.vx or 0) + fx_
   m.vy = (m.vy or 0) + fy_
   play(s, CLANK)
   spark(m.x, m.y, 255, 255, 255, s.controller)
 end
 
--- What may be in reach: `list.all{ near = { x, y, r } }` (WormForge after
--- 0.9.61) lists only what is within r, in the list's own order, so each saw
--- no longer makes five whole lists of handles a frame. r is a pixel wider
--- than the reach and the distance is still tested below, so the same objects
--- are hit as from the whole list. An older DLL lists everything.
 local near_works
 local function near(list, s, reach)
   if near_works == nil then near_works = pcall(list.all, { near = { 0, 0, 0 } }) end
@@ -299,8 +261,6 @@ local function near(list, s, reach)
 end
 
 local function process(s, now)
-  -- PX clears stopRotation before processSawCollission (:186-189), so the
-  -- anti-loop return below cannot leave an ally-contact stop latched.
   s.stop_rotation = false
   if s.hits_this_turn > 88 then return end
 
@@ -346,9 +306,6 @@ local function process(s, now)
 end
 
 local function tick(a, s)
-  -- PX resets PosX/PosY and SpX/SpY every frame (:171-175). A blast still
-  -- lands on the visible mask actor, and WA frees a visible actor that leaves
-  -- the map, so pin the controller before anything else runs.
   a.x, a.y = s.x, s.y
   a.vx, a.vy = 0, 0
 
@@ -372,9 +329,6 @@ local function spawn_controller(s)
     owner = fetchWorm() or current_worm(),
     sprite = mask_for(s.radius), x = s.x, y = s.y,
     kind = "saw", mask = true,
-    -- The mask must stay exactly where the saw is drawn. Mask land/actor
-    -- resolution would shove the disc, and the object layer is where WA keeps
-    -- a persistent map object (PX's saw is in the oil-drum layer).
     mask_land = false, mask_actors = false, as_object = true,
     gravity = false, collide = false, drown = false, persist = true,
     on = function(actor) tick(actor, s) end,
@@ -385,7 +339,6 @@ local function spawn_controller(s)
 end
 
 local QUAD = { blend = "alpha", points = { {}, {}, {}, {} } }
--- Made once: a table of five tables per layer per rendered frame was garbage.
 local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
 local function draw_layer(s, sheet, frame, depth, colour, angle)
   local half = 110 * s.size
@@ -404,8 +357,6 @@ end
 local function draw()
   for _, s in ipairs(saws) do
     local tc = s.times_collided
-    -- Source Draw: `if (tc <= 14) SawIn; else if (tc >= 14) SawInBlood`
-    -- means the inner blood frame starts at 15, not 14.
     local inner = s.electric and 8 or (tc > 14 and 4 or 3)
     local outer
     if s.electric then
@@ -443,22 +394,16 @@ function M.install()
     sounds = { CUT[1], CUT[2], CUT[3], CUT[4], CLANK, SHOCK },
     gpu_prefix = "sprites/saw/",
   }
-  -- Cache the turn's worm instead of scanning every frame.
   wa.on.worm_message(function(worm)
     if worm.turn then current_turn_worm = worm end
   end, { msgs = { wa.msg.FRAME_FINISH}})
   wa.on.turn_start(function()
     turn_active = true
-    -- PX resets timesSliced/sawhitlimit at preturn. Its hitFrame is per-worm
-    -- and technically survives a turn boundary, but this port clears the Lua
-    -- gates too so a stale frame from the previous round cannot block hits.
     worm_slices, worm_next, worm_taze = {}, {}, {}
     obj_hits, obj_next = {}, {}
     for i = 1, #saws do
       local s = saws[i]
       reset_turn(s)
-      -- Even a pinned actor can be gone (WA's own cleanup); without a
-      -- controller the saw never ticks again, so rebuild it for this turn.
       if not s.controller or s.controller.id == 0 then
         s.controller = spawn_controller(s)
       end
@@ -481,8 +426,6 @@ function M.spawn(o)
     depth = o.depth or (wa.depth.OBJECTS + 1),
     tazed = false
   }
-  -- `visible=false` would also drop the sprite id the mask is built from, so
-  -- keep the mask sprite and draw it as additive black to hide it.
   s.controller = spawn_controller(s)
   if not s.controller then return nil end
   saws[#saws + 1] = s

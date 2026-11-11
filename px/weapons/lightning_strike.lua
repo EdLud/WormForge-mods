@@ -1,7 +1,7 @@
--- Lightning Strike: record, art and behaviour.
+-- Lightning Strike: a beam from the sky that heals worms, revives graves and arms mines.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     ends_turn = true,
@@ -13,21 +13,14 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/napalm_strike.wep",
     panel_icon = "sprites/lightning/icon.png",
-    -- With the Electric Grenade's arc and zap sheets: both weapons' effects
-        -- are GPU sheets under this prefix.
         sprites = {
           "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
           "sprites/electric_grenade/explosion.png", "sprites/electric_grenade/tazed1.png",
           "sprites/electric_grenade/tazed2.png",
         },
-    -- Gravity Control's error too, for a refused revive: declared here, or
-    -- a profile without Gravity Control would not load it.
     sounds = { "sounds/lightning/thunder.wav", "sounds/lightning/hit.wav", "sounds/gravity_control/error.wav" },
     params = { gpu_prefix = "sprites/" },
-    -- Click-only dispatch keeps the strike's cursor and turn handling.
         on_select = { cursor = true },
-    -- The engine ends WA's prefire after a click-only fire. (A closure:
-        -- lightning_click is defined further down.)
         on_click = function(ev) shared.lightning_click(ev) end,
   })
 end
@@ -55,13 +48,8 @@ function weapon.setup()
   local electrical_trace = c.electrical_trace
   local revived_by_lightning = shared.revived_by_lightning
 
-  -- Half the width of the line along the beam that strikes what it touches:
-  -- the drawn beam wavers about it, so anything whose body is within 4 pixels
-  -- of the straight line from the beam's top to where it ends is struck too.
   local STRIKE_HALF_WIDTH = 4
 
-  -- Whether `obj` is struck: on the beam's line, from its top to its end, or
-  -- (when the beam hit something) about where it ended.
   local function struck(s, obj, length)
     local ox, oy = obj.x - s.sx, obj.y - s.sy
     local along = ox * s.dirx + oy * s.diry
@@ -78,8 +66,6 @@ function weapon.setup()
   local function strike_hit(s)
     if shared.zap_bowling_balls then shared.zap_bowling_balls(s.ex, s.ey) end
     local length = math.sqrt(sq(s.ex - s.sx) + sq(s.ey - s.sy))
-    -- Everything the line and the end can reach, in WA's entity order: within
-    -- half the line, its width and the largest body (9) of the middle.
     local targets = wa.world.electrical_nearby
       and wa.world.electrical_nearby((s.sx + s.ex) / 2, (s.sy + s.ey) / 2,
         math.ceil(length / 2) + STRIKE_HALF_WIDTH + 9 + 6, true)
@@ -87,8 +73,6 @@ function weapon.setup()
     for _, obj in ipairs(targets) do
       if struck(s, obj, length) then
         if obj.kind == "worm" then
-          -- A rule may take the strike instead (Specialists: a zombie is a
-          -- Soldier again, no health added).
           if not revived_by_lightning[obj.id]
             and not (shared.lightning_restores_worm and shared.lightning_restores_worm(obj)) then
             obj:heal(25)
@@ -103,9 +87,6 @@ function weapon.setup()
                 shared.restore_lightning_inventory(worm)
               end
             else
-              -- Refused: a living worm holds its place (a Reinforcement takes a
-              -- dead worm's), as when the team has eight. Reinforcement's error
-              -- sound, from the grave: the strike's thrower may be gone by now.
               wa.sound.play(obj, "sounds/gravity_control/error.wav")
             end
           end
@@ -116,21 +97,11 @@ function weapon.setup()
         end
       end
     end
-    -- PX's Electromagnets and turrets (lib/electrical's registry): magnets
-    -- recharged, turrets the striker's.
     for _, obj in ipairs(electrical.special_targets()) do
       if struck(s, obj, length) then obj.provider.strike(obj, s.alliance) end
     end
   end
 
-  -- PX's cloud: every second frame of the strike's life a puff of WA's large
-  -- cloud, tinted a dark bluish grey, is thrown out from the top of the beam
-  -- and slowed by the air; a core puff (100 frames, 1.2x to 0.6x) until the
-  -- strike is spent, a surrounding one (140 frames, 1x to nothing) until the
-  -- strike is gone. Each fades in from nothing. Also PX's sparks: while the
-  -- beam holds, a glow thrown from where it hit, falling. Both are advanced
-  -- here, once per game frame, from the strike's own generator, and only drawn
-  -- below; nothing else reads them.
   local function strike_rand(s)
     s.seed = (s.seed * 1103515245 + 12345) % 0x80000000
     return s.seed / 0x80000000
@@ -179,8 +150,6 @@ function weapon.setup()
   end
 
   shared.lightning_click = function(ev)
-    -- PX's direction: from the left unless the shot's x speed, which WA's
-    -- arrow keys set, is negative (lightningstrike.txt: SpX < 0 -> -DirX).
     local dirx = 0.5 * ((ev.vx or 0) < 0 and -1 or 1)
     local diry = math.sqrt(3) / 2
     local sy = -270
@@ -188,15 +157,12 @@ function weapon.setup()
     local hit = electrical_trace(sx, sy, dirx, diry)
     local ex, ey = hit and hit.x or sx + (300 * dirx),
       hit and hit.y or sy + (300 * diry)
-    -- A bowling ball on the way stops the beam, as PX's does.
     local bx, by = nil, nil
     if shared.bowling_ball_on_beam then
       local reach = math.sqrt(sq(ex - sx) + sq(ey - sy))
       bx, by = shared.bowling_ball_on_beam(sx, sy, dirx, diry, reach)
     end
     if bx then ex, ey, hit = bx, by, { x = bx, y = by } end
-    -- PX's beam stops at its own objects too (CMASK_OTHERWEAPON): the
-    -- Electromagnets and turrets of lib/electrical's registry.
     local reach = hit and math.sqrt(sq(ex - sx) + sq(ey - sy)) or 10000
     local tx, ty = electrical.special_on_beam(sx, sy, dirx, diry, reach)
     if tx then ex, ey, hit = tx, ty, { x = tx, y = ty } end
@@ -231,8 +197,6 @@ function weapon.setup()
   end
 end
 
--- The "revive_health" option: the health a worm brought back from its grave
--- gets. Project X's Lightning gives 25; the Highlander port gave 10.
 weapon.revive_health = 10
 function weapon.configure(ctx)
   weapon.revive_health = ctx.option("revive_health")

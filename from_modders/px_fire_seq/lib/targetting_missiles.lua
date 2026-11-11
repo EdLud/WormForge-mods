@@ -1,11 +1,4 @@
 -- Homing targets for missiles and other x/y/vx/vy objects.
--- Age, target and cooldown live per missile. Steering writes the *current
--- `wa.on.missile_frame` table*: the engine reads velocity back from that table
--- and writes the result over the object, so a write through a missile handle
--- would be discarded.
---
--- Worm lists are snapshotted once per world frame; distance is checked before
--- the terrain trace.
 
 local M = {}
 
@@ -13,10 +6,8 @@ local entries = {}
 local order = {}
 local on_target = {}
 local installed = false
--- Frames an entry may go unseen before its missile is taken as gone.
 local STALE = 3
 
--- One worm snapshot per frame, shared by every missile's post pass.
 local worm_frame, candidates, by_id
 
 local function object_id(object)
@@ -101,7 +92,6 @@ local function steer(entry, m, tx, ty)
   m.vy = m.vy + (dy * entry.speed - m.vy) * entry.strength
 end
 
--- `m` is this frame's event table: its vx/vy are what the engine keeps.
 local function update(entry, m, list, by_id)
   if entry.duration and entry.age >= entry.duration then return false end
   entry.age = entry.age + 1
@@ -143,10 +133,6 @@ local function update(entry, m, list, by_id)
   return true
 end
 
--- Drop entries whose missile stopped firing frames without an on_explode
--- (despawn, pool reuse). `wa.missiles.all()` handles carry the native pointer
--- in `.id`, not the sequence id `missile_frame` uses, so identity comes from
--- the frames each entry has seen instead.
 local function purge(frame)
   for i = #order, 1, -1 do
     local entry = entries[order[i]]
@@ -154,7 +140,6 @@ local function purge(frame)
   end
 end
 
--- Update and steer the missile whose frame this is.
 function M.tick(m)
   if type(m) ~= "table" then return end
   local entry = entries[m.id]

@@ -1,5 +1,5 @@
--- Source coalition colours. The light and body have independent lifetimes:
--- neither a turn change nor the planter's death extinguishes a placed light.
+-- Source coalition colours.
+
 local colours = {0xE62828, 0x0087E6, 0x63E63C, 0xE6E653, 0xAD45E6, 0x3EE6E6}
 local M = {}
 

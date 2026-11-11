@@ -1,7 +1,7 @@
--- Hellish Hand-Grenade: record, art and behaviour.
+-- Hellish Hand-Grenade: a holy hand grenade that bursts into spreading fire.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   missile = {
     bounce = {

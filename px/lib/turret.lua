@@ -1,24 +1,11 @@
--- Highlander: Project X's sentry turrets (weapon_sentry_gun's PxSentryGun,
--- weapon_sentry_laser's PxSentryLaser), the part they share: a body dropped
--- where the worm stands, with passage for the planter until clear, a head that sweeps,
--- picks the nearest moving enemy in sight beyond its barrel sweep, turns and fires, reloads
--- each turn, and is disabled for the turn by positive damage and explodes at 0
--- health. What it aims at and what it fires are the weapon's: `targets` (by
--- default the worms) and `fire(t, a, s, target)`. Another turret keeps the
--- body (planting, passage, health, capture, the death blast) and brings its
--- own brain and look: `think`, `draw`, `feet` and the hooks below (PyroMan's,
--- lib/pyro_turret.lua).
---
--- From the standalone sentry_gun port (mods/examples/sentry_gun_old), with
--- its numbers as the defaults. Angles: 0 down, 90 right, 180 up, 270 left.
+-- PX's sentry turrets, the shared part: planting, sweeping, aiming, firing, damage.
+
 local turret = {}
 local turrets = {}
 local feet = require("lib/sentry_mask")
 local health_label = require("lib/sentry_health")
 local electrical = require("lib/electrical")
 
--- PX's Tazer arc and Lightning Strike on its turrets (lib/electrical's
--- registry): every placed turret, its body's circle as Lightning's.
 local function electrical_targets()
   local out = {}
   for _, t in ipairs(turrets) do
@@ -35,10 +22,6 @@ end
 local stun_hook
 
 local function register_electrical()
-  -- PxSentryGun::OnTurnBegin: each start of its owner's turn takes a stunned
-  -- turn off; the first turn to start after the last is over reloads it.
-  -- One hook for every turret. Tab starts the turn again (wa.on.turn_start
-  -- runs then too): only the first start after a turn's end counts.
   if not stun_hook then
     stun_hook = true
     local turn_open = false
@@ -74,8 +57,6 @@ local function register_electrical()
   })
 end
 
--- Scripted bodies are not in the stock electrical target list. Include
--- their whole body circle in Lightning's existing beam selection in Lua.
 function turret.on_beam(x0, y0, dx, dy, length)
   local best, entry
   for _, t in ipairs(turrets) do
@@ -104,8 +85,6 @@ function turret.capture_hit(entry, x, y, alliance)
   return entry.t.capture(entry.body, entry.s, alliance)
 end
 
--- PX's Javelin includes sentries in its strict impact square. The stock
--- electrical list excludes Lua actors, so add them through this registry.
 function turret.projectile_target(x, y)
   for _, t in ipairs(turrets) do
     for _, id in ipairs(wa.sorted(t.state)) do
@@ -127,43 +106,37 @@ function turret.projectile_hit(entry, damage, vx, vy, uid)
 end
 
 local DEFAULTS = {
-  sensor_px = 360,      -- detection radius
-  ammo = 20,            -- rounds per turn
-  shot_frames = 6,      -- frames between rounds
-  activate = 60,        -- frames after acquiring before the first shot
-  beep_frames = 60,     -- minimum gap between alert beeps
-  rot_idle = 0.5,       -- degrees per frame while sweeping
-  rot_active = 1.5,     -- PX tracking speed, degrees per frame
-  sweep = 10,           -- PX idle sweep amplitude, degrees
-  aim_tolerance = 1.5,  -- PX fires only after rotation reaches the target
+  sensor_px = 360, -- detection radius
+  ammo = 20, -- rounds per turn
+  shot_frames = 6, -- frames between rounds
+  activate = 60, -- frames after acquiring before the first shot
+  beep_frames = 60, -- minimum gap between alert beeps
+  rot_idle = 0.5, -- degrees per frame while sweeping
+  rot_active = 1.5, -- PX tracking speed, degrees per frame
+  sweep = 10, -- PX idle sweep amplitude, degrees
+  aim_tolerance = 1.5, -- PX fires only after rotation reaches the target
   require_motion = true, -- PX only acquires walking/jumping/moving worms
-  settle_px = 4,        -- mask may overlap real terrain by this depth (placing, sliding)
-  sink_px = 0,          -- how deep the mask's feet rest in the land once planted
+  settle_px = 4,
+  sink_px = 0,
   foot_offsets = { -6, 7 }, -- support beside the buried mask, never inside it
-  top_px = feet.top,         -- top of the feet/hub silhouette above its anchor
+  top_px = feet.top, -- top of the feet/hub silhouette above its anchor
   capture_radius = 24, -- Lightning's circle around the body
   capture_up = 16 - feet.burial,
-  muzzle_up = 25 - feet.burial,       -- pixels from the anchor up to the turret pivot
-  sight_grace_px = 4, -- terrain grace beyond the barrel tip's circular sweep
-  placement_reach = 64, -- bounded clear-space search around the planting worm
+  muzzle_up = 25 - feet.burial, -- pixels from the anchor up to the turret pivot
+  sight_grace_px = 4,
+  placement_reach = 64,
   health = 50,
   slide_friction = 0.20, -- pixels/frame lost on supported ground
-  contact_worm = 0.5,    -- fraction of incoming worm velocity transferred
+  contact_worm = 0.5, -- fraction of incoming worm velocity transferred
   contact_projectile = 0.25, -- PX Javelin transfers a quarter of its velocity
   boom = { damage = 50, id = 100, below = false },
   boom_up = 20 - feet.burial, -- pixels from the anchor up to the death blast
   disable_on_damage = true, -- positive damage disables the sentry for the turn
-  hit_by = "all",       -- what hits it once planted (`body.hit_by`)
-  -- and while its planter passes: no worm contact
+  hit_by = "all", -- what hits it once planted (`body.hit_by`)
   passage_hit_by = { arrows = true, melee = true, fire = true, dragon_ball = true, blasts = true },
-  -- Occlusion band for the head: in front of terrain (0x180000), so the
-  -- landscape never buries it.
   head_depth = wa.depth.FRONT,
 }
 
--- 0 = down, 90 = right: the art faces right, and screen y grows down.
--- wa.math: an aim reaches the simulation (what the turret sees and hits), so
--- it must come out the same on every machine.
 function turret.angle_to(ax, ay, tx, ty)
   local dx = (tx - ax) // 1
   local dy = (ty - ay) // 1
@@ -172,16 +145,12 @@ function turret.angle_to(ax, ay, tx, ty)
   return deg
 end
 
--- The same physical barrel tip is used for firing and its terrain gate.
 function turret.muzzle(t, a, angle)
   local rad = math.rad(angle)
   return a.x + wa.math.sin(rad) * t.muzzle_out,
     a.y - t.muzzle_up + wa.math.cos(rad) * t.muzzle_out
 end
 
--- Terrain probes leave out this turret's stamped feet, but real terrain
--- and overlapping actors still block. Starting inside either must block too:
--- world.trace otherwise describes the exit from an initial overlap.
 function turret.trace(a, x0, y0, x1, y1)
   local hit = wa.world.trace { x0 = x0, y0 = y0, x1 = x1, y1 = y1,
     radius = 0, with = { "terrain" }, ignore = { a } }
@@ -189,9 +158,6 @@ function turret.trace(a, x0, y0, x1, y1)
   if hit and hit.hit then return hit end
 end
 
--- Ignore nearby terrain for sight only, inside the circle swept by every
--- possible muzzle position plus padding. Beyond it, even an initially solid
--- ray must block. Firing still checks the actual tip and uses the full terrain.
 function turret.sight(t, a, tx, ty)
   local px, py = a.x, a.y - t.muzzle_up
   local dx, dy = tx - px, ty - py
@@ -208,7 +174,6 @@ local function turn_toward(cur, want, speed)
   return (cur + d) % 360
 end
 
--- A turret without one of the sounds (the laser has no firing loop) skips it.
 local function play(a, sound)
   if sound then a:sound(sound) end
 end
@@ -218,25 +183,6 @@ local function angle_gap(a, b)
   return d < 0 and -d or d
 end
 
--- `cfg`: the weapon's numbers (over DEFAULTS), `art` { base, gun, flare,
--- barrel }, `sounds` { place, beep, fire_loop, fire_end, servo_start,
--- servo_loop, servo_end }, `tints` (team colours, red to cyan, 0xRRGGBB),
--- `kind`, `fire(t, a, s, target)`, which shoots once (a, the body; s, its
--- state), and optionally `targets(t, a, s)`, what it can aim at: a list of
--- { key, x, y, alliance, moving }, in an order the same on every machine.
--- Returns `t`, whose `place(fire_ev)` drops a turret for the firing worm.
---
--- A turret with its own brain passes `think(t, a, s)` (each planted frame,
--- instead of the sentry's sweep, aim and fire), `draw(t, s)` (each rendered
--- frame, instead of the sentry's sheets), `feet` (its footprint, from
--- lib/sentry_mask's `build`), and as it needs them `init(t, a, s)` (once
--- placed), `turn_begin(t, s)` (after each turn's reload) and
--- `ignore_hit(t, a, s, hit)` (true: the hit does nothing).
---
--- The head: `gun`, team-tinted, its frames the firing poses; with a
--- `barrel`, the barrel is its own untinted layer behind it, its frames the
--- poses, and the gun's two frames are its art and its mirror image, for a
--- turret that has turned to face left (PX draws it flipped).
 function turret.new(cfg)
   health_label.install()
   local t = {}
@@ -257,9 +203,6 @@ function turret.new(cfg)
     end
   end
 
-  -- The Sentry Gun's targets: the worms, keyed by worm id; moving by
-  -- note_motion. A frozen worm is none (orange's rule; PX aimed at one
-  -- sliding on its ice), and a target that freezes is lost.
   local function worm_targets(_, _, s)
     local out = {}
     for _, w in ipairs(wa.worms.all()) do
@@ -272,9 +215,6 @@ function turret.new(cfg)
   end
   local targets = cfg.targets or worm_targets
 
-  -- Movement is needed to notice a target; a held target may stop moving.
-  -- Nearby terrain has grace around the complete barrel sweep; normal sight
-  -- blocking applies beyond it. Firing also checks the current barrel tip.
   local function can_track(a, s, c, need_motion)
     if c.alliance == s.alliance then return false end
     if need_motion and t.require_motion and not c.moving then return false end
@@ -284,8 +224,6 @@ function turret.new(cfg)
     return turret.sight(t, a, c.x, c.y)
   end
 
-  -- The nearest moving enemy in sight; ties to the first listed, the same
-  -- everywhere.
   local function acquire(a, s, list)
     local ex, ey = a.x, a.y - t.muzzle_up
     local best, best_d
@@ -299,7 +237,6 @@ function turret.new(cfg)
     return best
   end
 
-  -- Keep the target while it remains eligible, in range and in sight.
   local function held(a, s, list)
     if s.tid == nil then return nil end
     for _, c in ipairs(list) do
@@ -311,7 +248,6 @@ function turret.new(cfg)
   function t.start_firing(a, s)
     if s.firing then return end
     s.firing, s.anim = true, 0
-    -- PX zeroes ShootTimer as firing (re)starts: the first round goes now.
     s.cooldown = 0
     s.fire_sound = 35
     play(a, t.sounds.fire_loop)
@@ -369,8 +305,6 @@ function turret.new(cfg)
       want = turret.angle_to(hx, hy, target.x, target.y)
       s.angle = turn_toward(s.angle, want, t.rot_active)
     elseif s.had_target then
-      -- PX stops firing at once, turns to the last place it saw it, then
-      -- drops it.
       if not s.lost then t.stop_firing(a, s) end
       s.lost = true
       want = turret.angle_to(hx, hy, s.tx, s.ty)
@@ -379,14 +313,12 @@ function turret.new(cfg)
         s.had_target, s.lost, s.tid = false, false, nil
       end
     else
-      -- PX sweeps to one side and turns back the moment it gets there.
       s.had_target = false
       want = s.idle + s.sweep_dir * t.sweep
       s.angle = turn_toward(s.angle, want, t.rot_idle)
       if s.angle == want then s.sweep_dir = -s.sweep_dir end
     end
 
-    -- PX: turned over itself, it idles facing the other way.
     if (180 - s.angle) * s.side < 0 then
       s.side = -s.side
       s.idle = 180 - 90 * s.side
@@ -405,12 +337,8 @@ function turret.new(cfg)
     if s.fire_sound > 0 then s.fire_sound = s.fire_sound - 1 end
 
     local aligned = target and angle_gap(s.angle, want) <= t.aim_tolerance
-    -- PX's long-rotation sound: a turn left of at least twice its speed.
     update_servo(a, s, target ~= nil and angle_gap(s.angle, want) >= 2 * t.rot_active)
 
-    -- Enemy movement can trigger a shot on any turn, including the planter's.
-    -- Firing stays latched until the target is lost, ammo runs out or damage
-    -- disables the sentry.
     local muzzle_clear = false
     if target and s.activate <= 0 and (s.firing or aligned) then
       local mx, my = turret.muzzle(t, a, s.angle)
@@ -431,8 +359,6 @@ function turret.new(cfg)
     end
   end
 
-  -- Coalition owns the sentry. A living member is only WA's required
-  -- spawn/shot parent, chosen in stable worm-id order; it is not the owner.
   function t.owner(a, s)
     local best
     for _, w in ipairs(wa.worms.all()) do
@@ -451,8 +377,6 @@ function turret.new(cfg)
   local function destroy(a, s, explode)
     state[a.id] = nil
     if explode then
-      -- The blast's stock parent must come from the owning colour too.
-      -- This instant, invisible emission has no collision or lasting body.
       local owner = t.owner(a, s)
       if owner ~= a then
         local e = wa.actors.spawn({ sprite = false, owner = owner,
@@ -481,7 +405,6 @@ function turret.new(cfg)
 
   function t.push(a, s, vx, vy)
     s.vx, s.vy = a.vx + vx, a.vy + vy
-    -- Wake WA's settled body as well as changing its momentum.
     a:warp { x = a.x, y = a.y, vx = s.vx, vy = s.vy }
     if vy < 0 then s.planted = false end
     if vx ~= 0 or vy ~= 0 then t.stop_firing(a, s) end
@@ -493,8 +416,6 @@ function turret.new(cfg)
     local uid = ev.other.uid
     if uid and s.script_hits[uid] then s.script_hits[uid] = nil; return end
     if ev.other.kind == "worm" and s.phase ~= 3 then return end
-    -- Sentries used to meet through their fixed terrain footprints. Keep
-    -- them as supports rather than adding projectile momentum to a stack.
     if ev.other.kind == "actor" then
       for _, other_t in ipairs(turrets) do
         if other_t.state[ev.other.id] then return end
@@ -509,8 +430,6 @@ function turret.new(cfg)
     hit(a, { damage = damage, vx = vx, vy = vy })
   end
 
-  -- WA moves the sprite-shaped body before FRAME_FINISH. Lua owns only
-  -- planting policy and sliding friction, never a second physics step.
   local function motion(a, s)
     s.x, s.y, s.vx, s.vy = a.x, a.y, a.vx, a.vy
     local planted = s.vy == 0 and a:on_feet()
@@ -544,8 +463,6 @@ function turret.new(cfg)
   local function brain(a)
     local s = state[a.id]
     if not s then return end
-    -- Damage is consumed only by on.hit; the legacy frame damage accumulator
-    -- may describe the same blast and must not deduct health twice.
     s.tick = s.tick + 1
     local frame = wa.world.frame()
     for uid, at in pairs(s.script_hits) do
@@ -560,8 +477,6 @@ function turret.new(cfg)
       for _, w in ipairs(wa.worms.all()) do
         if w.id == s.planter_id and w.hp > 0 then planter = w; break end
       end
-      -- Keep passage until both the previous and current footprints are
-      -- clear, including a fast fall past the planter in this tick.
       if not planter or (not feet.overlaps_worm(s.x, s.y, planter)
         and not feet.overlaps_worm(previous_x, previous_y, planter)) then
         s.phase, a.hit_by = 3, t.hit_by
@@ -584,11 +499,8 @@ function turret.new(cfg)
   end
   t.status = status
 
-  -- Fixed height with the in-game-tuned offset. Following the idle sweep's
-  -- changing top made tiny digits shimmer.
   local label_clearance = t.art.barrel and 26 or 25
 
-  -- One gameplay actor; its head, barrel, flare and added LED are draw calls.
   local function sheet(path, x, y, frame, angle, rgb, depth, blend, size)
     local h = (size or 144) / 2
     local r = math.rad(angle)
@@ -629,9 +541,6 @@ function turret.new(cfg)
     end)
   end
 
-  -- Lightning's: the sentries switch sides and off (PxSentryGun's
-  -- `TurretActive = false`); PyroMan's turrets (CTurretBase) only switch
-  -- sides and keep firing (`capture_keeps_firing`).
   function t.capture(a, s, alliance)
     if alliance < 0 or alliance > 5 then return false end
     s.alliance = alliance
@@ -639,11 +548,6 @@ function turret.new(cfg)
     return true
   end
 
-  -- The Tazer arc's zap (tazer.txt's CTazerDamage::Zap): a sentry is stunned
-  -- for two of its owner's turns (`tazer = "stun"`: PxSentryGun::Stun(2)), a
-  -- Flame or Petrol Turret loses its ammo (`tazer = "empty"`: CCustomTurret's
-  -- ammoCurrent = 0), and every turret then takes the arc's hit on objects:
-  -- 12 damage, pushed 1.2 the arc's way and 4 up.
   function t.electric_zap(a, s, side)
     if t.tazer == "stun" then
       s.stun = 2
@@ -654,13 +558,9 @@ function turret.new(cfg)
     hit(a, { damage = 12, vx = side * 1.2, vy = -4 })
   end
 
-  -- Prefer the worm's position, then deterministic 4px rings if blocked.
-  -- The planter can walk out; every other worm keeps its body clearance.
   local function placement(worm, facing)
     local wx, wy, planter_id = worm.x, worm.y, worm.id
     local x, y = wx, wy - feet.burial
-    -- Nothing moves during this callback. Snapshot native handles once and
-    -- share terrain reads across the overlapping candidates in this search.
     local worms, obstacles, land = {}, {}, {}
     for _, w in ipairs(wa.worms.all()) do
       local id, hp = w.id, w.hp
@@ -701,8 +601,6 @@ function turret.new(cfg)
     end
   end
 
-  -- Drop a turret for the firing worm, its owner's colour (not worm.team,
-  -- its roster slot: online a blue team in slot 1 placed a red turret).
   function t.place(fire_ev)
     local worm = fire_ev.worm
     local alliance = worm.alliance or 0
@@ -711,7 +609,6 @@ function turret.new(cfg)
     local idle = facing < 0 and 270 or 90
     local x, y = placement(worm, facing)
     if not x then
-      -- The native placed shot consumes one charge; retain it on failure.
       local ammo = worm:ammo(t.weapon)
       if ammo >= 0 then worm:ammo(t.weapon, { set = ammo + 1 }) end
       wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
@@ -723,7 +620,6 @@ function turret.new(cfg)
       loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
       gravity = true, drown = false,
       body = { shape = t.art.mask, hits = { land = true, objects = true },
-        -- Planter passage narrows body collisions, never explosion damage.
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
       on = { frame = brain, hit = hit, contact = touched },
     })
@@ -746,8 +642,6 @@ function turret.new(cfg)
     return body, s
   end
 
-  -- A planter cannot carry partial immunity into a later turn, even
-  -- when the sentry is still falling.
   wa.on.turn_end(function(ev)
     local worm = ev.worm
     if not worm then return end
@@ -765,9 +659,6 @@ function turret.new(cfg)
     if t.turn_begin then t.turn_begin(t, s) end
   end
 
-  -- Each turn reloads and reactivates every turret, and forgets what moved
-  -- and what it aimed at. Order-independent: each entry gets the same reset.
-  -- A stunned sentry stays off, and forgets.
   wa.on.worm_message(function(_, msg)
     if msg ~= wa.msg.START_TURN then return end
     for id, s in pairs(state) do

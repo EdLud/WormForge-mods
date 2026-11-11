@@ -1,7 +1,7 @@
--- Electric Grenade: record, art and behaviour.
+-- Electric Grenade: a grenade whose blast is followed by a chaining electric arc.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     remember_selection = true,
@@ -9,11 +9,9 @@ weapon.record = {
   },
 }
 
-weapon.missile_sprite = { -- Electric Grenade (electric_grenade_anim: electric_grenade_bullet)
+weapon.missile_sprite = {
     sheet = "sprites/px_hold/electric_grenade.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
-    -- PX's record has sprite 0; the pack's stock grenade is only for the
-    -- worm's throw sheet.
     hide = true,
   }
 
@@ -46,9 +44,6 @@ function weapon.setup()
   local c = require("lib/electrical").context()
   local tazed = c.tazed
 
-  -- The worm that last fired the Electric Grenade, as PX keeps it at the
-  -- fire: the grenade's arc never zaps its thrower (lib/electrical's
-  -- grenade_arc). A tazed worm's fire is eaten there and throws nothing.
   wa.on.worm_message(function(worm, msg)
     if worm.weapon == "px.electric_grenade" and not tazed["worm:" .. worm.id] then
       c.thrower = worm

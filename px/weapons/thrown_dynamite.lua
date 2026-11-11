@@ -1,4 +1,5 @@
--- A charged throw using PX's heavier, low-bounce dynamite record.
+-- Thrown Dynamite: a charged throw of a heavier, low-bounce dynamite.
+
 local holds = require("wf-lib/holds")
 local weapon = {
   definition = {
@@ -37,7 +38,6 @@ local weapon = {
   },
 }
 
--- PX's held fuse sparks. Private visual randomness leaves gameplay RNG alone.
 function weapon.setup()
   local particles, driver, seed = {}, nil, 1733
   local function random()
@@ -63,8 +63,6 @@ function weapon.setup()
     local x = worm.x + wa.math.sin(angle) * 13
     local y = worm.y - wa.math.cos(angle) * 23
     if y >= wa.world.water() then return end
-    -- Add particles only after a live updater exists; a failed spawn cannot
-    -- leave frozen quads behind, including when a replay ends mid-throw.
     if not driver then
       driver = wa.actors.spawn{sprite=false,owner=worm,x=x,y=y,gravity=false,collide=false,on=step}
     end

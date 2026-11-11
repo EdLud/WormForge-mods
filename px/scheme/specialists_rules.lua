@@ -1,6 +1,5 @@
 -- Class inventories, native cooldowns, Medic aura and the Soldier's zombie.
--- No switching controller: WA's continuous selection chooses the worm; this
--- updates its class arsenal.
+
 local data = require("scheme/specialists_data")
 local zombie = require("scheme/specialists_zombie")
 local rules = {}
@@ -20,8 +19,6 @@ function rules.install(ctx)
       end
     end
   end
-  -- Source non-class pickups are team-owned. Only class/bonus slots are
-  -- replaced; this also leaves unrelated weapons added to a profile alone.
   local initialized, temporary_locks, warned_extra = {}, {}, false
   local function class_of(worm) return data.classes[worm.id % 16] end
   local function initialize(worm)
@@ -39,9 +36,6 @@ function rules.install(ctx)
       worm.name = class.name
       if worm.hp < class.hp then worm:heal(class.hp - worm.hp) end
     elseif worm.name ~= class.name and not zombie.is_zombie(worm) then
-      -- Brought back from its grave (the Health Zone, Lightning): a new
-      -- body WA builds from the team's lobby record, so its lobby name
-      -- again. It keeps the health it came back with.
       worm.name = class.name
     end
     return class
@@ -67,16 +61,12 @@ function rules.install(ctx)
       worm:ammo(id, { set = allowed[id] and -1 or 0, keep_delay = true })
     end
   end
-  -- The zombie's poses in colour with the match, so its tint never waits
-  -- for a copy mid-turn.
   wa.assets.load({ sprites = { GLOW }, gpu_prefix = "sprites/specialists/", wa_sprites = { "worm" } })
   zombie.install(function(worm) return worm.id % 16 == 1 end, data.classes[1].name)
   wa.on.turn_start(function(event) refresh(event.worm) end)
   wa.on.worm_message(function(worm, msg)
     initialize(worm)
     if msg == wa.msg.TURN_STARTED and worm.turn then
-      -- Native upkeep handles positive values; only PX's temporary -1
-      -- locks are restored here, once on an actual team-turn start.
       local locks = temporary_locks[worm.ammo_group] or {}
       for _, id in ipairs(wa.sorted(locks)) do
         if worm:delay(id) == -1 then worm:delay(id, 0) end
@@ -103,7 +93,6 @@ function rules.install(ctx)
       elseif worm.state == "parachuting" and placed["stock.parachute"] then
         worm:delay("stock.parachute", 0)
       end
-      -- PX calls this WS_FIRED; WA's current API names its setup prefiring.
       if worm.state == "prefiring" and worm.weapon == "px.jump" and placed["px.jump"] then
         worm:delay("px.jump", 1)
       end

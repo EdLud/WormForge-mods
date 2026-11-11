@@ -1,7 +1,7 @@
--- Sentry Gun: record, art and behaviour.
+-- Sentry Gun: a turret that fires at moving enemy worms within 360 pixels.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {}
 
 function weapon.definition()
@@ -12,8 +12,6 @@ function weapon.definition()
     name = "Sentry Gun",
     panel_icon = "sprites/sentry_gun/icon.png",
     is_weapon = true,
-    -- PX's take-out and placing, grey; the housing in them coloured per team
-        -- at draw time (one sheet and its housing for six colours).
         worm_sprites = {
           weaponlnk = "sprites/sentry_gun/equip.png", weaponlnku = "sprites/sentry_gun/equipu.png",
           weaponlnkd = "sprites/sentry_gun/equipd.png",
@@ -41,10 +39,7 @@ function weapon.definition()
         },
     params = {
           sprite_columns = 1,
-          -- The take-out and placing play frame by frame, not as aim sheets.
           worm_sprites_animate = true,
-          -- The turret between terrain (0x180000) and soil (0x1B0000): the
-          -- real landscape can occlude its feet. The worm's sheets stay in front.
           depth = wa.depth.BEHIND_TERRAIN,
           depth_prefix = "sprites/sentry_gun/turret_",
           gpu_prefix = "sprites/sentry_gun/turret_",
@@ -54,32 +49,17 @@ function weapon.definition()
 end
 
 function weapon.setup()
-  -- Highlander: Sentry Gun (PX weapon_sentry_gun: sentrygun.txt's PxSentryGun),
-  -- on the Kamikaze slot as PX's Highlander scheme has it. The turret itself
-  -- (placing, planting, aiming, reloading, damage) is lib/turret.lua; this is
-  -- what it fires: stock Uzi rounds with PX's damage and spread, ejecting
-  -- casings. Ported from the standalone sentry_gun pack
-  -- (mods/examples/sentry_gun_old).
   local shared = require("lib/shared")
   local turret = require("lib/turret")
   local ART = "sprites/sentry_gun/"
   local SND = "sounds/sentry_gun/"
-  local MUZZLE_OUT = 11      -- pixels from the pivot along the bore
-  -- PX rolls a barrel deviation for each round and keeps every 5th one
-  -- pin-point: tenths of a degree, from WA's shared RNG.
-  local SPREAD_TENTHS = 20   -- +-2.0 degrees
-  -- PX ejects a shell casing (WA's "uzicase" frames) on every shot, sideways
-  -- from the barrel to the side the turret faces, with a little random angle
-  -- and speed, gravity and no bounce, gone after 100 frames.
+  local MUZZLE_OUT = 11 -- pixels from the pivot along the bore
+  local SPREAD_TENTHS = 20 -- +-2.0 degrees
   local CASING = ART .. "casing.png"
   local CASING_FRAMES, CASING_LIFE = 16, 100
-  local CASING_JITTER_DEG = 17                  -- PX's RandomFloat(-0.3, 0.3) rad
+  local CASING_JITTER_DEG = 17 -- PX's RandomFloat(-0.3, 0.3) rad
   local CASING_SPEED_MIN, CASING_SPEED_MAX = 200, 300 -- PX's 2.0 to 3.0, hundredths
 
-  -- Tints for the grey head, from PX's own render (G/R about 0.39 and B/R
-  -- about 0.28 on its red housing), the dominant channel pinned at 255: a
-  -- vertex tint only scales down. Red to cyan, as worm.alliance + 1. The same
-  -- colours tint the housing the worm carries (worm_sprites_team_tint).
   local TEAM_TINT = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 }
   shared.sentry_team_tint = TEAM_TINT
 
@@ -103,14 +83,8 @@ function weapon.setup()
     })
   end
 
-  -- WA traces and handles each impact exactly as a stock Uzi round, including
-  -- directional push and its small hit graphics. Ignore only the emitting
-  -- sentry's body/feet during tracing. WA handles intervening worms/objects,
-  -- friendly fire and nearby hits; no synthetic explosions or impact actors.
   local function fire(t, a, s)
     local owner = t.owner(a, s)
-    -- The native gun needs a living worm parent. An eliminated coalition's
-    -- sentry retains its colour/ammo, and can fire again after capture/revival.
     if owner == a then t.stop_firing(a, s); return end
     s.shots = s.shots + 1
     local dev = 0
@@ -133,7 +107,7 @@ function weapon.setup()
 
   local gun = turret.new({
     kind = "sentry", weapon = "px.sentry_gun",
-    tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun(2))
+    tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun)
     damage = 2, push_pct = 100,
     muzzle_out = MUZZLE_OUT,
     art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun.png", flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },

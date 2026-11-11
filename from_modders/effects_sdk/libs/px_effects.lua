@@ -1,21 +1,13 @@
--- PX's effect manager, as a shared module: reach arcs, the electric explosion
--- (ring + squashed lens), spark, glow, smoke and the round crater. The trail is
--- the effects SDK's `wf-lib/effects/trail`; this file only feeds it. PX
--- originals: wklua_and_px/utils/px_effects.c and effects_methods.c; the line
--- mapping is porting-analysis/electric_mine_effects.md.
---
--- Pure data at load: `wa` does not exist until `install(ctx)`. The trail is the
--- SDK's own export, so it resolves through the same bundle.
+-- PX's effect manager: reach arcs, the electric explosion, sparks, glow, smoke, craters.
+
 local trail = require("wf-lib/effects/trail")
 
 local fx = {}
 
--- The effect manager's own art, exported by this bundle's asset namespace.
 fx.SPARK = "wf-lib/effects/sprites/px_effects/spark"
 fx.BLOB = "wf-lib/effects/sprites/px_effects/glow.png"
 fx.SMOKE = "wf-lib/effects/sprites/px_effects/cloud.png"
 
--- The electric mine's numbers (weapon_electric_mine.c:20-25, :57, :70).
 fx.PRESETS = {
   electric = {
     spark = { cell = 60, frames = 10, size = 0.4, rate = 0.02, pause = 0.1,
@@ -23,8 +15,6 @@ fx.PRESETS = {
     glow = { cell = 128, size = 0.18, passes = 3, r = 20, g = 40, b = 70 },
     reach = { count = 2, first = { 6, 22 }, stagger = 12, cooldown = { 13, 51 },
       distance = 35, speed = { 0.08, 0.18 }, bulge = { -130, 130 },
-      -- PX's own negative-bulge formula draws a detached arc; "arc" keeps the
-      -- bolt on the mine and still bows at random.
       curve = "arc", terrain = true, noise = 4.0, segments = 16,
       core_w = 8.0, glow_w = 13.0, r = 130, g = 180, b = 255 },
     trail = { every = 2, max = 12, vanish = 2, core_w = 8.0, glow_w = 13.0,
@@ -38,12 +28,6 @@ fx.PRESETS = {
   },
 }
 
--- A strike from the sky: no spark or glow of its own, one bolt at a time that
--- comes down from above the emitter onto it, held lit for a few frames.
--- reach.from = "sky" starts the bolt sky[1]..sky[2] px above the emitter, up
--- to sky_side px sideways, and ends it on the emitter; reach.hold keeps a
--- finished bolt on screen for that many frames. Neither key changes the
--- electric preset, which keeps PX's random reach points.
 fx.PRESETS.thunder = {
   spark = false, glow = false,
   reach = { count = 1, first = { 20, 80 }, stagger = 0, cooldown = { 30, 110 },
@@ -90,8 +74,6 @@ local function copy(dst, src, keys)
   return merge(dst, src, keys)
 end
 
--- The driver only needs *an* owner; prefer whose turn it is (the usual one)
--- and fall back to any living worm so late blasts still draw.
 local function current_worm()
   local first
   for _, w in ipairs(wa.worms.all()) do
@@ -101,8 +83,6 @@ local function current_worm()
   return first
 end
 
--- Event owners can be a zero handle: `ev.worm` wraps 0, which is still a
--- truthy userdata and `or` will not replace it. `wa.actors.spawn` refuses 0.
 local function usable(owner)
   return owner ~= nil and (owner.id or 0) ~= 0
 end
@@ -111,7 +91,6 @@ local function new_seed()
   return wa.random(1, 2147483646)
 end
 
--- Park-Miller, exact in a double; one wa.random draw per effect seeds it.
 local function next_rand(rng)
   rng.seed = (rng.seed * 48271) % 2147483647
   return rng.seed / 2147483647
@@ -145,9 +124,6 @@ local function wrap(a)
   return a
 end
 
--- Arc geometry: "px" is PX's sagitta formula verbatim (including its detached
--- negative-bulge arc); "arc" keeps the sign but always passes through both ends;
--- "line" and "bezier" are the other two PX curve types.
 local function setup_arc(st)
   local dx, dy = st.to_x - st.from_x, st.to_y - st.from_y
   local dist = math.sqrt(dx * dx + dy * dy)
@@ -244,9 +220,6 @@ local function update_arc(st)
   if st.noise_age % 2 == 0 then fill_arc_noise(st) end
 end
 
--- Opt-in fade for a finished arc: `fade` frames of dimming (the beams are
--- additive, so dimmer reads as more transparent). Returns true once the arc
--- may be dropped: at once when it has no fade, else after the last fade frame.
 local function fade_done(st)
   if not st.fade or st.fade <= 0 then return true end
   st.fade_left = (st.fade_left or st.fade) - 1
@@ -254,8 +227,6 @@ local function fade_done(st)
   return st.fade_left <= 0
 end
 
--- Drawing. One spec and one point pool, refilled per pass; wa.draw.ribbon
--- copies its table (the effects SDK trail does the same).
 local RIBBON = { blend = "add", points = {} }
 local POINTS = {}
 for i = 1, 260 do POINTS[i] = { x = 0, y = 0, width = 0, u = 0, color = 0xFF000000 } end
@@ -334,8 +305,6 @@ local function draw_glow(g)
   end
 end
 
--- The electric explosion: DrawExplosion and DrawEllipse (effects_methods.c:80-98,
--- px_effects.c:898-988).
 local function fill_burst_noise(b)
   local n = b.segments
   for i = 1, n do b.noise_vals[i] = rand_float(b.rng, -1, 1) end
@@ -440,8 +409,6 @@ local function update_glow(g)
   if g.life and g.age > g.life then g.done = true end
 end
 
--- PX's persistent CEffectManager loop (type 0 ring, type 6 thin spin). The
--- caller owns the lifetime; the saw detaches it when the electric mode ends.
 local function fill_ring_noise(st)
   local n = st.segments + 1
   for i = 1, n do st.noise_vals[i] = rand_float(st.rng, -1, 1) end
@@ -477,7 +444,6 @@ local function draw_ring(st)
       p.x = st.x + wa.math.cos(a) * rr
       p.y = st.y + wa.math.sin(a) * rr
       p.width, p.u = width, (i - 1) / n
-      -- PX's thin spin narrows and dims to the arc ends (:1019-1027).
       if st.thin then
         local t = (i - 1) / n
         local f = 4 * t * (1 - t) + 0.15
@@ -492,8 +458,6 @@ local function draw_ring(st)
   end
   local core = rgb(st.r, st.g, st.b, 1)
   local glow = rgb(st.r * 0.72, st.g * 0.72, st.b * 0.72, 1)
-  -- PX DrawRingFX: a dim under-beam at 0.85 radius, the core, then the wide
-  -- glow. Type 6 (thin spin) is the single tapered core pass only.
   if not st.thin then pass(settings.beam, st.core_w, 0.85, glow, 0.5) end
   pass(settings.beam, st.core_w, 1, core)
   if st.glow_w > 0 and not st.thin then pass(settings.glow, st.glow_w, 1, glow) end
@@ -675,7 +639,7 @@ local function update_emitter(e)
     update_arc(a)
     if a.done then
       if (a.hold_left or 0) > 0 then
-        a.hold_left = a.hold_left - 1     -- a finished bolt stays lit
+        a.hold_left = a.hold_left - 1 -- a finished bolt stays lit
       elseif fade_done(a) then
         local ray = a.ray_index
         table.remove(e.arcs, i)
@@ -746,7 +710,6 @@ tick = function(a)
   end
 end
 
--- Call from install(ctx), after the bundle's sprite paths are known.
 function fx.install(o)
   if installed then return end
   installed = true
@@ -777,7 +740,6 @@ function fx.emitter(o)
   if not installed then wa.log("px_effects: fx.install(ctx) first") return nil end
   o = o or {}
   local preset = fx.PRESETS[o.preset or "electric"] or fx.PRESETS.electric
-  -- A preset (or the caller) may switch the spark or the glow off with false.
   local spark, glow
   if preset.spark and o.spark ~= false then
     spark = copy({}, preset.spark, SPARK_KEYS)
@@ -819,7 +781,6 @@ function fx.emitter(o)
     glow.depth = glow.depth or settings.depth.glow
     glow.age = 0
   end
-  -- A draw can land before the first tick; the quad needs these now.
   if spark then spark.x, spark.y = e.x, e.y end
   if glow then glow.x, glow.y = e.x, e.y end
   local base = rand_int(e, reach.first[1], reach.first[2])
@@ -874,12 +835,6 @@ function fx.ring(o)
   st.r, st.g, st.b = o.r or 130, o.g or 180, o.b or 255
   st.speed = o.speed or 0
   st.angle = o.angle or 0
-  -- PX beamThiccness is a half width (TexturedBeamPoint lays at +-dx), and
-  -- wa.draw.ribbon wants the full one, so double it. PX's beam glow is three
-  -- half-widths, not the single-glow radius formula. The beam texture lights
-  -- only about a third of the ribbon, so PX's 2.3 half-width floor reads as
-  -- ~1.4 px; floor the core at 3.2 half (6.4 full) for ~2 px visible even on
-  -- the smallest saw. The glow keeps PX's 3x low-clamped width.
   local px_core = st.radius / 10
   if px_core < 2.3 then px_core = 2.3 end
   local px_glow = px_core * 3
@@ -909,9 +864,6 @@ function fx.thin_spin(o)
   o = o or {}
   o.thin = true
   o.glow_w = o.glow_w or 0
-  -- PX DrawThinSpinFX: half width 6*objectScale, objectScale = 2*radius/100;
-  -- doubled for wa.draw.ribbon. Floor the max at 6.4 full (~2 px visible) so
-  -- a small saw's arc is not a hairline; the dome taper is in draw_ring.
   o.core_w = o.core_w or math.max(6.4, 0.24 * (o.radius or 0))
   return fx.ring(o)
 end
@@ -999,7 +951,6 @@ function fx.smoke(o)
   return make_smoke(sm)
 end
 
--- A round crater. PX's MakeHole (custom_explosion.c:134-137); sim only.
 function fx.crater(o)
   if not o then return end
   local shape = o.shape or "circle"
@@ -1012,8 +963,6 @@ function fx.crater(o)
     sprite = o.sprite, frame = o.frame })
 end
 
--- Follow a mine a weapon just placed. on_place carries no handle, so claim the
--- nearest unclaimed mine near the placement point; id+uid detect its removal.
 local claimed = {}
 function fx.tracker(o)
   o = o or {}
@@ -1073,8 +1022,6 @@ function fx.mine(o)
     owner = o.owner, x = o.x, y = o.y, vx = o.vx, vy = o.vy,
     follow = t, preset = o.preset, random = o.random, seed = o.seed,
     spark = o.spark, glow = o.glow, reach = o.reach, trail = o.trail,
-    -- Hold the spark and bolts until the tracker has the mine: until then
-    -- its x/y is only the placement point.
     ready = false,
   }
   local e = fx.emitter(opts)

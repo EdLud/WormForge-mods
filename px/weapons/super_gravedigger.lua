@@ -1,7 +1,7 @@
--- Super Gravedigger: record, art and behaviour.
+-- Super Gravedigger: a banana bomb whose bits skip along the ground before blowing up.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     remember_selection = false,

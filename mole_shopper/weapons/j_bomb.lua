@@ -1,4 +1,5 @@
--- A placed, seven-second fragmentation bomb with 28 impact-detonating children.
+-- j-bomb: place a seven-second bomb that scatters 28 explosive fragments.
+
 local holds = require("wf-lib/holds")
 local ART = "sprites/j_bomb/"
 
@@ -8,9 +9,6 @@ return {
       copy_from = "stock.dynamite", name = "j-bomb", panel_icon = ART .. "icon.png",
       sprite = ART .. "body.png",
       cluster = {sprite = ART .. "fragment.png", sprite_columns = 1},
-      -- Placed, it never aims: on the aim sheets the worm looked at the
-      -- ground with the bomb pointing down. Held level, as the TNT is: PX's
-      -- draw, the aim sheets' level frame, and the bomb at that frame's angle.
       worm_sprites = {
         wthrow = holds.PX_POSTURE.wthrow, wthrowu = holds.PX_POSTURE.wthrowu,
         wthrowd = holds.PX_POSTURE.wthrowd,

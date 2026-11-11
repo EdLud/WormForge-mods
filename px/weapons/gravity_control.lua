@@ -1,7 +1,7 @@
--- Gravity Control: record, art and behaviour.
+-- Gravity Control: 1 to 5 choose the gravity; firing holds it for the turn.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   handling = {
     retreat = -1,
@@ -11,8 +11,6 @@ weapon.record = {
   },
 }
 
--- In utility crates and on donor cards, as WA's Low Gravity it is built on: past
--- WA's 70 a weapon otherwise comes in weapon crates and on no card.
 weapon.defaults = { crate = { type = "utility" }, donor_card = true }
 
 function weapon.definition()
@@ -30,24 +28,21 @@ function weapon.setup()
   local GRAVITY_FACTORS = { 0.3, 0.5, 1.0, 1.7, 2.4 }
   local GRAVITY_NAMES = { "Very Low Gravity", "Low Gravity", "Normal Gravity", "High Gravity", "Very High Gravity" }
 
-  local gravity_choice          -- TransformedGravity's index, until fired
-  local gravity_initial         -- InitialGravity: the match's
-  local gravity_factor          -- ModulatedGravity while Gravity Control is on
-  local SETTLE_LIMIT = 500      -- frames (10 s) the turn clock may stand still
-  local clock_seen = {}         -- worm id -> { clock, frames }: each worm counts the frames itself
-  local retreating = false      -- the turn's retreat: the gravity holds until the turn ends
-  local settling = false        -- the turn has ended with Gravity Control on
-  local crate_floor = 0         -- the newest crate's uid when the turn ended
+  local gravity_choice -- TransformedGravity's index, until fired
+  local gravity_initial -- InitialGravity: the match's
+  local gravity_factor -- ModulatedGravity while Gravity Control is on
+  local SETTLE_LIMIT = 500 -- frames (10 s) the turn clock may stand still
+  local clock_seen = {}
+  local retreating = false
+  local settling = false -- the turn has ended with Gravity Control on
+  local crate_floor = 0 -- the newest crate's uid when the turn ended
 
   local function gravity_back()
     gravity_factor, clock_seen, settling = nil, {}, false
     wa.world.set_gravity(gravity_initial)
   end
 
-  -- Every worm sees each frame once, so the first to count SETTLE_LIMIT frames
-  -- with the clock where it was marks 10 s, whichever worms are still alive.
   local function watch_clock(worm)
-    -- WA's turn clock stands still through a retreat, which is not settling.
     if not gravity_factor or retreating then
       return
     end
@@ -65,15 +60,6 @@ function weapon.setup()
 
   wa.on.turn_retreat(function() retreating = true end)
 
-  -- As WA's Low Gravity: on through the settling after the turn, back for
-  -- the next turn. WA puts it back when it drops the crates between turns
-  -- (0x560E1E), else when the next team starts; it scales gravity only
-  -- while a team has the turn (0x5603A3). turn_start comes after the crate
-  -- drop, so a crate WA made since the turn ended puts it back before its
-  -- first step. A worm switch within the turn (Tab) runs turn_start without
-  -- an end, and changes nothing. The 10 s still clock still applies in the
-  -- settling: something that never settles under a strong gravity (a grave
-  -- at 2.4x) would hold the next turn off for ever.
   wa.on.turn_start(function()
     if settling then gravity_back() end
   end)

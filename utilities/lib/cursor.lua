@@ -1,5 +1,5 @@
--- Shared land-cursor lifetime. All actions run in synchronized simulation
--- callbacks; drawing and HUD callbacks never perform them.
+-- Shared land-cursor lifetime.
+
 local M = {}
 
 function M.install(ctx, spec)
@@ -54,7 +54,6 @@ function M.install(ctx, spec)
   wa.on.turn_end(stop)
 end
 
--- Use native entity order to break ties, identically on every peer.
 function M.nearest(objects, x, y, eligible)
   local best, best_d
   for _, obj in ipairs(objects) do

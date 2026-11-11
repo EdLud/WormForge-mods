@@ -1,7 +1,7 @@
--- S.M.A.R.T Bomb: record, art and behaviour.
+-- S.M.A.R.T Bomb: a mortar whose cluster bits home in on worms.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
     launch_power_pct = "charged",
@@ -73,7 +73,6 @@ function weapon.definition()
           homing_sprite = "sprites/smart_bomb/cluster_homing.png",
         },
     sprite_overrides = { wsvbd = "sprites/smart_bomb/trail.png" },
-    -- 250
         worm_sprites = {
           weaponlnk = "sprites/smart_bomb/aim.png",
           weaponlnku = "sprites/smart_bomb/aimu.png",

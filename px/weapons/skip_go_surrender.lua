@@ -1,7 +1,7 @@
--- Skip Go/Surrender: record, art and behaviour.
+-- Skip Go/Surrender: Space skips the turn; Ctrl + Space surrenders.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {}
 
 function weapon.definition()

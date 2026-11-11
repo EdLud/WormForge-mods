@@ -1,4 +1,5 @@
--- An inventory utility, separate from the always-on global Parkour feature.
+-- Parkour: parkour for the turn: Enter kicks the worm off a wall, Backspace bunny-hops it.
+
 local weapon = {
   definition = {
     copy_from = "stock.double_turn_time",
@@ -29,9 +30,6 @@ function weapon.setup()
     if not worm.turn or not enabled[worm.id] or worm.hp <= 0 then return end
     local airborne = parkour.air_input(worm, msg)
     movement(worm, msg)
-    -- Own native airborne jump input, including cooldown attempts. The shared
-    -- controller deduplicates the global option independently: every Lua
-    -- handler still runs after "eat". Ground/vehicle controls remain native.
     if airborne then return "eat" end
   end, {msgs={wa.msg.FRAME_FINISH,wa.msg.JUMP,wa.msg.JUMP_UP}})
 end

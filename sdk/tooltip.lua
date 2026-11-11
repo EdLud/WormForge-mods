@@ -1,18 +1,5 @@
--- A bundle's weapon tooltip: one window in WA's medium font at the bottom
--- right of the screen, just above the wind bar, bordered in the active team's
--- colour and seen by that team's coalition only. WormForge fades it out
--- while WA's weapon panel is open.
---
---   local tooltip = require("wf-lib/tooltip")
---   -- While the turn's worm holds the weapon: its settings, live.
---   tooltip.hint("my.weapon", function(worm) return "My Weapon: " .. mode .. "\n+ next mode" end)
---   -- Something that just happened: shown for a few seconds over the hint.
---   tooltip.notice(worm, "No space to launch!")
---
--- A reader returns the text (`\n` breaks lines) or nil for none; it runs on
--- every frame the weapon is held, so the window follows its settings. The
--- window is opened, changed and closed by the simulation, the same on every
--- machine; only who sees it differs.
+-- The weapon tooltip: a window at the bottom right, seen by the active team's coalition.
+
 local tooltip = {}
 
 local COLOURS = { "red", "blue", "green", "yellow", "purple", "cyan" }
@@ -20,7 +7,6 @@ local NOTICE_FRAMES = 150 -- 3 seconds at WA's 50 frames a second
 local readers = {}
 local installed, window, showing, notice
 
--- WA's top banner, for an engine without `wa.hud.window`: one line.
 local function banner(text, alliance)
   local line = text:gsub("\n", " | ")
   if #line > 127 then line = line:sub(1, 124) .. "..." end
@@ -65,13 +51,11 @@ local function install()
   wa.on.turn_end(reset)
 end
 
--- `reader(worm)` is the weapon `id`'s tooltip while the turn's worm holds it.
 function tooltip.hint(id, reader)
   readers[id] = reader
   install()
 end
 
--- `text` for `worm`'s coalition now, for `seconds` (3) of the turn.
 function tooltip.notice(worm, text, seconds)
   install()
   notice = { text = text, alliance = worm.alliance, frames = math.floor((seconds or 3) * 50 + 0.5) }

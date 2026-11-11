@@ -1,4 +1,5 @@
--- Four scripted secondary grenades with independent linear blasts.
+-- Golden Grenade: a charged grenade with a wide blast and four explosive secondary grenades.
+
 local holds = require("wf-lib/holds")
 local ART = "sprites/golden_grenade/"
 local CHILD = {
@@ -20,8 +21,6 @@ return {
       local child = children[ev.missile] or (launching_children > 0 and not parents[ev.missile])
       children[ev.missile], parents[ev.missile], trails[ev.missile] = nil, nil, nil
       local damage, push, reach = child and 60 or 90, child and 100 or 60, child and 124 or 184
-      -- The explosion point needs its own emitter, independent of whether
-      -- the throwing worm survives. Persisting effects do not hold the turn.
       local sound_owner = ev.worm
       if not sound_owner or sound_owner.id == 0 then sound_owner = wa.worms.all()[1] end
       if sound_owner then
@@ -37,7 +36,6 @@ return {
         damage = damage, radius = reach, push_pct = push, terrain_radius = damage}
       bursts[#bursts + 1] = {x = ev.x, y = ev.y, born = wa.world.frame(), radius = child and 20 or 30}
       if child then return end
-      -- Spawn after the parent's blast. PX's evenly spaced 15-degree upward fan.
       CHILD.sprite = wa.weapons.data(ctx.id).clusters.bit.sprite
       for i = 0, 3 do
         local radians = (-97.5 + i * 5) * math.pi / 180
@@ -65,8 +63,6 @@ return {
         explosion_sound = {enabled = false}, trail = {sprite = 0, speed = 0}},
       on_explode = explode,
     }
-    -- Resolve the secondary art via a weapon-scoped native cluster sheet. The
-    -- parent creates no native clusters; secondary launches use that sheet id.
     wa.on.missile_frame(function(m)
       if m.weapon ~= ctx.id then return end
       if m.phase == "pre" and not children[m.id] then parents[m.id] = true end

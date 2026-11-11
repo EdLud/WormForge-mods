@@ -1,9 +1,5 @@
 -- Buffalo of Lies: PX's charging buffalo, three per shot.
---
--- PX's CBuffaloManager spawns a CBuffalo (a CMissile on the pack's own roam
--- record); each collision explodes it and the manager spawns the next at the
--- explosion point. The .wep already walks it (action roam, walk speed 1.3),
--- so Lua only runs the three, draws the 20-frame sheet and the sounds.
+
 local sb = require("wf-lib/px_sprite_builder")
 
 local M = {}
@@ -16,14 +12,14 @@ local prevX = {}
 local prevY = {}
 
 local BUFFALOS = 3
-local START_FRAMES = 118    -- buffalostart.wav, 2.35 s at 50 fps
-local WALK_FRAMES = 84      -- buffaloride.wav, 1.68 s
-local RUN_PHASE = 0.032     -- PX: 0.001 * 20 * 1.6
-local SINK_PHASE = 0.0145   -- PX: 0.001 * 20 * 0.725
+local START_FRAMES = 118 -- buffalostart.wav, 2.35 s at 50 fps
+local WALK_FRAMES = 84 -- buffaloride.wav, 1.68 s
+local RUN_PHASE = 0.032 -- PX: 0.001 * 20 * 1.6
+local SINK_PHASE = 0.0145 -- PX: 0.001 * 20 * 0.725
 local SINK_TURN = 0.05
-local WALK_SPEED = 1.3     -- the record's roam.walk_speed
-local RECOIL_FRAMES = 20   -- how long the backwards/up pop lasts
-local GROUND_VY = 0.8      -- the roam sits still vertically when grounded
+local WALK_SPEED = 1.3 -- the record's roam.walk_speed
+local RECOIL_FRAMES = 20 -- how long the backwards/up pop lasts
+local GROUND_VY = 0.8 -- the roam sits still vertically when grounded
 local HALF_PI = math.pi / 2
 
 local info = {}
@@ -67,9 +63,6 @@ local function gone(id)
   end
 end
 
--- A missile spawned at the previous one's impact can explode inside launch(),
--- before it has an id. The launch context lets that synchronous explosion
--- continue the chain instead of being dropped as an unknown missile.
 local function spawn(o)
   local previous = launching
   launching = { side = o.side, owner = o.owner, shot_id = o.shot_id,
@@ -106,7 +99,6 @@ function M.install(ctx)
     shot = { id = shot_seq, owner = owner, side = side, spawned = 1, age = 0,
       roar = wa.random(60, 80) }
     wa.sound.play(owner, SND .. "start.wav")
-    -- PX's first buffalo takes a quarter of the throw's speed.
     local id, exploded = spawn({ weapon = ctx.id, owner = owner,
         x = fire.x, y = fire.y, vx = vx * 0.25, vy = vy * 0.25, side = side,
         shot_id = shot.id })
@@ -127,7 +119,6 @@ function M.install(ctx)
     if not synchronous then info[ev.missile] = nil end
     if not shot or t.shot_id ~= shot.id or not t.current then return end
     local water = wa.world.water()
-    -- A buffalo that reached the water does not send another one.
     if t.sinking or (water and ev.y >= water + 15) then
       shot = nil
       return
@@ -136,20 +127,13 @@ function M.install(ctx)
       shot = nil
       return
     end
-    -- PX's recoil is away from the buffalo that just exploded (-LastSide),
-    -- not away from the newly chosen direction.
     local recoil_side = -t.side
     if mode == "opposite" then
       shot.side = -shot.side
     elseif mode == "random" then
-      -- PX's SignEx(RandomInt(-1, 1)): zero is the negative side.
       shot.side = shot.side * (wa.random(0, 1) == 0 and -1 or 1)
     end
-    -- Launch with the chosen side so the ctor's roam Side is that way, then
-    -- the pre hook flips the horizontal speed back for PX's recoil pop.
     local s = wa.random(131072, 212992) / 65536
-    -- Count it first: a synchronous explosion inside launch() must see this
-    -- buffalo as the one that just spawned.
     shot.spawned = shot.spawned + 1
     local id, exploded = spawn({ weapon = ctx.id, owner = shot.owner,
         x = ev.x, y = ev.y, vx = shot.side * s, vy = -s, side = shot.side,
@@ -175,7 +159,6 @@ function M.install(ctx)
     if not synchronous then info[ev.missile] = nil end
     if not shot or t.shot_id ~= shot.id or not t.current then return end
     local water = wa.world.water()
-    -- A buffalo that reached the water does not send another one.
     if t.sinking or (water and ev.y >= water + 15) then
       shot = nil
       return
@@ -184,20 +167,13 @@ function M.install(ctx)
       shot = nil
       return
     end
-    -- PX's recoil is away from the buffalo that just exploded (-LastSide),
-    -- not away from the newly chosen direction.
     local recoil_side = -t.side
     if mode == "opposite" then
       shot.side = -shot.side
     elseif mode == "random" then
-      -- PX's SignEx(RandomInt(-1, 1)): zero is the negative side.
       shot.side = shot.side * (wa.random(0, 1) == 0 and -1 or 1)
     end
-    -- Launch with the chosen side so the ctor's roam Side is that way, then
-    -- the pre hook flips the horizontal speed back for PX's recoil pop.
     local s = wa.random(131072, 212992) / 65536
-    -- Count it first: a synchronous explosion inside launch() must see this
-    -- buffalo as the one that just spawned.
     shot.spawned = shot.spawned + 1
     local id, exploded = spawn({ weapon = ctx.id, owner = shot.owner,
         x = ev.x, y = ev.y, vx = shot.side * s, vy = -s, side = shot.side,
@@ -229,10 +205,6 @@ function M.install(ctx)
     if not t then return end
     if m.phase == "pre" then
       m.sprite = 0
-      -- The ctor took the chosen side; feed the native update the backwards
-      -- recoil speed for the pop. Once the timer is up, keep it until the
-      -- post hook sees the native roam walking (grounded vy and walk vx);
-      -- the timer alone let it walk forward in mid-air.
       if t.recoil_side then
         m.vx = t.recoil_side * t.recoil_speed
         if t.recoil_frames > 0 then t.recoil_frames = t.recoil_frames - 1 end
@@ -298,8 +270,6 @@ function M.install(ctx)
   wa.weapons.replace({
       wep = "weps/buffalo_w.wep",
       name = "Buffalo of Lies",
-      -- The record's stock cow body stays the hidden native body: the roam
-      -- action places it on the terrain from that sprite's size, as PX did.
       panel_icon = ICON,
       worm_sprites = sb.PX_POSTURE,
       hold = {
@@ -319,7 +289,6 @@ function M.install(ctx)
         SND .. "roar1.wav", SND .. "roar2.wav" },
       params = { gpu_prefix = "sprites/", sprite_columns = 1 },
       handling = { retreat = 3000, ends_turn = true },
-      -- PX overrides the worm's explosion damage with BuffaloDamage = 50.
       missile = { explosion = { power = 50 } },
       on_fire = on_fire,
       on_explode = on_explode,

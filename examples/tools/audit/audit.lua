@@ -1,5 +1,5 @@
--- All actions run on simulation callbacks. A hidden actor supplies the clock
--- across turn changes; render callbacks only display progress.
+-- All actions run on simulation callbacks.
+
 local all_cases = require("audit/cases")
 return function(ctx)
   local instant = { ["stock.damage_x2"] = true, ["stock.crate_spy"] = true,
@@ -22,17 +22,9 @@ return function(ctx)
       if name == "stock.bungee" or instant[name] or late[name] then cases[#cases + 1] = name end
     end
   end
-  -- With `copies`, each case fires its plain copy past 70 (tools.copy_<name>,
-  -- `custom_slots = "past_70"`) in place of WA's own: a difference from a home
-  -- run is something WA ties to the slot id. Signals keep the stock name, so
-  -- the two runs compare.
   local copies = ctx.options.copies
   local function id_of(name) return copies and (name:gsub("^stock%.", "tools.copy_")) or name end
   local function case_of(weapon) return weapon and (weapon:gsub("^tools%.copy_", "stock.")) end
-  -- WA consumes stock in these panel cells automatically, independently
-  -- of the weapon placed there. Profiles start them empty. Give the case's
-  -- weapon ammo explicitly, then clear these cells between cases;
-  -- native activation during that case remains an observed slot tie.
   local automatic = { "stock.damage_x2", "stock.crate_spy", "stock.double_turn_time", "stock.crate_shower" }
   local automatic_set = {}
   for _, name in ipairs(automatic) do automatic_set[name] = true end
@@ -66,7 +58,6 @@ return function(ctx)
     end) .. '"'
   end
 
-  -- Flat JSON objects only. Keys and hook payloads have stable order.
   local function emit(event, fields)
     fields = fields or {}
     fields.event = event
@@ -89,8 +80,6 @@ return function(ctx)
     return (i % 10) * 768 + 384, (i // 10) * 768 + 500
   end
 
-  -- Ray samples at eight-pixel intervals in the station's 512-square region.
-  -- Integer rolling hash: compare the baseline as well as the crater.
   local function land_digest(x, y)
     local hash = 1
     for dx = -256, 256, 8 do
@@ -160,8 +149,6 @@ return function(ctx)
     next_at = now + 30
   end
 
-  -- All audit worms are protected for the whole session. "eat" uses the
-  -- existing hurt contract (skips WA's hurt handler, including its push).
   wa.on.hurt(function(hit)
     if not started or stopped or not audit_worms[hit.worm.id] or hit.phase ~= "pre" then return end
     if current then
@@ -172,8 +159,6 @@ return function(ctx)
   end)
 
   wa.on.worm_message(function(w, msg)
-    -- turn_start runs before WA handles START_TURN. Wait until that worm
-    -- has a live turn on a simulation frame before inspecting the round.
     if startup_worm == w.id and w.turn then
       startup_worm, started = nil, true
       initialize(w)
@@ -200,9 +185,6 @@ return function(ctx)
     if current.name == "stock.sheep_launcher" and case_of(m.weapon) == current.name and m.phase == "post" then
       current.launcher_initial = current.launcher_initial or m.id
       current.launcher_body = { id = m.id, x = m.x, y = m.y, vx = m.vx, vy = m.vy, frame = now }
-      -- A rocket promotes to a new sheep body on landing (or on the
-      -- airborne activation). Require that transition plus three samples
-      -- of near-zero vertical speed with terrain just below it.
       local ground = wa.land.trace(m.x, m.y, m.x, m.y + 12)
       local landed = m.id ~= current.launcher_initial and ground and math.abs(m.vy) < 0.25
       current.launcher_grounded = landed and (current.launcher_grounded or 0) + 1 or 0
@@ -215,8 +197,6 @@ return function(ctx)
   end)
 
   wa.on.turn_end(function(ev)
-    -- Tab hands control to another worm without ending this test. Let
-    -- the next simulation tick observe WA's active worm on the same team.
     if current and current.selection_active and ev.worm.team == current.team then return end
     if current and ev.worm.id == current.worm then finish("turn_end") end
   end)
@@ -225,9 +205,6 @@ return function(ctx)
     ["stock.magic_bullet"] = true, ["stock.girder"] = true, ["stock.girder_pack"] = true,
     ["stock.teleport"] = true }
   local sheep = { ["stock.sheep"] = 2, ["stock.super_sheep"] = 3, ["stock.aqua_sheep"] = 3 }
-  -- Girders need open air: above the worm, halfway up the 576-pixel gap
-  -- between its platform and the underside of the one above. The Starter
-  -- Pack's girders go 20 pixels apart, centred on the worm.
   local girders = { ["stock.girder"] = 1, ["stock.girder_pack"] = 5 }
   local GIRDER_EVERY = 30
   local function girder_target(n)
@@ -251,9 +228,6 @@ return function(ctx)
     emit("begin", { worm = w.id, station = index, x = x, y = y,
       ammo = w:ammo(id_of(name)), land = land_digest(x, y) })
     wa.audit.begin(20261015)
-    -- Every case gets the same, ample turn time: a turn running out part
-    -- way through a case cut it short, and Double Time's result depends
-    -- on the time left.
     wa.world.set_turn_clock(60000)
     local start_x = x
     if name == "stock.bungee" then start_x = x + 244
@@ -312,8 +286,6 @@ return function(ctx)
       if not w then finish("removed"); return end
       if age > 40 and not w.turn then finish("turn_changed"); return end
       if instant[name] then
-        -- Stocking one utility exercises WA's normal per-turn consumption
-        -- after collection. Never equip or send fire for an instant utility.
         if age == 40 then
           w:ammo(id_of(name), { set = 1 })
           current.clock_before = wa.world.turn_clock()
@@ -323,8 +295,6 @@ return function(ctx)
           emit("utility_result", { ammo = w:ammo(id_of(name)), clock_delta = wa.world.turn_clock() - current.clock_before })
         end
       elseif name == "stock.bungee" then
-        -- Bungee attaches on the walking-to-falling transition. A midair
-        -- warp bypasses that native cliff check, as does the Parachute path.
         if age >= 40 and age < 90 then w:input{key = "right"}
         elseif age == 110 and current.bungee_seen then
           current.detach_requested = true
@@ -367,8 +337,6 @@ return function(ctx)
         released = true
         emit("released", { ammo = w:ammo(id_of(name)), state = w.state_id })
       elseif girders[name] and age > 40 and age < 40 + GIRDER_EVERY * girders[name] + 10 then
-        -- Each girder: click, press, release; then see whether WA put it
-        -- there (a rejected one leaves air at the click).
         local n = (age - 40) // GIRDER_EVERY + 1
         local step = (age - 40) % GIRDER_EVERY
         local gx, gy = girder_target(n)
@@ -404,8 +372,6 @@ return function(ctx)
           current.launcher_phase, current.launcher_phase_start = "landed", age
           current.launcher_body, current.launcher_initial, current.launcher_grounded = nil, nil, 0
           emit("launcher_phase", { phase = "landed", land = land_digest(current.x, current.y) })
-          -- A steep second launch lands on the station instead of crossing
-          -- the inter-platform gap. Its activation waits for observed land.
           w:warp{x = current.x, y = current.y - 12, vx = 0, vy = 0, facing = 1}
           w:equip(id_of(name))
           w:input{aim = 85}
@@ -468,8 +434,6 @@ return function(ctx)
       elseif animals[name] and (age == 141 or age == 241) then
         w:input{fire = "release"}
       end
-      -- Input can end the test reentrantly (turn_end, death). Never keep
-      -- touching that test's worm after it has done so.
       if not current then return end
       w = live(current.worm)
       if not w then finish("removed"); return end
@@ -484,8 +448,6 @@ return function(ctx)
     end
     if now < next_at then return end
     local w = active()
-    -- WA may choose any starting team. Reach a fixed first audit worm
-    -- through ordinary Skip Go turns instead of requiring lucky restarts.
     if opening_worm then
       if now > 30000 then fail("opening worm never received a normal turn"); return end
       if w and w.id == opening_worm then
@@ -511,8 +473,6 @@ return function(ctx)
     if late[next_name] then
       index = index + 1
       local x, y = station(index)
-      -- Split fresh cases across teams 1/2 so a three-worm starting roster
-      -- never fills WA's eight-worm team limit. Keep team 3 for Surrender.
       local fresh = wa.worms.spawn{ team = next_name == "stock.surrender" and 3 or (1 + (index - 62) % 2),
         x = x, y = y - 12, health = 100, name = "Audit " .. index }
       audit_worms[fresh.id], pending = true, fresh.id
@@ -536,8 +496,6 @@ return function(ctx)
     if wa.world.networked() then fail("offline only"); return end
     if size.w ~= 7680 or size.h ~= 5376 then fail("load the generated Audit.png (7680x5376)"); return end
     local teams = {}
-    -- Resolve through this round's entity, not the session pointer, which
-    -- can still be unpublished during the initial turn_start callback.
     local all = wa.worms.all(first)
     for _, w in ipairs(all) do teams[w.team] = (teams[w.team] or 0) + 1 end
     if #all ~= 9 or #wa.sorted(teams) ~= 3 or teams[1] ~= 3 or teams[2] ~= 3 or teams[3] ~= 3 then
@@ -550,7 +508,6 @@ return function(ctx)
     for i, w in ipairs(all) do
       audit_worms[w.id] = true
       if w.team == 1 and not opening_worm then opening_worm = w.id end
-      -- Nine centres, twelve pixels apart, fit the existing reserve strip.
       w:warp{x = 24 + (i - 1) * 12, y = 5288, vx = 0, vy = 0, facing = 1}
     end
     for n = 1, #cases do
@@ -561,7 +518,6 @@ return function(ctx)
     end
     emit("map", { digest = map_hash })
     status = "Audit: waiting for team 1's first worm's normal turn"
-    -- Remove wind as a variable across the two independently started rounds.
     wa.world.set_wind(0)
     driver = wa.actors.spawn{
       owner = first, sprite = false, gravity = false, collide = false, persist = true,

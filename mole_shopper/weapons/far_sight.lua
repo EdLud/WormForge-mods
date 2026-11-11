@@ -1,4 +1,5 @@
--- A permanent remote light. PX's 60-frame controller is not a reveal timeout.
+-- Far Sight: place a stationary coalition light for the rest of the round.
+
 local lights = require("lib/lights")
 local ART = "sprites/far_sight/"
 
@@ -18,8 +19,6 @@ return {
     local function start_cursor(worm, x, y)
       stop_cursor()
       if not selected(worm) then return end
-      -- eat_fire suppresses WA's own cursor. This actor follows the pointer
-      -- natively and uses the existing cursor render path above the fog.
       cursor = wa.cursor.spawn{owner = worm, x = x, y = y,
         on = function()
           if not selected(worm) then stop_cursor() end
@@ -48,8 +47,6 @@ return {
           gravity = false, collide = false, drown = false, persist = true, solid = false,
         }
         lights.attach(actor, 155, terrain_blocking)
-        -- eat_fire keeps WA from firing or spending ammo; accepted placements
-        -- consume one unit here. Infinite ammo remains infinite.
         worm:ammo(ctx.id, -1)
         markers[#markers + 1] = {actor = actor, id = actor.id,
           colour = lights.colour(ev.worm), born = wa.world.frame()}

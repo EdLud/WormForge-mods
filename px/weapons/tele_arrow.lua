@@ -1,4 +1,5 @@
--- Space detonates a bouncing projectile and moves the active worm to it.
+-- Tele Arrow: fires a bouncing projectile; Space detonates it and teleports the worm there.
+
 local holds = require("wf-lib/holds")
 local weapon = {}
 
@@ -10,8 +11,6 @@ local function teleport(event)
   if not worm then return end
   local x, y = event.x, event.y
   if worm:fits(x, y) then worm:warp({x=x,y=y}); return end
-  -- Source scan: centre first, then eleven columns on each of eleven rows.
-  -- Bound the search even when the entire destination is obstructed.
   x, y = math.floor(x), math.floor(y)
   for row = 0, 10 do
     for column = 0, 10 do
@@ -21,7 +20,6 @@ local function teleport(event)
   end
 end
 
--- Project X's Personal Invisibility keeps the archer invisible.
 weapon.defaults = { ends_invisibility = false }
 
 weapon.definition = {
@@ -46,7 +44,6 @@ weapon.definition = {
         worms_frozen=true,worms_normal=true},
     },
     ends_on_contact = {},
-    -- PX replaces ExplodeAt entirely: no native blast or terrain destruction.
     explosion = {power=0,push_pct=0,bias=9},
     trail = {power=20,speed=150,sprite="sprites/tele_arrow/trail.png"},
   },

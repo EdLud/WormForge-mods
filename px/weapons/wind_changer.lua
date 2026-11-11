@@ -1,7 +1,7 @@
--- Wind Changer: record, art and behaviour.
+-- Wind Changer: 0 to 9 choose the force; firing sets the wind toward where the worm faces.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
     subtype = 19,
@@ -29,12 +29,9 @@ end
 weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
-  -- PX's force steps, applied toward the firing worm's facing.
   local WIND_STEP = 0.0317
   local wind_force = 0
   require("lib/turn_controls").register("px.wind_changer", {
-    -- Each selection starts at force 0, so Space without a digit calms the
-    -- wind: leaving the weapon or ending the turn forgets the force.
     frame = function(worm)
       if worm.turn and worm.weapon ~= "px.wind_changer" then wind_force = 0 end
     end,

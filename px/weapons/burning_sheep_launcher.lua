@@ -1,7 +1,7 @@
--- Burning Sheep Launcher: record, art and behaviour.
+-- Burning Sheep Launcher: launches a burning sheep.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
     launch_power_pct = "charged",
@@ -21,8 +21,6 @@ weapon.record = {
         water = true,
         worms = true,
         worms_frozen = true,
-        -- Solid to it: with collects_crates = false below, it bounces off
-        -- a crate instead of collecting it for the team.
         crates = true,
       },
       max_bounces = 2,
@@ -50,8 +48,6 @@ weapon.record = {
   },
 }
 
--- WA's missiles pick up any crate they reach, whatever they collide with;
--- the burning sheep leaves them where they are.
 weapon.defaults = {
   collects_crates = false,
 }

@@ -1,32 +1,24 @@
--- Draw a held weapon during WA's repeated-fire frames (0x6A/0x6B). The engine
--- draws the aiming and put-away frames; from the second shot of a held burst
--- `h.firing` is false, so this fills those two frames at full size.
--- Presentation only: reads worm state and enqueues a quad.
+-- Draw a held weapon during WA's repeated-fire frames (0x6A/0x6B).
 
 local M = {}
 
--- Raw WA states; `worm.state` is nil for some of them.
 local FIRING = {
   [0x6A] = true, -- firing
   [0x6B] = true, -- fired
 }
 
--- `worm_hold::DEPTH`: the engine's one front band (`worm_hold.rs:18`).
 local DEPTH = 0x10000
 
 local draws = {}
 local hooked = false
 
--- One quad spec, refilled per draw: no table in the render callback.
 local QUAD = { depth = DEPTH, points = { {}, {}, {}, {} } }
 
--- `render::Sprite::emit`'s rotation: angle in radians, clockwise, y down.
 local function corner(t, cx, cy, cos, sin, lx, ly)
   t.x = cx + lx * cos - ly * sin
   t.y = cy + lx * sin + ly * cos
 end
 
--- Read aim and facing live: the player can adjust them mid-burst.
 local function enqueue(art, w)
   local pi = math.pi
   local facing = w.facing < 0 and -1 or 1
@@ -59,8 +51,6 @@ end
 local function hook()
   hooked = true
   wa.on.draw(function()
-    -- The worms and their weapons, read once a draw: each field read is a call
-    -- into the engine, and the draw runs every rendered frame.
     local weapons = {}
     local worms = wa.worms.all()
     for j = 1, #worms do weapons[j] = worms[j].weapon end
@@ -68,9 +58,6 @@ local function hook()
       local art = draws[i]
       for j = 1, #worms do
         if weapons[j] == art.weapon then
-          -- `draw_holds` skips dead, hidden and body-hidden worms
-          -- (`worm_hold.rs:309-315`); `visible`/`body_visible` are the same two
-          -- hide flags (`crates/lua-host/src/actor.rs:1523-1541`).
           local w = worms[j]
           local st = w.state_id
           if st and FIRING[st] and w.hp and w.hp > 0 and w.visible and w.body_visible then
@@ -82,10 +69,6 @@ local function hook()
   end)
 end
 
--- `art` is the same table the weapon also passes as `spec.hold`: `weapon` (the
--- id WA's `worm.weapon` reports), `sheet`, `size` (the cell, 90 for PX's gun
--- cells), and the engine's `weap_radius`/`weap_rotation`/`weap_radial_rotation`.
--- The engine ignores the two presentation-only keys (`weapon`, `size`).
 function M.add(art)
   if type(art) ~= "table" or not art.sheet or not art.weapon then
     wa.log("px_hold_art: a hold needs a sheet and a weapon id")

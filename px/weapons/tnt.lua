@@ -1,11 +1,8 @@
--- TNT: Specialists 2.3's Soldier explosive (weapon_explosives), on WA's
--- Dynamite. The scheme's record is WA's Dynamite with a weaker blast that
--- bursts into three short-fused bits: three more small blasts around it.
+-- TNT: the Soldier's dynamite: a smaller blast that bursts into three more around it.
+
 local weapon = {}
 local ART = "sprites/tnt/"
 
--- Native record settings, from the Specialists 2.3 scheme's dynamite slot.
--- Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
     launch_power_pct = 7,
@@ -51,9 +48,6 @@ weapon.record = {
   },
 }
 
--- tnt_anim: WeapSprite type 5 over the record's sprite 0, upright, on every
--- TNT missile (its constructor arms it): the stick, and the three bits,
--- which have no sprite of their own and show it for their 75 ms.
 weapon.missile_sprite = {
   sheet = ART .. "tnt.png", frames = 1, upright = true, hide = true,
 }
@@ -65,10 +59,6 @@ function weapon.definition()
     copy_from = "stock.dynamite",
     name = "TNT",
     panel_icon = ART .. "ico_tnt.png",
-    -- PX's builder takes the weapon out empty-handed (default_pick) and draws
-    -- the TNT in the hand; WA's take-out shows its own stick. Taken out, the
-    -- worm holds it level (static): the aim sheet's level frame, where WA's
-    -- own pose for it showed the worm looking at the ground.
     worm_sprites = {
       wdynlnk = PX_POSTURE.wthrow, wdynlnku = PX_POSTURE.wthrowu, wdynlnkd = PX_POSTURE.wthrowd,
       weaponlnk = sdk.PX_LEVEL.weaponlnk, weaponlnku = sdk.PX_LEVEL.weaponlnku,
@@ -76,8 +66,7 @@ function weapon.definition()
     },
     sprites = { ART .. "tnt.png", ART .. "tnt_hold.png", ART .. "trail.png", ART .. "glow.png" },
     params = { gpu_prefix = ART },
-    hold = { -- tnt_anim: held at a fixed angle (dont_rotate_with_angle) and
-      -- placed, so never put away. Its 0.8 scale is baked into tnt_hold.png.
+    hold = {
       thrown = true,
       sheet = ART .. "tnt_hold.png", hand_type = 1, hand_radius = 12,
       hand_radial_rotation = -0.95, weap_rotation = 0.45, weap_radius = 12,
@@ -87,9 +76,6 @@ function weapon.definition()
   })
 end
 
--- explosives_script: do_sprite_trail_effects(75, PosX, PosY - 20) every frame
--- the TNT lies fusing: stock sprite 75 (vasebit1) as additive sparks, and the
--- glow every other frame. Drawing only, with a private random stream.
 function weapon.setup()
   local shared = require("lib/shared")
   local TRAIL, GLOW, LIMIT = ART .. "trail.png", ART .. "glow.png", 256
@@ -115,8 +101,6 @@ function weapon.setup()
   local function emit(x, y, glow)
     if y >= wa.world.water() or #particles >= LIMIT then return end
     if not driver then
-      -- Start the updater before adding any particles: a rejected spawn must
-      -- not leave frozen quads behind.
       local owner = shared.current_worm() or wa.worms.all()[1]
       if not owner then return end
       driver = wa.actors.spawn{ sprite = false, owner = owner, x = x, y = y,

@@ -1,5 +1,5 @@
 -- Specialists 2.3 (five worms), 0rang3's September 2026 build.
--- Class order is original worm order. IDs describe weapons, never panel slots.
+
 return {
   classes = {
     { name = "Soldier", hp = 150,
@@ -18,7 +18,6 @@ return {
       weapons = { "stock.parachute", "px.real_shotgun", "stock.teleport" },
       survivor = { "stock.holy_grenade" } },
   },
-  -- Positive values use native team-turn upkeep; Tab never decrements them.
   delays = {
     ["stock.bazooka"] = 1, ["stock.grenade"] = 1, ["px.mines_gun"] = 2,
     ["px.tnt"] = 2, ["px.chilli_bomb"] = 2, ["px.parkour"] = 1,

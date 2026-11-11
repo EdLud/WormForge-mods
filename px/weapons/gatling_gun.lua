@@ -1,4 +1,5 @@
--- Specialists' Gatling Gun. The native gun owns cadence, spread and recoil.
+-- Gatling Gun: a rapid-fire gun.
+
 return {
   definition = {
     copy_from = "stock.minigun",

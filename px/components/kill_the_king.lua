@@ -1,19 +1,5 @@
--- ============================================================================
--- WormForge WA 3.8.1 Port: KTK (Kill The King) Control Logic
--- Transpiled and hardened from Project X 3.6.31.0 CKtkControl
---
--- Security & Sandbox Compliance (sandbox.rs):
---  - COMPONENT OPTIONS: mod.toml declares the settings; the table below is the fallback.
---  - STABLE FRAME GATE: Evaluates once per frame via worm.id <= lastWormId dispatch boundary.
---  - STRICT TEAM INDICES: 1-based team numbers (1: Red, 2: Blue, etc.) strictly compared.
---  - NO INSTANT LOSS: Safe solid pixel detection with fail-safe guard (disables if 0 pixels).
---  - SOUND CLAIMS: wa.sound.play safely called with worm handle (not numeric id) when claimed.
---  - WINNER TRACKING: Eliminates losing team via w:hurt(w.hp) in deterministic lockstep.
--- ============================================================================
+-- Kill the King: the attackers must destroy the defenders' king before the timer runs out.
 
--- IN-Game Replay breakst the mod, revives worms for some reason.
-
--- Inline configuration table (sandbox-compliant: do NOT use require/dofile)
 return function(ctx)
   local function option(key, fallback)
     if ctx and ctx.option then
@@ -25,35 +11,24 @@ return function(ctx)
 
   local TEAM = { red = 1, blue = 2, green = 3, yellow = 4, purple = 5, cyan = 6 }
 
-  -- Fixed values: these were inline before options were added and are not
-  -- user-tunable. King boxes are 10x10 px; checks run every 5 frames.
   local KING_BOX_SIZE = 10
   local CHECK_INTERVAL_FRAMES = 5
 
   local CONFIG = {
-    -- King Count: one or two. Both kings belong to the defenders; either loss
-    -- ends the round, as PX's CKtkControl does.
     kingsCount = option("kings", "one") == "two" and 2 or 1,
 
-    -- Time for attack in milliseconds (300,000 ms = 5 minutes)
     timeForAttackMs = (option("attack_time_seconds", 300) or 300) * 1000,
 
-    -- "AttackOnly" (decreases only on attacker turns)
-    -- "DefendAndCompensate" (defenders' turns add defenderGainMs back)
     timerType = option("timer_mode", "attack_only") == "defend_and_compensate"
       and "DefendAndCompensate" or "AttackOnly",
 
-    -- Timer HUD caption
     timerCaption = "Remaining attack time:",
 
-    -- Teams (1-based indices in WA: 1=Red, 2=Blue, 3=Green, 4=Yellow, 5=Purple, 6=Cyan)
     attackersTeam = TEAM[option("attackers_team", "red")] or 1,
     defendersTeam = TEAM[option("defenders_team", "blue")] or 2,
 
-    -- Percentage of King solid pixels that must be destroyed to trigger King loss
     destructionPercentage = 75,
 
-    -- King 1 Configuration (Pixel coordinates on the map)
     king1 = {
       name = "Blue King",
       x1 = option("king1_x", 106) or 106,
@@ -63,7 +38,6 @@ return function(ctx)
       destructionPercentage = option("king1_destroy_percent", 70) or 70,
     },
 
-    -- King 2 Configuration (Used when kingsCount >= 2)
     king2 = {
       name = "Red King",
       x1 = option("king2_x", 1420) or 1420,
@@ -80,7 +54,6 @@ return function(ctx)
 
   local MS_PER_FRAME = 20 -- 50 fps lockstep (1000ms / 50 = 20ms per frame)
 
-  -- State Variables (Pure functions of simulation frames)
   local initialized = false
   local matchOver = false
   local winningTeam = nil
@@ -95,16 +68,9 @@ return function(ctx)
   local kings = {}
   local kingsCount = CONFIG.kingsCount or 1
 
-  -- Dispatch ordering tracking for once-per-frame gate
   local lastWormId = 999999
   local frameCheckCounter = 0
 
-  -- ----------------------------------------------------------------------------
-  -- Object cleaner: PX's ObjectCleaner, generalised to map-edge slices.
-  -- The outer quarter on each side, plus 5% toward the centre, starts without
-  -- mines, oil drums or crates. PX removed those within a map object's radius;
-  -- this clears the whole edge slice once per match.
-  -- ----------------------------------------------------------------------------
   local CLEAN_EDGE_FRACTION = 0.25 + 0.05
   local CLEAN_KINDS = { mine = true, oil = true, crate = true }
   local cleanerDone = false
@@ -129,8 +95,6 @@ return function(ctx)
     end
 
     if wa.world.electrical_nearby then
-      -- electrical_nearby is a circle capped at 1000 px. Cover the slice with
-      -- a 1000-px grid so a tall or wide map cannot hide an object in a corner.
       local step = 1000
       for cx = x0, x1, step do
         for cy = 0, size.h, step do
@@ -148,8 +112,6 @@ return function(ctx)
   end
 
   local function discard_edge_object(obj, size)
-    -- Mines have object:remove(); crates and oil drums do not, so park those
-    -- just outside the map on the side they came from.
     if obj.remove then
       local ok, removed = pcall(obj.remove, obj)
       if ok and removed then return true end
@@ -192,9 +154,6 @@ return function(ctx)
     end
   end
 
-  -- ----------------------------------------------------------------------------
-  -- Helper: Initialize King solid pixel area on round start
-  -- ----------------------------------------------------------------------------
   local function init_king(cfg, id)
     if not cfg then return nil end
 
@@ -204,7 +163,6 @@ return function(ctx)
     local x2 = cfg.x1 + cfg.width
     local y2 = cfg.y1 + cfg.height
 
-    -- PX scans x < KingX2, y < KingY2 (ktk_control.txt), so the box is half-open.
     for x = x1, x2 - 1 do
       for y = y1, y2 - 1 do
         if wa.land.solid(x, y) then
@@ -213,10 +171,6 @@ return function(ctx)
       end
     end
 
-    -- Safe Guard against empty bounding boxes (e.g. map mismatch or bad coordinates):
-    -- In PX, DrawKing painted terrain. If WormForge runs on an arbitrary map with 0 solid pixels,
-    -- DO NOT fallback to width*height (which would cause an instant loss on first sample).
-    -- Instead, log warning and disable win check for this king.
     local active = true
     if totalSolid == 0 then
       wa.log(string.format("[KTK WARNING] King %d box (%d,%d) has 0 solid pixels! Win check disabled to prevent instant loss.", id, x1, y1))
@@ -245,9 +199,6 @@ return function(ctx)
     }
   end
 
-  -- ----------------------------------------------------------------------------
-  -- Helper: Check remaining solid terrain pixels for an active King
-  -- ----------------------------------------------------------------------------
   local function check_king_damage(king)
     if not king or not king.active or king.destroyed then
       return false
@@ -275,10 +226,6 @@ return function(ctx)
     return false
   end
 
-  -- ----------------------------------------------------------------------------
-  -- WIN CONDITION: For-loop setting opposing team worms HP to 0
-  -- Red Team victory enforcement across all clients in deterministic lockstep
-  -- ----------------------------------------------------------------------------
   local function eliminate_team(losingTeamIndex, winnerIndex, reason)
     if matchOver then return end
     matchOver = true
@@ -287,9 +234,6 @@ return function(ctx)
 
     wa.log(string.format("[KTK] Win Condition Triggered: %s. Eliminating Team %d (Team %d Wins)", reason, losingTeamIndex, winnerIndex))
 
-    -- Iterate through all worms; set the losing team's HP to 0
-    -- In WormForge, w:hurt(w.hp) issues standard MSG_HIT (0x4B), immediately
-    -- eliminating the worm through WA's deterministic damage pipeline.
     local worms = wa.worms.all()
     for _, w in ipairs(worms) do
       if w.team == losingTeamIndex and w.hp > 0 then
@@ -298,9 +242,6 @@ return function(ctx)
     end
   end
 
-  -- ----------------------------------------------------------------------------
-  -- Format milliseconds to MM:SS
-  -- ----------------------------------------------------------------------------
   local function format_time(ms)
     if ms < 0 then ms = 0 end
     local totalSeconds = math.floor(ms / 1000)
@@ -309,14 +250,9 @@ return function(ctx)
     return string.format("%02d:%02d", minutes, seconds)
   end
 
-  -- ----------------------------------------------------------------------------
-  -- Main Lockstep Simulation Hook (FRAME_FINISH)
-  -- ----------------------------------------------------------------------------
   wa.on.worm_message(function(worm)
-    -- Clear the map edges once, before the first king scan.
     run_cleaner()
 
-    -- One-time match initialization
     if not initialized then
       initialized = true
       kings[1] = init_king(CONFIG.king1, 1)
@@ -329,14 +265,9 @@ return function(ctx)
       return
     end
 
-    -- ONCE-PER-FRAME GATE:
-    -- worm_message fires for EVERY worm each frame.
-    -- Worm dispatch order is deterministic and monotonic. When current worm.id <= lastWormId,
-    -- we have crossed into a new simulation frame.
     local isNewFrame = (worm.id <= lastWormId)
     lastWormId = worm.id
 
-    -- Timer update only runs if this worm is the currently active turn worm
     if worm.turn then
       local curTeam = worm.team -- strictly 1-based team index
 
@@ -345,7 +276,6 @@ return function(ctx)
 
         if timerMs <= 0 then
           timerMs = 0
-          -- Attackers ran out of time -> Defenders (Red) Win!
           eliminate_team(attackersTeam, defendersTeam, "Attack Timer Expired")
           return
         end
@@ -354,7 +284,6 @@ return function(ctx)
       end
     end
 
-    -- Frame-boundary logic: King damage check
     if isNewFrame then
       frameCheckCounter = frameCheckCounter + 1
       if frameCheckCounter >= CHECK_INTERVAL_FRAMES then
@@ -363,7 +292,6 @@ return function(ctx)
         for i = 1, kingsCount do
           local king = kings[i]
           if check_king_damage(king) then
-            -- King destroyed -> Defenders lose, Attackers (Red) Win!
             eliminate_team(defendersTeam, attackersTeam, string.format("%s Destroyed", king.name))
             return
           end
@@ -372,19 +300,14 @@ return function(ctx)
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  -- ----------------------------------------------------------------------------
-  -- Presentation HUD Overlay (wa.on.hud)
-  -- ----------------------------------------------------------------------------
   wa.on.hud(function()
     if not initialized then return end
 
-    -- Draw Attack Timer
     if CONFIG.showTimer then
       local timerStr = string.format("%s %s", CONFIG.timerCaption or "Remaining attack time:", format_time(timerMs))
       wa.hud.line(timerStr, 14, 40)
     end
 
-    -- Draw King HP status
     if CONFIG.showKingHp then
       for i = 1, kingsCount do
         local king = kings[i]

@@ -1,7 +1,7 @@
--- Cow Launcher: record, art and behaviour.
+-- Cow Launcher: launches a mad cow; hold fire to charge.
+
 local weapon = {}
 
--- Native record settings. Edit this weapon here; imported records are review drafts.
 weapon.record = {
   fires = {
     launch_power_pct = 50,
@@ -19,8 +19,6 @@ function weapon.definition()
   })
 end
 
--- The "charged" option: held fire sets the launch power, as WA's Bazooka.
--- Off keeps Project X's fixed launch at half power.
 function weapon.configure(ctx, spec)
   if ctx.option("charged") then
     spec.fires.launch_power_pct = "charged"
