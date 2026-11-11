@@ -96,10 +96,13 @@ local function worm(x)
   local w = { kind="worm", id=1, x=x or 100, y=100, vx=0, vy=0, hp=100,
     weapon="px.health_zone", turn=true, aiming=false, aim=0.5, facing=1, alliance=2 }
   function w:heal(n) assert(math.type(n)=="integer"); self.hp=self.hp+n end
-  function w:hurt(n)
-    -- The zone's damage is a burn, not a hit: no hit state each tick.
-    assert(type(n)=="table" and n.react==false and not n.vx and not n.vy, "zone damage without WA's hit")
-    self.hp=self.hp-n.amount
+  -- The zone's damage is a drain, not a hit: a hit a second on the turn's
+  -- worm kept WA's damage pause up, and the turn never resumed.
+  function w:hurt() error("zone damage must not be a hit") end
+  function w:reduce_health(n)
+    assert(math.type(n)=="integer")
+    if self.hp <= n then return false end
+    self.hp=self.hp-n; return true
   end
   worms, nearby = {w}, {w}; return w
 end

@@ -58,8 +58,10 @@ function M.install(ctx)
     end
   end
 
+  -- Not worm:hurt: a hit on the turn's worm starts WA's damage pause, and a
+  -- tick every second restarts it before it ends, so the turn never resumes.
   local function damage_health(obj)
-    if obj.kind == "worm" and obj.hp > MIN_HP then obj:hurt({ amount = 1, react = false }) end
+    if obj.kind == "worm" and obj.hp > MIN_HP then obj:reduce_health(1) end
   end
 
   local function resting(obj)
