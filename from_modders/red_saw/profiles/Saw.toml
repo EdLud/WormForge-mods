@@ -1,5 +1,5 @@
 # Saw -- both PX weapon records at the fired 50% size.
-description = "Project X's stationary saw blade (two weapons)."
+description = "The Saw, both weapons."
 
 [weapons]
 "px.saw_grenade" = { row = "F8", column = 1 }

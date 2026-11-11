@@ -74,8 +74,8 @@ counters held.
 A burst whose shots are the record's own projectile at a fixed interval needs
 none of this: keep the record a gun and let WA fire it.
 
-- `gun.burst_size` (record +0x48) is how many times `FireWeapon::GunFire` loops,
-  and `gun.shot_interval_ms` (+0x40) the gap between the shots.
+- `gun.burst_size` is how many shots WA fires, and `gun.shot_interval_ms` the
+  gap between them.
 - WA holds the firing pose, counts its own ammo and drops the loop when the worm
   is interrupted, so the counter hold, the drain and the state checks above have
   nothing to do.

@@ -27,7 +27,7 @@ id = "px.electric_mine"
 type = "weapon"
 name = "Electric Mine"
 credits = "ported by reddaz"
-description = "Project X's Electric Mine: WA's mine, live on the ground -- sparks, two crackling reach bolts and a trail, an electric blast, chain arcs to mines it catches, and a taze on what it hits."
+description = "A mine that sparks, arcs to nearby mines and tazes what it hits."
 entry = "weapons/electric_mine.lua"
 icon = "sprites/elemine.png"
 default_position = { row = "F5", column = 2 }

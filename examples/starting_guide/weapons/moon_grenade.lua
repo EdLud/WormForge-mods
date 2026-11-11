@@ -1,4 +1,4 @@
--- Moon Grenade: WA's Grenade with about a third of the gravity and a small
+-- Moon Grenade: the stock Grenade with about a third of the gravity and a small
 -- burst, which digs three craters in the ground below it.
 
 return {
@@ -19,14 +19,12 @@ return {
       },
 
       -- Simulation: runs on every player's machine at the same moment,
-      -- so it may change the game and roll WA's dice.
+      -- so it may change the game.
       on_explode = function(ev)
-        -- One crater down-right, one straight down, one down-left. The dice
-        -- pick each one's angle within its part (0 degrees is right, 90 is
-        -- straight down), its distance and its size.
+        -- One crater down-right, one straight down, one down-left with some randomness added in.
         for i = 0, 2 do
           local angle = math.rad(20 + 60 * i + wa.random(0, 20))
-          local distance = wa.random(60, 85)
+          local distance = wa.random(60, 85) -- same result on all machines
           wa.land.cut{
             x = ev.x + distance * wa.math.cos(angle),
             y = ev.y + distance * wa.math.sin(angle),

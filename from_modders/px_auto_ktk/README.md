@@ -1,7 +1,7 @@
 # Auto Kill the King
 
-Project X's Kill the King (CKtkControl, `map_object_ktk_control/scripts/ktk_control.txt`)
-with the king placed by the mod instead of by a hand-made map.
+Project X's Kill the King with the king placed by the mod instead of by a
+hand-made map.
 
 One king. The attackers must destroy its terrain before the attack timer runs
 out; the defenders win otherwise.
@@ -26,7 +26,7 @@ edge fifth (`side = left` by default), found in this order:
 
 The king is PX's terrain stamp (`leftsmallking`/`rightsmallking`, 25x40 px of
 art in a 20x40 win box; `king_size = big` uses the 40x80 pair). Its solid pixels
-are the win condition, counted every 5 frames as in the baseline.
+are the win condition, counted every 5 frames.
 
 ## Worm spawn points
 

@@ -3,7 +3,7 @@
 # bullets but not its twelve-shot limit: hold Space to keep firing, release it
 # to stop after the bullet already in flight. A finite ammo setting fires that
 # many bullets, up to 20; infinite ammo uses the 20 cap.
-description = "PX's Megashark, firing while Space is held: inventory ammo up to 20 homing chlorophyte bullets, four to a target."
+description = "The Megashark that fires while Space is held."
 features = []
 
 [weapons]

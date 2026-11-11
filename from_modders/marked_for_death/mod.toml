@@ -17,7 +17,7 @@ id = "px.death_mark"
 type = "weapon"
 name = "Death Mark"
 credits = "reddaz"
-description = "Marks the worm in front: it takes 50% more damage for three turns. Does not end the turn."
+description = "Marks the worm in front: it takes 50% more damage for three turns. Doesn't end the turn."
 entry = "weapons/death_mark.lua"
 icon = "sprites/curse/whiteprod_icon.png"
 default_position = { row = "F10", column = 1 }
@@ -29,7 +29,7 @@ min = 110
 max = 500
 default = 150
 label = "Mark damage %"
-description = "Extra damage the mark adds, in percent: 150 = 1.5x (PX's value), 200 = double."
+description = "Damage a marked worm takes, in percent: 150 is 1.5x, 200 is double."
 [[components]]
 
 id = "px.homing_curse"
@@ -48,7 +48,7 @@ min = 1
 max = 50
 default = 3
 label = "Max homing objects"
-description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3). Magnetic actors are pulled by the curse magnet and do not use a lock."
+description = "How many mines, missiles, oil drums and arrows may home at one cursed worm."
 [[components]]
 
 id = "px.marked_for_death"
@@ -67,7 +67,7 @@ min = 110
 max = 500
 default = 150
 label = "Mark damage %"
-description = "Extra damage the mark adds, in percent: 150 = 1.5x (PX's value), 200 = double."
+description = "Damage a marked worm takes, in percent: 150 is 1.5x, 200 is double."
 [[components]]
 
 id = "px.wish_of_death"
@@ -86,4 +86,4 @@ min = 1
 max = 50
 default = 3
 label = "Max homing objects"
-description = "How many mines, missiles, oil drums and arrows may lock onto one cursed worm (PX: 3). Magnetic actors are pulled by the curse magnet and do not use a lock."
+description = "How many mines, missiles, oil drums and arrows may home at one cursed worm."

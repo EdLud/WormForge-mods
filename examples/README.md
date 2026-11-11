@@ -5,17 +5,17 @@ its card) to your own profile. Nothing in a bundle runs until a profile selects 
 weapon goes wherever the profile places it: its code never names a slot, it
 names weapons by id (`guide.moon_grenade`, `stock.bazooka`).
 
-None of these ships to players. The packs that do are `mods/px/` (Project X's
+None of these ships to players. The mods that do are `mods/px/` (Project X's
 weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
 of war, +N Seconds and the Cursor) and `mods/sdk/`.
 
 - `starting_guide` (`example.starting_guide`) — the example of the
   [WormForge starting guide](https://github.com/EdLud/WormForge/blob/main/docs/starting-guide-1-your-first-mod.md),
-  growing part by part. Part 1: `guide.moon_grenade`, WA's Grenade with about
+  growing part by part. Part 1: `guide.moon_grenade`, the stock Grenade with about
   a third of the gravity and a small burst, which digs three craters in the
   ground below it (`missile.explosion.power`, `on_explode`, `wa.random`,
   `wa.land.cut`, `wa.math`, a HUD line); `profiles/Moon Grenade.toml` places
-  it beside WA's Grenade.
+  it beside the stock Grenade.
 - `pooz` (`example.pooz`) — selecting the weapon possesses the worm as a
   humanoid runner (run/sprint, coyote time at edges, double jump). A/D, W to
   jump, Shift. Switch weapon to drop out.
@@ -36,11 +36,11 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     stock missiles, then 40 Lua actors from the same positions, drawn on the
     GPU in four styles, then Highlander's magnets, Bowling Ball Strikes and
     Electric Grenades. Its sprites load as assets (`wa.assets.load`).
-  - `profiles/Diagnostics.toml` ticks the profiler and the state logger over
+  - `profiles/Diagnostics.toml` selects the profiler and the state logger over
     the lobby's weapons;
     `profiles/Stress.toml` places the three Highlander weapons the stress test
     fires (it needs `mods/px` too).
 
-Profiles own their game scheme too: unset settings take Intermediate. Use the
+Profiles hold WSC settings too: unset settings take Intermediate. Use the
 loader's **Manage Scheme (.WSC)** page or a profile's `[scheme]`; gravity and
 wind have moved there from Utilities. See [profile scheme settings](../../docs/profile-scheme.md).

@@ -1,13 +1,10 @@
 # Project X Electric Mine
 
-A WormForge bundle for Project X's Electric Mine
-(`PX_pending/weapon_electric_mine.c`).
+Project X's Electric Mine as a mod of its own; the effect manager and trail
+come from the shared `effects.sdk`:
 
-It holds the weapon and its own modules, so updates to the `px` pack cannot
-overwrite them; the effect manager and trail come from the shared `effects.sdk`:
-
-- `weapons/electric_mine.lua` -- WA's mine, with WA's own blast silenced and
-  PX's custom electric explosion run in its place.
+- `weapons/electric_mine.lua` -- the stock mine, its blast silenced and PX's
+  electric explosion run in its place.
 - `lib/custom_explosion.lua` -- PX's `do_custom_explosion`: damage, push, hole,
   chain arcs and effect, launching the effect itself. The radial damage is
   PX's `Env->Objs` walk through `wa.world.blast`: worms, crates, oil drums,
@@ -46,8 +43,7 @@ by PX's 1.25 and truncated.
 ## Tazing a mine from another electric weapon
 
 `wf-lib/electric/taze_mine` marks any mine. The stock blast stays; the frame the
-mine goes, PX's electric explosion (`createElectricExplosion`,
-`custom_taze.c:313-315`) is drawn at the effect radius, and worms in the
+mine goes, PX's electric explosion is drawn at the effect radius, and worms in the
 electric field get the artificial taze: 15 damage on release, the captured blast
 push scaled to PX's 116/100, and a trail on the mine. Call it before the mine
 can be freed:

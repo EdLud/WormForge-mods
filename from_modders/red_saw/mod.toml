@@ -14,7 +14,7 @@ dependencies = ["effects.sdk", "px.electric", "wf.sdk"]
 id = "px.saw_grenade"
 type = "weapon"
 name = "Saw"
-description = "Project X's saw grenade: a spinning blade planted where it lands, slicing and pushing anything that touches it."
+description = "A spinning blade planted where it lands, slicing and pushing whatever touches it."
 entry = "weapons/saw_grenade.lua"
 icon = "sprites/saw/icon.png"
 default_position = { row = "F8", column = 1 }
@@ -32,7 +32,7 @@ description = "Art and collision scale. PX's fired saw is 50%; the editor defaul
 id = "px.saw_place"
 type = "weapon"
 name = "Saw (place)"
-description = "Project X's weak-throw saw: the same planted blade, thrown with the place record."
+description = "The same blade, thrown weakly."
 entry = "weapons/saw_place.lua"
 icon = "sprites/saw/icon_place.png"
 default_position = { row = "F8", column = 2 }
@@ -50,7 +50,7 @@ description = "Art and collision scale. PX's fired saw is 50%; the editor defaul
 id = "px.saw_random"
 type = "feature"
 name = "Random saws"
-description = "PX's random_saws: seed the map with teamless saws, one per vertical slice, on the first turn."
+description = "Seeds the map with teamless saws, one per vertical slice, on the first turn."
 entry = "weapons/saw_random.lua"
 
 [[components.options]]
@@ -60,7 +60,7 @@ default = 4
 min = 1
 max = 12
 label = "Random saws"
-description = "One saw per map slice. PX falls back to 4 when its undefined setting is absent."
+description = "How many saws the map gets, one per slice."
 
 [[components.options]]
 key = "electric_chance"
@@ -69,7 +69,7 @@ default = 14
 min = 0
 max = 100
 label = "Electric saw chance (%)"
-description = "Chance each random map saw is supercharged. PX's 1 in 7 is about 14%; 20 is 1 in 5."
+description = "Chance that a map saw is electric, in percent."
 
 [sprites."sprites/saw/sawsheet.png"]
 frames = 11

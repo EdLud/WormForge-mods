@@ -12,7 +12,7 @@ Then import the public helper:
 local sprites = require("wf-lib/px_sprite_builder")
 ```
 
-`sprites.PX_POSTURE` and `sprites.PX_HANDS` name the library's own artwork.
+`sprites.PX_POSTURE` and `sprites.PX_HANDS` name the library's artwork.
 Use them in `worm_sprites` and `hold.hand`; your weapon's sheet remains relative
 to your own mod. `sprites.flight(ctx, { weapon = ctx.id, sheet = "sprites/my.png",
 anim = "track" })` draws a turning actor over your native missile. Register
@@ -67,8 +67,5 @@ An optional `asset_namespace = "wf-lib/name"` exposes library-owned assets to
 dependents with qualified paths such as `wf-lib/name/sprites/hand.png`. Sprite
 settings come from the library manifest. Paths stay inside the named provider.
 
-Create your own pack directly under `WormForge/Mods/`. `Mods/wf-lib/` belongs to
-catalogue installations. Local edits are protected from Update All. Explicit
-replacement keeps the previous complete folder in `WormForge/Backups/Packs/`;
-file baselines live separately in `WormForge/Installed/`. Saved profiles remain
-in `WormForge/Profiles/`.
+Make your own mod directly under `WormForge/Mods/`; `Mods/wf-lib/` belongs to
+the catalogue's installs.

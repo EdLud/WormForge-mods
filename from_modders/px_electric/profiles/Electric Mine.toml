@@ -1,5 +1,5 @@
 # One weapon: PX's Electric Mine on the mine slot, with infinite ammo.
-description = "Just the Electric Mine: PX's sparks, reach bolts, trail, electric blast and chain arcs."
+description = "The Electric Mine alone."
 features = []
 
 [weapons]

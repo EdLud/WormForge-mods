@@ -24,7 +24,7 @@ weapon.missile_sprite = { -- Valyrian Fire: its bottle, spun at PX's 0.35 (WeapS
     sheet = "sprites/px_hold/valyrian_fire.png", frames = 1,
     spin = true, spin_speed = 0.35,
     hide = true, -- PX's record has sprite 0; the stock bottle is the throw sheet's
-    sink_tint = 0xA0B4FF, -- cooler and darker below the water, still its own green
+    sink_tint = 0xA0B4FF, -- cooler and darker below the water
   }
 
 function weapon.definition()

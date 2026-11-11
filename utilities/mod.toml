@@ -1,8 +1,4 @@
-# Core utilities (format_version 2): one feature with the match settings the
-# lobby scheme doesn't have and some players' favourite packs as switches,
-# fog of war, utilities of our own (+N Seconds, Bullet Time) and the Cursor.
-# Nothing runs until a profile selects it (its card in the mod loader).
-# See README.md.
+# Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
 version = "0.17.0"
@@ -11,11 +7,10 @@ api_version = 4
 format_version = 2
 dependencies = ["wf.sdk"]
 
-# Fog of war and the Cursor Suite were their own packs until 0.5.0:
-# installing this one retires them.
+# Installing this mod retires the older Fog of war and Cursor Suite mods.
 replaces = ["core.fog", "example.cursor_suite"]
 
-# The fog of war add-on (core.fog) drives the fog renderer.
+# This add-on turns on the fog of war
 [fog]
 enable = true
 [[components]]
@@ -23,7 +18,7 @@ enable = true
 id = "core.utilities"
 type = "feature"
 name = "Utilities"
-description = "Match settings the lobby scheme doesn't have, and some players' favourite packs as switches."
+description = "A collection of features that could fit a diverse set of schemes"
 entry = "features/utilities.lua"
 credits = "ExTurnSide and Live HP by reddaz, Agility by Zed and 0rang3 (port by reddaz)"
 
@@ -34,14 +29,14 @@ default = 0
 min = 0
 max = 50
 label = "Heal at turn start (HP)"
-description = "Health the turn's first worm gets; switching worms (Tab, Select Worm) doesn't heal again."
+description = "Heals the worm by the set amount at the start of its turn."
 
 [[components.options]]
 key = "ex_turn_side"
 type = "bool"
 default = false
 label = "ExTurnSide"
-description = "Left and right turn the worm during jumps, flights and other actions; not on the rope, in a Kamikaze or while Shift is held. By red."
+description = "Left and right turn the worm during jumps, flights and other actions."
 
 [[components.options]]
 key = "agility"
@@ -55,14 +50,14 @@ key = "parkour"
 type = "bool"
 default = false
 label = "Parkour"
-description = "In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X."
+description = "In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below."
 
 [[components.options]]
 key = "fast_aim"
 type = "bool"
 default = false
 label = "Fast aim"
-description = "Holding Shift changes how fast the up and down keys aim, at the speed below. Weapons that aim in coarse steps, like the Blow Torch, keep WA's own aim. From Project X. Needs a WormForge newer than 0.9.8."
+description = "Holding Shift while aiming makes the aim faster"
 
 [[components.options]]
 key = "fast_aim_speed"
@@ -71,14 +66,14 @@ default = 200
 min = 1
 max = 400
 label = "Fast aim speed (%)"
-description = "The aim's speed with Shift held, as a percentage of WA's own: 200 is twice as fast, 50 half as fast, for finer aim."
+description = "Aim speed with Shift held, as percentage."
 
 [[components.options]]
 key = "live_hp"
 type = "bool"
 default = false
 label = "Live HP"
-description = "Non-active worms' health bars follow damage immediately, down to zero, preserving frozen state and momentum. Death timing stays with WA. Originally by reddaz."
+description = "Subtract health from damaged worms immediately"
 
 [[components.options]]
 key = "instant_death"
@@ -88,28 +83,28 @@ choices = ["off", "settled", "in_flight"]
 from_bool = ["off", "settled"]
 default = "off"
 label = "Instant Death"
-description = "Zero-HP non-active worms die without waiting for other objects. settled: WA's own death once the worm's own motion stops. in_flight: at once, wherever it is, and it flies on while it dies, as in Project X. Works independently of Live HP."
+description = "off: normal behaviour, settled: once the worm is still it immediately triggers its death animation, in_flight: immediately dies when reaching 0"
 
 [[components.options]]
 key = "collect_viewer"
 type = "bool"
 default = false
 label = "Collect viewer"
-description = "What a crate gave pops up over it, for the team that took it."
+description = "Pop-up icon on collecting a crate"
 
 [[components.options]]
 key = "kill_counter"
 type = "bool"
 default = false
 label = "Kill counter"
-description = "A badge behind each worm counts its kills, 1 to 9, then infinity. The worm whose turn it is gets the kill and the victim's own count with it. From Project X."
+description = "Shows the number of kills an individual worm has acquired. Useful for Highlander"
 
 [[components.options]]
 key = "damage_numbers"
 type = "bool"
 default = false
 label = "Damage numbers"
-description = "Damage and healing float over the worm, Worms Reloaded style. Uses Live HP's frame snapshot."
+description = "Damage and healing float over the worm, Worms Reloaded style. By red"
 
 [[components.options]]
 key = "damage_numbers_side"
@@ -117,26 +112,23 @@ type = "choice"
 choices = ["alternate", "facing", "random"]
 default = "alternate"
 label = "Damage number side"
-description = "alternate starts on the worm's facing side, then flips left/right per worm so hits stay readable; facing always follows the worm; random is a local coin."
+description = "Where the damage numbers are spawned."
 
 [[components.options]]
 key = "fps_counter"
 type = "bool"
 default = false
 label = "FPS counter"
-description = "Each player's own frame rate at the top right of their screen. Shows only; it changes nothing in the match. Needs a WormForge newer than 0.9.7."
+description = "Enables an FPS counter"
 
-# An instant utility of our own: configurable extra time, in utility crates.
-# Auto-Use, uses per turn, extra pickups and retreat pickups are its weapon
-# settings (auto_use, uses_per_turn, extra_pickups, retreat_collect), as for
-# WA's instant utilities; profiles' older bonus_mode and retreat_collect
-# options are read into them.
+# +N Seconds: extra turn time from utility crates.
+# instant utilities.
 [[components]]
 
 id = "utilities.plus_ten"
 type = "weapon"
 name = "+N Seconds"
-description = "Adds configurable turn time. Its weapon settings choose how many bonuses a turn gets and what extra and retreat pickups do. Manual use does not end the turn."
+description = "Adds N seconds to the turn of the collecting / activating player"
 entry = "weapons/plus_n.lua"
 icon = "sprites/plus_n.png"
 default_position = { row = "utility", column = 6 }
@@ -150,13 +142,13 @@ max = 500
 label = "Seconds added"
 description = "Time added by each activated unit."
 
-# Bullet Time: the world in slow motion and the worm on its own time for a
-# set time, fired like +N Seconds.
+# Bullet Time: the world in slow motion while the worm keeps its speed, fired
+# like +N Seconds.
 [[components]]
 id = "utilities.bullet_time"
 type = "weapon"
 name = "Bullet Time"
-description = "Fire it and the world eases into slow motion, tinted blue, while your worm keeps its speed, for a set time. It can't be paused, and ends with the turn."
+description = "Slows down everything except the active worm (including the turn timer)"
 entry = "weapons/bullet_time.lua"
 icon = "sprites/bullet_time.png"
 default_position = { row = "utility", column = 7 }
@@ -168,7 +160,7 @@ default = 40
 min = 10
 max = 90
 label = "World speed (%)"
-description = "How fast the world runs during Bullet Time, as a percentage of the scheme's engine speed."
+description = "How fast the world is during Bullet Time"
 
 [[components.options]]
 key = "worm_speed"
@@ -177,7 +169,7 @@ default = 100
 min = 10
 max = 400
 label = "Worm speed (%)"
-description = "How fast your worm runs meanwhile, in real time: 100 keeps its normal speed while the world crawls. At most 8 times the world's."
+description = "How fast the worm moves during Bullet Time, in percent"
 
 [[components.options]]
 key = "seconds"
@@ -186,28 +178,27 @@ default = 20
 min = 1
 max = 60
 label = "Duration (s)"
-description = "How long Bullet Time lasts, in real seconds, easing in and out (2 s each) included."
+description = "How long Bullet Time lasts, in real seconds."
 
 [[components.options]]
 key = "music"
 type = "bool"
 default = true
 label = "Music slows too"
-description = "The soundtrack slows down with the world, lower and slower as a tape would, and comes back with it."
+description = ""
 
 [[components.options]]
 key = "tab"
 type = "bool"
 default = true
-label = "Tab fires it"
-description = "Tab starts Bullet Time too, spending one, and the worm keeps the weapon it holds. Not while WA's worm select has Tab (all turn with \"worm select always\"), in the retreat, or while its delay runs."
+label = "Activate with Tab"
+description = "Enables the tab key to launch bullet time if worm select isn't active"
 
-# Fog of war (wkFOW's renderer): until 0.5.0 its own bundle, core.fog.
 [[components]]
 id = "core.fog"
 type = "feature"
 name = "Fog of war"
-description = "Vision, terrain memory and lighting. Select this add-on in a profile to enable fog."
+description = "Select this add-on in a profile to play with fog."
 entry = "features/fog.lua"
 credits = "wkFOW"
 
@@ -259,7 +250,7 @@ type = "choice"
 choices = ["alliance", "active", "everyone"]
 default = "alliance"
 label = "Vision ownership"
-description = "Whose vision lights the map: 1 my alliance, 2 the active worm only, 3 everyone."
+description = "Whose vision players see: 1 their alliance, 2 the active worm only, 3 everyone."
 
 [[components.options]]
 key = "animal_circle_radius"
@@ -294,7 +285,7 @@ type = "int"
 default = 5
 min = 0
 max = 700
-label = "Proj circle"
+label = "Projectile circle"
 description = "Extra pixels of awareness outside each projectile's live sprite bounds."
 
 [[components.options]]
@@ -303,7 +294,7 @@ type = "int"
 default = 0
 min = 0
 max = 700
-label = "Proj cone length"
+label = "Projectile cone length"
 description = "Reach of a projectile's view cone, in pixels. 0 means no cone."
 
 [[components.options]]
@@ -312,7 +303,7 @@ type = "int"
 default = 45
 min = 45
 max = 360
-label = "Proj cone width"
+label = "Projectile cone width"
 description = "Width of a projectile's view cone, in degrees. 360 is a full circle."
 
 [[components.options]]
@@ -328,7 +319,7 @@ type = "choice"
 choices = ["everyone", "active"]
 default = "everyone"
 label = "Projectile vision"
-description = "Who sees a projectile's light: everyone, or only the alliance that fired it (for a projectile without a team, the alliance whose turn it is, its retreat included)."
+description = "Projectile light ownership: everyone, or only the alliance that fired it."
 
 [[components.options]]
 key = "explosion_circle"
@@ -337,7 +328,7 @@ default = 40
 min = 0
 max = 700
 label = "Explosion circle"
-description = "Temporary light radius past a crater's rim after explosions."
+description = "Temporary light radius after explosions."
 
 [[components.options]]
 key = "explosion_ownership"
@@ -345,7 +336,7 @@ type = "choice"
 choices = ["everyone", "active"]
 default = "everyone"
 label = "Explosion vision"
-description = "Who sees an explosion's light and its crater, and the glow of fire: everyone, or only the alliance whose turn made it, its retreat included."
+description = "Explosion vision ownership: everyone, active"
 
 [[components.options]]
 key = "crate_circle"
@@ -354,7 +345,7 @@ default = 20
 min = 0
 max = 700
 label = "Crate circle"
-description = "Light around every supply crate, in pixels, seen by everyone. 0 means crates give no light."
+description = "Light around every crate, in pixels, seen by everyone."
 
 [[components.options]]
 key = "crate_shadow_cast"
@@ -368,7 +359,7 @@ key = "spectator_mode"
 type = "bool"
 default = true
 label = "Reveal map for spectators"
-description = "Reveal the whole map to spectators and alliances with no surviving worms. Living allies keep their shared vision."
+description = "Reveal the whole map to spectators and alliances with no surviving worms."
 
 [[components.options]]
 key = "camera_follow"
@@ -376,21 +367,21 @@ type = "choice"
 choices = ["everything", "all but enemies", "only my side"]
 default = "all but enemies"
 label = "Camera follows"
-description = "everything: WA's normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only your own side's worms, cursor and shots."
+description = "everything: normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only own side's worms, cursor and shots."
 
 [[components.options]]
 key = "hide_enemy_hud"
 type = "bool"
 default = true
 label = "Hide enemy labels and arrows"
-description = "Never show the other sides' worm names, team names and health, the arrow over the worm whose turn it is, the worm select arrows, their cursors, markers and crosshair, even where your light reaches them. One exception: an enemy's health shows while the light of your worm whose turn it is reaches its body. Off: they all show wherever the fog is lit."
+description = "Hide enemy labels and arrows."
 
 [[components.options]]
 key = "placement_vision"
 type = "bool"
 default = false
 label = "Reveal map during placement"
-description = "Map visible during manual worm placement."
+description = "Map visible during manual worm placement. Useful for races."
 
 [[components.options]]
 key = "fog_floor"
@@ -401,12 +392,12 @@ max = 100
 label = "Minimum brightness (%)"
 description = "Fog brightness floor, percent. 0 is full darkness; higher values lift the whole map toward visibility."
 
-# Worm glow: every worm lit from within, for the fog's look of worms as lights.
+# Worm glow: every worm lit from within, the fog's look of worms as lights.
 [[components]]
 id = "core.worm_glow"
 type = "feature"
 name = "Worm glow"
-description = "A soft glow round every worm, in every pose and with every weapon, as if the light the fog of war draws round a worm came from it. A worm a mod tints itself (the Specialists zombie) keeps its own. Needs the shader renderer."
+description = "A soft glow round every worm."
 entry = "features/worm_glow.lua"
 
 [[components.options]]
@@ -416,7 +407,7 @@ default = 50
 min = 1
 max = 100
 label = "Strength (%)"
-description = "How strongly the glow shows, 1 to 100."
+description = "How strongly a worm glows, 1 to 100."
 
 [[components.options]]
 key = "radius"
@@ -425,7 +416,7 @@ default = 3
 min = 1
 max = 16
 label = "Blur radius"
-description = "How far the glow spreads past the worm, in pixels: its silhouette blurred twice by this much. Larger is softer and wider."
+description = "How far the glow spreads past the worm, in pixels."
 
 [[components.options]]
 key = "pad"
@@ -443,7 +434,7 @@ default = 160
 min = 10
 max = 800
 label = "Gain (%)"
-description = "How solid the glow is near the worm before it fades: the blur brightened by this much. Higher keeps it bright further out."
+description = "How solid the glow is near the worm before it fades."
 
 [[components.options]]
 key = "red"
@@ -452,7 +443,7 @@ default = 255
 min = 0
 max = 255
 label = "Red"
-description = "The glow's colour, its red part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
+description = "The glow's colour, red part: 0 to 255."
 
 [[components.options]]
 key = "green"
@@ -461,7 +452,7 @@ default = 255
 min = 0
 max = 255
 label = "Green"
-description = "The glow's colour, its green part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
+description = "The glow's colour, green part: 0 to 255."
 
 [[components.options]]
 key = "blue"
@@ -470,14 +461,14 @@ default = 255
 min = 0
 max = 255
 label = "Blue"
-description = "The glow's colour, its blue part: 0 to 255. White (255, 255, 255) by default; the worm itself keeps WA's colours."
+description = "The glow's colour, blue part: 0 to 255."
 
-# One Cursor weapon with seven modes: until 0.5.0 the Cursor Suite bundle.
+# The Cursor: one weapon with seven modes.
 [[components]]
 id = "cursors.cursor"
 type = "weapon"
 name = "Cursor"
-description = "Press + to cycle Light, Magnet attract, Magnet repel, Revive, Freeze, Fire and Hurt. Click to revive/freeze or deal 10 HP damage; hold left mouse for rainbow fire."
+description = "Press + to cycle through Light, Magnet attract, Magnet repel, Revive, Freeze, Fire and Hurt. Click to revive, freeze or deal 10 HP damage; hold the left mouse button for rainbow fire."
 entry = "weapons/cursor.lua"
 icon = "sprites/cursor.png"
 default_position = { row = "F8", column = 1 }

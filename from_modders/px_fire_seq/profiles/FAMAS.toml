@@ -1,5 +1,5 @@
 # One weapon: the FAMAS, on F3 6, with infinite ammo so it can be tested.
-description = "Just the FAMAS: one three-round burst per click; the fourth is two rounds and a dry fire."
+description = "The FAMAS alone."
 features = []
 
 [weapons]

@@ -9,7 +9,7 @@
 #
 # A component in no panel slot registers nothing (REPORT.md 11.13), so removing
 # the weapon from a profile leaves the match working.
-description = "PX's Megashark: twelve homing chlorophyte bullets in one burst, four to a target, with the record's own blast on impact."
+description = "The Megashark alone."
 features = []
 
 [weapons]

@@ -1,6 +1,6 @@
 # Saw + PX random map saws. The random feature is optional; the normal profile
 # is profiles/Saw.toml.
-description = "Project X's stationary saws with the random map spawner."
+description = "The Saw, with random saws on the map."
 
 features = ["px.saw_random"]
 

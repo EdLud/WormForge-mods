@@ -1,6 +1,6 @@
 # Assets not under the MIT license
 
-WormForge's own code, documentation, art and sounds are under the MIT license
+WormForge's code, documentation, art and sounds are under the MIT license
 in [LICENSE](LICENSE). The art and sounds listed here are not. They belong to
 their authors, were never published under a license, and nobody here can grant
 rights to them. WormForge ships them, credited, as a free fan port of Project
@@ -11,7 +11,7 @@ MIT license.
 
 Art and sounds from Project X and its community. Each weapon credits its
 authors as its scripts or their own posts name them (`authors` and `credits`
-in the pack's `mod.toml`, shown in the mod loader). Some of it may be based on
+in the mod's `mod.toml`, shown in the mod loader). Some of it may be based on
 Team17's own Worms Armageddon art.
 
 - `px/sprites/`, `px/sounds/`
@@ -22,7 +22,7 @@ Team17's own Worms Armageddon art.
 
 ## reddaz
 
-Art and sounds in reddaz's packs under `from_modders/`, Project X ones among
+Art and sounds in reddaz's mods under `from_modders/`, Project X ones among
 them. reddaz hasn't chosen a license for them; until then they are treated
 like the Project X art above.
 

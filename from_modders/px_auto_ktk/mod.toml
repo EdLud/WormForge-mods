@@ -19,7 +19,7 @@ format_version = 2
 id = "px.auto_ktk"
 type = "feature"
 name = "Auto Kill the King"
-description = "Finds or digs the defenders' king at the map edge before the first turn, then runs Project X's Kill the King: destroy the king before the attack timer runs out."
+description = "Places the defenders' king at a map edge before the first turn, then plays Kill the King: the attackers must destroy it before the timer runs out."
 entry = "components/auto_ktk.lua"
 
 [[components.options]]
@@ -36,7 +36,7 @@ type = "choice"
 choices = ["small", "big"]
 default = "small"
 label = "King size"
-description = "PX's small king is 20x40 px, the big one 40x80."
+description = "Small is 20x40 pixels, big is 40x80."
 
 [[components.options]]
 key = "allow_carve"
@@ -81,7 +81,7 @@ type = "choice"
 choices = ["attack_only", "defend_and_compensate"]
 default = "attack_only"
 label = "Timer runs during"
-description = "Attack only, or also refund defender_gain_ms on each defender turn."
+description = "Attack only, or also give the defenders time back on each of their turns."
 
 [[components.options]]
 key = "defender_gain_ms"

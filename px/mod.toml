@@ -842,7 +842,7 @@ id = "hl.rules"
 type = "feature"
 name = "Highlander rules"
 credits = "from Highlander 0rang3 1.1"
-description = "Project X's Highlander: each worm is dealt one weapon from each of three pools, may use each once a turn, and takes everything a worm it kills carried. Each placed weapon's pool is one of its settings."
+description = "Each worm is dealt one weapon from each of three pools, may use each once a turn, and takes what a worm it kills carried."
 entry = "components/highlander.lua"
 before_weapons = true
 
@@ -868,7 +868,7 @@ frames = 1
 id = "specialists.rules"
 type = "feature"
 name = "Specialists rules"
-description = "Project X Specialists 2.3: five worm classes, native weapon cooldowns, the Medic aura and the Soldier who comes back once as a zombie. Use five worms per team and 100 starting HP; the Specialists 2.3 profile places the full weapon set."
+description = "Five worm classes with their own weapons and cooldowns, the Medic aura and the Soldier who returns once as a zombie. Use five worms per team and 100 HP."
 entry = "components/specialists.lua"
 
 [[components]]
@@ -877,7 +877,7 @@ type = "feature"
 name = "Kill the King"
 authors = ["Danylo"]
 credits = "improved by 0rang3, ported by reddaz"
-description = "Project X's Kill the King (CKtkControl): the attackers must destroy the defenders' king before the timer runs out. Kings, teams and timer are component options; edge slices start clear of mines, drums and crates."
+description = "The attackers must destroy the defenders' king before the timer runs out."
 entry = "components/kill_the_king.lua"
 
 [[components.options]]
@@ -886,7 +886,7 @@ type = "choice"
 choices = ["one", "two"]
 default = "one"
 label = "Number of kings"
-description = "One uses King 1 only. Two adds King 2; either king falling wins for the attackers, as in PX."
+description = "One or two kings; with two, either king falling wins for the attackers."
 
 [[components.options]]
 key = "attack_time_seconds"
@@ -912,7 +912,7 @@ min = 0
 max = 100
 default = 5
 label = "Defender time gain (ms/frame)"
-description = "Only used by DefendAndCompensate. PX adds 5 ms per defender frame."
+description = "Time the defenders get back per frame of their turns (Defend and compensate only)."
 
 [[components.options]]
 key = "attackers_team"
@@ -1004,7 +1004,7 @@ type = "feature"
 name = "Project X oil drums"
 authors = ["Entuser"]
 credits = "sprites and skunk drum by Pablo, cluster, icy and electric drums by rafa``2, fitted to Highlander by 0rang3"
-description = "cool oil drums from px."
+description = "Project X's special oil drums: skunk, cluster, icy and electric."
 entry = "components/oil_drums.lua"
 before_weapons = true
 # The nuke drum fires the Nuke Rocket's rockets, placed or not.
@@ -1015,7 +1015,7 @@ id = "px.double_bazooka"
 type = "weapon"
 name = "Double Bazooka"
 authors = ["PyroMan"]
-description = "Highlander's Double Bazooka."
+description = "A bazooka whose shell fires a second shell from where the first one explodes."
 entry = "components/weapon.lua"
 icon = "sprites/double_bazooka/double_bazooka_ico.png"
 default_position = { row = "F1", column = 1 }
@@ -1027,7 +1027,7 @@ pool = "offensive"
 id = "px.igniter"
 type = "weapon"
 name = "Igniter"
-description = "Highlander's Igniter."
+description = "A gun whose bullet bursts into fire where it hits."
 entry = "components/weapon.lua"
 icon = "sprites/igniter/igniter_ico.png"
 default_position = { row = "F1", column = 2 }
@@ -1040,7 +1040,7 @@ id = "px.s_m_a_r_t_bomb"
 type = "weapon"
 name = "S.M.A.R.T Bomb"
 authors = ["Curtis"]
-description = "Highlander's S.M.A.R.T Bomb."
+description = "A mortar whose cluster bits home in on worms."
 entry = "components/weapon.lua"
 icon = "sprites/smart_bomb/smart_ico.png"
 default_position = { row = "F1", column = 3 }
@@ -1053,7 +1053,7 @@ id = "px.blaster_worm"
 type = "weapon"
 name = "Blaster Worm"
 authors = ["Curtis"]
-description = "Highlander's Blaster Worm."
+description = "A homing pigeon that bursts into clusters."
 entry = "components/weapon.lua"
 icon = "sprites/blaster_worm/bworm_ico.png"
 default_position = { row = "F1", column = 4 }
@@ -1066,7 +1066,7 @@ id = "px.burning_sheep_launcher"
 type = "weapon"
 name = "Burning Sheep Launcher"
 authors = ["StepS"]
-description = "Highlander's Burning Sheep Launcher."
+description = "Launches a burning sheep."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/burning_sheep_launcher_ico.png"
 default_position = { row = "F1", column = 5 }
@@ -1079,7 +1079,7 @@ id = "px.sticky_bomb"
 type = "weapon"
 name = "Sticky Bomb"
 authors = ["Twicken"]
-description = "Highlander's Sticky Bomb."
+description = "A grenade that sticks where it lands, then explodes."
 entry = "components/weapon.lua"
 icon = "sprites/sticky_bomb/sbico.png"
 default_position = { row = "F2", column = 1 }
@@ -1092,7 +1092,7 @@ id = "px.windy_cluster"
 type = "weapon"
 name = "Windy Cluster"
 authors = ["Curtis"]
-description = "Highlander's Windy Cluster."
+description = "A cluster bomb whose bits are carried by the wind."
 entry = "components/weapon.lua"
 icon = "sprites/windy_cluster/ico_windyc.png"
 default_position = { row = "F2", column = 2 }
@@ -1105,7 +1105,7 @@ id = "px.super_gravedigger"
 type = "weapon"
 name = "Super Gravedigger"
 authors = ["Curtis"]
-description = "Highlander's Super Gravedigger."
+description = "A banana bomb that bursts on impact into bits that skip along the ground before blowing up."
 entry = "components/weapon.lua"
 icon = "sprites/super_gravedigger/sgrave_ico.png"
 default_position = { row = "F2", column = 3 }
@@ -1118,7 +1118,7 @@ id = "px.thumper_nade"
 type = "weapon"
 name = "Thumper Nade"
 authors = ["Curtis"]
-description = "Highlander's Thumper Nade."
+description = "A heavy grenade that bounces twice, then bursts into clusters with a hard push."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpern_ico.png"
 default_position = { row = "F2", column = 4 }
@@ -1131,7 +1131,7 @@ id = "px.electric_grenade"
 type = "weapon"
 name = "Electric Grenade"
 authors = ["reddaz"]
-description = "Highlander's Electric Grenade."
+description = "A grenade whose blast is followed by a chaining electric arc."
 entry = "components/weapon.lua"
 icon = "sprites/electric_grenade/icon.png"
 default_position = { row = "F2", column = 5 }
@@ -1143,7 +1143,7 @@ pool = "offensive"
 id = "px.real_shotgun"
 type = "weapon"
 name = "Real Shotgun"
-description = "Highlander's Real Shotgun."
+description = "A shotgun that fires five pellets per shot."
 entry = "components/weapon.lua"
 icon = "sprites/real_shotgun/real_shotgun_ico.png"
 default_position = { row = "F3", column = 1 }
@@ -1157,7 +1157,7 @@ type = "weapon"
 name = "Sniper Rifle"
 authors = ["Twicken"]
 credits = "laser sight by Zed"
-description = "Highlander's Sniper Rifle."
+description = "A rifle with a laser sight: one precise shot."
 entry = "components/weapon.lua"
 icon = "sprites/sniper_rifle/srico.png"
 default_position = { row = "F3", column = 2 }
@@ -1170,7 +1170,7 @@ id = "px.laser_gun"
 type = "weapon"
 name = "Laser Gun"
 authors = ["_Kilburn"]
-description = "Highlander's Laser Gun."
+description = "Fires a beam that burns and cuts along the aim for five seconds."
 entry = "components/weapon.lua"
 icon = "sprites/laser_gun/ico_lasergun.png"
 default_position = { row = "F3", column = 3 }
@@ -1183,7 +1183,7 @@ id = "px.burst_rifle"
 type = "weapon"
 name = "Burst Rifle"
 authors = ["Curtis"]
-description = "Highlander's Burst Rifle."
+description = "A minigun that fires in bursts."
 entry = "components/weapon.lua"
 icon = "sprites/burst_rifle/ico_burstr.png"
 default_position = { row = "F3", column = 4 }
@@ -1196,7 +1196,7 @@ id = "px.shadow_bolt"
 type = "weapon"
 name = "Shadow-Bolt"
 authors = ["Curtis"]
-description = "Highlander's Shadow-Bolt."
+description = "A crossbow that fires a shadow bolt."
 entry = "components/weapon.lua"
 icon = "sprites/shadow_bolt/ico_shadowb.png"
 default_position = { row = "F3", column = 5 }
@@ -1209,7 +1209,7 @@ id = "px.fire_jump"
 type = "weapon"
 name = "Fire Jump"
 credits = "new icon by 0rang3"
-description = "Highlander's Fire Jump."
+description = "A fire punch that carries the worm high up, then forward."
 entry = "components/weapon.lua"
 icon = "sprites/fire_jump/fire_jump_ico.png"
 default_position = { row = "F4", column = 1 }
@@ -1223,7 +1223,7 @@ type = "weapon"
 name = "Sentry Laser"
 authors = ["rafa``2"]
 credits = "from code by _Kilburn"
-description = "Highlander's Sentry Laser."
+description = "A turret that shoots down missiles, mines and bowling balls of other colours with a laser."
 entry = "components/weapon.lua"
 icon = "sprites/sentry_laser/icon.png"
 default_position = { row = "F4", column = 2 }
@@ -1238,14 +1238,14 @@ min = 1
 max = 500
 default = 35
 label = "Health"
-description = "Damage the sentry takes before it’s destroyed."
+description = "Damage the sentry takes before it's destroyed."
 
 [[components]]
 id = "px.sentry_gun"
 type = "weapon"
 name = "Sentry Gun"
 authors = ["_Kilburn"]
-description = "Highlander's Sentry Gun."
+description = "A turret that fires at moving enemy worms within 360 pixels."
 entry = "components/weapon.lua"
 icon = "sprites/sentry_gun/icon.png"
 default_position = { row = "F4", column = 3 }
@@ -1260,7 +1260,7 @@ min = 1
 max = 500
 default = 50
 label = "Health"
-description = "Damage the sentry takes before it’s destroyed."
+description = "Damage the sentry takes before it's destroyed."
 
 [[components.options]]
 key = "ammo"
@@ -1295,7 +1295,7 @@ type = "weapon"
 name = "Kamikaze Rocket"
 authors = ["Pablo"]
 credits = "updated by rafa``2"
-description = "Highlander's Kamikaze Rocket."
+description = "Ctrl + Space turns the worm into a steerable rocket for four seconds, then it blows up."
 entry = "components/weapon.lua"
 icon = "sprites/kamikaze_rocket/icon.png"
 default_position = { row = "F4", column = 4 }
@@ -1305,7 +1305,7 @@ id = "px.javelin"
 type = "weapon"
 name = "Javelin"
 authors = ["Zed", "rafa``2"]
-description = "Highlander's Javelin."
+description = "A thrown javelin that pierces the first worm or object it hits, or sticks in the land as terrain."
 entry = "components/weapon.lua"
 icon = "sprites/javelin/icon.png"
 default_position = { row = "F4", column = 5 }
@@ -1330,7 +1330,7 @@ min = 1
 max = 500
 default = 50
 label = "Health"
-description = "Damage the turret takes before it’s destroyed."
+description = "Damage the turret takes before it's destroyed."
 
 [[components.options]]
 key = "ammo"
@@ -1348,7 +1348,7 @@ min = 20
 max = 10000
 default = 400
 label = "Fire rate (ms)"
-description = "Milliseconds between the turret’s first two shots each turn."
+description = "Milliseconds between the turret's first two shots each turn."
 
 [[components.options]]
 key = "fire_increase_pct"
@@ -1357,7 +1357,7 @@ min = 0
 max = 100
 default = 12
 label = "Fire increase (%)"
-description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+description = "How much longer each wait between shots is than the last, in percent."
 
 [[components]]
 id = "px.flame_turret"
@@ -1376,7 +1376,7 @@ min = 1
 max = 500
 default = 50
 label = "Health"
-description = "Damage the turret takes before it’s destroyed."
+description = "Damage the turret takes before it's destroyed."
 
 [[components.options]]
 key = "ammo"
@@ -1394,7 +1394,7 @@ min = 20
 max = 10000
 default = 400
 label = "Fire rate (ms)"
-description = "Milliseconds between the turret’s first two shots each turn."
+description = "Milliseconds between the turret's first two shots each turn."
 
 [[components.options]]
 key = "fire_increase_pct"
@@ -1403,7 +1403,7 @@ min = 0
 max = 100
 default = 12
 label = "Fire increase (%)"
-description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+description = "How much longer each wait between shots is than the last, in percent."
 
 [[components]]
 id = "px.mine_turret"
@@ -1422,7 +1422,7 @@ min = 1
 max = 500
 default = 50
 label = "Health"
-description = "Damage the turret takes before it’s destroyed."
+description = "Damage the turret takes before it's destroyed."
 
 [[components.options]]
 key = "ammo"
@@ -1440,7 +1440,7 @@ min = 20
 max = 10000
 default = 400
 label = "Fire rate (ms)"
-description = "Milliseconds between the turret’s first two shots each turn."
+description = "Milliseconds between the turret's first two shots each turn."
 
 [[components.options]]
 key = "fire_increase_pct"
@@ -1449,7 +1449,7 @@ min = 0
 max = 100
 default = 12
 label = "Fire increase (%)"
-description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+description = "How much longer each wait between shots is than the last, in percent."
 
 [[components]]
 id = "px.auto_ballista"
@@ -1468,7 +1468,7 @@ min = 1
 max = 500
 default = 50
 label = "Health"
-description = "Damage the turret takes before it’s destroyed."
+description = "Damage the turret takes before it's destroyed."
 
 [[components.options]]
 key = "ammo"
@@ -1486,7 +1486,7 @@ min = 20
 max = 10000
 default = 400
 label = "Fire rate (ms)"
-description = "Milliseconds between the turret’s first two shots each turn."
+description = "Milliseconds between the turret's first two shots each turn."
 
 [[components.options]]
 key = "fire_increase_pct"
@@ -1495,14 +1495,14 @@ min = 0
 max = 100
 default = 12
 label = "Fire increase (%)"
-description = "Percent each next wait between shots is longer than the last, so the turret slows as it fires."
+description = "How much longer each wait between shots is than the last, in percent."
 
 [[components]]
 id = "px.nuke_rocket"
 type = "weapon"
 name = "Nuke Rocket"
 authors = ["PyroMan"]
-description = "Highlander's Nuke Rocket."
+description = "A placed rocket that fuses, then launches a nuke that bursts into clusters."
 entry = "components/weapon.lua"
 icon = "sprites/nuke_rocket/nuke_rocket_ico.png"
 default_position = { row = "F5", column = 2 }
@@ -1515,7 +1515,7 @@ id = "px.pogo_sheep"
 type = "weapon"
 name = "Pogo Sheep"
 authors = ["Curtis"]
-description = "Highlander's Pogo Sheep."
+description = "A sheep that bounces around the map like a pogo stick, then bursts into bouncing bits."
 entry = "components/weapon.lua"
 icon = "sprites/pogo_sheep/psheep_ico.png"
 default_position = { row = "F5", column = 3 }
@@ -1528,7 +1528,7 @@ id = "px.ghost_sheep"
 type = "weapon"
 name = "Ghost Sheep"
 authors = ["StepS"]
-description = "Highlander's Ghost Sheep."
+description = "A super sheep that flies through the land for eight seconds, then explodes."
 entry = "components/weapon.lua"
 icon = "sprites/ghost_sheep/ghost_sheep_ico.png"
 default_position = { row = "F5", column = 5 }
@@ -1541,7 +1541,7 @@ id = "px.gravler"
 type = "weapon"
 name = "Gravler"
 authors = ["Curtis"]
-description = "Highlander's Gravler."
+description = "A mole that digs for a set time, then blows up."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravler_ico.png"
 default_position = { row = "F5", column = 6 }
@@ -1562,14 +1562,14 @@ min = 1
 max = 100
 default = 40
 label = "Blast power (radius and damage)"
-description = "The size of its explosion. WA ties a blast's radius and damage together, so this sets both."
+description = "The size of its explosion: radius and damage together."
 
 [[components]]
 id = "px.mortar_strike"
 type = "weapon"
 name = "Mortar Strike"
 authors = ["Curtis"]
-description = "Highlander's Mortar Strike."
+description = "An air strike that drops mortar shells."
 entry = "components/weapon.lua"
 icon = "sprites/mortar_strike/ico_mortarst.png"
 default_position = { row = "F6", column = 1 }
@@ -1583,7 +1583,7 @@ id = "px.homing_air_strike"
 type = "weapon"
 name = "Homing Air Strike"
 credits = "from Worms 2"
-description = "Worms 2's Homing Air Strike: click a target; a jet drops five homing missiles that steer for it."
+description = "Click a target; a jet drops five homing missiles that steer for it."
 entry = "weapons/homing_air_strike.lua"
 icon = "sprites/homing_air_strike/ico_hairstrike.png"
 default_position = { row = "F6", column = 6 }
@@ -1593,7 +1593,7 @@ id = "px.submarine_attack"
 type = "weapon"
 name = "Submarine Attack"
 authors = ["rafa``2"]
-description = "Highlander's Submarine Attack: click a target; a submarine rises under it and fires twenty missiles up out of the water."
+description = "Click a target; a submarine rises under it and fires twenty missiles up out of the water."
 entry = "components/weapon.lua"
 icon = "sprites/submarine_attack/icon.png"
 default_position = { row = "F6", column = 4 }
@@ -1606,7 +1606,7 @@ cavern = false
 id = "px.lightning_strike"
 type = "weapon"
 name = "Lightning Strike"
-description = "Highlander's Lightning Strike."
+description = "A beam from the sky that heals worms, revives graves and arms mines."
 entry = "components/weapon.lua"
 icon = "sprites/lightning/icon.png"
 default_position = { row = "F6", column = 2 }
@@ -1622,14 +1622,14 @@ min = 1
 max = 1000
 default = 10
 label = "Revived worm's health"
-description = "The health a worm the strike brings back from its grave gets. Project X's Lightning gives 25, as in Specialists."
+description = "Health of a worm the strike revives."
 
 [[components]]
 id = "px.pigeon_strike"
 type = "weapon"
 name = "Pigeon Strike"
 authors = ["Curtis"]
-description = "Highlander's Pigeon Strike."
+description = "A mail strike whose pigeons home in on worms and burst into bouncing bits."
 entry = "components/weapon.lua"
 icon = "sprites/pigeon_strike/ico_pigeonst.png"
 default_position = { row = "F6", column = 3 }
@@ -1643,7 +1643,7 @@ id = "px.gravler_strike"
 type = "weapon"
 name = "Gravler Strike"
 authors = ["Curtis"]
-description = "Highlander's Gravler Strike."
+description = "A strike of Gravlers."
 entry = "components/weapon.lua"
 icon = "sprites/gravler/gravlerst_ico.png"
 default_position = { row = "F6", column = 5 }
@@ -1657,7 +1657,7 @@ id = "px.super_drill"
 type = "weapon"
 name = "Super Drill"
 authors = ["StepS"]
-description = "Highlander's Super Drill."
+description = "A pneumatic drill that cuts a hole twice as wide."
 entry = "components/weapon.lua"
 icon = "sprites/super_drill/ico_superdrill.png"
 default_position = { row = "F7", column = 2 }
@@ -1670,7 +1670,7 @@ id = "px.electromagnet"
 type = "weapon"
 name = "Electromagnet"
 authors = ["_Kilburn"]
-description = "Highlander's Electromagnet."
+description = "A placed magnet that pulls or pushes mines and missiles for four turns; + switches the pole."
 entry = "components/weapon.lua"
 icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
@@ -1684,7 +1684,7 @@ type = "choice"
 choices = ["none", "light", "full"]
 default = "light"
 label = "Mines push the magnet"
-description = "How hard a mine that runs into the magnet knocks it. None: it stays put and the mines gather on it, as in Project X. Light: a fifth of the push. Full: the mine knocks it away, it pulls the mine back, and so on. Every mine counts, the Mine's and the level's alike; blasts, worms and other weapons push it as usual."
+description = "How hard a mine that runs into the magnet knocks it: none, light or full."
 
 [components.suggests."hl.rules"]
 pool = "second"
@@ -1693,7 +1693,7 @@ pool = "second"
 id = "px.3_girder_pack"
 type = "weapon"
 name = "3 Girder Pack"
-description = "Highlander's 3 Girder Pack."
+description = "Places three girders in one go."
 entry = "components/weapon.lua"
 icon = "girder_pack"
 default_position = { row = "F7", column = 5 }
@@ -1707,7 +1707,7 @@ default = 0
 min = 0
 max = 65535
 label = "Placement range (px)"
-description = "How far from the worm its girders may be placed: the cursor is held to this circle. 0 places anywhere. Highlander uses 300."
+description = "How far from the worm its girders may be placed, in pixels; 0 is anywhere."
 data = true
 
 [components.suggests."hl.rules"]
@@ -1717,7 +1717,7 @@ pool = "movement"
 id = "px.jump"
 type = "weapon"
 name = "Jump"
-description = "Highlander's Jump."
+description = "The worm itself is launched along the aim with the shot's power."
 entry = "components/weapon.lua"
 icon = "sprites/jump/jumpic.png"
 default_position = { row = "F8", column = 1 }
@@ -1731,7 +1731,7 @@ type = "weapon"
 name = "Hot Air Balloon"
 authors = ["rafa``2"]
 credits = "modified by 0rang3"
-description = "Highlander's Hot Air Balloon."
+description = "A balloon that carries the worm up and with the wind; Space pops it."
 entry = "components/weapon.lua"
 icon = "sprites/balloon/balloon_icon.png"
 default_position = { row = "F8", column = 2 }
@@ -1741,7 +1741,7 @@ id = "px.hang_glider"
 type = "weapon"
 name = "Hang-Glider"
 authors = ["_Kilburn"]
-description = "Highlander's Hang-Glider."
+description = "A parachute that flies as a glider, steered with the arrow keys."
 entry = "components/weapon.lua"
 icon = "sprites/hang_glider/ico_glider.png"
 default_position = { row = "F8", column = 3 }
@@ -1754,7 +1754,7 @@ id = "px.super_tele"
 type = "weapon"
 name = "Super Tele"
 authors = ["StepS"]
-description = "Highlander's Super Tele."
+description = "A teleport that also works into solid land, cutting room to arrive."
 entry = "components/weapon.lua"
 icon = "sprites/super_tele/icon.png"
 default_position = { row = "F8", column = 4 }
@@ -1767,7 +1767,7 @@ id = "px.portal_gun"
 type = "weapon"
 name = "Portal Gun"
 authors = ["PyroMan"]
-description = "Highlander's Portal Gun."
+description = "Fires two portals; worms and objects pass from one to the other."
 entry = "components/weapon.lua"
 icon = "sprites/portal_gun/icon.png"
 default_position = { row = "F8", column = 5 }
@@ -1780,7 +1780,7 @@ id = "px.chilli_bomb"
 type = "weapon"
 name = "Chilli Bomb"
 authors = ["PyroMan"]
-description = "Highlander's Chilli Bomb."
+description = "A super banana that bursts into five chillis, each bursting into fire."
 entry = "components/weapon.lua"
 icon = "sprites/chilli_bomb/chilli_ico.png"
 default_position = { row = "F9", column = 1 }
@@ -1793,7 +1793,7 @@ id = "px.hellish_hand_grenade"
 type = "weapon"
 name = "Hellish Hand-Grenade"
 authors = ["Twicken"]
-description = "Highlander's Hellish Hand-Grenade."
+description = "A holy hand grenade that bursts into spreading fire."
 entry = "components/weapon.lua"
 icon = "sprites/hellish/hhh_ico.png"
 default_position = { row = "F9", column = 2 }
@@ -1806,7 +1806,7 @@ id = "px.ferret"
 type = "weapon"
 name = "Ferret"
 authors = ["rafa``2"]
-description = "Highlander's Ferret."
+description = "A ferret that walks the land's outline and explodes on a worm, a drum or the water."
 entry = "components/weapon.lua"
 icon = "sprites/ferret/icon.png"
 default_position = { row = "F9", column = 4 }
@@ -1819,7 +1819,7 @@ cavern = false
 id = "px.banana_express"
 type = "weapon"
 name = "Banana Express"
-description = "Highlander's Banana Express."
+description = "An MB Bomb strike flown by the banana plane."
 entry = "components/weapon.lua"
 icon = "sprites/banana_express/banana_express_ico.png"
 default_position = { row = "F9", column = 5 }
@@ -1833,7 +1833,7 @@ id = "px.valyrian_fire"
 type = "weapon"
 name = "Valyrian Fire"
 authors = ["rafa``2"]
-description = "Highlander's Valyrian Fire."
+description = "A petrol bomb whose green fire burns hotter and throws further."
 entry = "components/weapon.lua"
 icon = "sprites/valyrian_fire/icon.png"
 default_position = { row = "F10", column = 1 }
@@ -1846,7 +1846,7 @@ id = "px.remote_roller"
 type = "weapon"
 name = "Remote Roller"
 authors = ["Curtis"]
-description = "Highlander's Remote Roller."
+description = "A roller dropped at the worm's feet with a push of its own."
 entry = "components/weapon.lua"
 icon = "sprites/remote_roller/rroller_ico.png"
 default_position = { row = "F10", column = 2 }
@@ -1861,7 +1861,7 @@ min = 0
 max = 100
 default = 15
 label = "Launch power"
-description = "The push it gets when dropped, in % of full power, on top of the worm's own speed. Project X's is 15 (WA's Sheep and Skunk: 5); 0 just drops it."
+description = "The push it gets when dropped, in percent of full power; 0 just drops it."
 
 [[components]]
 id = "px.bowling_ball_strike"
@@ -1869,7 +1869,7 @@ type = "weapon"
 name = "Bowling Ball Strike"
 authors = ["Entuser"]
 credits = "bowling ball by _Kilburn"
-description = "Highlander's Bowling Ball Strike."
+description = "Drops three bowling balls that roll and crush what they hit."
 entry = "components/weapon.lua"
 icon = "sprites/bowling_ball/strike_icon.png"
 default_position = { row = "F10", column = 4 }
@@ -1883,7 +1883,7 @@ id = "px.thumper_nade_strike"
 type = "weapon"
 name = "Thumper Nade Strike"
 authors = ["Curtis"]
-description = "Highlander's Thumper Nade Strike."
+description = "A carpet bomb of Thumper Nades."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpernst_ico.png"
 default_position = { row = "F10", column = 5 }
@@ -1896,7 +1896,7 @@ cavern = false
 id = "px.cow_launcher"
 type = "weapon"
 name = "Cow Launcher"
-description = "Highlander's Cow Launcher."
+description = "Launches a mad cow; hold fire to charge."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/cow_launcher_ico.png"
 default_position = { row = "F11", column = 1 }
@@ -1909,13 +1909,13 @@ key = "charged"
 type = "bool"
 default = false
 label = "Charged"
-description = "Hold fire to set the launch power, as WA's Bazooka. Off: Project X's launch at a fixed half power."
+description = "Hold fire to set the launch power; off launches at half power."
 
 [[components]]
 id = "px.old_woman_launcher"
 type = "weapon"
 name = "Old Woman Launcher"
-description = "Highlander's Old Woman Launcher."
+description = "Launches an Old Woman; hold fire to charge."
 entry = "components/weapon.lua"
 icon = "sprites/launchers/old_woman_launcher_ico.png"
 default_position = { row = "F11", column = 2 }
@@ -1928,7 +1928,7 @@ key = "charged"
 type = "bool"
 default = false
 label = "Charged"
-description = "Hold fire to set the launch power, as WA's Bazooka. Off: Project X's launch at a fixed half power."
+description = "Hold fire to set the launch power; off launches at half power."
 
 [[components]]
 id = "px.crate_strike"
@@ -1936,7 +1936,7 @@ type = "weapon"
 name = "Crate Strike"
 authors = ["StepS"]
 credits = "with rafa``2 and 0rang3"
-description = "Highlander's Crate Strike."
+description = "Drops three crates by parachute around the click."
 entry = "components/weapon.lua"
 icon = "sprites/crate_strike/icon.png"
 default_position = { row = "F11", column = 3 }
@@ -1950,7 +1950,7 @@ id = "px.reinforcement"
 type = "weapon"
 name = "Reinforcement"
 authors = ["StepS"]
-description = "Highlander's Reinforcement."
+description = "Click to add a new worm to the team, with 200 health."
 entry = "components/weapon.lua"
 icon = "sprites/reinforcement/icon.png"
 default_position = { row = "F11", column = 4 }
@@ -1964,7 +1964,7 @@ id = "px.ice_arrow"
 type = "weapon"
 name = "Ice Arrow"
 authors = ["StepS"]
-description = "Highlander's Ice Arrow."
+description = "An arrow that freezes the worm it hits."
 entry = "components/weapon.lua"
 icon = "sprites/ice_arrow/icon.png"
 default_position = { row = "F11", column = 5 }
@@ -1976,7 +1976,7 @@ pool = "second"
 id = "px.skip_go_surrender"
 type = "weapon"
 name = "Skip Go/Surrender"
-description = "Highlander's Skip Go/Surrender."
+description = "Space skips the turn; Ctrl + Space surrenders."
 entry = "components/weapon.lua"
 icon = "sprites/skip_go/icon.png"
 default_position = { row = "F12", column = 1 }
@@ -1987,7 +1987,7 @@ type = "weapon"
 name = "Wind Changer"
 authors = ["ravander"]
 credits = "improved by 0rang3"
-description = "Highlander's Wind Changer."
+description = "0 to 9 choose the force; firing sets the wind toward where the worm faces."
 entry = "components/weapon.lua"
 icon = "sprites/wind_changer/ico_windchanger.png"
 default_position = { row = "F12", column = 2 }
@@ -1998,7 +1998,7 @@ type = "weapon"
 name = "Weapon Crate"
 authors = ["StepS", "rafa``2"]
 credits = "with 0rang3"
-description = "Highlander's Weapon Crate."
+description = "Places a weapon crate in front of the worm; one per team per round."
 entry = "components/weapon.lua"
 icon = "sprites/weapon_crate/icon.png"
 default_position = { row = "F12", column = 4 }
@@ -2008,7 +2008,7 @@ id = "px.helicopter"
 type = "weapon"
 name = "Helicopter"
 credits = "sprites by raffie, improved by 0rang3"
-description = "Highlander's Helicopter."
+description = "A jet pack flown as a helicopter: arrow keys steer, and a fast landing crashes it."
 entry = "components/weapon.lua"
 icon = "sprites/helicopter/heli_ico.png"
 default_position = { row = "utility", column = 1 }
@@ -2023,7 +2023,7 @@ min = 1
 max = 999
 default = 100
 label = "Fuel"
-description = "The helicopter's fuel. Project X's is 100."
+description = "The helicopter's fuel."
 
 [[components]]
 id = "px.gravity_control"
@@ -2031,7 +2031,7 @@ type = "weapon"
 name = "Gravity Control"
 authors = ["DannyB"]
 credits = "edited by 0rang3"
-description = "Highlander's Gravity Control."
+description = "1 to 5 choose the gravity; firing holds it for the turn."
 entry = "components/weapon.lua"
 icon = "sprites/gravity_control/gravity_control_ico.png"
 default_position = { row = "utility", column = 2 }
@@ -2045,7 +2045,7 @@ type = "weapon"
 name = "Swim Suit"
 authors = ["StepS"]
 credits = "diving by PyroMan"
-description = "Highlander's Swim Suit."
+description = "Worn, a worm swims instead of drowning, steered with the arrow keys."
 entry = "components/weapon.lua"
 icon = "sprites/swim_suit/ico_swimsuit.png"
 default_position = { row = "utility", column = 4 }
@@ -2058,7 +2058,7 @@ id = "px.attack_helicopter"
 type = "weapon"
 name = "Attack Helicopter"
 credits = "ported by reddaz"
-description = "Project X's air strike: click a target; a helicopter strafes in from off the map and guns it down."
+description = "Click a target; a helicopter strafes in from off the map and guns it down."
 entry = "weapons/attack_helicopter.lua"
 icon = "sprites/helishootico.png"
 default_position = { row = "F6", column = 4 }
@@ -2070,7 +2070,7 @@ min = 1
 max = 1000
 default = 17
 label = "Bullets per strafe"
-description = "How many rounds the helicopter fires before it leaves. Project X fires 17."
+description = "How many rounds the helicopter fires before it leaves."
 
 [[components]]
 id = "px.bunker_buster"
@@ -2078,7 +2078,7 @@ type = "weapon"
 name = "Bunker Buster"
 authors = ["_Kilburn"]
 credits = "ported by reddaz"
-description = "Worms Reloaded's drill strike: click a target; a buster falls, drills down through the land and blows up."
+description = "Click a target; a buster falls, drills down through the land and blows up."
 entry = "weapons/bunker_buster.lua"
 icon = "sprites/bunker_buster/icon.png"
 default_position = { row = "F7", column = 3 }
@@ -2089,7 +2089,7 @@ type = "weapon"
 name = "Super Bunker Buster"
 authors = ["_Kilburn"]
 credits = "ported by reddaz"
-description = "The Super: the same drill, spraying fire as it goes and cutting sideways with five blasts that overlap along the drill's line."
+description = "The Bunker Buster that also sprays fire and cuts sideways with five blasts."
 entry = "weapons/bunker_buster.lua"
 icon = "sprites/super_bunker_buster/icon.png"
 default_position = { row = "F7", column = 6 }
@@ -2098,7 +2098,7 @@ default_position = { row = "F7", column = 6 }
 id = "px.double_jump"
 type = "weapon"
 name = "Double Jump"
-description = "Project X's Double Jump: switched on for the turn, a worm in mid-jump jumps once more on Enter or Backspace."
+description = "Switched on for the turn, a worm in mid-jump jumps once more on Enter or Backspace."
 entry = "weapons/double_jump.lua"
 icon = "sprites/double_jump/icon.png"
 default_position = { row = "F8", column = 2 }
@@ -2109,7 +2109,7 @@ type = "weapon"
 name = "Security Grenade"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Security Grenade: WA's own grenade, and on top of its blast a ring of eight more blasts, 60 pixels out, 25 damage each."
+description = "A grenade whose blast is ringed by eight more blasts, 60 pixels out."
 entry = "weapons/security_grenade.lua"
 icon = "sprites/security_grenade/icon.png"
 default_position = { row = "F2", column = 6 }
@@ -2120,7 +2120,7 @@ type = "weapon"
 name = "Ninja Star"
 authors = ["Curtis"]
 credits = "ported by reddaz"
-description = "Project X's thrown star: it sticks in the land where it lands. Land it on a worm, a mine, a barrel or a crate instead and it bites, 10 damage and a shove, with the blast as well. A thin ribbon trails the star in flight."
+description = "A thrown star that sticks in the land or bites what it hits for 10 damage."
 entry = "weapons/ninja_star.lua"
 icon = "sprites/ninja_star/icon.png"
 default_position = { row = "F2", column = 7 }
@@ -2131,7 +2131,7 @@ type = "weapon"
 name = "Health Zone"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Health Zone: a thrown zone that heals the worm inside it at the configured rate, or resurrects a grave at 1 HP. Duration counts from the next turn. + heals, - damages (1 HP/sec without killing)."
+description = "A thrown zone that heals the worm inside it or revives a grave; + heals, - damages."
 entry = "weapons/health_zone.lua"
 icon = "sprites/health_zone/icon.png"
 default_position = { row = "F9", column = 3 }
@@ -2160,7 +2160,7 @@ type = "weapon"
 name = "Blast Zone"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Blast Zone: the Health Zone's round, but the 45x45 zone it leaves explodes, 30 damage and a shove, whenever a worm, mine, barrel, crate, arrow or missile is inside it, and arms a mine it catches with a random 1-5 second fuse. 1-5 turns."
+description = "A thrown zone that explodes whenever a worm or object is inside it."
 entry = "weapons/blast_zone.lua"
 icon = "sprites/blast_zone/icon.png"
 default_position = { row = "F9", column = 6 }
@@ -2171,7 +2171,7 @@ type = "weapon"
 name = "Spot Hider"
 authors = ["PyroMan"]
 credits = "ported by reddaz"
-description = "Project X's Spot Hider: the zones' round, and where it lands a darkness spreads out and hides the spot, worms and their names, for 4 turns, then fades. It fills the open air round corners, as much of it wherever it lands. It watches nothing and explodes nothing."
+description = "A thrown zone that hides the spot it lands on in darkness for four turns."
 entry = "weapons/spot_hider.lua"
 icon = "sprites/spot_hider/icon.png"
 default_position = { row = "F9", column = 7 }
@@ -2182,7 +2182,7 @@ type = "choice"
 choices = ["shadow", "mask"]
 default = "shadow"
 label = "Look"
-description = "Shadow: an opaque darkness that fills the open air from where the round lands, round corners, drawn as the fog of war draws darkness, with or without fog. Mask: Project X's flat see-through mask."
+description = "Shadow: an opaque darkness spreading from where it lands, stopped by terrain. Mask: Project X's flat see-through mask."
 
 [[components.options]]
 key = "hides_for"
@@ -2190,7 +2190,7 @@ type = "choice"
 choices = ["everyone", "enemies"]
 default = "everyone"
 label = "Hides for"
-description = "Enemies: the shooter's side sees the shadow at half its darkness, so their own worms show through. The mask look hides for everyone."
+description = "Enemies: the shooter's side sees through the shadow at half its darkness."
 
 [[components.options]]
 key = "spread_seconds"
@@ -2208,7 +2208,7 @@ min = 10
 max = 350
 default = 256
 label = "Size (radius)"
-description = "How much the shadow hides: as much as a circle of this radius. In the open it is that circle; landed in a pocket, it fills the pocket and flows on out of its openings, round corners, up to twice this far. The mask look keeps Project X's size."
+description = "How much the shadow hides: a circle of this radius, flowing out of pockets up to twice as far."
 
 [sprites."sprites/thrown_dynamite/tdynamite.png"]
 frames = 4
@@ -2226,7 +2226,7 @@ frames = 7
 id = "px.gatling_gun"
 type = "weapon"
 name = "Gatling Gun"
-description = "Project X Specialists: Gatling Gun."
+description = "A rapid-fire gun."
 entry = "components/weapon.lua"
 icon = "sprites/gatling_gun/ico_gatlingg.png"
 default_position = { row = "F3", column = 6 }
@@ -2235,7 +2235,7 @@ default_position = { row = "F3", column = 6 }
 id = "px.thrown_dynamite"
 type = "weapon"
 name = "Thrown Dynamite"
-description = "Project X Specialists: Thrown Dynamite."
+description = "A charged throw of a heavier, low-bounce dynamite."
 entry = "components/weapon.lua"
 icon = "sprites/thrown_dynamite/ico_tdynamite.png"
 default_position = { row = "F2", column = 8 }
@@ -2244,7 +2244,7 @@ default_position = { row = "F2", column = 8 }
 id = "px.tnt"
 type = "weapon"
 name = "TNT"
-description = "Project X Specialists: TNT, the Soldier's dynamite. A smaller blast that bursts into three more around it."
+description = "The Soldier's dynamite: a smaller blast that bursts into three more around it."
 entry = "components/weapon.lua"
 icon = "sprites/tnt/ico_tnt.png"
 default_position = { row = "F5", column = 1 }
@@ -2256,7 +2256,7 @@ frames = 32
 id = "px.tele_arrow"
 type = "weapon"
 name = "Tele Arrow"
-description = "Project X Specialists: Tele Arrow."
+description = "Fires a bouncing projectile; Space detonates it and teleports the worm there."
 entry = "components/weapon.lua"
 icon = "sprites/tele_arrow/ico_telea.png"
 default_position = { row = "F8", column = 6 }
@@ -2280,7 +2280,7 @@ frames = 8
 id = "px.girder_launcher"
 type = "weapon"
 name = "Girder Launcher"
-description = "Project X Specialists: Girder Launcher."
+description = "Fires four mini-girders that push what they strike or become terrain."
 entry = "components/weapon.lua"
 icon = "sprites/girder_launcher/ico_girderl.png"
 default_position = { row = "F7", column = 5 }
@@ -2290,7 +2290,7 @@ id = "px.sacrifice"
 type = "weapon"
 name = "Sacrifice"
 authors = ["0rang3"]
-description = "Project X Specialists: Sacrifice."
+description = "Trades 50 HP for five seconds of turn time per step, keeping one HP."
 entry = "components/weapon.lua"
 icon = "sprites/sacrifice/sacrifice_ico.png"
 default_position = { row = "F12", column = 4 }
@@ -2301,7 +2301,7 @@ type = "weapon"
 name = "Parkour"
 authors = ["Zed"]
 credits = "modified by PyroMan and 0rang3"
-description = "Project X Specialists: Parkour."
+description = "Parkour for the turn: Enter kicks the worm off a wall, Backspace bunny-hops it."
 entry = "components/weapon.lua"
 icon = "sprites/parkour/parkour_ico.png"
 default_position = { row = "F12", column = 5 }
@@ -2320,7 +2320,7 @@ id = "px.tazer"
 type = "weapon"
 name = "Tazer"
 authors = ["_Kilburn"]
-description = "Project X Specialists: Tazer."
+description = "A chain-lightning shot that arcs between worms; it doesn't end the turn."
 entry = "components/weapon.lua"
 icon = "sprites/tazer/ico_tazer.png"
 default_position = { row = "F3", column = 7 }
@@ -2329,7 +2329,7 @@ default_position = { row = "F3", column = 7 }
 id = "px.drilling_crew"
 type = "weapon"
 name = "Drilling Crew"
-description = "Project X Specialists: Drilling Crew."
+description = "A roaming drill followed by a bouncing worker."
 entry = "components/weapon.lua"
 icon = "sprites/drilling_crew/ico_drillingc.png"
 default_position = { row = "F6", column = 7 }
@@ -2338,7 +2338,7 @@ default_position = { row = "F6", column = 7 }
 id = "px.mines_gun"
 type = "weapon"
 name = "Mines Gun"
-description = "Project X Specialists: six launched mines with delayed triggered fuses."
+description = "Launches six mines with delayed fuses."
 entry = "components/weapon.lua"
 icon = "sprites/mines_gun/icon.png"
 default_position = { row = "F3", column = 8 }
@@ -2347,7 +2347,7 @@ default_position = { row = "F3", column = 8 }
 id = "px.platform"
 type = "weapon"
 name = "Platform"
-description = "Specialists: a fixed platform with 40 health."
+description = "A fixed platform with 40 health."
 entry = "components/weapon.lua"
 icon = "sprites/platform/platform_icon.png"
 default_position = { row = "F11", column = 8 }
@@ -2356,7 +2356,7 @@ default_position = { row = "F11", column = 8 }
 id = "px.bulldozer"
 type = "weapon"
 name = "Bulldozer"
-description = "Specialists: a walking digger that tunnels and shoves what it touches."
+description = "A walking digger that tunnels and shoves what it touches."
 entry = "components/weapon.lua"
 icon = "sprites/bulldozer/bdico.png"
 default_position = { row = "F5", column = 8 }
@@ -2365,7 +2365,7 @@ default_position = { row = "F5", column = 8 }
 id = "px.barrel_launcher"
 type = "weapon"
 name = "Barrel Launcher"
-description = "Specialists: launches one of five special oil drums, chosen with keys 1-5."
+description = "Launches one of five special oil drums, chosen with keys 1-5."
 entry = "components/weapon.lua"
 icon = "sprites/barrel_launcher/bl_ico.png"
 default_position = { row = "F1", column = 8 }
@@ -2376,7 +2376,7 @@ type = "weapon"
 name = "Trampoline"
 authors = ["ravander"]
 credits = "revised by StepS, sprites by raffie, fix by PyroMan, breakable by 0rang3"
-description = "Specialists: a thrown, breakable trampoline that throws worms, missiles and mines back up."
+description = "A thrown, breakable trampoline that throws worms, missiles and mines back up."
 entry = "components/weapon.lua"
 icon = "sprites/trampoline/tramp_ico.png"
 default_position = { row = "utility", column = 8 }
@@ -2387,7 +2387,7 @@ type = "weapon"
 name = "Mine Launcher"
 authors = ["StepS"]
 credits = "improved by 0rang3"
-description = "Specialists: fires an instant, sticky or invisible mine, chosen with keys 1-3."
+description = "Fires an instant, sticky or invisible mine, chosen with keys 1-3."
 entry = "components/weapon.lua"
 icon = "sprites/mine_launcher/minelauncher_ico.png"
 default_position = { row = "F1", column = 9 }
@@ -2396,7 +2396,7 @@ default_position = { row = "F1", column = 9 }
 id = "px.gravity_gun"
 type = "weapon"
 name = "Gravity Gun"
-description = "Specialists: pulls the object it aims at, holds it in front of the worm, and throws it."
+description = "Pulls the object it aims at, holds it in front of the worm and throws it."
 entry = "components/weapon.lua"
 icon = "sprites/gravity_gun/gravity_gun_ico.png"
 default_position = { row = "F8", column = 8 }
@@ -2407,41 +2407,41 @@ type = "choice"
 choices = ["all", "own", "off"]
 default = "all"
 label = "Grabs worms"
-description = "All: any worm. Own: only worms of your colour (your team and its allies). Off: no worm. A worm the gun can't take is no obstacle for it: the aim goes on to what lies behind."
+description = "All: any worm. Own: only your colour's worms. Off: no worm."
 
 [[components.options]]
 key = "grab_mines"
 type = "bool"
 default = true
 label = "Grabs mines"
-description = "Off: the gun passes over mines, neither pulling nor pushing them."
+description = "Off: the gun ignores mines."
 
 [[components.options]]
 key = "grab_crates"
 type = "bool"
 default = true
 label = "Grabs crates"
-description = "Off: the gun passes over crates, neither pulling nor pushing them."
+description = "Off: the gun ignores crates."
 
 [[components.options]]
 key = "grab_oil_drums"
 type = "bool"
 default = true
 label = "Grabs oil drums"
-description = "Off: the gun passes over oil drums, neither pulling nor pushing them."
+description = "Off: the gun ignores oil drums."
 
 [[components.options]]
 key = "grab_graves"
 type = "bool"
 default = true
 label = "Grabs gravestones"
-description = "Off: the gun passes over gravestones, neither pulling nor pushing them."
+description = "Off: the gun ignores gravestones."
 
 [[components]]
 id = "px.personal_invisibility"
 type = "weapon"
 name = "Personal Invisibility"
-description = "Specialists: WA's Invisibility for one worm, for three turns or until it attacks."
+description = "Invisibility for one worm, for three turns or until it attacks."
 entry = "components/weapon.lua"
 icon = "sprites/personal_invisibility/ico_pinvisibility.png"
 default_position = { row = "utility", column = 9 }
@@ -2450,7 +2450,7 @@ default_position = { row = "utility", column = 9 }
 id = "px.small_worm"
 type = "weapon"
 name = "Small Worm"
-description = "Specialists: the worm takes a mine's shape, lighter gravity and more mass until the turn is over."
+description = "The worm takes a mine's shape, lighter gravity and more mass until the turn is over."
 entry = "components/weapon.lua"
 icon = "sprites/small_worm/small_ico.png"
 default_position = { row = "utility", column = 10 }
@@ -2459,7 +2459,7 @@ default_position = { row = "utility", column = 10 }
 id = "px.toxic_grenade"
 type = "weapon"
 name = "Toxic Grenade"
-description = "Specialists: a grenade that releases a lingering poison cloud."
+description = "A grenade that releases a lingering poison cloud."
 entry = "components/weapon.lua"
 icon = "sprites/toxic_grenade/img_toxicgren.png"
 default_position = { row = "F2", column = 8 }

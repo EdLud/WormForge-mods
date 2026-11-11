@@ -5,27 +5,27 @@ pack tests. Mod changes belong here. The engine lives in
 [EdLud/WormForgeNew](https://github.com/EdLud/WormForgeNew); the production
 catalogue is served by [EdLud/WormForge](https://github.com/EdLud/WormForge).
 
-The packs players receive, selected by `catalogue.toml` with their profiles:
+The mods players receive, selected by `catalogue.toml` with their profiles:
 
 - `px/` — the Project X ports and their rule sets, Highlander and Kill the King.
-- `utilities/` — WormForge's own add-ons and tools: Utilities, Fog of war,
-  +N Seconds and the Cursor.
+- `utilities/` — WormForge's add-ons and tools: Utilities, Fog of war,
+  +N Seconds, Bullet Time and the Cursor.
 - `sdk/` — the shared helpers other packs build on.
-- `from_modders/` — community packs, packs only (their profiles stay out of the
-  catalogue): reddaz's Effects SDK, Electric Mine, Sequential Fire (Megashark,
-  FAMAS, Ripper Star), Saw and Keeper Bee.
+- `from_modders/` — community mods, without their profiles (those stay out of
+  the catalogue): reddaz's Effects SDK, Electric Mine, Sequential Fire
+  (Megashark, FAMAS, Ripper Star), Saw, Keeper Bee, Curse of Death, Bouncy
+  Laser, Buffalo of Lies and Auto Kill the King.
 
 `examples/` holds developer and diagnostic bundles; none of them ships. Diagnostic components
 and their support files are removed during public staging.
 
 ## Working locally
 
-In the game installation, create your own bundle directly under
-`WormForge/Mods/<my-mod>/`. Catalogue downloads go under `Mods/wf-lib/`, which
-contains a warning explaining ownership. Update All skips locally edited packs.
-**Replace (backup)** explicitly installs the catalogue copy while retaining the
-complete previous folder under `WormForge/Backups/Packs/`; saved profiles stay
-under `WormForge/Profiles/`.
+In the game installation, make your own mod directly under
+`WormForge/Mods/<my-mod>/`. Catalogue downloads go under `Mods/wf-lib/`. Update
+all skips mods with local changes; **Replace (backup)** installs the copy from
+the catalogue and moves the previous folder to `WormForge/Backups/Packs/`.
+Saved profiles stay under `WormForge/Profiles/`.
 
 The public [SDK helpers](sdk/README.md) expose the PX sprite builder, postures
 and hands through `require("wf-lib/px_sprite_builder")` with
@@ -52,7 +52,7 @@ one parent does not automatically update the other. Never pin an unpublished
 mods commit in a parent that other people need to clone.
 
 Run engine integration tests from an engine checkout using the same mods
-commit. Existing `mods/px` and `mods/examples` paths remain valid there.
+commit. The `mods/px` and `mods/examples` paths are the same there.
 
 ## PX tests
 
@@ -80,10 +80,10 @@ python3 catalogue/tools/test_catalogue.py
 python3 catalogue/tools/publish-packs.py --check --site .
 ```
 
-Change the version in each affected pack's `mod.toml` before republishing changed
-files, including changed bundled profiles. A published `(pack id, version)` is
-immutable. Unchanged packs keep their archive hashes. Removing a bundled profile
-does not remove a player's locally saved profile.
+Change the version in each changed mod's `mod.toml` before republishing,
+bundled profiles included. A published `(mod id, version)` is immutable;
+unchanged mods keep their archive hashes. Removing a bundled profile doesn't
+remove a player's saved profile.
 
 Commit the mods changes before building. The builder reads a Git archive of
 that exact commit, excluding ignored or untracked files. The signed index records
@@ -111,10 +111,10 @@ Building does not commit, push or deploy anything.
 ## Publishing
 
 Shared-library catalogues use schema 3. Publish a compatible engine DLL before
-publishing them; older DLLs refuse schema 3 without installing any packs.
+publishing them: a DLL without schema 3 refuses the catalogue and installs nothing.
 Current DLLs continue to accept older schema 2 catalogues.
 
-1. Test the packs in game from the mods commit you will publish.
+1. Test the mods in game from the mods commit you will publish.
 2. Pin that mods commit in the website checkout and build there.
 3. Verify (`--verify`) and review the complete generated downloads, then commit
    and deploy. Retain historical version

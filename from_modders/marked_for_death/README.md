@@ -4,15 +4,13 @@ Four weapons from Project X's `utility_curse_of_death.pxl`
 (`utility_curse_of_death/scripts/curse_of_death_script.txt`):
 
 - **Death Mark** / **Marked For Death** mark a worm: it takes the mark's
-  percentage of every blast and hit for four team turns (`MARK_TURNS`, PX line
-  487; `MARK_MULTIPLIER`, line 488).
+  percentage of every blast and hit for four team turns.
 - **Homing Curse** / **Wish Of Death** curse a worm: loose mines, missiles, oil
-  drums and arrows lock onto it and home (`ApplyCurse`, lines 464-472;
-  `ChaseTargetCurse`, lines 151-164) for three team turns (`CURSE_TURNS`, line
-  468) or until two objects have locked (lines 301, 407).
+  drums and arrows lock onto it and home for three team turns, or until two
+  objects have locked.
 
 The two click weapons refund the shot with "Nothing found!" when the click
-finds nobody (PX's `SCFindWorm`, line 514).
+finds nobody.
 
 ## Options
 
@@ -21,8 +19,7 @@ finds nobody (PX's `SCFindWorm`, line 514).
 | `dmg_percent` | 150 | Mark damage, percent (110-500). Stored per marked worm. |
 | `max_homing` | 3 | Objects that may lock onto one cursed worm (1-50). |
 
-PX keeps `dmgMultiplier` and `timesTargeted` on the worm; the port stores the
-same per worm, so two placed weapons keep their own numbers.
+The numbers are stored per worm, so two placed weapons keep their own.
 
 ## Departures
 

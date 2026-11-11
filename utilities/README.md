@@ -1,15 +1,9 @@
 # Core utilities
 
-WormForge's own add-ons and tools (`core.utilities`, `format_version = 2`):
-**Utilities**, with the match settings the lobby scheme doesn't have and some
-players' favourite mods as switches; **Fog of war**; **Worm glow**; the **+N Seconds**
-and **Bullet Time** utilities; and the **Cursor** weapon. Fog of war and the Cursor were their own
-packs (`core.fog`, `example.cursor_suite`) until 0.6.0; installing this pack
-from the catalogue moves those to `WormForge/Backups/Packs`, since their
-components are here now (`replaces` in `mod.toml`).
-
-Utilities changes nothing until a profile selects it: click the **Core utilities** card in the mod loader, tick
-"Utilities" among its add-ons and set it up there, or write it by hand in a profile file in `WormForge/Profiles`:
+WormForge's add-ons and tools, the mod **Core utilities** (`core.utilities`):
+**Utilities**, with match settings the lobby scheme doesn't have and some
+favourite mods as switches; **Fog of war**; **Worm glow**; the **+N Seconds**
+and **Bullet Time** utilities; and the **Cursor** weapon.
 
 ```toml
 features = ["core.utilities"]
@@ -19,235 +13,24 @@ heal_per_turn = 10
 live_hp = true
 ```
 
+## Utilities
+
 | Setting | Type | What it does |
 |---|---|---|
-| Heal at turn start | number, 0–50 | Health the turn's first worm gets when its team's turn starts. Switching worms within the turn (Tab, Select Worm) doesn't heal again. |
-| ExTurnSide | switch | Left and right turn the worm during jumps, flights and other actions; not on the rope, in a Kamikaze or while Shift is held. By red. |
+| Heal at turn start | number, 0–50 | Heals the worm by the set amount at the start of its turn. |
+| ExTurnSide | switch | Left and right turn the worm during jumps, flights and other actions. By red. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by reddaz. |
-| Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels (wall jump) and Backspace hops it off the land within 30 pixels below (bunny hop). Project X's parkour script. |
-| Fast aim | switch, and a speed, 1–400 % | With Shift held, the up and down keys aim at the speed set (200 % twice WA's, 50 % half, for finer aim). Weapons that aim in coarse steps, like the Blow Torch, keep WA's own aim. Project X's fast aim, which its Highlander, KAOS, Specialists and Mole Shopper schemes load. Needs a WormForge newer than 0.9.8 (`worm.aim_target`); an older DLL runs the rest of Utilities without it. Run `lua mods/utilities/test_fast_aim.lua` to check it. |
-| Live HP | switch | Non-active worms' health bars follow damage immediately, down to zero, preserving freeze and momentum. Originally by reddaz. |
-| Instant Death | switch, off by default | Zero-HP non-active worms start their native death sequence once their own motion settles, without waiting for the rest of the battlefield. |
-| Collect viewer | switch | What a crate gave pops up over it, for the team that took it. |
-| FPS counter | switch | Each player's own frame rate at the top right of their screen, over the last second. It only shows; nothing in the match changes. Needs a WormForge newer than 0.9.7 (`wa.hud.fps_counter()`); an older DLL runs the rest of Utilities without it. |
-| Kill counter | switch | A badge behind each worm counts its kills, 1 to 9, then infinity, and glow sparks burst from the killer. The worm whose turn it is gets the kill, whatever did the killing, and the victim's own count with it (a worm with 2 kills is worth 3). From Project X's kill counter, which Orange's Highlander loads. |
+| Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X. |
+| Fast aim | switch, and a speed, 1–400 % | Holding Shift makes the aim faster, at the speed set. Weapons that aim in coarse steps, like the Blow Torch, keep the normal aim. From Project X. |
+| Live HP | switch | Subtracts health from damaged worms immediately. By reddaz. |
+| Instant Death | off, settled, in flight | Settled: a worm at 0 HP dies as soon as it's still. In flight: it dies at once, wherever it is, and flies on while it dies, as in Project X. |
+| Collect viewer | switch | A pop-up icon when a crate is collected. |
+| Kill counter | switch | A badge behind each worm counts its kills, 1 to 9, then infinity. The worm whose turn it is gets the kill and the victim's count with it. From Project X; useful for Highlander. |
+| Damage numbers | switch, and a side | Damage and healing float over the worm, Worms Reloaded style. By red. |
+| FPS counter | switch | Each player's frame rate at the top right of their screen. |
 
-Gravity and wind belong to the profile's scheme (**Manage Scheme (.WSC)** in the loader, `[scheme]`),
-including `gravity`, `constant_wind` and `wind`.
+## Tests
 
-Live HP requires a DLL providing `worm:commit_health()`. It commits actual
-damage through WA's health-label handler, including for 1 HP survivors,
-without synthetic hits, healing pulses or changing the worm's state. A worm
-brought to 0 shows 0 at once through `worm:show_health()` (0.9.6 DLLs), which
-leaves WA the damage it owes: WA then kills it once the battlefield settles,
-mid-turn, as without Live HP. (A commit there left WA nothing owed, and the
-worm stood at 0 until the turn ended; an older DLL still behaves so.) Ice
-Arrow can freeze its victim normally. Active worms retain WA's ordinary
-health timing; death timing stays with WA for every worm. Nothing forces
-worms to die in mid-flight.
-Run its regression harness from the repository root with
-`lua mods/utilities/test_live_hp.lua`.
-
-Instant Death is independent of Live HP. Set `instant_death` in the same
-Utilities options table, or pick it under **Instant Death** in the loader:
-`"settled"` lets a zero-HP worm die once its own movement stops, through
-WA's own death (`worm:allow_death()`); `"in_flight"` starts its death at
-once, wherever it is, and it flies on while it dies, as in Project X
-(`worm:die()`, WormForge 0.9.52). A saved `true` reads as `"settled"`. WA
-still owns the death animation, explosion and grave. The active worm keeps its ordinary turn/death rules. Falls and direct
-HP changes are covered by the next simulation frame too. Run
-`lua mods/utilities/test_instant_death.lua` from the repository root
-to check both switches independently and together.
-
-## +N Seconds
-
-An instant utility that adds configurable time. Its stable ID remains
-`utilities.plus_ten`, so existing profiles keep their weapon and ammo settings.
-Its one option is the time added:
-
-| Option | Values | Default |
-|---|---|---|
-| Seconds added (`seconds`) | 1–500 | 10 |
-
-The rest are its weapon settings, as for WA's instant utilities (WormForge's
-`docs/instant-utilities.md`), in **Manage Weapon Panel**:
-
-| Setting | Values | Default |
-|---|---|---|
-| Uses per turn (`uses_per_turn`) | 1–255, `"unlimited"` | 1 |
-| Extra pickups (`extra_pickups`) | `keep`, `discard` | `discard` |
-| Collected during retreat (`retreat_collect`) | `activate`, `keep`, `discard` | `activate` |
-
-While worms are still being placed (manual placement), pickups wait for the
-team's first turn, as WA's Double Time does (`wa.world.placing()`, WormForge
-newer than 0.9.81; an older DLL refuses this pack's settings anyway).
-
-The defaults are WA's Double Time's. Until 0.14.0 +N kept extra and retreat
-pickups; a profile that wants that sets both to `keep`.
-
-With **Auto-Use on**, pickups activate immediately during normal turn time,
-each unit one bonus, up to the turn's uses; at turn start held units are
-used the same way. Infinite inventory uses one unit at turn start, plus each
-newly collected unit up to the turn's uses, without becoming finite. Units
-past the turn's uses are kept for later turns (`keep`) or, of that pickup,
-dropped (`discard`); previously held inventory and infinite ammo are never
-dropped.
-
-During retreat, `activate` extends the retreat countdown; `keep` saves the
-pickup for the next turn; `discard` drops only the pickup. These choices
-apply only with Auto-Use on. **Auto-Use off** always keeps pickups in inventory,
-including during retreat, for manual use. The retreat setting takes
-precedence over extra pickups: `keep` banks the whole pickup even with
-`discard`; `activate` follows extra pickups. Manual use obeys the uses per
-turn too; a use past them refunds the unit. Using this utility does not end
-the turn. Each countdown is capped at one hour.
-
-Profiles saved before 0.14.0 gave these as options, `bonus_mode` (`stack`,
-`once_keep`, `once_discard`) and `retreat_collect` (`nothing` for discard);
-they are read as `uses_per_turn = "unlimited"`, 1 with `keep`, 1 with
-`discard`, and the same `retreat_collect`.
-
-```toml
-[weapons]
-"utilities.plus_ten" = { row = "utility", column = 6 }
-
-[weapon_settings]
-"utilities.plus_ten" = { crate_pct = 60, auto_use = true, uses_per_turn = "unlimited", retreat_collect = "keep" }
-
-[options."utilities.plus_ten"]
-seconds = 15
-```
-
-The Lua lives in `weapons/plus_n.lua`; the icon is `sprites/plus_n.png`.
-Run `lua mods/utilities/test_auto_use.lua` to check these rules.
-
-A weapon's ammo, infinite included, is a weapon setting (the loader's **Manage Weapon Panel**), not
-a utility. The switches are those mods' own code, in `features/`, loaded only
-when switched on.
-
-Everything runs in simulation callbacks (`wa.on.turn_start`, and
-`wa.on.worm_message` for the wind), so the settings are the same on every peer
-and in replays: the selection, options included, is frozen with the bundles.
-
-WA rolls a turn's wind after it starts the turn, so the wind is set at the
-first frame after `turn_start` rather than in it.
-
-## Bullet Time
-
-A utility fired like +N Seconds (it is built on WA's Double Time, so WA
-decides when it may be used): for a set time the world runs in slow motion
-while the worm that fired it keeps its own speed. What the worm fires belongs
-to the world and crawls with it. Once on, it runs out by itself; firing it
-again meanwhile gives the unit back. It ends with the turn, and a worm switch
-(Tab) hands it to the new worm. The world eases into slow motion and back
-out of it (easeOutCirc, 2 seconds each way, within the duration), and the
-screen takes a blue tint as it does (drawn on the GPU layer, so it needs the
-shader renderer). The time left shows in the weapon tooltip's window at the
-bottom right (`wf-lib/tooltip`), for the firing team's side, over the held
-weapon's hint until it ends. WA's sounds slow down with the world; WA's turn clock counts
-the world's frames, so the turn lasts longer in real time.
-
-Tab fires it too (an option, on by default), and the worm keeps the weapon it
-holds: one unit is spent and slow motion starts wherever the worm is, mid-jump,
-on the rope or charging a throw. Tab is WA's while WA picks worms (the
-scheme's worm select, until the worm moves), so there it switches worms as
-ever; under "worm select always" it switches worms all turn and never fires
-Bullet Time. Not in the retreat either, nor while the weapon's delay runs.
-With Tab on, the turn team's Bullet Time shows at the top right in the HUD
-tray (`wa.hud.tray`), as the weapon panel shows it, with its ammo and "Tab"
-under it, to that team's side only; it lights up, a bar running down, while
-it runs, and goes once the team has none left.
-
-| Option | Default | |
-|---|---|---|
-| World speed (%) | 40 | The world's speed, of the scheme's engine speed. |
-| Worm speed (%) | 100 | The worm's, in real time: 100 is its normal speed. At most 8 times the world's. |
-| Duration (s) | 20 | How long it lasts, in real seconds, easing in and out included. |
-| Music slows too | on | The soundtrack slows with the world. |
-| Tab fires it | on | Tab starts it too, the held weapon kept. |
-
-It uses `wa.world.set_speed` and `worm.time_scale`, so it needs a WormForge
-newer than 0.9.81; Tab needs `wa.world.keys().tab` and
-`wa.world.worm_selecting()` (newer than 0.9.83), and is off without them.
-Run `lua mods/tests/utilities/test_bullet_time.lua` from the repository root
-for its Tab checks. The Lua lives in `weapons/bullet_time.lua`; the icon is
-`sprites/bullet_time.png`, the tint's plain sheet `sprites/bullet_time_tint.png`.
-
-## Fog of war
-
-`core.fog`, an add-on: wkFOW's renderer with declared vision. Select it in a
-profile to darken what no worm of yours can see; it needs WA's D3D9 shader
-renderer. Its settings: worms' awareness circle and aim cone, terrain shadow
-casting, terrain memory (off, stale, live or premapped), whose vision lights
-the map (your alliance, the active worm or everyone), the same circle and cone
-for animals and projectiles, light after explosions and around crates, the
-whole map for spectators and during placement, and a minimum brightness.
-The Lua lives in `features/fog.lua`; the pack's `[fog]` lets it drive the
-renderer.
-
-## Worm glow
-
-`core.worm_glow`, an add-on: a soft glow round every worm, so with the fog a
-worm reads as the light round it. Each worm's body keeps WA's colours (a
-white `worm.tint`) with a glow behind it in the add-on's colour
-(`glow_color`); a worm another mod tints (the Specialists zombie) keeps its
-own tint. Its settings: the glow's strength, its blur radius, the padding
-round each pose (0 grows it with the radius), its gain, and its colour as
-red, green and blue. WA's poses without a weapon are copied with the match
-(`wa_sprites = { "worm" }`), and the placed weapons' own worm poses get their
-glows with it (`worm_glow`), so none is made mid-match; WA's own weapon poses
-are copied the first time they are drawn. A vehicle that hides the worm and
-draws it in its own art (the Balloon, the Helicopter, the Hang-Glider) glows
-in its place: the weapon lists that art in `params.worm_art` and its actor
-says `a:gfx{ glow_of = worm }`. Needs WA's D3D9 shader renderer and
-a WormForge newer than 0.9.7. The Lua lives in `features/worm_glow.lua`.
-
-## Cursor
-
-One **Cursor** weapon (`cursors.cursor`), with infinite ammo and no turn end
-or teleport on click. Select it, then press **+** (top row or keypad) to cycle:
-
-| Mode | Action |
-|---|---|
-| Light | Cast a 300 px terrain-blocked light, visible to its owner; requires fog for the lighting effect |
-| Magnet attract | Attract magnetic objects within 300 px at fixed strength |
-| Magnet repel | Repel magnetic objects within 300 px at fixed strength |
-| Revive | Click near a linked gravestone to revive its original worm with 100 HP |
-| Freeze | Click near a living worm to apply WA's native freeze |
-| Fire | Hold the left mouse button to spray rainbow petrol flames at 25 flames/second |
-| Hurt | Click near a living worm to deal 10 HP damage through `worm:hurt(10)` |
-
-While the Cursor is held, the weapon tooltip (`wf-lib/tooltip`) names the
-mode for the worm's coalition and follows each change. Holding + advances once; release and press
-again to advance another mode. Each worm starts in Light and remembers its
-own mode across selections and turns. Number keys do not change magnet power.
-Switching modes removes the previous light or magnetic field immediately.
-Switching weapons, dying or ending the turn removes the cursor and its effect;
-a remembered selection restores it next turn.
-
-Revive, Freeze and Hurt choose the nearest eligible target within 24 px. Revive
-leaves unlinked graves and any revival WA refuses alone. Freeze can target
-either team, including the caster. WA owns revival placement, turn effects
-and freeze/thaw behavior.
-
-Hurt can target either team, including the caster, and can kill. Each click
-sends one ordinary `worm:hurt(10)` with no knockback; health display, loss of
-control and death timing follow the engine and the profile's settings.
-
-Fire uses WA's fire physics and damage. Its rainbow petrol flames do not
-spread into untinted fires, but still burn worms. On selection or entering
-Fire mode, it waits 60 ms (three simulation frames, rounding up 50 ms) and
-requires releasing any held click before a new press can spray. Leaving Fire
-mode stops emission; existing flames burn out naturally. The rainbow tint
-requires WA's D3D9 shader renderer. Simulation callbacks own mode changes
-and actions, including the mode announcement.
-
-The **0.9.3 demo profile** (in this repository; no longer in the catalogue)
-places Cursor and PX's Bowling Ball Strike, with fog, Live HP and Instant
-Death enabled. Select Cursor and press + to try the
-other modes. The demo needs the Utilities (Fog of war is in it) and Project X ports
-bundles; the Cursor itself has no PX dependency.
-
-The Lua lives in `weapons/cursor.lua` and `lib/cursor.lua`; the icon is
-`sprites/cursor.png`. Run `lua mods/tests/utilities/test_cursor.lua` from the
-repository root.
+From the repository root: `lua mods/utilities/test_live_hp.lua`,
+`test_instant_death.lua`, `test_auto_use.lua`, `test_fast_aim.lua` and
+`lua mods/tests/utilities/test_bullet_time.lua`, `test_cursor.lua`.

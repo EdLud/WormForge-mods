@@ -118,7 +118,7 @@ id = "tools.copy_bazooka"
 diagnostics = true
 type = "weapon"
 name = "Copy: bazooka"
-description = "WA's bazooka, copied unchanged, for the audit's copies run."
+description = "The stock bazooka, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "bazooka"
 
@@ -127,7 +127,7 @@ id = "tools.copy_homing_missile"
 diagnostics = true
 type = "weapon"
 name = "Copy: homing_missile"
-description = "WA's homing_missile, copied unchanged, for the audit's copies run."
+description = "The stock homing_missile, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "homing_missile"
 
@@ -136,7 +136,7 @@ id = "tools.copy_mortar"
 diagnostics = true
 type = "weapon"
 name = "Copy: mortar"
-description = "WA's mortar, copied unchanged, for the audit's copies run."
+description = "The stock mortar, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mortar"
 
@@ -145,7 +145,7 @@ id = "tools.copy_homing_pigeon"
 diagnostics = true
 type = "weapon"
 name = "Copy: homing_pigeon"
-description = "WA's homing_pigeon, copied unchanged, for the audit's copies run."
+description = "The stock homing_pigeon, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "homing_pigeon"
 
@@ -154,7 +154,7 @@ id = "tools.copy_sheep_launcher"
 diagnostics = true
 type = "weapon"
 name = "Copy: sheep_launcher"
-description = "WA's sheep_launcher, copied unchanged, for the audit's copies run."
+description = "The stock sheep_launcher, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "sheep_launcher"
 
@@ -163,7 +163,7 @@ id = "tools.copy_grenade"
 diagnostics = true
 type = "weapon"
 name = "Copy: grenade"
-description = "WA's grenade, copied unchanged, for the audit's copies run."
+description = "The stock grenade, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "grenade"
 
@@ -172,7 +172,7 @@ id = "tools.copy_cluster_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: cluster_bomb"
-description = "WA's cluster_bomb, copied unchanged, for the audit's copies run."
+description = "The stock cluster_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "cluster_bomb"
 
@@ -181,7 +181,7 @@ id = "tools.copy_banana_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: banana_bomb"
-description = "WA's banana_bomb, copied unchanged, for the audit's copies run."
+description = "The stock banana_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "banana_bomb"
 
@@ -190,7 +190,7 @@ id = "tools.copy_battle_axe"
 diagnostics = true
 type = "weapon"
 name = "Copy: battle_axe"
-description = "WA's battle_axe, copied unchanged, for the audit's copies run."
+description = "The stock battle_axe, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "battle_axe"
 
@@ -199,7 +199,7 @@ id = "tools.copy_shotgun"
 diagnostics = true
 type = "weapon"
 name = "Copy: shotgun"
-description = "WA's shotgun, copied unchanged, for the audit's copies run."
+description = "The stock shotgun, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "shotgun"
 
@@ -208,7 +208,7 @@ id = "tools.copy_handgun"
 diagnostics = true
 type = "weapon"
 name = "Copy: handgun"
-description = "WA's handgun, copied unchanged, for the audit's copies run."
+description = "The stock handgun, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "handgun"
 
@@ -217,7 +217,7 @@ id = "tools.copy_uzi"
 diagnostics = true
 type = "weapon"
 name = "Copy: uzi"
-description = "WA's uzi, copied unchanged, for the audit's copies run."
+description = "The stock uzi, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "uzi"
 
@@ -226,7 +226,7 @@ id = "tools.copy_minigun"
 diagnostics = true
 type = "weapon"
 name = "Copy: minigun"
-description = "WA's minigun, copied unchanged, for the audit's copies run."
+description = "The stock minigun, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "minigun"
 
@@ -235,7 +235,7 @@ id = "tools.copy_longbow"
 diagnostics = true
 type = "weapon"
 name = "Copy: longbow"
-description = "WA's longbow, copied unchanged, for the audit's copies run."
+description = "The stock longbow, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "longbow"
 
@@ -244,7 +244,7 @@ id = "tools.copy_fire_punch"
 diagnostics = true
 type = "weapon"
 name = "Copy: fire_punch"
-description = "WA's fire_punch, copied unchanged, for the audit's copies run."
+description = "The stock fire_punch, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "fire_punch"
 
@@ -253,7 +253,7 @@ id = "tools.copy_dragon_ball"
 diagnostics = true
 type = "weapon"
 name = "Copy: dragon_ball"
-description = "WA's dragon_ball, copied unchanged, for the audit's copies run."
+description = "The stock dragon_ball, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "dragon_ball"
 
@@ -262,7 +262,7 @@ id = "tools.copy_prod"
 diagnostics = true
 type = "weapon"
 name = "Copy: prod"
-description = "WA's prod, copied unchanged, for the audit's copies run."
+description = "The stock prod, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "prod"
 
@@ -271,7 +271,7 @@ id = "tools.copy_dynamite"
 diagnostics = true
 type = "weapon"
 name = "Copy: dynamite"
-description = "WA's dynamite, copied unchanged, for the audit's copies run."
+description = "The stock dynamite, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "dynamite"
 
@@ -280,7 +280,7 @@ id = "tools.copy_mine"
 diagnostics = true
 type = "weapon"
 name = "Copy: mine"
-description = "WA's mine, copied unchanged, for the audit's copies run."
+description = "The stock mine, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mine"
 
@@ -289,7 +289,7 @@ id = "tools.copy_sheep"
 diagnostics = true
 type = "weapon"
 name = "Copy: sheep"
-description = "WA's sheep, copied unchanged, for the audit's copies run."
+description = "The stock sheep, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "sheep"
 
@@ -298,7 +298,7 @@ id = "tools.copy_super_sheep"
 diagnostics = true
 type = "weapon"
 name = "Copy: super_sheep"
-description = "WA's super_sheep, copied unchanged, for the audit's copies run."
+description = "The stock super_sheep, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "super_sheep"
 
@@ -307,7 +307,7 @@ id = "tools.copy_aqua_sheep"
 diagnostics = true
 type = "weapon"
 name = "Copy: aqua_sheep"
-description = "WA's aqua_sheep, copied unchanged, for the audit's copies run."
+description = "The stock aqua_sheep, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "aqua_sheep"
 
@@ -316,7 +316,7 @@ id = "tools.copy_mole_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: mole_bomb"
-description = "WA's mole_bomb, copied unchanged, for the audit's copies run."
+description = "The stock mole_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mole_bomb"
 
@@ -325,7 +325,7 @@ id = "tools.copy_air_strike"
 diagnostics = true
 type = "weapon"
 name = "Copy: air_strike"
-description = "WA's air_strike, copied unchanged, for the audit's copies run."
+description = "The stock air_strike, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "air_strike"
 
@@ -334,7 +334,7 @@ id = "tools.copy_napalm_strike"
 diagnostics = true
 type = "weapon"
 name = "Copy: napalm_strike"
-description = "WA's napalm_strike, copied unchanged, for the audit's copies run."
+description = "The stock napalm_strike, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "napalm_strike"
 
@@ -343,7 +343,7 @@ id = "tools.copy_mail_strike"
 diagnostics = true
 type = "weapon"
 name = "Copy: mail_strike"
-description = "WA's mail_strike, copied unchanged, for the audit's copies run."
+description = "The stock mail_strike, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mail_strike"
 
@@ -352,7 +352,7 @@ id = "tools.copy_mine_strike"
 diagnostics = true
 type = "weapon"
 name = "Copy: mine_strike"
-description = "WA's mine_strike, copied unchanged, for the audit's copies run."
+description = "The stock mine_strike, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mine_strike"
 
@@ -361,7 +361,7 @@ id = "tools.copy_mole_squadron"
 diagnostics = true
 type = "weapon"
 name = "Copy: mole_squadron"
-description = "WA's mole_squadron, copied unchanged, for the audit's copies run."
+description = "The stock mole_squadron, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mole_squadron"
 
@@ -370,7 +370,7 @@ id = "tools.copy_blow_torch"
 diagnostics = true
 type = "weapon"
 name = "Copy: blow_torch"
-description = "WA's blow_torch, copied unchanged, for the audit's copies run."
+description = "The stock blow_torch, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "blow_torch"
 
@@ -379,7 +379,7 @@ id = "tools.copy_pneumatic_drill"
 diagnostics = true
 type = "weapon"
 name = "Copy: pneumatic_drill"
-description = "WA's pneumatic_drill, copied unchanged, for the audit's copies run."
+description = "The stock pneumatic_drill, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "pneumatic_drill"
 
@@ -388,7 +388,7 @@ id = "tools.copy_girder"
 diagnostics = true
 type = "weapon"
 name = "Copy: girder"
-description = "WA's girder, copied unchanged, for the audit's copies run."
+description = "The stock girder, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "girder"
 
@@ -397,7 +397,7 @@ id = "tools.copy_baseball_bat"
 diagnostics = true
 type = "weapon"
 name = "Copy: baseball_bat"
-description = "WA's baseball_bat, copied unchanged, for the audit's copies run."
+description = "The stock baseball_bat, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "baseball_bat"
 
@@ -406,7 +406,7 @@ id = "tools.copy_girder_pack"
 diagnostics = true
 type = "weapon"
 name = "Copy: girder_pack"
-description = "WA's girder_pack, copied unchanged, for the audit's copies run."
+description = "The stock girder_pack, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "girder_pack"
 
@@ -415,7 +415,7 @@ id = "tools.copy_ninja_rope"
 diagnostics = true
 type = "weapon"
 name = "Copy: ninja_rope"
-description = "WA's ninja_rope, copied unchanged, for the audit's copies run."
+description = "The stock ninja_rope, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "ninja_rope"
 
@@ -424,7 +424,7 @@ id = "tools.copy_bungee"
 diagnostics = true
 type = "weapon"
 name = "Copy: bungee"
-description = "WA's bungee, copied unchanged, for the audit's copies run."
+description = "The stock bungee, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "bungee"
 
@@ -433,7 +433,7 @@ id = "tools.copy_parachute"
 diagnostics = true
 type = "weapon"
 name = "Copy: parachute"
-description = "WA's parachute, copied unchanged, for the audit's copies run."
+description = "The stock parachute, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "parachute"
 
@@ -442,7 +442,7 @@ id = "tools.copy_teleport"
 diagnostics = true
 type = "weapon"
 name = "Copy: teleport"
-description = "WA's teleport, copied unchanged, for the audit's copies run."
+description = "The stock teleport, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "teleport"
 
@@ -451,7 +451,7 @@ id = "tools.copy_scales_of_justice"
 diagnostics = true
 type = "weapon"
 name = "Copy: scales_of_justice"
-description = "WA's scales_of_justice, copied unchanged, for the audit's copies run."
+description = "The stock scales_of_justice, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "scales_of_justice"
 
@@ -460,7 +460,7 @@ id = "tools.copy_super_banana"
 diagnostics = true
 type = "weapon"
 name = "Copy: super_banana"
-description = "WA's super_banana, copied unchanged, for the audit's copies run."
+description = "The stock super_banana, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "super_banana"
 
@@ -469,7 +469,7 @@ id = "tools.copy_holy_grenade"
 diagnostics = true
 type = "weapon"
 name = "Copy: holy_grenade"
-description = "WA's holy_grenade, copied unchanged, for the audit's copies run."
+description = "The stock holy_grenade, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "holy_grenade"
 
@@ -478,7 +478,7 @@ id = "tools.copy_flame_thrower"
 diagnostics = true
 type = "weapon"
 name = "Copy: flame_thrower"
-description = "WA's flame_thrower, copied unchanged, for the audit's copies run."
+description = "The stock flame_thrower, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "flame_thrower"
 
@@ -487,7 +487,7 @@ id = "tools.copy_salvation_army"
 diagnostics = true
 type = "weapon"
 name = "Copy: salvation_army"
-description = "WA's salvation_army, copied unchanged, for the audit's copies run."
+description = "The stock salvation_army, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "salvation_army"
 
@@ -496,7 +496,7 @@ id = "tools.copy_mb_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: mb_bomb"
-description = "WA's mb_bomb, copied unchanged, for the audit's copies run."
+description = "The stock mb_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mb_bomb"
 
@@ -505,7 +505,7 @@ id = "tools.copy_petrol_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: petrol_bomb"
-description = "WA's petrol_bomb, copied unchanged, for the audit's copies run."
+description = "The stock petrol_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "petrol_bomb"
 
@@ -514,7 +514,7 @@ id = "tools.copy_skunk"
 diagnostics = true
 type = "weapon"
 name = "Copy: skunk"
-description = "WA's skunk, copied unchanged, for the audit's copies run."
+description = "The stock skunk, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "skunk"
 
@@ -523,7 +523,7 @@ id = "tools.copy_ming_vase"
 diagnostics = true
 type = "weapon"
 name = "Copy: ming_vase"
-description = "WA's ming_vase, copied unchanged, for the audit's copies run."
+description = "The stock ming_vase, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "ming_vase"
 
@@ -532,7 +532,7 @@ id = "tools.copy_sheep_strike"
 diagnostics = true
 type = "weapon"
 name = "Copy: sheep_strike"
-description = "WA's sheep_strike, copied unchanged, for the audit's copies run."
+description = "The stock sheep_strike, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "sheep_strike"
 
@@ -541,7 +541,7 @@ id = "tools.copy_carpet_bomb"
 diagnostics = true
 type = "weapon"
 name = "Copy: carpet_bomb"
-description = "WA's carpet_bomb, copied unchanged, for the audit's copies run."
+description = "The stock carpet_bomb, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "carpet_bomb"
 
@@ -550,7 +550,7 @@ id = "tools.copy_mad_cow"
 diagnostics = true
 type = "weapon"
 name = "Copy: mad_cow"
-description = "WA's mad_cow, copied unchanged, for the audit's copies run."
+description = "The stock mad_cow, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "mad_cow"
 
@@ -559,7 +559,7 @@ id = "tools.copy_old_woman"
 diagnostics = true
 type = "weapon"
 name = "Copy: old_woman"
-description = "WA's old_woman, copied unchanged, for the audit's copies run."
+description = "The stock old_woman, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "old_woman"
 
@@ -568,7 +568,7 @@ id = "tools.copy_donkey"
 diagnostics = true
 type = "weapon"
 name = "Copy: donkey"
-description = "WA's donkey, copied unchanged, for the audit's copies run."
+description = "The stock donkey, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "donkey"
 
@@ -577,7 +577,7 @@ id = "tools.copy_magic_bullet"
 diagnostics = true
 type = "weapon"
 name = "Copy: magic_bullet"
-description = "WA's magic_bullet, copied unchanged, for the audit's copies run."
+description = "The stock magic_bullet, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "magic_bullet"
 
@@ -586,7 +586,7 @@ id = "tools.copy_jet_pack"
 diagnostics = true
 type = "weapon"
 name = "Copy: jet_pack"
-description = "WA's jet_pack, copied unchanged, for the audit's copies run."
+description = "The stock jet_pack, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "jet_pack"
 
@@ -595,7 +595,7 @@ id = "tools.copy_low_gravity"
 diagnostics = true
 type = "weapon"
 name = "Copy: low_gravity"
-description = "WA's low_gravity, copied unchanged, for the audit's copies run."
+description = "The stock low_gravity, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "low_gravity"
 
@@ -604,7 +604,7 @@ id = "tools.copy_fast_walk"
 diagnostics = true
 type = "weapon"
 name = "Copy: fast_walk"
-description = "WA's fast_walk, copied unchanged, for the audit's copies run."
+description = "The stock fast_walk, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "fast_walk"
 
@@ -613,7 +613,7 @@ id = "tools.copy_laser_sight"
 diagnostics = true
 type = "weapon"
 name = "Copy: laser_sight"
-description = "WA's laser_sight, copied unchanged, for the audit's copies run."
+description = "The stock laser_sight, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "laser_sight"
 
@@ -622,7 +622,7 @@ id = "tools.copy_invisibility"
 diagnostics = true
 type = "weapon"
 name = "Copy: invisibility"
-description = "WA's invisibility, copied unchanged, for the audit's copies run."
+description = "The stock invisibility, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "invisibility"
 
@@ -631,7 +631,7 @@ id = "tools.copy_damage_x2"
 diagnostics = true
 type = "weapon"
 name = "Copy: damage_x2"
-description = "WA's damage_x2, copied unchanged, for the audit's copies run."
+description = "The stock damage_x2, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "damage_x2"
 
@@ -640,7 +640,7 @@ id = "tools.copy_crate_spy"
 diagnostics = true
 type = "weapon"
 name = "Copy: crate_spy"
-description = "WA's crate_spy, copied unchanged, for the audit's copies run."
+description = "The stock crate_spy, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "crate_spy"
 
@@ -649,7 +649,7 @@ id = "tools.copy_double_turn_time"
 diagnostics = true
 type = "weapon"
 name = "Copy: double_turn_time"
-description = "WA's double_turn_time, copied unchanged, for the audit's copies run."
+description = "The stock double_turn_time, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "double_turn_time"
 
@@ -658,7 +658,7 @@ id = "tools.copy_crate_shower"
 diagnostics = true
 type = "weapon"
 name = "Copy: crate_shower"
-description = "WA's crate_shower, copied unchanged, for the audit's copies run."
+description = "The stock crate_shower, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "crate_shower"
 
@@ -667,7 +667,7 @@ id = "tools.copy_kamikaze"
 diagnostics = true
 type = "weapon"
 name = "Copy: kamikaze"
-description = "WA's kamikaze, copied unchanged, for the audit's copies run."
+description = "The stock kamikaze, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "kamikaze"
 
@@ -676,7 +676,7 @@ id = "tools.copy_suicide_bomber"
 diagnostics = true
 type = "weapon"
 name = "Copy: suicide_bomber"
-description = "WA's suicide_bomber, copied unchanged, for the audit's copies run."
+description = "The stock suicide_bomber, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "suicide_bomber"
 
@@ -685,7 +685,7 @@ id = "tools.copy_skip_go"
 diagnostics = true
 type = "weapon"
 name = "Copy: skip_go"
-description = "WA's skip_go, copied unchanged, for the audit's copies run."
+description = "The stock skip_go, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "skip_go"
 
@@ -694,7 +694,7 @@ id = "tools.copy_select_worm"
 diagnostics = true
 type = "weapon"
 name = "Copy: select_worm"
-description = "WA's select_worm, copied unchanged, for the audit's copies run."
+description = "The stock select_worm, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "select_worm"
 
@@ -703,7 +703,7 @@ id = "tools.copy_freeze"
 diagnostics = true
 type = "weapon"
 name = "Copy: freeze"
-description = "WA's freeze, copied unchanged, for the audit's copies run."
+description = "The stock freeze, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "freeze"
 
@@ -712,7 +712,7 @@ id = "tools.copy_nuclear_test"
 diagnostics = true
 type = "weapon"
 name = "Copy: nuclear_test"
-description = "WA's nuclear_test, copied unchanged, for the audit's copies run."
+description = "The stock nuclear_test, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "nuclear_test"
 
@@ -721,7 +721,7 @@ id = "tools.copy_earthquake"
 diagnostics = true
 type = "weapon"
 name = "Copy: earthquake"
-description = "WA's earthquake, copied unchanged, for the audit's copies run."
+description = "The stock earthquake, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "earthquake"
 
@@ -730,7 +730,7 @@ id = "tools.copy_armageddon"
 diagnostics = true
 type = "weapon"
 name = "Copy: armageddon"
-description = "WA's armageddon, copied unchanged, for the audit's copies run."
+description = "The stock armageddon, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "armageddon"
 
@@ -739,6 +739,6 @@ id = "tools.copy_surrender"
 diagnostics = true
 type = "weapon"
 name = "Copy: surrender"
-description = "WA's surrender, copied unchanged, for the audit's copies run."
+description = "The stock surrender, copied unchanged, for the audit."
 entry = "audit/copy.lua"
 icon = "surrender"

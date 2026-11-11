@@ -47,7 +47,7 @@ key = "terrain_blocking"
 type = "bool"
 default = true
 label = "Terrain blocking"
-description = "Reject placement inside terrain and let terrain cast shadows. Disable to place and reveal through terrain."
+description = "Terrain blocks the light and placement inside it; off places and lights through terrain."
 
 [[components]]
 id = "px.power_shotgun"
@@ -138,7 +138,7 @@ min = 0
 max = 600
 default = 0
 label = "How long (seconds, 0 = turn-based)"
-description = "0: turn-based, for its team's next turns (Turns). N: for N seconds of game time from putting it on, and off at the turn's cleanup at the latest, as WA's utilities."
+description = "0: lasts for its team's next turns (see Turns). N: lasts N seconds of game time."
 
 [[components.options]]
 key = "turns"
@@ -147,4 +147,4 @@ min = 1
 max = 20
 default = 1
 label = "Turns (turn-based only)"
-description = "How many of its team's turns the suit lasts: it comes off when the team's Nth next turn starts. 1: until the team's next turn."
+description = "How many of its team's turns the suit lasts."

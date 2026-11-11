@@ -42,7 +42,7 @@ id = "px.laser_reflect"
 type = "weapon"
 name = "Reflective Laser Gun"
 credits = "ported by reddaz"
-description = "Project X's Reflective Laser Gun: charges for half a second, then a beam that bounces off the terrain twice and hits every worm and object on its path at once."
+description = "A laser beam that bounces off the terrain twice and hits everything on its path."
 entry = "weapons/laser_reflect.lua"
 icon = "sprites/laser_gun/ico_lasergun.png"
 default_position = { row = "F3", column = 4 }
@@ -54,4 +54,4 @@ min = 0
 max = 10
 default = 2
 label = "Bounces"
-description = "How many times the beam reflects off the terrain. PX: 2 (three runs); 0 is a straight beam."
+description = "How many times the beam bounces off the terrain; 0 is a straight beam."

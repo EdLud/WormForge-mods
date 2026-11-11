@@ -1,4 +1,4 @@
-description = "The starting guide's Moon Grenade, with WA's Grenade beside it to compare, a Ninja Rope and Skip Go."
+description = "The starting guide's Moon Grenade, with the stock Grenade beside it to compare, a Ninja Rope and Skip Go."
 
 [weapons]
 "guide.moon_grenade" = true
