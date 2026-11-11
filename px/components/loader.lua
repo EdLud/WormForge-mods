@@ -21,6 +21,7 @@ local ORDER = {
   "lib/missile_sprites",
   "weapons/double_bazooka",
   "weapons/chilli_bomb",
+  "weapons/homing_fire_cluster",
   "weapons/nuke_rocket",
   "weapons/helicopter",
   "weapons/hot_air_balloon",

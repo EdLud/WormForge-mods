@@ -33,6 +33,7 @@ return {
   ["px.hellish_hand_grenade"] = "weapons/hellish_hand_grenade",
   ["px.hot_air_balloon"] = "weapons/hot_air_balloon",
   ["px.ice_arrow"] = "weapons/ice_arrow",
+  ["px.homing_fire_cluster"] = "weapons/homing_fire_cluster",
   ["px.igniter"] = "weapons/igniter",
   ["px.javelin"] = "weapons/javelin",
   ["px.jump"] = "weapons/jump",

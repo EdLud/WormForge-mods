@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.62"
+version = "0.20.63"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -283,6 +283,14 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/helicopter/jumpin.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/homing_fire_cluster/bullet.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/homing_fire_cluster/clustlet.png"]
 fps = 15
 play = "loop"
 
@@ -1784,6 +1792,19 @@ description = "A super banana that bursts into five chillis, each bursting into 
 entry = "components/weapon.lua"
 icon = "sprites/chilli_bomb/chilli_ico.png"
 default_position = { row = "F9", column = 1 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+
+[[components]]
+id = "px.homing_fire_cluster"
+type = "weapon"
+name = "Homing Fire Cluster"
+authors = ["PyroMan"]
+description = "Click a target, then throw: a grenade that homes on it and bursts into five clustlets, each bursting into fire."
+entry = "components/weapon.lua"
+icon = "sprites/homing_fire_cluster/homing_fire_cluster_ico.png"
+default_position = { row = "F9", column = 8 }
 
 [components.suggests."hl.rules"]
 pool = "offensive"

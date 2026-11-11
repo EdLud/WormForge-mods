@@ -54,15 +54,24 @@ local function sprite_owner()
   return any
 end
 
-wa.on.missile_frame(function(m)
-  local p = shared.owns(m.weapon) and PX_WEAP_SPRITES[m.weapon]
-  if p and p.first_sprite and not matched[m.id] then
+-- A weapon's missile_sprite is one spec, or a list of them told apart by
+-- first_sprite: the WA sprite a missile draws on its first frame.
+local function spec_for(m)
+  local specs = shared.owns(m.weapon) and PX_WEAP_SPRITES[m.weapon]
+  if not specs then return nil end
+  if matched[m.id] then return matched[m.id] end
+  if specs.sheet then specs = { specs } end
+  for _, p in ipairs(specs) do
+    if not p.first_sprite then return p end
     if m.phase == "pre" and m.sprite == p.first_sprite then
-      matched[m.id] = true
-    else
-      p = nil
+      matched[m.id] = p
+      return p
     end
   end
+end
+
+wa.on.missile_frame(function(m)
+  local p = spec_for(m)
   if p and p.hide and m.phase == "pre" and (flying[m.id] or sprite_owner()) then
     m.sprite = 0
   end
