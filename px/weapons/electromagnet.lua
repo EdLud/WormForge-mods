@@ -253,6 +253,9 @@ function weapon.setup()
   wa.on.turn_start(function(event)
     if turn_open then return end
     turn_open = true
+    for i = #magnets, 1, -1 do
+      if magnets[i].field.native == nil then remove(magnets[i]) end -- the engine freed it (far off the map)
+    end
     local team = event.worm and event.worm.team
     for _, m in ipairs(magnets) do
       m.ended_at = nil

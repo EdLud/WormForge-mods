@@ -831,7 +831,9 @@ local function new_match(opts)
         assert(spec.owner ~= nil, "launch needs an owner")
         M.launched = M.launched or {}
         M.launched[#M.launched + 1] = spec
-        return 9000 + #M.launched
+        local id = 9000 + #M.launched
+        if M.on_launch then M.on_launch(spec, id) end -- a missile that bursts as WA builds it
+        return id
       end,
     },
     on = {
@@ -1463,6 +1465,35 @@ do
   magnet_frame(repel)
   magnet_frame(attract)
   check("four owner turns discharge both magnets", mine.dx == 0)
+end
+
+print("Electromagnet: a magnet the engine freed leaves the list")
+do
+  new_match()
+  local w = worm(16)
+  w.x, w.y, w.weapon, w.turn = 100, 100, "baseball_bat", true
+  local shot = assert((function()
+    for _, spec in ipairs(replaced) do if spec.weapon == "baseball_bat" then return spec.on_fire end end
+  end)())
+  shot({ worm = w })
+  local gone = M.magnetic_fields[#M.magnetic_fields]
+  shot({ worm = w })
+  local live = M.spawned[#M.spawned]
+  -- As the engine's handle to a removed field: nil to read, an error to write.
+  rawset(gone, "native", nil)
+  setmetatable(gone, { __newindex = function(f, k, v)
+    if k ~= "removed" then error("magnetic field has been removed") end
+    rawset(f, k, v)
+  end })
+  M.magnetic_step(); live.on(live)
+  local mine = { id = 105, x = 140, y = 100, fuse = -1 }
+  function mine:arm(ms) self.armed = ms; return true end
+  M.mines = { mine }
+  local ok = pcall(function()
+    for _ = 1, 4 do M.turn_end({ worm = w }); M.turn_start({ worm = w, active = w }) end
+  end)
+  check("turn starts go on past a freed magnet", ok)
+  check("and the live magnet still discharges on its fourth turn", mine.armed ~= nil)
 end
 
 print("Electromagnet: planter passage lasts at least 250 ms and until clear")
@@ -3327,29 +3358,42 @@ do
   w.weapon = "bazooka"
   ammo[w.ammo_group].bazooka = 1
   M.message(w, wa.msg.FIRE_WEAPON)
-  M.missile({ id = 500, phase = "pre", weapon = "bazooka", x = 90, y = 52, vx = 0, vy = 0 })
-  M.missile({ id = 500, phase = "post", weapon = "bazooka", x = 100, y = 50, vx = 6, vy = -1 })
-  spec.on_explode({ x = 100, y = 50, slot = 1, missile = 500 })
+  spec.on_explode({ x = 100, y = 50, slot = 1, missile = 500, vx = 6, vy = -1 })
   check("the first shell cuts PX's 50-pixel hole", M.digs and #M.digs == 1
     and M.digs[1].x == 100 and M.digs[1].y == 50 and M.digs[1].radius == 50)
   check("no second shell during the blast", not M.launched)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   local l = M.launched and M.launched[1]
-  check("a second shell after it, at the first one's speed, for the shooter", l and #M.launched == 1
+  check("a second shell after it, at the first one's speed as it burst, for the shooter", l and #M.launched == 1
     and l.weapon == "bazooka" and l.owner == w and l.x == 100 and l.y == 50
     and l.vx == 6 and l.vy == -1)
   check("with PX's damage 40 and 5 s fuse, and the record's own bazooka shell (not PX's 54, a cluster bit here)",
     l.missile.explosion.power == 40 and l.missile.fuse == 5000 and l.missile.sprite == nil)
   M.message(worm(32), wa.msg.FRAME_FINISH)
   check("launched once", #M.launched == 1)
-  M.missile({ id = 9001, phase = "post", weapon = "bazooka", x = 140, y = 44, vx = 6, vy = 0 })
-  spec.on_explode({ x = 140, y = 44, slot = 1, missile = 9001 })
+  spec.on_explode({ x = 140, y = 44, slot = 1, missile = 9001, vx = 6, vy = 0 })
   M.message(w, wa.msg.FRAME_FINISH)
   check("the second shell's explosion ends it", #M.launched == 1 and #M.digs == 1)
   spec.on_explode({ x = 1, y = 1, slot = 1 })
-  spec.on_explode({ x = 1, y = 1, slot = 1, missile = 777 })
   M.message(w, wa.msg.FRAME_FINISH)
-  check("no missile id, or one never seen flying: nothing", #M.launched == 1 and #M.digs == 1)
+  check("no missile id: nothing", #M.launched == 1 and #M.digs == 1)
+  spec.on_explode({ x = 20, y = 30, slot = 1, missile = 777, vx = -14, vy = -19 })
+  M.message(w, wa.msg.FRAME_FINISH)
+  l = M.launched[2]
+  check("point blank, with no frame flown: the hole and a second shell at its launch speed",
+    #M.digs == 2 and l and l.x == 20 and l.y == 30 and l.vx == -14 and l.vy == -19)
+  -- Point blank the second shell starts where the first burst, still in the
+  -- worm or the land, and bursts inside the launch, before it returns its id.
+  M.on_launch = function(shot, id)
+    assert(#M.launched < 20, "second shells launched without end")
+    spec.on_explode({ x = shot.x, y = shot.y, slot = 1, missile = id, vx = shot.vx, vy = shot.vy })
+  end
+  spec.on_explode({ x = 60, y = 70, slot = 1, missile = 778, vx = 3, vy = 4 })
+  local ok, err = pcall(M.message, w, wa.msg.FRAME_FINISH)
+  M.on_launch = nil
+  check("a second shell that bursts as it is built ends it", ok and #M.launched == 3 and #M.digs == 3, err)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("and leaves nothing to launch later", #M.launched == 3)
 end
 
 print("s.m.a.r.t bomb: homing bits leave the red trail")
