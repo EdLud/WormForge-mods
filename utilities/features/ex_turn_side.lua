@@ -3,17 +3,8 @@
 local prev_left = false
 local prev_right = false
 
--- Girders and strikes take left and right for their angle and direction
--- until the click is spent; retreat starts once it is.
-local GIRDER_SUBTYPE = 17
-
-local function arrows_aim_the_click(worm)
-  if not worm.weapon or wa.world.retreat() > 0 then return false end
-  local ok, data = pcall(wa.weapons.data, worm.weapon)
-  if not ok then return false end
-  return data.fires.as == "strike"
-    or (data.fires.as == "special" and data.fires.subtype == GIRDER_SUBTYPE)
-end
+-- While the cursor is up for a girder or a strike, left and right aim it.
+local AIMS_THE_CLICK = { girder = true, strike = true }
 
 wa.on.worm_message(function(worm)
   if not worm.turn then return end
@@ -28,7 +19,7 @@ wa.on.worm_message(function(worm)
   local right = k.right and not prev_right
   prev_left = k.left
   prev_right = k.right
-  if not (left or right) or arrows_aim_the_click(worm) then return end
+  if not (left or right) or AIMS_THE_CLICK[worm.click] then return end
 
   if left then
     worm.facing = -1
