@@ -7,7 +7,7 @@
 # so the bundle does not depend on `px`.
 id = "px.laser_reflect"
 name = "Bouncy Laser"
-version = "0.8.1"
+version = "0.8.2"
 author = "reddaz"
 api_version = 4
 format_version = 2

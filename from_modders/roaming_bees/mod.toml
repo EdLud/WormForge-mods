@@ -6,7 +6,7 @@
 # See README.md.
 id = "spawn.bees"
 name = "Keeper Bee"
-version = "1.2.0"
+version = "1.2.1"
 author = "reddaz"
 api_version = 4
 format_version = 2

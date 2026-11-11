@@ -6,7 +6,7 @@
 # overlays; the README carries the PX line citations and the departures.
 id = "px.curse_of_death"
 name = "Curse of Death"
-version = "1.0.3"
+version = "1.0.4"
 author = "reddaz"
 api_version = 4
 format_version = 2

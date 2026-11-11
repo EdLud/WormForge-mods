@@ -23,7 +23,7 @@
 # it; profiles/ holds one per weapon to load in the mod loader.
 id = "px.fire_seq"
 name = "[Guns] Sequential Fire"
-version = "1.3.4"
+version = "1.3.5"
 author = "reddaz"
 api_version = 4
 format_version = 2
