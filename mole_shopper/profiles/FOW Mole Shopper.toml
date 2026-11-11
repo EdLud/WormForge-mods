@@ -130,7 +130,7 @@ unrestricted_weapon_use = false
 upgraded_clusters = true
 upgraded_grenade = true
 upgraded_longbow = true
-upgraded_shotgun = true
+upgraded_shotgun = false
 utility_crate_weight = 0
 water_rise_rate = 2
 weapon_crate_weight = 100
@@ -996,7 +996,7 @@ retreat = 3000
 [weapon_settings."stock.mole_bomb"]
 ammo = -1
 crate_pct = 0.0
-power = 3
+power = 4
 shots = 2
 
 [weapon_settings."stock.ninja_rope"]
