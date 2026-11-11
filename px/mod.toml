@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.65"
+version = "0.20.66"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1682,17 +1682,8 @@ description = "A placed magnet that pulls or pushes mines and missiles for four 
 entry = "components/weapon.lua"
 icon = "sprites/electromagnet/ico_magnet.png"
 default_position = { row = "F7", column = 4 }
-
-# Not PX's: a pulled mine that runs into the magnet hands it some of its speed
-# (WA's momentum exchange); at full the magnet is knocked away, pulls the mine
-# back and is knocked again. Every WA mine counts, the scheme's too.
-[[components.options]]
-key = "mine_push"
-type = "choice"
-choices = ["none", "light", "full"]
-default = "light"
-label = "Mines push the magnet"
-description = "How hard a mine that runs into the magnet knocks it: none, light or full."
+# A profile that sets the old "Mines push the magnet" loads without it.
+deprecated_options = ["mine_push"]
 
 [components.suggests."hl.rules"]
 pool = "second"

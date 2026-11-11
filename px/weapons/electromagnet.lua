@@ -2,8 +2,10 @@
 
 local weapon = {}
 
-local MINE_PUSH = { none = 0, light = 0.2, full = 1 }
-local mine_push = MINE_PUSH.light
+-- What its field drags can't push it by running into it: stock mines and
+-- missiles, the animals among them. Worms, blasts, guns, the Prod and the
+-- Fire Punch push it as usual.
+local PUSHED_BY = { mines = 0, missiles = 0 }
 
 weapon.record = {
   handling = {
@@ -38,10 +40,6 @@ function weapon.definition()
     params = { gpu_prefix = "sprites/electromagnet/" },
     on_fire = function(fire) fires.electromagnet(fire) end,
   })
-end
-
-function weapon.configure(ctx)
-  mine_push = MINE_PUSH[ctx.option("mine_push")]
 end
 
 function weapon.setup()
@@ -233,7 +231,7 @@ function weapon.setup()
     local a = wa.actors.spawn({
       sprite = BODY .. (pol < 0 and "magnet.png" or "magnet2.png"),
       x = m.x, y = m.y, vx = m.vx, vy = m.vy, owner = worm,
-      drown = false, body = { physics = "mine", pushed_by = { mines = mine_push } }, on = {
+      drown = false, body = { physics = "mine", pushed_by = PUSHED_BY }, on = {
         frame = function(actor) frame(m, actor) end,
         hit = function(actor, event) hit(m, actor, event) end,
       },
