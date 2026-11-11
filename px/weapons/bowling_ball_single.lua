@@ -3,8 +3,8 @@
 local weapon = {}
 local ART = "sprites/bowling_ball/"
 
--- The ball's physics, draw and hits are the strike's.
-weapon.requires = { "weapons/bowling_ball" }
+-- The ball itself is lib/bowling_balls, shared with the strike.
+weapon.requires = { "lib/bowling_balls" }
 
 function weapon.definition()
   local shared = require("lib/shared")

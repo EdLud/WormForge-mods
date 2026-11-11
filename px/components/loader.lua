@@ -61,6 +61,7 @@ local ORDER = {
   "weapons/ice_arrow",
   "weapons/valyrian_fire",
   "weapons/reinforcement",
+  "lib/bowling_balls",
   "weapons/bowling_ball",
   "weapons/bowling_ball_single",
   "weapons/ferret",
