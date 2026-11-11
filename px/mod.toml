@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.66"
+version = "0.20.67"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1889,6 +1889,19 @@ default_position = { row = "F10", column = 4 }
 [components.suggests."hl.rules"]
 pool = "offensive"
 cavern = false
+
+[[components]]
+id = "px.bowling_ball"
+type = "weapon"
+name = "Bowling Ball"
+authors = ["_Kilburn"]
+description = "Sets a bowling ball down in front of the worm, to roll and crush what it hits."
+entry = "components/weapon.lua"
+icon = "sprites/bowling_ball/icon.png"
+default_position = { row = "F10", column = 6 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
 
 [[components]]
 id = "px.thumper_nade_strike"

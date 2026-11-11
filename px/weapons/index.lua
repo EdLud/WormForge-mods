@@ -5,6 +5,7 @@ return {
   ["px.auto_ballista"] = "weapons/auto_ballista",
   ["px.banana_express"] = "weapons/banana_express",
   ["px.blaster_worm"] = "weapons/blaster_worm",
+  ["px.bowling_ball"] = "weapons/bowling_ball_single",
   ["px.bowling_ball_strike"] = "weapons/bowling_ball",
   ["px.burning_sheep_launcher"] = "weapons/burning_sheep_launcher",
   ["px.burst_rifle"] = "weapons/burst_rifle",

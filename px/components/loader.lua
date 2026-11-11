@@ -58,6 +58,7 @@ local ORDER = {
   "weapons/valyrian_fire",
   "weapons/reinforcement",
   "weapons/bowling_ball",
+  "weapons/bowling_ball_single",
   "weapons/ferret",
   "weapons/electromagnet",
   "weapons/crate_strike",

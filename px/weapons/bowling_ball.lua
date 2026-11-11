@@ -77,6 +77,13 @@ function weapon.setup()
   local BALL_DEPTH = wa.depth.OBJECTS
   local GLOW_DEPTH, SHEEN_DEPTH, SPARK_DEPTH = BALL_DEPTH + 1, BALL_DEPTH - 1, BALL_DEPTH - 2
   local EDGE = 32000
+  -- In the water it sinks as a missile does, Valyrian Fire's among them (WA's
+  -- sea step, 0x4FDE20): no gravity, its speed kept at 0.8 (+0x54, 0xCCCC) and
+  -- 0.3 down added each frame, so it slows to 1.5 a frame.
+  local SEA_DRAG, SEA_SINK = 0.8, 0.3
+  local SUNK = 200 -- and is gone this far below the surface
+  local SINK_TINT = 0xA0B4FF -- Valyrian Fire's: cooler and darker below the water
+  local SOUND_SPLASH = 57 -- WA's Splash, as it falls in
 
   local SOLID = { "terrain", "worms", "crates", "oil" }
   local SOLID_FAST = { "terrain", "crates", "oil" }
@@ -379,7 +386,27 @@ function weapon.setup()
     b.vy = b.vy + k * hit.vy
   end
 
-  local function spawn_ball(owner, x, y, vx, vy)
+  -- Sinking, it hits nothing and nothing finds it: it leaves the ball list.
+  local function sink(a, b)
+    if not b.sinking then
+      b.sinking, b.asleep, b.low = true, false, false
+      shared.bowling_balls[a.id] = nil
+      a:sound(SOUND_SPLASH)
+    end
+    b.vx, b.vy = b.vx * SEA_DRAG, b.vy * SEA_DRAG + SEA_SINK
+    b.rvx, b.rvy = b.vx, b.vy
+    b.x, b.y = b.x + b.vx, b.y + b.vy
+    if b.y >= wa.world.water() + SUNK then
+      a:despawn()
+      return
+    end
+    spin(b)
+    a.x, a.y, a.vx, a.vy = b.x, b.y + SPRITE_DROP, 0, 0
+    a:gfx({ angle = math.deg(b.rot) % 360, depth = BALL_DEPTH, tint = SINK_TINT })
+  end
+
+  -- spare: frames for which the ball can't hurt its owner.
+  local function spawn_ball(owner, x, y, vx, vy, spare)
     local b = {
       x = x, y = y, vx = vx, vy = vy, lvx = vx, lvy = vy, rvx = 0, rvy = 0, lx = x, ly = y,
       rot = 0, low = false, low_timer = 200, sleep_timer = 200, rec_x = x, rec_y = y,
@@ -395,9 +422,8 @@ function weapon.setup()
             a:despawn()
             return
           end
-          if b.y >= wa.world.water() then
-            shared.bowling_balls[a.id] = nil
-            a:despawn()
+          if b.sinking or b.y >= wa.world.water() then
+            sink(a, b)
             return
           end
           local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y, a)
@@ -440,9 +466,21 @@ function weapon.setup()
     })
     shared.bowling_balls[a.id] = b
     b.trail_seed = a.id * 7919 % 0x80000000
+    if spare and owner then recover[owner.id] = clock + spare end
     return a, b
   end
   shared.spawn_bowling_ball = spawn_ball
+
+  -- The first height from y up, within a ball's width, where a ball at x is
+  -- clear of the land; y itself if the land fills all of it.
+  shared.bowling_ball_clear_y = function(x, y)
+    for up = 0, 2 * RADIUS do
+      if not wa.world.collides({ x = x, y = y - up, radius = RADIUS, with = { "terrain" } }) then
+        return y - up
+      end
+    end
+    return y
+  end
 
   local function drift(y0, y1, vx)
     local g = wa.world.gravity()

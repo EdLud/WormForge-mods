@@ -3846,6 +3846,43 @@ do
   end
   check("a ball flung far off the map flies on while WA can place it, then is removed",
     errors == 0 and flung_a.dead and flung.x > 30000 and flung.x <= 32767, errors .. " " .. flung.x)
+  -- Into the water it sinks as Valyrian Fire's missile does: WA's sea step,
+  -- tinted blue, out of the ball list, gone 200 below the surface.
+  local sinker_a, sinker = rolling(700, 6, 0, 150)
+  M.water = 170
+  run(40)
+  check("it falls in with WA's Splash, once", #M.actor_sounds == 1 and M.actor_sounds[1] == 57,
+    table.concat(M.actor_sounds, ","))
+  check("in the water the ball sinks, slowing to 1.5 a frame, tinted blue",
+    sinker.sinking and not sinker_a.dead and sinker_a.tint == 0xA0B4FF
+      and math.abs(sinker.vx) < 0.01 and math.abs(sinker.vy - 1.5) < 0.01,
+    sinker.vx .. "," .. sinker.vy .. " " .. tostring(sinker_a.tint))
+  check("and nothing finds it there", shared.bowling_ball_target(sinker_a.id) == nil)
+  run(200)
+  check("and 200 below the surface it is gone", sinker_a.dead and sinker.y >= 370, tostring(sinker.y))
+  M.water = nil
+  -- The Bowling Ball on its own: PX's placed record and take-out sheets, and
+  -- its FireFinal: set down from the worm at half its speed, 0.4 forward and
+  -- 0.8 up, its own ball unable to hurt it for 50 frames.
+  rolling(-1000, 0)
+  require("weapons/bowling_ball_single").setup()
+  local single = require("weapons/bowling_ball_single").definition()
+  check("the Bowling Ball is PX's placed record, taken out and put away on PX's sheets",
+    single.wep == "weps/bowling_ball.wep" and single.worm_sprites.wdynlnk == "sprites/bowling_ball/wbblnk.png"
+      and single.worm_sprites.wdynlnku == "sprites/bowling_ball/wbblnku.png"
+      and single.worm_sprites.wdynlnkd == "sprites/bowling_ball/wbblnkd.png" and type(single.on_fire) == "function")
+  local thrower = stand(worm(16), 300)
+  thrower.facing, thrower.vx, thrower.vy = -1, -12, 2
+  single.on_fire({ worm = thrower })
+  local set_a = M.spawned[#M.spawned]
+  local set = shared.bowling_balls[set_a.id]
+  check("it is set down at the worm, lifted clear of the floor, at half its speed, 0.4 forward and 0.8 up",
+    set and set.x == 300 and set.y < 184 and set.y > 176
+      and math.abs(set.vx + 6.4) < 1e-9 and math.abs(set.vy - 0.2) < 1e-9,
+    set and (set.y .. " " .. set.vx .. "," .. set.vy))
+  run(20)
+  check("rolling off fast through the worm that set it down, it leaves it unhurt",
+    thrower.hp == 100 and set.x < 260, thrower.hp .. " " .. set.x)
   -- The Lightning Strike's overcharge.
   local zapped_actor, zapped = rolling(400, 0)
   local _, far = shared.spawn_bowling_ball(worm(16), 600, 183, 0, 0)
