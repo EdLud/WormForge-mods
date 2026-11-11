@@ -6,6 +6,7 @@ local clouds = {}
 local ART = "sprites/toxic_grenade/"
 local SMOKE = ART.."smoke.png"
 local FINISH_TURN = 55
+local poison = 2
 local pending_end
 local abs = math.abs
 
@@ -53,7 +54,7 @@ local function move(p,worms,random,solid)
   if age%8==0 then
     if not wn then gather(worms) end
     for k=1,wn do
-      if abs(wx[k]-x)<20 and abs(wy[k]-y)<20 then ww[k]:poison(2) end
+      if abs(wx[k]-x)<20 and abs(wy[k]-y)<20 then ww[k]:poison(poison) end
     end
   end
   p.x,p.y=x+vx,y+vy
@@ -108,6 +109,10 @@ weapon.definition = {
     weap_radius=10,hand_type=1,hand_scale=0.8,thrown=true},
 }
 weapon.missile_sprite={sheet=ART.."poisongren.png",frames=1,hide=true}
+
+function weapon.configure(ctx)
+  poison = ctx.option("poison") or 2
+end
 
 function weapon.setup()
   wa.on.worm_message(function(_,msg)

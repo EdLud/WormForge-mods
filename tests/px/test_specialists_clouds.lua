@@ -6,9 +6,10 @@ local toxic=require("weapons/toxic_grenade")
 local bodies,draws,hooks={}, {}, {}
 local frame,sim_random,poison_calls,poison_dose=0,0,0,0
 local blocked=false
+local dose=2
 local target={id=1,hp=100,x=100,y=100,turn=true}
 function target:poison(n)
-  assert(n==2);poison_calls=poison_calls+1
+  assert(n==dose);poison_calls=poison_calls+1
   if poison_dose==0 then poison_dose=n;return true end
   return false
 end
@@ -120,5 +121,11 @@ for i,d in ipairs(draws) do
   assert(d.color==single[i].color)
   for c=1,4 do for a=1,2 do assert(d.points[c][a]==single[i].points[c][a]) end end
 end
+-- The profile's Poison option is the dose each puff gives.
+dose=7;poison_calls=0
+toxic.configure{option=function(key)assert(key=="poison");return 7 end}
+toxic.definition.on_explode{x=100,y=100};cloud=bodies[#bodies]
+for _=1,9 do step()end
+assert(poison_calls>0,"the cloud poisons with the configured dose")
 print("Platform geometry, fixed placement, damage art and one death blast passed")
 print("Toxic cloud simulation, native poison exposure, draw isolation, turn dedup and expiry passed")

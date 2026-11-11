@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.67"
+version = "0.20.68"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -2488,6 +2488,15 @@ description = "A grenade that releases a lingering poison cloud."
 entry = "components/weapon.lua"
 icon = "sprites/toxic_grenade/img_toxicgren.png"
 default_position = { row = "F2", column = 8 }
+
+[[components.options]]
+key = "poison"
+type = "int"
+min = 1
+max = 200
+default = 2
+label = "Poison"
+description = "Poison per turn that a worm takes from the cloud."
 
 [sprites."sprites/barrel_launcher/aim.png"]
 fps = 15
