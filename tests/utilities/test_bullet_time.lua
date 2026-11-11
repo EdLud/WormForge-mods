@@ -144,4 +144,38 @@ selected.on_fire({ worm = worm })
 tick() -- it eases in from full speed
 assert(running(), "the panel fires it as before")
 assert(#tray == 0, "no tray without Tab")
-print("Bullet Time: Tab press, worm selection, retreat, delay, ammo, tray, option and panel passed")
+fire(hooks.stop)
+
+-- The speed is world ^ depth: the pitch falls the same semitones each real
+-- second over the ramp, holds at the world speed, and rises the same way.
+local ripples = {}
+wa.view = { ripple = function(r)
+  ripples[#ripples + 1] = r
+  return { stop = function() r.stopped = true end }
+end }
+for k in pairs(hooks) do hooks[k] = {} end
+speeds, ammo = {}, 1
+options.seconds = 10
+weapon.install({ id = "utilities.bullet_time", option = function(k) return options[k] end })
+selected.on_fire({ worm = worm })
+local world, real = options.world_speed / 100, 0
+local function semis(s) return 12 * math.log(s, 2) end
+local full = semis(world)
+for _ = 1, 50 * 12 do
+  local s = speeds[#speeds]
+  if s == 1 and real > 0 then break end
+  real = real + 1 / (50 * s)
+  tick()
+  local now = speeds[#speeds]
+  if now ~= 1 then
+    local want = real < 2 and real / 2 or real > 8 and (10 - real) / 2 or 1
+    assert(math.abs(semis(now) / full - want) < 1e-9, string.format("%.3f s: depth %.4f, want %.4f", real, semis(now) / full, want))
+  end
+end
+assert(math.abs(real - 10) < 0.05, "it lasts its seconds: " .. real)
+assert(#ripples == 2 and ripples[1].duration_ms == 2000 and ripples[2].duration_ms == 2000, "a ripple per ramp")
+local crests = ripples[1].speed * 2 / ripples[1].wavelength
+assert(math.abs(crests + full) < 1e-9, "a crest per semitone")
+fire(hooks.stop)
+wa.view = nil
+print("Bullet Time: Tab press, worm selection, retreat, delay, ammo, tray, option, panel and semitone ramp passed")

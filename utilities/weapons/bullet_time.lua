@@ -7,11 +7,7 @@ local TINT = 0x2060FF -- the screen's tint at full slow motion
 local TINT_ALPHA = 0x48
 local TINT_SPRITE = "sprites/bullet_time_tint.png"
 local MARGIN = 8192 -- pixels of tint past the map's edges
-
-local function ease(x)
-  local d = x - 1
-  return math.sqrt(1 - d * d)
-end
+local WAVELENGTH = 64 -- the ripple's, in pixels
 
 return {
   defaults = {
@@ -37,11 +33,33 @@ return {
     local t -- real seconds since it was fired; nil while off
     local speed = 1
     local slowed -- the worm on its own time
+    local ripple -- the live ripple's handle
+    local leaving -- the ease out has started
 
+    -- One depth for all three: the speed (and so the pitch of the sounds and
+    -- music) is world ^ depth, so the pitch falls the same number of
+    -- semitones each second, in step with the tint and the ripple's fade.
     local function depth(at)
-      if at < ramp then return ease(at / ramp) end
-      if at > total - ramp then return 1 - ease((at - (total - ramp)) / ramp) end
+      if at < ramp then return at / ramp end
+      if at > total - ramp then return math.max(0, (total - at) / ramp) end
       return 1
+    end
+
+    -- A ripple over one ramp, fading as the tint grows or shrinks; one crest
+    -- passes a point for each semitone the pitch moves.
+    local semitones = 12 * math.log(1 / world, 2)
+    local function ring(worm)
+      if not (wa.view and wa.view.ripple) then return end
+      if ripple then ripple:stop() end
+      ripple = wa.view.ripple{
+        x = worm.x,
+        y = worm.y,
+        amplitude = 10,
+        wavelength = WAVELENGTH,
+        speed = math.max(1, WAVELENGTH * semitones / ramp),
+        duration_ms = ramp * 1000,
+        falloff = 120,
+      }
     end
 
     local function cell(worm)
@@ -55,7 +73,7 @@ return {
     end
 
     local function apply()
-      speed = 1 + (world - 1) * depth(t)
+      speed = world ^ depth(t)
       wa.world.set_speed(speed)
       if music then music(speed) end
       if slowed then slowed.time_scale = math.min(worm_speed / speed, 8) end
@@ -70,25 +88,17 @@ return {
     end
 
     local function start(worm)
-      t = 0
+      t, leaving = 0, false
       cell(worm)
       hand_to(worm)
-      if wa.view and wa.view.ripple then
-        wa.view.ripple{
-          x = worm.x,
-          y = worm.y,
-          amplitude = 10,
-          wavelength = 64,
-          speed = 60,
-          duration_ms = 4200,
-          falloff = 120,
-        }
-      end
+      ring(worm)
     end
 
     local function stop()
       if not t then return end
       t, speed = nil, 1
+      if ripple then ripple:stop() end
+      ripple = nil
       if slowed then
         slowed.time_scale = 1
         local e = cells[slowed.team]
@@ -138,6 +148,10 @@ return {
       if t >= total then
         stop()
       else
+        if not leaving and t > total - ramp then
+          leaving = true
+          ring(worm)
+        end
         apply()
         tooltip.notice(worm, string.format("Bullet Time: %.1f s", total - t), 0.1)
       end
