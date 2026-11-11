@@ -4,20 +4,9 @@ local holds = require("wf-lib/holds")
 local weapon = {}
 
 local function teleport(event)
-  local worm
-  for _, w in ipairs(wa.worms.all()) do
-    if w.turn and w.hp > 0 then worm = w; break end
-  end
-  if not worm then return end
-  local x, y = event.x, event.y
-  if worm:fits(x, y) then worm:warp({x=x,y=y}); return end
-  x, y = math.floor(x), math.floor(y)
-  for row = 0, 10 do
-    for column = 0, 10 do
-      local px, py = x - 4 + column, y - 4 + row
-      if worm:fits(px, py) then worm:warp({x=px,y=py}); return end
-    end
-  end
+  local landing = require("lib/tele_landing")
+  local worm = landing.turn_worm()
+  if worm then landing.warp(worm, event.x, event.y) end
 end
 
 weapon.defaults = { ends_invisibility = false }

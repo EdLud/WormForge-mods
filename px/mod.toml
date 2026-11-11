@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.68"
+version = "0.20.69"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1799,6 +1799,67 @@ default_position = { row = "F9", column = 8 }
 
 [components.suggests."hl.rules"]
 pool = "offensive"
+
+[[components]]
+id = "px.fire_cluster_bomb"
+type = "weapon"
+name = "Fire Cluster Bomb"
+authors = ["PyroMan"]
+description = "A grenade that bursts into five clustlets, each bursting into fire."
+entry = "components/weapon.lua"
+icon = "sprites/fire_cluster/fire_cluster_ico.png"
+default_position = { row = "F9", column = 9 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+
+[[components]]
+id = "px.digging_cluster_bomb"
+type = "weapon"
+name = "Digging Cluster Bomb"
+authors = ["PyroMan"]
+description = "A grenade that digs through land and bursts into five digging clustlets, each bursting into fire."
+entry = "components/weapon.lua"
+icon = "sprites/digging_cluster/digging_cluster_ico.png"
+default_position = { row = "F10", column = 3 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+
+[[components]]
+id = "px.homing_digger"
+type = "weapon"
+name = "Homing Digger"
+authors = ["PyroMan"]
+description = "Click a target, then throw: a bomb that homes on it, digs on through the land, and bursts into fire after 3 seconds or on Space."
+entry = "components/weapon.lua"
+icon = "sprites/homing_digger/homing_digger_ico.png"
+default_position = { row = "F10", column = 7 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+
+[[components]]
+id = "px.ninja_bomb"
+type = "weapon"
+name = "Ninja Bomb"
+authors = ["PyroMan"]
+description = "A grenade that bursts into 21 arrows flying out in rings, each hitting for 15 damage."
+entry = "components/weapon.lua"
+icon = "sprites/ninja_bomb/ninja_bomb_ico.png"
+default_position = { row = "F5", column = 4 }
+
+[components.suggests."hl.rules"]
+pool = "offensive"
+
+[[components]]
+id = "px.telenade"
+type = "weapon"
+name = "TeleNade"
+description = "A grenade that teleports the worm to where it goes off, with no blast."
+entry = "components/weapon.lua"
+icon = "sprites/telenade/ico_telenade.png"
+default_position = { row = "F8", column = 7 }
 
 [[components]]
 id = "px.hellish_hand_grenade"
