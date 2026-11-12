@@ -47,9 +47,10 @@ local function new_match(options)
         end
       end,
       quad = function(q)
-        M.quad[#M.quad + 1] = { sprite = q.sprite, depth = q.depth, blend = q.blend }
-        M.quad_boxes[#M.quad_boxes + 1] = { sprite = q.sprite, top = q.points[1][2], bottom = q.points[3][2] }
+        M.quad[#M.quad + 1] = { sprite = q.sprite, depth = q.depth, blend = q.blend, uv = q.uv and { table.unpack(q.uv) } }
+        M.quad_boxes[#M.quad_boxes + 1] = { sprite = q.sprite, depth = q.depth, top = q.points[1][2], bottom = q.points[3][2] }
         if q.colors and q.colors[3] >> 24 == 0 then M.fades = (M.fades or 0) + 1 end
+        if q.colors and q.colors[1] >> 24 == 0 then M.fades_in = (M.fades_in or 0) + 1 end
       end,
       ribbon = function(r)
         local pts = {}
@@ -183,15 +184,15 @@ do
   end
   check("far and mid rain behind the land", behind > 20, behind)
   check("heavy rain also in front of it", front > 0, front)
-  local under, crossing = 0, 0
+  local below, cut = 0, 0
   for _, q in ipairs(M.quad_boxes) do
-    if q.sprite == "sprites/rain.png" then
-      if q.top >= 560 then under = under + 1 end
-      if q.top < 560 and q.bottom > 560 then crossing = crossing + 1 end
-    end
+    if q.sprite == "sprites/rain.png" and q.bottom > 560.01 then below = below + 1 end
   end
-  check("no rain cell under the water line", under == 0, under)
-  check("the cells across it fade out", crossing > 0 and M.fades > 0, crossing .. "," .. tostring(M.fades))
+  for _, q in ipairs(M.quad) do
+    if q.sprite == "sprites/rain.png" and q.uv and q.uv[4] < 1 then cut = cut + 1 end
+  end
+  check("no rain reaches under the water line", below == 0, below)
+  check("the cells across it show only their part above", cut > 0, cut)
   check("the rain sound loops from the start", M.ambient and M.ambient.path == "sounds/rain.wav")
   check("the sheets are loaded with the lightning's",
     M.assets and #M.assets.sprites == 8 and #M.assets.sounds == 3)
@@ -242,6 +243,73 @@ do
   check("rain rings the water: whole rings in one batch", whole > 100, whole)
   check("rings the shore cuts are drawn as arcs", rings > 20 and near_shore > 0, rings .. "," .. near_shore)
   check("no ring crosses into the cliff", crossing == 0, crossing)
+end
+
+print("sky: the clouds stand in the world")
+do
+  new_match({ rain = 0, darkness = 0, lightning_chance = 0 })
+  local function clouds(cx, cy)
+    wa.world.view = function() return { cx = cx, cy = cy, w = 1000, h = 600, zoom = 1 } end
+    draw()
+    local ys, xs = {}, {}
+    for _, q in ipairs(M.quad_boxes) do
+      if q.sprite == "wf-lib/px/sprites/lightning/cloud.png" then
+        ys[#ys + 1], xs[#xs + 1] = q.top, q.left
+      end
+    end
+    table.sort(ys); table.sort(xs)
+    return ys, xs
+  end
+  local band = load_module("lib/sky").RAIN_TOP
+  local high_y, high_x = clouds(500, band)
+  local low_y = clouds(500, band + 40)
+  local same = #high_y > 20 and #high_y == #low_y
+  for i = 1, #high_y do same = same and high_y[i] == low_y[i] end
+  check("moving the camera down leaves the clouds where they were", same, #high_y .. "," .. #low_y)
+  local _, side_x = clouds(700, band)
+  local shared = 0
+  local at = {}
+  for _, x in ipairs(high_x) do at[x] = true end
+  for _, x in ipairs(side_x) do if at[x] then shared = shared + 1 end end
+  check("and across: puffs keep their x as the view moves", shared > 10, shared)
+  local far = clouds(500, 2000)
+  check("a view far below the band draws none", #far == 0, #far)
+
+  -- The rain comes out of the clouds: nothing above each layer's line, fading in under it.
+  local sky = load_module("lib/sky")
+  for _, clouds_on in ipairs({ 70, 0 }) do
+    new_match({ clouds = clouds_on, darkness = 0, lightning_chance = 0 })
+    wa.world.view = function() return { cx = 500, cy = sky.RAIN_TOP + 100, w = 1000, h = 900, zoom = 1 } end
+    frames(3)
+    local above, faded_in = 0, 0
+    for _, q in ipairs(M.quad_boxes) do
+      if q.sprite == "sprites/rain.png" then
+        local line = q.depth == wa.depth.FRONT and sky.RAIN_TOP_FRONT or sky.RAIN_TOP
+        if q.top < line - 0.01 then above = above + 1 end
+      end
+    end
+    for _, q in ipairs(M.quad) do
+      if q.sprite == "sprites/rain.png" and q.uv and q.uv[2] > 0 then faded_in = faded_in + 1 end
+    end
+    if clouds_on > 0 then
+      check("no rain above the clouds' line", above == 0, above)
+      check("the cells across it start at the line, cut by uv", faded_in > 0 and (M.fades_in or 0) > 0, faded_in)
+    else
+      check("without clouds the rain falls from the whole sky", above > 0, above)
+    end
+  end
+  new_match({ darkness = 0, lightning_chance = 0 })
+  wa.world.view = function() return { cx = 500, cy = sky.RAIN_TOP, w = 1000, h = 600, zoom = 1 } end
+  frames(2)
+  local cloud_depth, far_rain = nil, nil
+  for _, q in ipairs(M.quads) do
+    if q.sprite == "wf-lib/px/sprites/lightning/cloud.png" and q.count > 0 then cloud_depth = cloud_depth or q.depth end
+    if q.sprite == "sprites/rain.png" and q.depth >= wa.depth.BEHIND_TERRAIN then
+      far_rain = math.min(far_rain or math.huge, q.depth)
+    end
+  end
+  check("the clouds draw nearer than the rain behind the land, hiding where it starts",
+    cloud_depth and far_rain and cloud_depth < far_rain, tostring(cloud_depth) .. "," .. tostring(far_rain))
 end
 
 print(failed == 0 and "\nALL PASS" or ("\n" .. failed .. " FAILED"))

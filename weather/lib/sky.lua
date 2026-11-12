@@ -1,12 +1,18 @@
--- Sky: storm clouds along the top of the view, flashes of lightning and the storm's darkness.
+-- Sky: storm clouds along the top of the level, flashes of lightning and the storm's darkness.
 local L = require("wf-lib/lightning")
 
 local sky = {}
 
-local SPACING = 70 -- screen pixels between puffs in a row
+local SPACING = 70 -- pixels between puffs in a row
 local ROWS = 3
-local PARALLAX = 0.3 -- how much of the camera's movement the clouds follow
+local CLOUD_Y = -400 -- world y of the top row
+local ROW_GAP = 26 -- pixels between rows
 local DRIFT = 12 -- pixels a frame per unit of wind (pixels/frame²)
+
+-- Where the rain comes out of the clouds: inside the band's lower rows, hidden by
+-- them; rain drawn in front of the clouds starts under their underside.
+sky.RAIN_TOP = CLOUD_Y + ROW_GAP * 2 + 10
+sky.RAIN_TOP_FRONT = CLOUD_Y + ROW_GAP * 2 + 110
 
 local function hash(i, j)
   local h = (i * 2654435761) ~ (j * 40503)
@@ -17,7 +23,7 @@ end
 function sky.install(cfg)
   local g = L.gfx()
   local flat = wa.sprites.key("sprites/flat.png")
-  local band_depth = wa.depth.BEHIND_TERRAIN + 0x2000
+  local band_depth = wa.depth.BEHIND_TERRAIN + 0x800
   local style = { depth = band_depth, dark = { 38, 36, 52 }, alpha = cfg.clouds }
   local puffs = {}
   local drift, last = 0, nil
@@ -59,32 +65,29 @@ function sky.install(cfg)
     last = st.now
     drift = drift + step * st.wind * DRIFT * cfg.wind
     local power, lx = brightest(st)
-    if cfg.clouds > 0 then
-      local z = st.zoom
-      local spacing = SPACING / z
-      -- Far away, the clouds follow the camera most of the way.
-      local base = st.cx * (1 - PARALLAX) + drift
+    -- The band stands in the world: only puffs a view can reach are made.
+    local band_top, band_bottom = CLOUD_Y - 120, CLOUD_Y + ROW_GAP * ROWS + 120
+    if cfg.clouds > 0 and st.bottom > band_top and st.top < band_bottom then
       local n = 0
       for row = 0, ROWS - 1 do
-        local offset = base + row * spacing * 0.5
-        local i0 = math.floor((st.left - spacing * 2 - offset) / spacing)
-        local i1 = math.floor((st.right + spacing * 2 - offset) / spacing)
+        local offset = drift + row * SPACING * 0.5
+        local i0 = math.floor((st.left - SPACING * 3 - offset) / SPACING)
+        local i1 = math.floor((st.right + SPACING * 3 - offset) / SPACING)
         for i = i0, i1 do
           local r = hash(i, row)
           local breathe = 0.08 * wa.math.sin(st.now * 0.01 + r * 6.28)
           n = n + 1
           local p = puffs[n] or {}
           puffs[n] = p
-          p.x = i * spacing + offset + (r - 0.5) * spacing * 0.6
-          p.y = st.top + (row * 26 + 10 + hash(i, row + 7) * 18) / z
-          p.size = (1.4 + 0.9 * r + breathe - row * 0.15) / z
+          p.x = i * SPACING + offset + (r - 0.5) * SPACING * 0.6
+          p.y = CLOUD_Y + row * ROW_GAP + hash(i, row + 7) * 18
+          p.size = 1.4 + 0.9 * r + breathe - row * 0.15
           p.alpha = (0.75 + 0.25 * hash(i, row + 3)) * (1 - row * 0.12)
         end
       end
       for k = #puffs, n + 1, -1 do puffs[k] = nil end
-      local reach = 220 / z
       if power > 0 then
-        g.draw_cloud(puffs, lx, st.top + 40 / z, power, reach, 0.6, style)
+        g.draw_cloud(puffs, lx, CLOUD_Y + 40, power, 220, 0.6, style)
       else
         g.draw_cloud(puffs, 0, 0, 0, 1, 1, style)
       end

@@ -1,7 +1,7 @@
 # Weather: rain, a stormy sky, rings on water and puddles, and lightning.
 id = "core.weather"
 name = "Weather"
-version = "0.1.0"
+version = "0.1.1"
 author = "WormForge"
 api_version = 4
 format_version = 2
