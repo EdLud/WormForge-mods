@@ -1,0 +1,7 @@
+description = "WA's Grenade with about a third of gravity and small burst, which digs three craters in the ground."
+
+[weapons]
+"wfws.toxic_thrower" = true
+"stock.minigun" = true
+"stock.ninja_rope" = true
+"stock.skip_go" = true
