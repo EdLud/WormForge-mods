@@ -5633,9 +5633,27 @@ do
   for _ = 1, 149 do effect.on(effect) end
   check("150 frame warning leaves health alone", target.hp == 100)
   effect.on(effect)
+  M.quads, M.ribbons = {}, {}
   M.draw()
   check("active strike emits a terrain-occluded GPU ribbon",
     #M.ribbons > 0 and M.ribbons[1].depth == wa.depth.BEHIND_TERRAIN)
+  -- The cloud is between the flash and the sky: the flash lights the cloud
+  -- (its puffs again, lit corner by corner), and no glow shows above it.
+  local root = M.ribbons[1] and M.ribbons[1].points[1]
+  local lit, above = 0, 0
+  for _, q in ipairs(M.quads) do
+    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.colors then lit = lit + 1 end
+    if root and q.sprite == wa.sprites.key("sprites/lightning/glow.png") and q.points[1][2] < root.y - 40 then
+      above = above + 1
+    end
+  end
+  for _, r in ipairs(M.ribbons) do
+    for _, p in ipairs(r.sprite == wa.sprites.key("sprites/lightning/glow.png") and root and r.points or {}) do
+      if p.y - p.width / 2 < root.y - 40 then above = above + 1 end
+    end
+  end
+  check("the flash lights its cloud from inside", lit > 60, tostring(lit))
+  check("and none of its glow shows above the cloud", root and above == 0, tostring(above))
   for _ = 1, 15 do effect.on(effect) end
   check("beam stays active for 16 frames", target.hp == 100)
   effect.on(effect)
@@ -5646,7 +5664,8 @@ do
   M.draw()
   local puffs = 0
   for _, q in ipairs(M.quads) do
-    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.blend == "alpha" and (q.color & 0xFFFFFF) == 0x2D283C then
+    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.blend == "alpha" and q.color
+      and (q.color & 0xFFFFFF) == 0x2D283C then
       puffs = puffs + 1
     end
   end
