@@ -1,0 +1,85 @@
+# Weather: rain, a stormy sky, rings on water and puddles, and lightning.
+id = "core.weather"
+name = "Weather"
+version = "0.1.0"
+author = "WormForge"
+api_version = 4
+format_version = 2
+dependencies = ["wf.sdk"]
+
+[[components]]
+id = "core.weather"
+type = "feature"
+name = "Weather"
+description = "Rain falls, storm clouds gather and lightning flashes."
+entry = "features/weather.lua"
+credits = "Rain sound from Project X's Rain weather"
+
+[[components.options]]
+key = "rain"
+type = "int"
+default = 60
+min = 0
+max = 100
+label = "Rain (%)"
+description = "How heavy the rain is. 0 means no rain."
+
+[[components.options]]
+key = "wind"
+type = "int"
+default = 100
+min = 0
+max = 200
+label = "Wind on the rain (%)"
+description = "How much the wind slants the rain and drives the clouds."
+
+[[components.options]]
+key = "clouds"
+type = "int"
+default = 70
+min = 0
+max = 100
+label = "Clouds (%)"
+description = "How thick the storm clouds at the top of the screen are. 0 means a clear sky."
+
+[[components.options]]
+key = "darkness"
+type = "int"
+default = 25
+min = 0
+max = 100
+label = "Darkness (%)"
+description = "How much the storm darkens the world. Lightning lights it up again."
+
+[[components.options]]
+key = "ripples"
+type = "bool"
+default = true
+label = "Ripples"
+description = "Drops make rings on the water and on puddles, stopping at the shore."
+
+[[components.options]]
+key = "lightning_chance"
+type = "int"
+default = 30
+min = 0
+max = 100
+label = "Lightning chance (% per minute)"
+description = "The chance of lightning in each minute of play. Near 100 it strikes several times a minute."
+
+[[components.options]]
+key = "lightning_effect"
+type = "choice"
+choices = ["looks", "strike"]
+default = "looks"
+label = "Lightning"
+description = "looks: only light and thunder. strike: it heals worms, revives graves, starts mines and blows up crates and oil drums, as the Lightning Strike does."
+
+[[components.options]]
+key = "volume"
+type = "int"
+default = 70
+min = 0
+max = 100
+label = "Rain volume (%)"
+description = ""

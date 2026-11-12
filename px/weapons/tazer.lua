@@ -16,7 +16,7 @@ weapon.definition = {
     weaponfire="sprites/tazer/wtazer.png",weaponfireu="sprites/tazer/wtazeru.png",
     weaponfired="sprites/tazer/wtazerd.png",
   },
-  sprites={"sprites/lightning/beam.png","sprites/lightning/glow.png","sprites/lightning/cloud.png",
+  sprites={"wf-lib/px/sprites/lightning/beam.png","wf-lib/px/sprites/lightning/glow.png","wf-lib/px/sprites/lightning/cloud.png",
     "sprites/electric_grenade/explosion.png","sprites/electric_grenade/tazed1.png",
     "sprites/electric_grenade/tazed2.png"},
   sounds={"sounds/lightning/tazer_loop.wav"},

@@ -69,3 +69,30 @@ settings come from the library manifest. Paths stay inside the named provider.
 
 Make your own mod directly under `WormForge/Mods/`; `Mods/wf-lib/` belongs to
 the catalogue's installs.
+
+`require("wf-lib/lightning")` is Project X's Lightning Strike. Declare
+`lightning.SPRITES` and `lightning.SOUNDS` (a weapon's `sprites` and `sounds`,
+or `wa.assets.load`), call `lightning.setup()` once to draw your strikes, then
+from a simulation callback:
+
+```lua
+lightning.strike{ x = 300, y = 200, side = 1, owner = worm, effects = true }
+```
+
+The bolt comes down to (x, y) at 30 degrees, from the left with `side` 1 and
+from the right with -1. It gives a 150-frame warning, then strikes: it heals
+worms on its line by 25, revives graves at `revive_health` (10), starts mines
+and hits crates and oil drums. With `effects = false` it only lights up and
+thunders. `owner` is a worm or `"none"`; the thunder plays at `thunder_on`,
+else where the bolt lands.
+
+`lightning.extend{ beam, before_hit, heals, revived, after_hit }` adds what
+your own objects need: `beam(sx, sy, dx, dy, ex, ey, hit)` returns where the
+beam stops instead, `heals(worm)` returning false spares a worm, `revived(worm)`
+hears a revive, and `after_hit(s, struck)` gets a test for what is on the line.
+Each mod that imports it has its own strikes and hooks.
+
+`lightning.gfx().draw_cloud(puffs, x, y, power, reach, spread, style)` draws
+the storm cloud lit by a light at (x, y) (draw callbacks). Each puff has `x`,
+`y`, `size` and `alpha`; `style` sets `depth`, `dark = { r, g, b }` and
+`alpha`. `lightning.flash(s)` is a strike's brightness, 0 to 1.

@@ -5642,13 +5642,13 @@ do
   local root = M.ribbons[1] and M.ribbons[1].points[1]
   local lit, above = 0, 0
   for _, q in ipairs(M.quads) do
-    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.colors then lit = lit + 1 end
-    if root and q.sprite == wa.sprites.key("sprites/lightning/glow.png") and q.points[1][2] < root.y - 40 then
+    if q.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/cloud.png") and q.colors then lit = lit + 1 end
+    if root and q.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/glow.png") and q.points[1][2] < root.y - 40 then
       above = above + 1
     end
   end
   for _, r in ipairs(M.ribbons) do
-    for _, p in ipairs(r.sprite == wa.sprites.key("sprites/lightning/glow.png") and root and r.points or {}) do
+    for _, p in ipairs(r.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/glow.png") and root and r.points or {}) do
       if p.y - p.width / 2 < root.y - 40 then above = above + 1 end
     end
   end
@@ -5664,7 +5664,7 @@ do
   M.draw()
   local puffs = 0
   for _, q in ipairs(M.quads) do
-    if q.sprite == wa.sprites.key("sprites/lightning/cloud.png") and q.blend == "alpha" and q.color
+    if q.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/cloud.png") and q.blend == "alpha" and q.color
       and (q.color & 0xFFFFFF) == 0x2D283C then
       puffs = puffs + 1
     end
@@ -5966,7 +5966,7 @@ do
   M.quads, M.ribbons = {}, {}
   M.draw()
   local glows = 0
-  for _, q in ipairs(M.quads) do if q.sprite == wa.sprites.key("sprites/lightning/glow.png") then glows = glows + 1 end end
+  for _, q in ipairs(M.quads) do if q.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/glow.png") then glows = glows + 1 end end
   local strip = M.ribbons[1]
   check("the current glows at every point, PX's width at its ends",
     strip and glows >= #strip.points and math.abs(strip.points[1].width - 2 * 9 * 0.1) < 1e-9,
@@ -5998,7 +5998,7 @@ do
   M.draw()
   local on_ball = false
   for _, q in ipairs(M.quads) do
-    if q.sprite == wa.sprites.key("sprites/lightning/glow.png") and q.points[1][1] < 5 and q.points[3][1] > 5
+    if q.sprite == wa.sprites.key("wf-lib/px/sprites/lightning/glow.png") and q.points[1][1] < 5 and q.points[3][1] > 5
       and q.points[3][1] - q.points[1][1] > 40 then on_ball = true end
   end
   check("the arc links to a Bowling Ball, PX's glow on it", ball and on_ball and not ball.zapped)

@@ -1,6 +1,6 @@
 id = "wf.sdk"
 name = "WormForge shared helpers"
-version = "0.2.4"
+version = "0.3.0"
 author = "WormForge / Project X authors"
 api_version = 4
 format_version = 2
@@ -13,6 +13,7 @@ asset_namespace = "wf-lib/px"
 "wf-lib/parkour" = "parkour.lua"
 "wf-lib/tooltip" = "tooltip.lua"
 "wf-lib/own_time" = "own_time.lua"
+"wf-lib/lightning" = "lightning.lua"
 
 [sprites."sprites/px_hold/aim.png"]
 fps = 15

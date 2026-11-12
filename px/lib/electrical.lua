@@ -1,4 +1,6 @@
--- Shared target queries, the Tazer's arc and beam rendering for the electrical weapons.
+-- Shared target queries, the Tazer's arc and its drawing for the electrical
+-- weapons. The Lightning Strike's bolt, cloud and trace are wf.sdk's
+-- (wf-lib/lightning), which the arcs draw with too.
 
 local electrical = {}
 local context, installed
@@ -50,61 +52,16 @@ function electrical.context()
   if context then return context end
   local function sq(v) return v * v end
   local shared = require("lib/shared")
-  local ELECTRIC_DEPTH = wa.depth.BEHIND_TERRAIN
-  local BEAM = "sprites/lightning/beam.png"
-  local GLOW = "sprites/lightning/glow.png"
-  local CLOUD = "sprites/lightning/cloud.png"
-  local CLOUD_DEPTH = ELECTRIC_DEPTH - 0x1000
+  local L = require("wf-lib/lightning")
+  local ELECTRIC_DEPTH = L.depth()
+  local BEAM, GLOW = L.BEAM, L.GLOW
   local GRENADE_BURST = "sprites/electric_grenade/explosion.png"
-  local strikes, arcs, tazed = {}, {}, {}
+  local arcs, tazed = {}, {}
   shared.revived_by_lightning = shared.revived_by_lightning or {}
-  local function effect_actor(x, y, owner, frame)
-    return wa.actors.spawn({
-      sprite = GLOW, visible = false, gravity = false, collide = false,
-      owner = owner, x = x, y = y, on = frame,
-    })
-  end
-
-  local function electrical_targets(graves)
-    local out = {}
-    for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
-      for _, obj in ipairs(group.all()) do out[#out + 1] = obj end
-    end
-    if graves and wa.graves then
-      for _, obj in ipairs(wa.graves.all()) do out[#out + 1] = obj end
-    end
-    return out
-  end
-
-  local function target_radius(obj)
-    if obj.radius then return obj.radius end
-    if obj.kind == "worm" then return 6 end
-    if obj.kind == "grave" then return 8 end
-    if obj.kind == "mine" then return 5 end
-    return 9
-  end
-
-  local function electrical_trace(x0, y0, dx, dy)
-    local far = 10000
-    if wa.world.electrical_trace then
-      return wa.world.electrical_trace(x0, y0,
-        (x0 + dx * far), (y0 + dy * far))
-    end
-    local land = wa.land.trace(x0, y0,
-      (x0 + dx * far), (y0 + dy * far))
-    local best = land and math.sqrt(sq(land.x - x0) + sq(land.y - y0)) or far
-    local hit = land and { x = land.x, y = land.y, obj = nil } or nil
-    for _, obj in ipairs(electrical_targets(true)) do
-      local ox, oy = (obj.x - x0), (obj.y - y0)
-      local along = ox * dx + oy * dy
-      local across = math.abs(ox * dy - oy * dx)
-      if along > 0 and along < best and across <= target_radius(obj) then
-        best = along
-        hit = { x = obj.x, y = obj.y, obj = obj }
-      end
-    end
-    return hit
-  end
+  local effect_actor = L.effect_actor
+  local electrical_targets = L.targets
+  local target_radius = L.target_radius
+  local electrical_trace = L.trace
   local function target_key(obj)
     return obj.kind .. ":" .. obj.id
   end
@@ -275,7 +232,7 @@ function electrical.context()
     return start_arc({x=ev.x,y=ev.y,worm=ev.worm,owner=ev.owner,life=ev.life,ignore=ignore})
   end
 
-  context = { sq = sq, ELECTRIC_DEPTH = ELECTRIC_DEPTH, BEAM = BEAM, GLOW = GLOW, CLOUD = CLOUD, CLOUD_DEPTH = CLOUD_DEPTH, GRENADE_BURST = GRENADE_BURST, strikes = strikes, arcs = arcs, tazed = tazed, effect_actor = effect_actor, electrical_targets = electrical_targets, target_radius = target_radius, electrical_trace = electrical_trace, target_key = target_key, find_target = find_target, start_arc = start_arc, grenade_arc = grenade_arc }
+  context = { sq = sq, ELECTRIC_DEPTH = ELECTRIC_DEPTH, BEAM = BEAM, GLOW = GLOW, GRENADE_BURST = GRENADE_BURST, arcs = arcs, tazed = tazed, effect_actor = effect_actor, electrical_targets = electrical_targets, target_radius = target_radius, electrical_trace = electrical_trace, target_key = target_key, find_target = find_target, start_arc = start_arc, grenade_arc = grenade_arc }
   return context
 end
 
@@ -283,258 +240,20 @@ function electrical.setup()
   if installed then return end
   installed = true
   local c = electrical.context()
-  local sq = c.sq
-  local ELECTRIC_DEPTH = c.ELECTRIC_DEPTH
-  local BEAM = c.BEAM
-  local GLOW = c.GLOW
-  local CLOUD = c.CLOUD
-  local CLOUD_DEPTH = c.CLOUD_DEPTH
   local GRENADE_BURST = c.GRENADE_BURST
-  local strikes = c.strikes
+  local ELECTRIC_DEPTH = c.ELECTRIC_DEPTH
   local arcs = c.arcs
   local tazed = c.tazed
-  local effect_actor = c.effect_actor
-  local electrical_targets = c.electrical_targets
-  local target_radius = c.target_radius
-  local electrical_trace = c.electrical_trace
   local find_target = c.find_target
   wa.on.worm_message(function(worm, msg)
     if tazed[c.target_key(worm)] then return "eat" end
   end, { msgs = { wa.msg.FIRE_WEAPON } })
   if wa.on.draw and wa.draw.ribbon then
-    local beam_sprite = wa.sprites.key(BEAM)
-    local glow_sprite = wa.sprites.key(GLOW)
-    local cloud_sprite = wa.sprites.key(CLOUD)
+    local g = require("wf-lib/lightning").gfx()
+    local colour, square, glow, point, ribbon, noise_span =
+      g.colour, g.square, g.glow, g.point, g.ribbon, g.noise_span
     local burst_sprite = wa.sprites.key(GRENADE_BURST)
-    local function colour(a, r, g, b)
-      return (math.floor(a) << 24) | (r << 16) | (g << 8) | b
-    end
-    local QUAD = { points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
-    local function square(sprite, frame, blend, color, depth, x, y, hw, hh)
-      QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sprite, frame, blend, color, depth
-      local p = QUAD.points
-      p[1][1], p[1][2] = x - hw, y - hh
-      p[2][1], p[2][2] = x + hw, y - hh
-      p[3][1], p[3][2] = x + hw, y + hh
-      p[4][1], p[4][2] = x - hw, y + hh
-      wa.draw.quad(QUAD)
-    end
-    local function glow(x, y, size, color)
-      local h = size / 2
-      square(glow_sprite, 0, "add", color, ELECTRIC_DEPTH, x, y, h, h)
-    end
-    local RIBBON = { sprite = beam_sprite, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
-    local POINTS = {}
-    local function point(i, x, y, width, u, color)
-      local p = POINTS[i]
-      if not p then p = {}; POINTS[i] = p end
-      RIBBON.points[i] = p
-      p.x, p.y, p.width, p.u, p.color = x, y, width, u, color
-    end
-    local function ribbon(n)
-      local pts = RIBBON.points
-      for i = #pts, n + 1, -1 do pts[i] = nil end
-      wa.draw.ribbon(RIBBON)
-    end
-    local LR, LG, LB = 120, 140, 255
-    local function lerp(t, a, b) return a + (b - a) * t end
-    local function noise_span(noise, off, divs, scale, first, last)
-      for i = 0, divs - 1 do noise[off + i] = 0 end
-      noise[off], noise[off + divs - 1] = first, last
-      local k = divs
-      local l = k >> 1
-      while l > 0 do
-        for i = l, divs - 1 - l, k do
-          noise[off + i] = (noise[off + i - l] + noise[off + i + l]) * 0.5 + (wa.draw.random() * 2 - 1) * scale
-        end
-        k = l
-        l = k >> 1
-      end
-    end
-    local function new_shape(s)
-      s.noise, s.attach = s.noise or {}, s.attach or {}
-      for i = 1, 8 do s.attach[i] = nil end
-      noise_span(s.noise, 0, 9, 1.0, 0, 0)
-      for _ = 1, 6 do s.attach[1 + math.floor(wa.draw.random() * 8)] = true end
-      for i = 0, 5 do
-        local off = 2 + wa.draw.random() * 4
-        if wa.draw.random() < 0.5 then off = -off end
-        noise_span(s.noise, 9 + 9 * i, 9, 0.5, 0, off)
-      end
-      s.ground = 0.5 + wa.draw.random() * 0.3
-      -- Each frame of the bolt flashes anew; now and then one is weaker.
-      s.flicker = wa.draw.random() < 0.25 and 0.5 or 0.85 + 0.15 * wa.draw.random()
-      s.flicker_x = (wa.draw.random() * 2 - 1) * 25
-      s.shape_tick = s.ticks
-    end
-    -- A bolt's glow: a strip through the bolt's points, cut from the middle
-    -- column of the glow sheet (u 0.5), so it follows each bend smoothly.
-    local HALO = { sprite = glow_sprite, blend = "add", depth = ELECTRIC_DEPTH, points = {} }
-    local function beam(noise, off, divs, width, endwidth, scale, x1, y1, x2, y2, glowalpha)
-      if divs < 2 then return end
-      local dx, dy = (x2 - x1), (y2 - y1)
-      local dd = math.sqrt(dx * dx + dy * dy)
-      if dd <= 0 then return end
-      dx, dy = dx / dd, dy / dd
-      local d = divs - 1
-      local halo = HALO.points
-      -- Wider than two sections, the strip would fold over itself at a bend.
-      local reach = math.min(64, 2 * dd / d)
-      for i = #halo, divs + 1, -1 do halo[i] = nil end
-      for i = 0, divs - 1 do
-        local f = i / d
-        local n = noise[off + i] or 0
-        local x = lerp(f, x1, x2) + scale * dy * n
-        local y = lerp(f, y1, y2) - scale * dx * n
-        point(i + 1, x, y, 2 * lerp(f, width, endwidth), f, colour(255, LR, LG, LB))
-        local h = halo[i + 1] or {}
-        halo[i + 1] = h
-        -- A branch's glow starts from nothing where it leaves the bolt.
-        local start = (glowalpha < 1 and i == 0) and 0 or 1
-        h.x, h.y, h.width, h.u = x, y, reach * (1 - 0.75 * (1 - start)), 0.5
-        h.color = colour(255 * glowalpha * (1 - f) * start, LR, LG, LB)
-      end
-      ribbon(divs)
-      wa.draw.ribbon(HALO)
-    end
-    -- The cloud. Each puff is drawn dark, and while a light is on in the
-    -- cloud it is drawn again over itself, lit corner by corner: white near
-    -- the light, deep blue further off. Near the light it is added on once
-    -- more, so the cloud glows there. Light going up falls off faster,
-    -- because the cloud stands between the light and the sky. With `spread`
-    -- 1 each corner is lit by where it is, a smooth fall across the cloud;
-    -- with less, the middle of the puff counts more, so a small light stays
-    -- on the puffs around it. The dark puffs and the glow take one colour a
-    -- puff, so each goes in one wa.draw.quads call.
-    local DARK = { sprite = cloud_sprite, frame = 0, blend = "alpha", depth = CLOUD_DEPTH, quads = {}, count = 0 }
-    local GLOWS = { sprite = cloud_sprite, frame = 0, blend = "add", depth = CLOUD_DEPTH - 0x200, quads = {}, count = 0 }
-    local LIT = { sprite = cloud_sprite, frame = 0, blend = "alpha", depth = CLOUD_DEPTH - 0x100,
-      points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} }, colors = { 0, 0, 0, 0 } }
-    local function batch(b, n, pts, color)
-      if not wa.draw.quads then
-        QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = b.sprite, 0, b.blend, color, b.depth
-        local q = QUAD.points
-        for i = 1, 4 do q[i][1], q[i][2] = pts[i][1], pts[i][2] end
-        wa.draw.quad(QUAD)
-        return n
-      end
-      local l = b.quads
-      l[n + 1], l[n + 2], l[n + 3], l[n + 4] = pts[1][1], pts[1][2], pts[2][1], pts[2][2]
-      l[n + 5], l[n + 6], l[n + 7], l[n + 8] = pts[3][1], pts[3][2], pts[4][1], pts[4][2]
-      l[n + 9] = color
-      return n + 9
-    end
-    local function draw_cloud(s, lx, ly, power, reach, spread)
-      local pts, cols = LIT.points, LIT.colors
-      local function light(x, y)
-        local dx, dy = x - lx, y - ly
-        if dy < 0 then dy = dy * 3 end
-        return power / (1 + (dx * dx + dy * dy) / (reach * reach))
-      end
-      local dark, glows = 0, 0
-      for _, puff in ipairs(s.cloud) do
-        local t = puff.age / puff.life
-        local size = lerp(t, puff.s0, puff.s1)
-        local x, y, hw, hh = puff.x, puff.y, 64 * size, 40 * size
-        pts[1][1], pts[1][2] = x - hw, y - hh
-        pts[2][1], pts[2][2] = x + hw, y - hh
-        pts[3][1], pts[3][2] = x + hw, y + hh
-        pts[4][1], pts[4][2] = x - hw, y + hh
-        dark = batch(DARK, dark, pts, colour(255 * t, 45, 40, 60))
-        if power > 0 then
-          local lit = 0
-          for i = 1, 4 do
-            local l = light(x + spread * (pts[i][1] - x), y + spread * (pts[i][2] - y))
-            cols[i] = colour(255 * t * math.min(1, 1.5 * l), math.floor(lerp(l, 70, 235)),
-              math.floor(lerp(l, 80, 240)), math.floor(lerp(l, 190, 255)))
-            lit = lit | cols[i]
-          end
-          if lit >> 24 > 0 then
-            wa.draw.quad(LIT)
-            local l = light(x, y)
-            if 70 * t * l * l >= 1 then glows = batch(GLOWS, glows, pts, colour(70 * t * l * l, LR, LG, LB)) end
-          end
-        end
-      end
-      if dark > 0 then DARK.count = dark // 9; wa.draw.quads(DARK) end
-      if glows > 0 then GLOWS.count = glows // 9; wa.draw.quads(GLOWS) end
-    end
-    -- How bright the flash is, 0..1: it builds as the bolt comes down,
-    -- flickers while it stands and dies away after it.
-    local function flash(s)
-      if s.delay >= 8 then return 0 end
-      if s.delay > 0 then return 0.3 + 0.4 * (8 - s.delay) / 8 end
-      if s.life > 0 then return s.flicker or 1 end
-      local f = 1 - (60 - s.tail + (wa.draw.fraction and wa.draw.fraction() or 0)) / 8
-      return f > 0 and 0.5 * f * f or 0
-    end
-    -- Before the bolt comes down, the cloud now and then lights up inside
-    -- for a moment, somewhere else each time.
-    local function glimmer(s)
-      if s.glimmer_tick ~= s.ticks then
-        s.glimmer_tick = s.ticks
-        local g = s.glimmer
-        if g and s.ticks >= g.till then s.glimmer, g = nil, nil end
-        if g then
-          g.now = g.power * (0.4 + 0.6 * wa.draw.random())
-        elseif s.delay < 110 and wa.draw.random() < 0.06 then
-          local power = 0.35 + 0.3 * wa.draw.random()
-          s.glimmer = { x = s.sx + (wa.draw.random() * 2 - 1) * 90, y = s.sy - 5 - wa.draw.random() * 20,
-            till = s.ticks + 2 + math.floor(wa.draw.random() * 4), power = power, now = power }
-        end
-      end
-      return s.glimmer
-    end
-    local function draw_strike(s)
-      local power = flash(s)
-      if power > 0 then
-        local lx, ly = s.sx + 15 * s.dirx + (s.flicker_x or 0), s.sy + 15 * s.diry
-        draw_cloud(s, lx, ly, power, 70, 0.6)
-        -- Light comes out under the cloud: a wide, flat glow whose top half
-        -- sits behind the dark puffs.
-        QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth =
-          glow_sprite, 0, "add", colour(160 * power, LR, LG, LB), ELECTRIC_DEPTH
-        local q = QUAD.points
-        local cx, cy = lx + 20 * s.dirx, ly + 35
-        q[1][1], q[1][2] = cx - 150, cy - 75
-        q[2][1], q[2][2] = cx + 150, cy - 75
-        q[3][1], q[3][2] = cx + 150, cy + 75
-        q[4][1], q[4][2] = cx - 150, cy + 75
-        wa.draw.quad(QUAD)
-      else
-        local g = s.delay >= 8 and glimmer(s)
-        if g then draw_cloud(s, g.x, g.y, g.now, 40, 0.3) else draw_cloud(s, 0, 0, 0, 1, 1) end
-      end
-      for _, p in ipairs(s.sparks) do
-        local t = p.age / 50
-        glow(p.x, p.y, 13 * (1 - t) + 1, colour(255, LR, LG, LB))
-      end
-      if s.life <= 0 or s.delay >= 8 then return end
-      if not s.noise or (s.delay == 0 and s.shape_tick ~= s.ticks) then new_shape(s) end
-      local divs, ex, ey = 9, s.ex, s.ey
-      if s.delay > 0 then
-        local fr = (8 - s.delay) / 8
-        divs = math.floor(9 * fr)
-        ex, ey = lerp(fr, s.sx, s.ex), lerp(fr, s.sy, s.ey)
-      end
-      beam(s.noise, 0, divs, 35, 3, 15, s.sx, s.sy, ex, ey, 1.0)
-      local sub, d = 0, divs - 1
-      for i = 0, divs - 1 do
-        if s.attach[i] and d > 0 then
-          local f = i / d
-          local x = lerp(f, s.sx, ex) + 10 * s.diry * s.noise[i]
-          local y = lerp(f, s.sy, ey) - 10 * s.dirx * s.noise[i]
-          beam(s.noise, 9 + 9 * sub, 9, lerp(f, 10, 1), 0.1, 15 * (1 - f), x, y,
-            x + s.dirx * 100 * (1 - f), y + s.diry * 100 * (1 - f), 0.5 * (1 - f))
-          sub = sub + 1
-        end
-      end
-      if s.delay == 0 and s.hit then glow(s.ex, s.ey, 128 * s.ground, colour(255, LR, LG, LB)) end
-    end
     wa.on.draw(function()
-      for _, s in ipairs(strikes) do
-        draw_strike(s)
-      end
       for _, arc in ipairs(arcs) do
         if arc.burst ~= false and arc.explosion < 10 then
           local h = 75
