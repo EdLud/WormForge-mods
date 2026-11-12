@@ -116,7 +116,7 @@ wa.on.missile_frame(function(m)
     f.sunk = sunk
     a:gfx({ tint = sunk and p.sink_tint or 0xFFFFFF })
   end
-  a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH })
+  a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH, scale = p.scale })
 end)
 end
 

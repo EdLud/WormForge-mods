@@ -38,6 +38,7 @@ return {
   ["px.fire_cluster_bomb"] = "weapons/fire_cluster_bomb",
   ["px.digging_cluster_bomb"] = "weapons/digging_cluster_bomb",
   ["px.homing_digger"] = "weapons/homing_digger",
+  ["px.homing_cluster_bomb"] = "weapons/homing_cluster_bomb",
   ["px.ninja_bomb"] = "weapons/ninja_bomb",
   ["px.telenade"] = "weapons/telenade",
   ["px.igniter"] = "weapons/igniter",

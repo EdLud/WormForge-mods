@@ -63,8 +63,8 @@ local SPEEDS = { { 0, -10 }, { 5, -6 }, { -5, -6 }, { 6, 4 }, { -6, 6 } }
 
 weapon.missile_sprite = {
   { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = GRENADE_SPRITE },
-  { sheet = "sprites/homing_fire_cluster/clustlet.png", frames = 1, hide = true,
-    first_sprite = CLUSTLET_SPRITE },
+  -- PX draws each clustlet as the bomb itself.
+  { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = CLUSTLET_SPRITE },
 }
 
 local clustlets = {}
@@ -90,7 +90,7 @@ function weapon.definition()
     sprite = "grenade",
     on_explode = on_explode,
     worm_sprites = sdk.PX_POSTURE,
-    sprites = { ART .. "bullet.png", "sprites/homing_fire_cluster/clustlet.png" },
+    sprites = { ART .. "bullet.png" },
     hold = {
       thrown = true,
       sheet = ART .. "bullet.png", hand_type = 1, hand_radius = 18,

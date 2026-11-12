@@ -48,7 +48,7 @@ local CLUSTLET = {
 
 weapon.missile_sprite = {
   { sheet = ART .. "bullet.png", frames = 1, spin = true, hide = true, first_sprite = GRENADE_SPRITE },
-  { sheet = "sprites/homing_fire_cluster/clustlet.png", frames = 1, spin = true, hide = true,
+  { sheet = ART .. "clustlet.png", frames = 1, spin = true, hide = true,
     first_sprite = CLUSTLET_SPRITE },
 }
 
@@ -75,7 +75,7 @@ function weapon.definition()
     sprite = "grenade",
     on_explode = on_explode,
     worm_sprites = sdk.PX_POSTURE,
-    sprites = { ART .. "bullet.png", "sprites/homing_fire_cluster/clustlet.png" },
+    sprites = { ART .. "bullet.png", ART .. "clustlet.png" },
     hold = {
       thrown = true,
       sheet = ART .. "bullet.png", hand_type = 1, hand_radius = 16,
