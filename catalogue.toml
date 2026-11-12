@@ -14,6 +14,7 @@ packs = [
   "from_modders/px_buffalo",
   "from_modders/laser_reflect",
   "from_modders/px_auto_ktk",
+  "from_modders/wfws_sdk",
 ]
 
 # Exact source paths: a profile is published only when listed here.

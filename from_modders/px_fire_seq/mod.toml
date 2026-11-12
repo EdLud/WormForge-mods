@@ -35,6 +35,8 @@ mod_icon = "profiles/mod_icon.png"
 # See README.md, "When not to use it", before reaching for it.
 [exports]
 "wf-lib/fire_seq" = "lib/fire_seq.lua"
+"wf-lib/px_hold_art" = "lib/px_hold_art.lua"
+"wf-lib/seq-spb" = "lib/px_sprite_builder.lua"
 
 [[components]]
 id = "px.ripper_star"
