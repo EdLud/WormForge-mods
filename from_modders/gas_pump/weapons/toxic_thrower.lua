@@ -133,10 +133,6 @@ return {
 
     hold_art.add(hold)
 
-    -- px_hold_art draws only when worm.weapon == ctx.id and state_id is 0x6A or
-    -- 0x6B. This shows which of the two fails (look for the lines in wkLua.log).
-
-
     sb.flight(ctx, {
       weapon = ctx.id,
       sheet = "sprites/toxic_thrower/missile.png",
