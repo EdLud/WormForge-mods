@@ -69,25 +69,48 @@ hook(shooter, FINISH)
 assert(#launched == 5)
 print("Digging Cluster Bomb passed")
 
--- Homing Digger: one digger on at the bomb's speed; a digger's burst ends it,
--- also when it bursts while WA builds it.
+-- Homing Digger: the rocket's burst throws one digger at three times its last
+-- speed; it drills an 8-pixel hole a frame in land at 3.5, speeds up in the air
+-- and turns half way to the click every other frame; its burst starts fire.
 reset()
+local missile_hook, fires, cuts, solid = nil, {}, {}, false
+wa.on.missile_frame = function(f) missile_hook = f end
+wa.fire = { spawn = function(spec) fires[#fires + 1] = spec end }
+wa.land = { cut = function(spec) cuts[#cuts + 1] = spec end }
+wa.world = { collides = function() return solid end }
 local hd = require("weapons/homing_digger")
 def = hd.definition()
-assert(def.copy_from == "stock.cluster_bomb" and def.missile.action == "homing")
-assert(def.missile.explosion.power == 0)
+assert(def.copy_from == "stock.grenade" and def.click == "homing" and def.missile.burst == "nothing")
+assert(def.missile.explosion.power == 0 and def.missile.ends_on_contact.land)
 assert(def.missile.countdown == 0 and def.missile.fuse == 5000, "no timer, a fixed fuse")
 hd.setup()
+shooter.target = { x = 130, y = 40 }
 fire("px.homing_digger")
-def.on_explode({ missile = 0x100, x = 30, y = 40, vx = 4.5, vy = -2 })
+missile_hook({ id = 0x100, weapon = "px.homing_digger", phase = "post", x = 20, y = 40, vx = 4, vy = -1 })
+missile_hook({ id = 0x100, weapon = "px.homing_digger", phase = "post", x = 24, y = 39, vx = 0.5, vy = 0.2 })
+def.on_explode({ missile = 0x100, x = 30, y = 40, vx = 0, vy = 0 })
 hook(shooter, FINISH)
-assert(#launched == 1)
+assert(#launched == 1 and sounds[#sounds] == 44)
 local d = launched[1]
-assert(d.vx == 4.5 and d.vy == -2 and d.missile.action == "dig" and d.missile.explode_on_space)
-assert(d.missile.explosion.power == 40 and d.missile.fuse == 3000 and not d.missile.ends_on_contact.land)
-def.on_explode({ missile = 0x5001, x = 50, y = 40 })
+assert(d.vx == 12 and d.vy == -3, "three times its last speed over a pixel a frame")
+assert(d.missile.action == "dig" and d.missile.explode_on_space and d.missile.fuse == 5000)
+assert(d.missile.explosion.power == 50 and not d.missile.ends_on_contact.land)
+local id = next_id
+local m = { id = id, weapon = "px.homing_digger", phase = "pre", x = 30, y = 40, vx = 12, vy = -3 }
+solid = true
+missile_hook(m)
+assert(#cuts == 1 and cuts[1].radius == 8 and sounds[#sounds] == 85, "drills in land")
+m.phase = "post"
+missile_hook(m)
+assert(math.abs(m.vx - (12 + (3.5 - 12) * 0.5)) < 1e-9 and math.abs(m.vy - (-3 + 3 * 0.5)) < 1e-9,
+  "turns half way to the click at the digging speed")
+local vx = m.vx
+missile_hook(m)
+assert(m.vx == vx, "every other frame")
+def.on_explode({ missile = id, x = 50, y = 40 })
 hook(shooter, FINISH)
 assert(#launched == 1, "a digger's burst throws no more")
+assert(#fires == 1 and fires[1].count == 40 and fires[1].damage == 5 and sounds[#sounds] == 59)
 wa.weapons.launch = function(spec)
   launched[#launched + 1] = spec
   def.on_explode({ missile = 0x6000, x = spec.x, y = spec.y })
@@ -97,7 +120,45 @@ def.on_explode({ missile = 0x200, x = 30, y = 40, vx = 1, vy = 1 })
 hook(shooter, FINISH)
 hook(shooter, FINISH)
 assert(#launched == 2, "a digger bursting as it is built throws no more")
+assert(#fires == 2, "and starts its fire")
 print("Homing Digger passed")
+
+-- Homing Cluster Bomb: five clustlets fanned up from 20 pixels above the
+-- blast; after 40 frames, with sound 44 three frames before, they turn 0.15 of
+-- the way to the click every other frame; theirs throw no more.
+reset()
+local hc_frame
+wa.on.missile_frame = function(f) hc_frame = f end
+wa.math = { sin = math.sin, cos = math.cos }
+local hcb = require("weapons/homing_cluster_bomb")
+def = hcb.definition()
+assert(def.copy_from == "stock.grenade" and def.click == "homing" and def.missile.explosion.power == 30)
+hcb.setup()
+shooter.target = { x = 400, y = 100 }
+fire("px.homing_cluster_bomb")
+def.on_explode({ missile = 0x100, x = 200, y = 100 })
+hook(shooter, FINISH)
+assert(#launched == 5, "five clustlets")
+for i, c in ipairs(launched) do
+  assert(c.y == 80 and c.missile.action == "none" and c.missile.fuse == 6000 and c.missile.explosion.power == 20)
+  assert(c.vy < -8, "fanned about straight up")
+end
+assert(launched[1].vx < launched[5].vx, "from left to right")
+local cm = { id = next_id, weapon = "px.homing_cluster_bomb", phase = "post", x = 200, y = 60, vx = 0, vy = -5 }
+for _ = 1, 37 do hc_frame(cm) end
+assert(sounds[#sounds] ~= 44)
+hc_frame(cm)
+assert(sounds[#sounds] == 44, "the homing sound three frames before")
+assert(cm.vx == 0 and cm.vy == -5, "no homing in the first 40 frames")
+for _ = 1, 2 do hc_frame(cm) end
+assert(cm.vx == 0, "still waiting at frame 40")
+hc_frame(cm)
+local ux = 200 / math.sqrt(200 * 200 + 40 * 40)
+assert(math.abs(cm.vx - ux * 10 * 0.15) < 1e-9, "then a pull towards the click")
+def.on_explode({ missile = next_id, x = 200, y = 60 })
+hook(shooter, FINISH)
+assert(#launched == 5, "a clustlet's blast throws no more")
+print("Homing Cluster Bomb passed")
 
 -- Ninja Bomb: 21 arrows from 5 pixels above the burst; the two sideways ones weightless.
 reset()

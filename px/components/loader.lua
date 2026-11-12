@@ -25,6 +25,7 @@ local ORDER = {
   "weapons/fire_cluster_bomb",
   "weapons/digging_cluster_bomb",
   "weapons/homing_digger",
+  "weapons/homing_cluster_bomb",
   "weapons/ninja_bomb",
   "weapons/nuke_rocket",
   "weapons/helicopter",
