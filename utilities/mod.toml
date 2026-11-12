@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.17.3"
+version = "0.17.4"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -120,6 +120,13 @@ type = "bool"
 default = false
 label = "FPS counter"
 description = "Enables an FPS counter"
+
+[[components.options]]
+key = "disable_zoom"
+type = "bool"
+default = false
+label = "Disable zoom"
+description = "Every player sees the match at 1x, whatever their zoom setting."
 
 # +N Seconds: extra turn time from utility crates.
 # instant utilities.

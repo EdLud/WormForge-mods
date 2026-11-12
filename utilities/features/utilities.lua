@@ -49,6 +49,11 @@ return function(ctx)
     on[#on + 1] = "fps_counter"
   end
 
+  if ctx.option("disable_zoom") and wa.view.disable_zoom then
+    wa.view.disable_zoom()
+    on[#on + 1] = "disable_zoom"
+  end
+
   wa.log(("heal %d, packs %s"):format(
     heal, #on > 0 and table.concat(on, " ") or "none"))
 end
