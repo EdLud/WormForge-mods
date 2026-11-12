@@ -11,7 +11,7 @@ mod_icon = "sprites/toxic_thrower/icon.png"
 id = "wfws.toxic_thrower"
 type = "weapon"
 name = "Gas Pump"
-description = "WA's Grenade with about a third of gravity and small burst, which digs three craters in the ground."
+description = "Sprays 40 shells of toxic gas along your aim, poisoning the worms near where each one bursts."
 entry = "weapons/toxic_thrower.lua"
 icon = "sprites/toxic_thrower/icon.png"
 default_position = { row = "F3", column = 4 }

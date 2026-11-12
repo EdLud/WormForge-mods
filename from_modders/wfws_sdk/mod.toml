@@ -11,7 +11,7 @@
 id = "wfws.sdk"
 name = "WFWS Sprite Builder"
 version = "0.1.0"
-author = "WormForge Weapon Editor"
+author = "reddaz"
 api_version = 4
 format_version = 2
 dependencies = ["wf.sdk"]

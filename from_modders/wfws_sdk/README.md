@@ -45,59 +45,72 @@ sb.flight(ctx, {
   cyclical = 32,                 -- frames in the sheet (optional)
   anim_speed = 1.0, spin = 1.0, scale = 1.0, mirror = true, z = 5.0,
 
-  bits = {                       -- cluster-bit art
+  homing = {                     -- art while the missile homes (optional)
+    arm = 500, time = 2000,      -- ms after firing; time = 0 homes until it lands
+    sheet = "sprites/<mod>/homing.png", anim = "track",
+  },
+  dig = true,                    -- cycle the sheet while the nose is in the land
+  -- dig = { probe = 6, spread = 3, hold = 3, need = 2 }
+
+  bits = {                       -- cluster-bit art; it can have `homing` too
     sheet = "sprites/<mod>/bit_flight.png",
     anim = "rotation", cyclical = 32,
   },
   -- bits = "inherit"            -- bits use the primary art
-  -- omit bits entirely         -- bits keep WA's own sprite
+  -- omit bits entirely         -- bits keep their stock sprite
 
   states = {
-    { scope = "main", sig = 245, sheet = "sprites/<mod>/state_homing.png",
-      anim = "track" },
-    { scope = "bit", sig = 246, sheet = "sprites/<mod>/state_homing_bit.png" },
-    { scope = "main", sig = { 247, 248 }, native = true },  -- hand back to WA
+    { scope = "main", when = function(m) return m.vy > 0 end,
+      sheet = "sprites/<mod>/falling.png" },
+    { scope = "bit", when = function(m) return m.vy > 0 end, native = true },
   },
 })
 ```
 
 ### Identity
 
-The default classifier is `m.sprite ~= 0` at first sight: a **primary** keeps
-`sprite = 0`, a **cluster bit** keeps a nonzero stock id (`clustlet`). The
-generator writes `sprite = 0` on the primary unconditionally and forces a stock
-bit sprite, so both roles classify correctly even with an imported `.wep`.
+Each missile is sorted once, the first frame the builder sees it:
 
-### State signals
+1. a `roles` entry whose `match(m)` is true;
+2. `is_bit(m)`, when the weapon passes one;
+3. `m.bit`, when the engine gives it;
+4. otherwise, with a `bits` sheet set, the missile whose `m.sprite` is 0 is a
+   cluster bit: a bit starts from the copy of its parent, which the builder
+   has already zeroed. Without a `bits` sheet every missile is the primary.
 
-WA writes a nonzero `m.sprite` when a missile changes behaviour. The builder
-records the last nonzero value before zeroing, so `sig` matches the record's own
-sprite fields:
+### Homing
 
-| state | record field |
-|---|---|
-| homing (main) | `missile.homing.sprite` |
-| homing bit | `clusters.bit.homing.sprite` |
-| dig | `dig.dive_sprite`, `dig.sprite_1..3` |
-| roam flight | `sheep.flight_1`, `sheep.flight_2` |
-| gas | `roam.gas.animal_sprite` |
+Homing is timed. WA arms the missile `arm` ms after firing and steers it for
+`time` ms, and a game frame is 20 ms on every machine, so the builder swaps to
+the `homing` art for that window. Use the homing delay and duration from the
+record.
 
-Each active state needs a **distinct** nonzero id. The editor assigns one when
-the record field is empty and warns about duplicates.
+### Digging
+
+`dig` gives no new art. While at least `need` of four probes, `probe` pixels
+ahead of the centre and up to `spread` pixels to either side, are in the land,
+the sheet points along the heading and cycles its frames. It keeps cycling for
+`hold` frames after the nose comes out.
+
+### States
+
+A state is checked every frame, the first match in its `scope` (`"main"`,
+`"bit"`, `"any"` or a role name) wins, and it swaps the art. Test it with
+`when = function(m) ... end`.
+
+`sig` matches the last nonzero `m.sprite` the builder saw. WA doesn't write a
+behaviour sprite into `m.sprite`, which only ever holds the flight sprite, so
+`sig` stays only for the bundles that already pass one. New weapons use
+`when`, `homing` or `dig`.
 
 ### Native hand-back
 
-A state with `native = true` drops the follower and restores the last signal id
-to `m.sprite`. Use it to let WA draw the dig frames or a stock homing pose while
-the rest of the weapon keeps custom art.
+A state with `native = true` drops the follower and puts the last nonzero
+sprite id back in `m.sprite`, so WA draws the missile again while the rest of
+the weapon keeps custom art.
 
 ## Verify in game
 
-These are engine behaviours, not static checks:
-
-- `m.sprite` is writable in `pre`, and WA draws it again after `native = true`.
-- WA writes the behaviour sprite when it changes; one write is enough.
-- Dig: if `sprite_1..3` are written to `m.sprite` over time, list them all in
-  `sig`; if they are drawn separately, use `when = function(m) ... end`.
+- WA draws `m.sprite` again after a `native = true` state.
 - A state swap despawns and respawns the follower; watch for a one-frame flicker.
-- Roaming: check the `pre` phase still runs while the animal is on the ground.
+- Roaming: the `pre` phase still runs while the animal is on the ground.
