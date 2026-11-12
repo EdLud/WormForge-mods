@@ -15,6 +15,7 @@ packs = [
   "from_modders/laser_reflect",
   "from_modders/px_auto_ktk",
   "from_modders/wfws_sdk",
+  "from_modders/gas_pump",
 ]
 
 # Exact source paths: a profile is published only when listed here.

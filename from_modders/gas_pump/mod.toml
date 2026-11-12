@@ -1,0 +1,21 @@
+id = "wfws.toxic_thrower"
+name = "Gas Pump"
+version = "0.5.0"
+author = "reddaz"
+api_version = 4
+format_version = 2
+dependencies = ["effects.sdk", "px.fire_seq", "wf.sdk"]
+mod_icon = "sprites/toxic_thrower/icon.png"
+
+[[components]]
+id = "wfws.toxic_thrower"
+type = "weapon"
+name = "Gas Pump"
+description = "WA's Grenade with about a third of gravity and small burst, which digs three craters in the ground."
+entry = "weapons/toxic_thrower.lua"
+icon = "sprites/toxic_thrower/icon.png"
+default_position = { row = "F3", column = 4 }
+
+[sprites."sprites/toxic_thrower/missile.png"]
+fps = 15
+play = "loop"
