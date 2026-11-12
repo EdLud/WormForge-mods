@@ -6,8 +6,14 @@
 --     primary, cluster bit, or an extra `roles` entry. Cached per missile id.
 --
 --   STATE (re-evaluated every pre phase): what is it doing right now?
---     homing, roaming, emitting gas... Each state may swap the art, the
---     animation, or hand the missile back to WA (native = true).
+--     homing, digging, or a roaming animal waiting to take off. Each state may
+--     swap the art, the animation, or hand the missile back to WA (native).
+--
+--   ROAM (`roam = true`): a roaming animal walks until the turn's player
+--     presses Space, then flies. WA draws the walk from `m.sprite`, which is
+--     normal-flight art only, so it is never zeroed here; the generator zeroes
+--     `sheep.flight_1/2` instead. The builder draws nothing until the Space
+--     press, then owns the flown art.
 --
 --   DIG is not a state: a digging round has no art of its own. The record's
 --     dig sprite indexes are zeroed (a mole or the wsv* frames would draw
@@ -19,10 +25,13 @@
 --   sb.flight(ctx, {
 --     weapon = ctx.id,
 --     sheet = "...", anim = "track", ...        -- primary art
+--     size  = 1.25,                             -- every sheet, every role
+--     angle = 90,                               -- degrees added to the draw
 --     bits  = { sheet = "...", ... } | "inherit" | nil/false (native)
 --     is_bit = function(m) ... end,             -- optional classifier override
 --     roles  = { { name = "x", match = function(m) ... end, sheet = "..." } },
 --     dig    = true | { probe = 6, spread = 3, hold = 3, need = 2 },
+--     roam   = true,                            -- roaming animal: wait for Space
 --     states = {
 --       { scope = "main" | "bit" | "any" | <role name>,
 --         sig  = 245 | { 246, 247, 248 },       -- native sprite ids that mean
@@ -119,6 +128,19 @@ local function dig_settings(o)
   }
 end
 
+-- ---------------------------------------------------------------------------
+-- Weapon-wide builder parameters, applied to every role (the primary, the
+-- bits, each state and any `roles` entry):
+--
+--   size  = 1.25   what the panel's Size field multiplies each role's `scale`
+--                  by, so one number resizes the whole weapon.
+--   angle = 90     degrees added to whatever rotation the role's `anim` asked
+--                  for, for art that does not point up. Tracked art stays
+--                  tracked; it just gains the offset.
+--
+-- There is no glow here on purpose: WA only glows its own whitelisted sprites
+-- (`wa.assets.load{ wa_sprites }`), and a pack sheet has no glow copy.
+-- ---------------------------------------------------------------------------
 -- Heading of the round, normalized; the last one when it is at rest.
 local function heading_of(m, last)
   local vx, vy = m.vx or 0, m.vy or 0
@@ -164,7 +186,7 @@ end
 -- Sentinel: a missile (or state) the builder leaves to WA.
 local NATIVE = {}
 
-local function resolve(o)
+local function resolve(o, size)
   local anim = o.anim or "none"
   local cfg = {
     sheet = o.sheet,
@@ -174,7 +196,7 @@ local function resolve(o)
     cyclical = o.cyclical or 0,
     anim_speed = o.anim_speed or 1.0,
     z = o.z or 5.0,
-    scale = o.scale or 1.0,
+    scale = (o.scale or 1.0) * (size or 1.0),
     mirror = o.mirror ~= false,
     frame_fn = o.frame_fn,
     turn_fn = o.turn_fn,
@@ -182,7 +204,7 @@ local function resolve(o)
   -- `homing = { arm = ms, time = ms, sheet = "...", ... }`: art for the
   -- homing window, resolved once at install like every other role.
   if type(o.homing) == "table" then
-    local h = resolve(o.homing)
+    local h = resolve(o.homing, size)
     h.arm = o.homing.arm or 0
     h.time = o.homing.time or 0
     cfg.homing = h
@@ -221,12 +243,15 @@ function M.flight(ctx, opts)
     return
   end
 
-  local main = resolve(opts)
+  local size = opts.size or 1.0
+  local angle = opts.angle or 0.0
+
+  local main = resolve(opts, size)
 
   local bit_cfg = NATIVE
   local bit_art = false
   if type(opts.bits) == "table" then
-    bit_cfg = resolve(opts.bits)
+    bit_cfg = resolve(opts.bits, size)
     bit_art = true
   elseif opts.bits == "inherit" then
     bit_cfg = main
@@ -235,7 +260,7 @@ function M.flight(ctx, opts)
   local extra = {}
   if type(opts.roles) == "table" then
     for i, r in ipairs(opts.roles) do
-      extra[i] = { name = r.name or ("role" .. i), match = r.match, cfg = resolve(r) }
+      extra[i] = { name = r.name or ("role" .. i), match = r.match, cfg = resolve(r, size) }
     end
   end
 
@@ -246,7 +271,7 @@ function M.flight(ctx, opts)
         scope = s.scope or "any",
         sigs = sigset(s.sig),
         when = s.when,
-        cfg = s.native and NATIVE or resolve(s),
+        cfg = s.native and NATIVE or resolve(s, size),
       }
     end
   end
@@ -262,6 +287,14 @@ function M.flight(ctx, opts)
   local dig_dir = {}     -- [id] = last heading, for the terrain probes
   local dig_hold = {}    -- [id] = frames left of "digging"
   local dig = dig_settings(opts.dig)
+  -- Roaming animals: WA walks the animal until the turn's player presses
+  -- Space, and only then does it fly. The press is synchronized lockstep input
+  -- (`wa.world.keys().space`), so every peer draws the flight art from the
+  -- same frame. `m.sprite` stays WA's walking pose; the generator zeroes
+  -- `sheep.flight_1/2` so nothing draws under ours once it takes off.
+  local roam = opts.roam == true
+  local flying = {}      -- [id] = true once the animal has taken off
+  local armed = {}       -- [id] = Space was seen up since the missile appeared
   local age = {}         -- [id] = frames since first sight, for homing ms
   local logged = {}      -- [id] = frames logged so far (opts.log)
   local gen = 0
@@ -317,6 +350,8 @@ function M.flight(ctx, opts)
       active[id] = nil
       dig_dir[id] = nil
       dig_hold[id] = nil
+      flying[id] = nil
+      armed[id] = nil
       logged[id] = nil
       age[id] = nil
       b:despawn()
@@ -355,14 +390,31 @@ function M.flight(ctx, opts)
     end
 
     if m.phase == "pre" then
+      if roam and not flying[id] then
+        -- Walking. The Space press that takes off is the turn's player's, so
+        -- the turn's worm has to exist; `wa.world.keys()` is synchronized, so
+        -- every peer agrees on the frame the art starts.
+        local keys = wa.world.keys and wa.world.keys() or nil
+        local held = keys and keys.space and true or false
+        if not held then
+          armed[id] = true
+        elseif armed[id] and current_worm() then
+          flying[id] = true
+        end
+      end
+      if roam and not flying[id] then
+        active[id] = NATIVE
+        return
+      end
       if m.sprite ~= 0 then sig[id] = m.sprite end   -- read BEFORE zeroing
       local cfg = pick(m, ent)
       active[id] = cfg
       if cfg == NATIVE then
         -- Hand the sprite back. If our earlier zero stuck, restore the last
         -- signal (VERIFY: m.sprite is writable and WA draws it again).
-        if m.sprite == 0 and sig[id] then m.sprite = sig[id] end
-      else
+        if not roam and m.sprite == 0 and sig[id] then m.sprite = sig[id] end
+      elseif not roam then
+        -- Roaming keeps `m.sprite`: it is the walking pose, not flight art.
         m.sprite = 0
       end
       return
@@ -437,7 +489,14 @@ function M.flight(ctx, opts)
 
     b.facing = cfg.mirror and (m.vx < 0 and -1 or 1) or 1
     b:frame(frame)
-    b:gfx({ angle = math.deg(rot) % 360, depth = cfg.z, scale = cfg.scale })
+    -- `angle` is added in the drawn frame, and a mirrored sheet is flipped
+    -- about the vertical axis, so the offset is negated on the left side to
+    -- keep the art pointing the same way either way.
+    b:gfx({
+      angle = (math.deg(rot) + (b.facing < 0 and -angle or angle)) % 360,
+      depth = cfg.z,
+      scale = cfg.scale,
+    })
   end)
 end
 
