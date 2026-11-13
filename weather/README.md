@@ -1,7 +1,7 @@
 # Weather
 
-Rain, snow and a weather cycle for any profile: select the **Rain**, **Snow**
-or **Weather cycle** add-ons.
+Rain, snow or a weather cycle for any profile: select the **Weather** add-on and
+pick one with its **Weather** setting.
 
 Rain falls in layers, splashes on the ground and rings the water and puddles,
 each ring stopping at the shore. Lightning lights up the clouds and the sky
@@ -16,9 +16,9 @@ when the land under it is blown away it falls to the land below. It needs the
 Direct3D 9 (shader) renderer to show white; without it, settled snow takes the
 nearest colour of the land.
 
-**Weather cycle** changes the weather between rain, snow and clear spells; select
-Rain or Snow with it to change how they look. A turn cycle ends once every team has had a turn; at its start
-the weather may change, and settled snow melts from the top while it isn't
+With **Weather** set to `cycle`, the weather turns between rain, snow and clear
+spells. A turn cycle ends once every team has had a turn; at its start the
+weather may change, and settled snow melts from the top while it isn't
 snowing. A girder placed through settled snow loses those pixels when the snow
 under it melts.
 

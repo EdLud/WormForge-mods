@@ -36,9 +36,9 @@ local function listing(get)
   end
 end
 
-local RAIN = { rain = 80, wind = 100, clouds = 70, darkness = 25, ripples = true,
+local RAIN = { rain = 80, ripples = true,
   lightning_chance = 100, lightning_effect = "strike", volume = 70 }
-local SNOW = { snow = 60, wind = 100, clouds = 70, settle = false, settle_depth = 10, volume = 50 }
+local SNOW = { snow = 60, settle = false, settle_depth = 10, volume = 50 }
 local CYCLE = { change_chance = 35, rain_weight = 40, snow_weight = 40, clear_weight = 20, start = "random", melt = 4 }
 
 local function merged(defaults, given)
@@ -143,9 +143,22 @@ local function new_match(options, extra)
     worms = { all = listing(function() return M.worms end) },
     graves = { all = listing(function() return M.graves end) },
   }
-  if extra.cycle then load_module("features/weather_cycle")(merged(CYCLE, extra.cycle)) end
-  if options ~= false then load_module("features/weather")(merged(RAIN, options)) end
-  if extra.snow then load_module("features/snow")(merged(SNOW, extra.snow)) end
+  -- The one Weather add-on: snow without rain, rain without snow, or with the cycle both.
+  local mode = extra.cycle and "cycle" or (options == false and "snow" or "rain")
+  local values = { weather = mode }
+  for k, v in pairs(CYCLE) do values[k] = v end
+  for k, v in pairs(extra.cycle or {}) do values[k] = v end
+  for k, v in pairs(SNOW) do values[k == "volume" and "snow_volume" or k] = v end
+  for k, v in pairs(RAIN) do values[k] = v end
+  for k, v in pairs(options or {}) do values[k] = v end
+  for k, v in pairs(extra.snow or {}) do
+    values[k == "volume" and "snow_volume" or k] = v
+  end
+  M.options = values
+  load_module("features/weather")({ option = function(key)
+    assert(values[key] ~= nil, "no option " .. key)
+    return values[key]
+  end })
 end
 
 -- A turn of `team`'s worm starting, and ending.
@@ -334,7 +347,7 @@ do
   end
   check("light rain stays behind the land", front == 0)
 
-  new_match({ rain = 0, clouds = 0, darkness = 0, lightning_chance = 0 })
+  new_match({ rain = 0, lightning_chance = 0 })
   frames(3)
   check("nothing at all when everything is off", #M.quads == 0 and #M.ribbons == 0 and M.ambient == nil)
 end
@@ -376,7 +389,7 @@ end
 
 print("sky: the clouds stand in the world")
 do
-  new_match({ rain = 0, darkness = 0, lightning_chance = 0 })
+  new_match({ rain = 0, lightning_chance = 0 })
   local function clouds(cx, cy)
     wa.world.view = function() return { cx = cx, cy = cy, w = 1000, h = 600, zoom = 1 } end
     draw()
@@ -406,8 +419,8 @@ do
 
   -- The rain comes out of the clouds: nothing above each layer's line, fading in under it.
   local sky = load_module("lib/sky")
-  for _, clouds_on in ipairs({ 70, 0 }) do
-    new_match({ clouds = clouds_on, darkness = 0, lightning_chance = 0 })
+  do
+    new_match({ lightning_chance = 0 })
     wa.world.view = function() return { cx = 500, cy = sky.RAIN_TOP + 100, w = 1000, h = 900, zoom = 1 } end
     frames(3)
     local above, faded_in = 0, 0
@@ -420,14 +433,10 @@ do
     for _, q in ipairs(M.quad) do
       if q.sprite == "sprites/rain.png" and q.uv and q.uv[2] > 0 then faded_in = faded_in + 1 end
     end
-    if clouds_on > 0 then
-      check("no rain above the clouds' line", above == 0, above)
-      check("the cells across it start at the line, cut by uv", faded_in > 0 and (M.fades_in or 0) > 0, faded_in)
-    else
-      check("without clouds the rain falls from the whole sky", above > 0, above)
-    end
+    check("no rain above the clouds' line", above == 0, above)
+    check("the cells across it start at the line, cut by uv", faded_in > 0 and (M.fades_in or 0) > 0, faded_in)
   end
-  new_match({ darkness = 0, lightning_chance = 0 })
+  new_match({ lightning_chance = 0 })
   wa.world.view = function() return { cx = 500, cy = sky.RAIN_TOP, w = 1000, h = 600, zoom = 1 } end
   frames(2)
   local cloud_depth, far_rain = nil, nil
@@ -487,7 +496,7 @@ do
   end
   check("zoomed far out the flakes stay within the budget", total > 100 and total <= 1000, total)
 
-  new_match(false, { snow = { snow = 0, clouds = 0 } })
+  new_match(false, { snow = { snow = 0 } })
   frames(3)
   check("0 % draws no snow and plays no sound", #M.quads == 0 and M.ambients["sounds/blizzard.wav"] == nil)
 end
@@ -866,11 +875,11 @@ do
   frames(300)
   check("no lightning in the snow", #M.sounds == 0, #M.sounds)
 
-  -- The cycle alone brings rain and snow with their add-ons' defaults.
+  -- The cycle brings rain and snow.
   new_match(false, { cycle = { start = "rain", change_chance = 100, clear_weight = 0 } })
   W = load_module("lib/weather")
   frames(3)
-  check("the cycle alone starts with the rain asked for", W.kind == "rain" and W.target.rain == 1)
+  check("the cycle starts with the rain asked for", W.kind == "rain" and W.target.rain == 1)
   local rain_drawn = 0
   for _, q in ipairs(M.quads) do if q.sprite == "sprites/rain.png" then rain_drawn = rain_drawn + q.count end end
   check("and draws it", rain_drawn > 0, rain_drawn)
@@ -881,28 +890,13 @@ do
   for _, q in ipairs(M.quads) do if q.sprite == "sprites/flake.png" then flakes = flakes + q.count end end
   check("and draws that", flakes > 0, flakes)
 
-  -- Those defaults are the add-ons' own, as mod.toml declares them.
+  -- The options the add-on reads are the ones mod.toml declares.
   local toml = io.open(ROOT .. "weather/mod.toml"):read("a")
-  local declared, component, key = {}, nil, nil
-  for line in toml:gmatch("[^\n]+") do
-    local id = line:match('^id = "([^"]+)"')
-    if id then component = id end
-    local k = line:match('^key = "([^"]+)"')
-    if k then key = k end
-    local v = line:match("^default = (.+)$")
-    if v and key then
-      declared[component] = declared[component] or {}
-      declared[component][key] = v == "true" or (v ~= "false" and (tonumber(v) or v:match('^"(.*)"$')))
-      key = nil
-    end
-  end
-  local settings = load_module("lib/settings")
-  for kind, id in pairs({ rain = "core.weather", snow = "core.snow" }) do
-    local same = true
-    for k, v in pairs(declared[id]) do same = same and settings.DEFAULTS[kind][k] == v end
-    for k in pairs(settings.DEFAULTS[kind]) do same = same and declared[id][k] ~= nil end
-    check("the cycle's " .. kind .. " has the defaults mod.toml gives " .. id, same)
-  end
+  local declared, same = {}, true
+  for k in toml:gmatch('\nkey = "([^"]+)"') do declared[k] = true end
+  for k in pairs(declared) do same = same and M.options[k] ~= nil end
+  for k in pairs(M.options) do same = same and declared[k] == true end
+  check("the add-on's options are the ones mod.toml declares", same)
 end
 
 print(failed == 0 and "\nALL PASS" or ("\n" .. failed .. " FAILED"))

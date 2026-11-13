@@ -1,4 +1,4 @@
--- Weather: what is falling now, shared by the Rain, Snow and Weather cycle add-ons.
+-- Weather: what is falling now, for the rain, the snow and the cycle.
 local L = require("wf-lib/lightning")
 
 local W = {}
@@ -9,7 +9,7 @@ local SPRITES = { "sprites/rain.png", "sprites/splash.png", "sprites/ring.png", 
 local KINDS = { "rain", "snow" }
 local FADE = 150 -- frames a kind takes to fade in or out on screen
 
--- The settings of each selected kind, from its add-on.
+-- The settings of each kind in play.
 W.kinds = {}
 -- Whether each kind falls now, 0 or 1: set before the match and in simulation callbacks only.
 W.target = { rain = 0, snow = 0 }
@@ -22,7 +22,7 @@ W.ticks, W.on_cycle = {}, {}
 local cycle_cfg
 local set_up, begun = false, false
 
--- A kind is in play when its add-on is selected and falls at all.
+-- A kind is in play when the weather has it and it falls at all.
 local function has(kind)
   local cfg = W.kinds[kind]
   return cfg ~= nil and cfg.amount > 0
@@ -50,26 +50,8 @@ function W.set_kind(kind)
   for _, k in ipairs(KINDS) do W.target[k] = (k == kind and has(k)) and 1 or 0 end
 end
 
--- Once every add-on has installed: the cycle brings rain and snow with their defaults when their add-ons
--- aren't selected, so it works alone.
-local finished = false
-local function finish()
-  if finished then return end
-  finished = true
-  if not cycle_cfg then return end
-  local settings = require("lib/settings")
-  for _, k in ipairs(KINDS) do
-    if not W.kinds[k] then
-      W.kinds[k] = settings[k](settings.defaults(k))
-      require(k == "rain" and "lib/sim" or "lib/settle").install(W)
-    end
-  end
-  W.set_kind(W.kind)
-end
-
 -- The first turn: the first weather of the cycle, then the clock of the simulation.
 local function begin()
-  finish()
   if cycle_cfg then
     local start = cycle_cfg.start
     if start == "random" or (start ~= "clear" and not has(start)) then start = W.next_kind(cycle_cfg, nil) end
@@ -126,7 +108,6 @@ local function draw()
   local v = wa.world.view()
   if v.w <= 0 or v.h <= 0 then return end
   if not draws then
-    finish()
     draws = {}
     for _, name in ipairs({ "lib/sky", "lib/rain", "lib/surface", "lib/snow" }) do
       draws[#draws + 1] = require(name).install(W)
@@ -181,14 +162,14 @@ local function setup()
   end
 end
 
--- The settings of an add-on: `amount` 0..1 is how heavy it falls, the rest its own.
+-- The settings of a kind: `amount` 0..1 is how heavy it falls, the rest its own.
 function W.add(kind, cfg)
   setup()
   W.kinds[kind] = cfg
   if cycle_cfg then
     W.target[kind] = (W.kind == kind and has(kind)) and 1 or 0
   else
-    -- Selected, it stays all match: at 0 % its clouds and darkness still show.
+    -- Without the cycle it stays all match: at 0 % its clouds and darkness still show.
     W.target[kind] = 1
   end
 end

@@ -1,4 +1,4 @@
-# Weather: rain, snow, and a cycle that turns between them.
+# Weather: rain, snow, or a cycle that turns between them.
 id = "core.weather"
 name = "Weather"
 version = "0.2.0"
@@ -10,10 +10,18 @@ dependencies = ["wf.sdk"]
 [[components]]
 id = "core.weather"
 type = "feature"
-name = "Rain"
-description = "Rain falls, storm clouds gather and lightning flashes."
+name = "Weather"
+description = "Rain or snow all match, or a cycle that turns between rain, snow and clear spells."
 entry = "features/weather.lua"
-credits = "Rain sound from Project X's Rain weather"
+credits = "Rain sound from Project X's Rain weather, blizzard sound from Project X's weather sounds"
+
+[[components.options]]
+key = "weather"
+type = "choice"
+choices = ["rain", "snow", "cycle"]
+default = "rain"
+label = "Weather"
+description = "rain or snow: it falls all match. cycle: at each turn cycle the weather may change, by the shares below."
 
 [[components.options]]
 key = "rain"
@@ -25,31 +33,13 @@ label = "Rain (%)"
 description = "How heavy the rain is. 0 means no rain."
 
 [[components.options]]
-key = "wind"
+key = "snow"
 type = "int"
-default = 100
-min = 0
-max = 200
-label = "Wind on the rain (%)"
-description = "How much the wind slants the rain and drives the clouds."
-
-[[components.options]]
-key = "clouds"
-type = "int"
-default = 70
+default = 60
 min = 0
 max = 100
-label = "Clouds (%)"
-description = "How thick the storm clouds at the top of the screen are. 0 means a clear sky."
-
-[[components.options]]
-key = "darkness"
-type = "int"
-default = 25
-min = 0
-max = 100
-label = "Darkness (%)"
-description = "How much the storm darkens the world. Lightning lights it up again."
+label = "Snow (%)"
+description = "How heavy the snowfall is. 0 means no snow."
 
 [[components.options]]
 key = "ripples"
@@ -65,7 +55,7 @@ default = 30
 min = 0
 max = 100
 label = "Lightning chance (% per minute)"
-description = "The chance of lightning in each minute of play. Near 100 it strikes several times a minute."
+description = "The chance of lightning in each minute of rain. Near 100 it strikes several times a minute."
 
 [[components.options]]
 key = "lightning_effect"
@@ -74,50 +64,6 @@ choices = ["looks", "strike"]
 default = "looks"
 label = "Lightning"
 description = "looks: only light and thunder. strike: it heals worms, revives graves, starts mines and blows up crates and oil drums, as the Lightning Strike does."
-
-[[components.options]]
-key = "volume"
-type = "int"
-default = 70
-min = 0
-max = 100
-label = "Rain volume (%)"
-description = ""
-
-[[components]]
-id = "core.snow"
-type = "feature"
-name = "Snow"
-description = "Snow drifts down from white clouds and can settle on the ground."
-entry = "features/snow.lua"
-credits = "Blizzard sound from Project X's weather sounds"
-
-[[components.options]]
-key = "snow"
-type = "int"
-default = 60
-min = 0
-max = 100
-label = "Snow (%)"
-description = "How heavy the snowfall is. 0 means no snow."
-
-[[components.options]]
-key = "wind"
-type = "int"
-default = 100
-min = 0
-max = 200
-label = "Wind on the snow (%)"
-description = "How much the wind drives the flakes and the clouds."
-
-[[components.options]]
-key = "clouds"
-type = "int"
-default = 70
-min = 0
-max = 100
-label = "Clouds (%)"
-description = "How thick the white clouds at the top of the screen are. 0 means a clear sky."
 
 [[components.options]]
 key = "settle"
@@ -138,18 +84,20 @@ description = ""
 [[components.options]]
 key = "volume"
 type = "int"
+default = 70
+min = 0
+max = 100
+label = "Rain volume (%)"
+description = ""
+
+[[components.options]]
+key = "snow_volume"
+type = "int"
 default = 50
 min = 0
 max = 100
 label = "Snow volume (%)"
 description = ""
-
-[[components]]
-id = "core.weather_cycle"
-type = "feature"
-name = "Weather cycle"
-description = "Changes the weather between rain, snow and clear spells as the turns go round."
-entry = "features/weather_cycle.lua"
 
 [[components.options]]
 key = "change_chance"
@@ -157,7 +105,7 @@ type = "int"
 default = 35
 min = 0
 max = 100
-label = "Change chance (% per turn cycle)"
+label = "Cycle: change chance (% per turn cycle)"
 description = "The chance the weather changes once every team has had a turn."
 
 [[components.options]]
@@ -166,7 +114,7 @@ type = "int"
 default = 40
 min = 0
 max = 100
-label = "Rain share"
+label = "Cycle: rain share"
 description = "How often rain comes when the weather changes. 0 leaves it out."
 
 [[components.options]]
@@ -175,7 +123,7 @@ type = "int"
 default = 40
 min = 0
 max = 100
-label = "Snow share"
+label = "Cycle: snow share"
 description = "How often snow comes when the weather changes. 0 leaves it out."
 
 [[components.options]]
@@ -184,7 +132,7 @@ type = "int"
 default = 20
 min = 0
 max = 100
-label = "Clear share"
+label = "Cycle: clear share"
 description = "How often the sky clears when the weather changes."
 
 [[components.options]]
@@ -192,7 +140,7 @@ key = "start"
 type = "choice"
 choices = ["random", "clear", "rain", "snow"]
 default = "random"
-label = "First weather"
+label = "Cycle: first weather"
 description = ""
 
 [[components.options]]
@@ -201,5 +149,5 @@ type = "int"
 default = 4
 min = 0
 max = 40
-label = "Melt (px per turn cycle)"
+label = "Cycle: melt (px per turn cycle)"
 description = "How much settled snow melts at the start of each turn cycle while it isn't snowing. Rain melts twice as much."
