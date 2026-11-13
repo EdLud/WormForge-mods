@@ -11,5 +11,14 @@ type = "weapon"
 name = "Moon Grenade"
 description = "The stock Grenade with about a third of the gravity and a small burst, which digs three craters in the ground below it."
 entry = "weapons/moon_grenade.lua"
-icon = "grenade"
+icon = "sprites/moon_grenade.png"
 default_position = { row = "F2", column = 6 }
+
+[[components]]
+id = "guide.scatter_bazooka"
+type = "weapon"
+name = "Scatter Bazooka"
+description = "A bazooka that fires three smaller rockets in a fan."
+entry = "weapons/scatter_bazooka.lua"
+icon = "bazooka"
+default_position = { row = "F1", column = 6 }

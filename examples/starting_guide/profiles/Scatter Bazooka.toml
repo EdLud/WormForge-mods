@@ -1,0 +1,14 @@
+description = "The starting guide's Scatter Bazooka and Moon Grenade, with the stock Bazooka beside them to compare, a Ninja Rope and Skip Go."
+
+[weapons]
+"guide.scatter_bazooka" = true
+"guide.moon_grenade" = true
+"stock.bazooka" = true
+"stock.ninja_rope" = true
+"stock.skip_go" = true
+
+[weapon_settings."guide.scatter_bazooka"]
+delay = 0
+
+[weapon_settings."stock.ninja_rope"]
+ammo = -1

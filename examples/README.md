@@ -15,7 +15,10 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   a third of the gravity and a small burst, which digs three craters in the
   ground below it (`missile.explosion.power`, `on_explode`, `wa.random`,
   `wa.land.cut`, `wa.math`, a HUD line); `profiles/Moon Grenade.toml` places
-  it beside the stock Grenade.
+  it beside the stock Grenade. Part 2: `guide.scatter_bazooka`, a bazooka
+  that fires three smaller rockets in a fan (`defaults` and the profile's
+  settings, `ctx`, `on_fire`, `wa.weapons.launch`), and the Moon Grenade's
+  own `panel_icon`; `profiles/Scatter Bazooka.toml` places both.
 - `pooz` (`example.pooz`) — selecting the weapon possesses the worm as a
   humanoid runner (run/sprint, coyote time at edges, double jump). A/D, W to
   jump, Shift. Switch weapon to drop out.
