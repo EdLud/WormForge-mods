@@ -33,11 +33,12 @@ function surface.bounds(x, reach, step, open)
   return left, right
 end
 
-function surface.install(cfg)
-  if cfg.rain <= 0 then return nil end
-  local splash_sheet = wa.sprites.key("sprites/splash.png")
-  local ring_sheet = wa.sprites.key("sprites/ring.png")
-  local oval_sheet = wa.sprites.key("sprites/oval.png")
+function surface.install(W)
+  local cfg = W.kinds.rain
+  if not cfg or cfg.amount <= 0 then return nil end
+  local splash_sheet = W.keys["sprites/splash.png"]
+  local ring_sheet = W.keys["sprites/ring.png"]
+  local oval_sheet = W.keys["sprites/oval.png"]
   local over_water = wa.depth.FRONT - 1
   local on_ground = wa.depth.FRONT
   local heights = {}
@@ -150,12 +151,12 @@ function surface.install(cfg)
   end
 
   -- Splashes a frame of the world: one for every 400 pixels of view at full rain.
-  local rate = cfg.rain * 0.6
+  local rate = cfg.amount * 0.6
   return function(st)
     local step = last and st.now - last or 0
     if step < 0 or step > 50 then step = 0 end
     last = st.now
-    due = due + step * rate * st.w / 400
+    due = due + step * rate * (st.rain or 1) * st.w / 400
     while due >= 1 do
       due = due - 1
       spawn(st)

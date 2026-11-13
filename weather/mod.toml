@@ -1,7 +1,7 @@
-# Weather: rain, a stormy sky, rings on water and puddles, and lightning.
+# Weather: rain, snow, and a cycle that turns between them.
 id = "core.weather"
 name = "Weather"
-version = "0.1.1"
+version = "0.2.0"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -10,7 +10,7 @@ dependencies = ["wf.sdk"]
 [[components]]
 id = "core.weather"
 type = "feature"
-name = "Weather"
+name = "Rain"
 description = "Rain falls, storm clouds gather and lightning flashes."
 entry = "features/weather.lua"
 credits = "Rain sound from Project X's Rain weather"
@@ -83,3 +83,123 @@ min = 0
 max = 100
 label = "Rain volume (%)"
 description = ""
+
+[[components]]
+id = "core.snow"
+type = "feature"
+name = "Snow"
+description = "Snow drifts down from white clouds and can settle on the ground."
+entry = "features/snow.lua"
+credits = "Blizzard sound from Project X's weather sounds"
+
+[[components.options]]
+key = "snow"
+type = "int"
+default = 60
+min = 0
+max = 100
+label = "Snow (%)"
+description = "How heavy the snowfall is. 0 means no snow."
+
+[[components.options]]
+key = "wind"
+type = "int"
+default = 100
+min = 0
+max = 200
+label = "Wind on the snow (%)"
+description = "How much the wind drives the flakes and the clouds."
+
+[[components.options]]
+key = "clouds"
+type = "int"
+default = 70
+min = 0
+max = 100
+label = "Clouds (%)"
+description = "How thick the white clouds at the top of the screen are. 0 means a clear sky."
+
+[[components.options]]
+key = "settle"
+type = "bool"
+default = false
+label = "Settling snow"
+description = "Snow builds up on open ground as land that worms stand on, dig and blow up."
+
+[[components.options]]
+key = "settle_depth"
+type = "int"
+default = 10
+min = 2
+max = 40
+label = "Deepest settled snow (px)"
+description = ""
+
+[[components.options]]
+key = "volume"
+type = "int"
+default = 50
+min = 0
+max = 100
+label = "Snow volume (%)"
+description = ""
+
+[[components]]
+id = "core.weather_cycle"
+type = "feature"
+name = "Weather cycle"
+description = "Changes the weather between rain, snow and clear spells as the turns go round."
+entry = "features/weather_cycle.lua"
+
+[[components.options]]
+key = "change_chance"
+type = "int"
+default = 35
+min = 0
+max = 100
+label = "Change chance (% per turn cycle)"
+description = "The chance the weather changes once every team has had a turn."
+
+[[components.options]]
+key = "rain_weight"
+type = "int"
+default = 40
+min = 0
+max = 100
+label = "Rain share"
+description = "How often rain comes when the weather changes. 0 leaves it out."
+
+[[components.options]]
+key = "snow_weight"
+type = "int"
+default = 40
+min = 0
+max = 100
+label = "Snow share"
+description = "How often snow comes when the weather changes. 0 leaves it out."
+
+[[components.options]]
+key = "clear_weight"
+type = "int"
+default = 20
+min = 0
+max = 100
+label = "Clear share"
+description = "How often the sky clears when the weather changes."
+
+[[components.options]]
+key = "start"
+type = "choice"
+choices = ["random", "clear", "rain", "snow"]
+default = "random"
+label = "First weather"
+description = ""
+
+[[components.options]]
+key = "melt"
+type = "int"
+default = 4
+min = 0
+max = 40
+label = "Melt (px per turn cycle)"
+description = "How much settled snow melts at the start of each turn cycle while it isn't snowing. Rain melts twice as much."

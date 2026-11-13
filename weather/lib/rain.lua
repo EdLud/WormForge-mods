@@ -11,10 +11,11 @@ local function hash(i, j)
   return (h ~ (h >> 13)) & 0x7fffffff
 end
 
--- `cfg.rain` 0..1; returns the draw for one frame, or nil without rain.
-function rain.install(cfg)
-  if cfg.rain <= 0 then return nil end
-  local sheet = wa.sprites.key("sprites/rain.png")
+-- The Rain add-on's settings in `W.kinds.rain`; returns the draw for one frame, or nil without rain.
+function rain.install(W)
+  local cfg = W.kinds.rain
+  if not cfg or cfg.amount <= 0 then return nil end
+  local sheet = W.keys["sprites/rain.png"]
   local behind = wa.depth.BEHIND_TERRAIN + 0x1000
   local layers = {
     { scale = 0.5, alpha = 0.45, speed = 7, parallax = 0.55, depth = behind },
@@ -23,16 +24,15 @@ function rain.install(cfg)
   local sky = cfg.clouds > 0 and require("lib/sky") or nil
   for _, layer in ipairs(layers) do layer.top = sky and sky.RAIN_TOP end
   -- Heavy rain also falls in front of the land and the worms, behind the water.
-  if cfg.rain > 0.5 then
-    layers[3] = { scale = 1.3, alpha = 0.2 + 0.6 * (cfg.rain - 0.5), speed = 17, parallax = 1, depth = wa.depth.FRONT,
+  if cfg.amount > 0.5 then
+    layers[3] = { scale = 1.3, alpha = 0.2 + 0.6 * (cfg.amount - 0.5), speed = 17, parallax = 1, depth = wa.depth.FRONT,
       top = sky and sky.RAIN_TOP_FRONT }
   end
-  local dense = math.min(3, math.floor(cfg.rain * 4))
-  local light = 0.5 + 0.5 * cfg.rain
+  local dense = math.min(3, math.floor(cfg.amount * 4))
+  local light = 0.5 + 0.5 * cfg.amount
   for _, layer in ipairs(layers) do
     layer.drift, layer.batches = 0, {}
-    local a = math.floor(255 * layer.alpha * light)
-    layer.a, layer.colour = a, (a << 24) | 0xFFFFFF
+    layer.full = 255 * layer.alpha * light
     for f = 0, 3 do
       layer.batches[f] = { sprite = sheet, frame = f, blend = "alpha", depth = layer.depth, quads = {}, count = 0 }
     end
@@ -55,12 +55,17 @@ function rain.install(cfg)
   end
   local slant, last
   return function(st)
+    -- How much of the rain is falling now: it fades in and out as the weather changes.
+    local shown = st.rain or 1
+    if shown <= 0 then last = nil; return end
     local target = math.max(-MAX_SLANT, math.min(MAX_SLANT, st.wind * SLANT * cfg.wind))
     slant = slant and slant + (target - slant) * 0.03 or target
     local step = last and st.now - last or 0
     if step < 0 or step > 50 then step = 0 end
     last = st.now
     for _, layer in ipairs(layers) do
+      local a = math.floor(layer.full * shown)
+      layer.a, layer.colour = a, (a << 24) | 0xFFFFFF
       local T = TILE * layer.scale
       local fall = st.now * layer.speed
       layer.drift = layer.drift + step * layer.speed * slant

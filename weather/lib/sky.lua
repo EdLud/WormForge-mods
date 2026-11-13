@@ -1,4 +1,4 @@
--- Sky: storm clouds along the top of the level, flashes of lightning and the storm's darkness.
+-- Sky: clouds along the top of the level, dark for rain and white for snow, lightning flashes and the storm's darkness.
 local L = require("wf-lib/lightning")
 
 local sky = {}
@@ -8,6 +8,8 @@ local ROWS = 3
 local CLOUD_Y = -400 -- world y of the top row
 local ROW_GAP = 26 -- pixels between rows
 local DRIFT = 12 -- pixels a frame per unit of wind (pixels/frame²)
+local STORM = { 38, 36, 52 }
+local SNOW = { 226, 230, 238 }
 
 -- Where the rain comes out of the clouds: inside the band's lower rows, hidden by
 -- them; rain drawn in front of the clouds starts under their underside.
@@ -20,11 +22,17 @@ local function hash(i, j)
   return (h & 0xffff) / 0xffff
 end
 
-function sky.install(cfg)
+-- The clouds, flash and darkness of whatever falls, from the add-ons' settings in `W.kinds`.
+function sky.install(W)
+  local rain, snow = W.kinds.rain, W.kinds.snow
+  local NONE = { clouds = 0, wind = 0, darkness = 0, chance = 0 }
+  if not (rain or snow) then return nil end
+  rain, snow = rain or NONE, snow or NONE
   local g = L.gfx()
-  local flat = wa.sprites.key("sprites/flat.png")
+  local flat = W.keys["sprites/flat.png"]
   local band_depth = wa.depth.BEHIND_TERRAIN + 0x800
-  local style = { depth = band_depth, dark = { 38, 36, 52 }, alpha = cfg.clouds }
+  local style = { depth = band_depth, dark = { STORM[1], STORM[2], STORM[3] }, alpha = 0 }
+  local chance = 0
   local puffs = {}
   local drift, last = 0, nil
   local glimmer
@@ -51,7 +59,7 @@ function sky.install(cfg)
     end
     if power > 0 then return power, x end
     if glimmer and st.now >= glimmer.till then glimmer = nil end
-    if not glimmer and cfg.chance > 0 and wa.draw.random() < cfg.chance / 100 * 0.004 then
+    if not glimmer and chance > 0 and wa.draw.random() < chance / 100 * 0.004 then
       glimmer = { x = st.left + wa.draw.random() * st.w, till = st.now + 2 + wa.draw.random() * 5,
         power = 0.25 + 0.3 * wa.draw.random() }
     end
@@ -60,14 +68,22 @@ function sky.install(cfg)
   end
 
   return function(st)
+    local wet, white = st.rain or 0, st.snow or 0
+    local wr, ws = wet * rain.clouds, white * snow.clouds
+    local clouds = math.max(wr, ws)
+    local share = (wr + ws) > 0 and ws / (wr + ws) or 0
+    for i = 1, 3 do style.dark[i] = math.floor(STORM[i] + (SNOW[i] - STORM[i]) * share) end
+    style.alpha = clouds
+    chance = rain.chance * wet
+    local wind = (wet + white) > 0 and (rain.wind * wet + snow.wind * white) / (wet + white) or 0
     local step = last and st.now - last or 0
     if step < 0 or step > 50 then step = 0 end
     last = st.now
-    drift = drift + step * st.wind * DRIFT * cfg.wind
+    drift = drift + step * st.wind * DRIFT * wind
     local power, lx = brightest(st)
     -- The band stands in the world: only puffs a view can reach are made.
     local band_top, band_bottom = CLOUD_Y - 120, CLOUD_Y + ROW_GAP * ROWS + 120
-    if cfg.clouds > 0 and st.bottom > band_top and st.top < band_bottom then
+    if clouds > 0 and st.bottom > band_top and st.top < band_bottom then
       local n = 0
       for row = 0, ROWS - 1 do
         local offset = drift + row * SPACING * 0.5
@@ -97,8 +113,8 @@ function sky.install(cfg)
       local a = math.floor(110 * power)
       cover(st, "add", band_depth + 0x100, (a << 24) | 0xB4C8FF, (math.floor(a * 0.3) << 24) | 0xB4C8FF)
     end
-    if cfg.darkness > 0 then
-      local d = cfg.darkness * (1 - 0.8 * power)
+    if rain.darkness * wet > 0 then
+      local d = rain.darkness * wet * (1 - 0.8 * power)
       cover(st, "alpha", wa.depth.FRONT - 1, math.floor(150 * d) << 24, math.floor(100 * d) << 24)
     end
   end

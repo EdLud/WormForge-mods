@@ -7,6 +7,8 @@ rain.png    4 frames of 256x256, sparse to dense: thin falling streaks, bright
 splash.png  6 frames of 32x32: a drop's crown splash, rising and falling.
 ring.png    64x16: a soft line across, for the ring ribbons.
 flat.png    8x8 white: full-view quads coloured per corner.
+flake.png   3 frames of 16x16: soft round snowflakes with a cool edge.
+settle.png  9x9 frames: settling snow, a pixel or a column of pixels each.
 """
 from pathlib import Path
 
@@ -116,12 +118,52 @@ def flat(size: int = 8) -> None:
     save(np.full((size, size, 4), 255.0), "flat.png")
 
 
+def flake(size: int = 16) -> None:
+    """A soft disc, a smaller crisp one, and a faint wide one, white in the
+    middle and cooler towards the edge."""
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float64)
+    c = size / 2 - 0.5
+    d = np.sqrt((xx - c) ** 2 + (yy - c) ** 2)
+    out = []
+    for core, soft, peak in ((2.6, 2.2, 1.0), (1.6, 1.2, 1.0), (3.4, 3.0, 0.75)):
+        alpha = np.clip(1 - np.maximum(d - core, 0) / soft, 0, 1) ** 1.5 * peak
+        t = np.clip(d / (core + soft), 0, 1)[..., None]
+        tint = (1 - t) * np.array([255, 255, 255.0]) + t * np.array([200, 218, 255.0])
+        rgba = np.zeros((size, size, 4))
+        rgba[..., :3] = tint
+        rgba[..., 3] = alpha * 255
+        out.append(rgba)
+    save(np.concatenate(out, axis=0), "flake.png")
+
+
+def settle(size: int = 9) -> None:
+    """lib/settle.lua's sheet, everything on the middle column from the bottom
+    row up: four single pixels of snow in slightly different whites, then
+    columns of 1..9 pixels, white on top and cooler underneath. All opaque."""
+    shades = [(250, 252, 255), (242, 246, 252), (236, 241, 250), (246, 249, 255)]
+    out = []
+    for rgb in shades:
+        rgba = np.zeros((size, size, 4))
+        rgba[size - 1, size // 2] = [*rgb, 255]
+        out.append(rgba)
+    for h in range(1, size + 1):
+        rgba = np.zeros((size, size, 4))
+        for k in range(h):
+            t = k / max(h - 1, 1)
+            rgb = (1 - t) * np.array([226, 234, 248.0]) + t * np.array([250, 252, 255.0])
+            rgba[size - 1 - k, size // 2] = [*rgb, 255]
+        out.append(rgba)
+    save(np.concatenate(out, axis=0), "settle.png")
+
+
 if __name__ == "__main__":
     rain()
     splash()
     ring()
     oval()
     flat()
+    flake()
+    settle()
     for p in sorted(OUT.glob("*.png")):
         with Image.open(p) as img:
             print(p.name, img.size)

@@ -50,23 +50,15 @@ function sim.strike(cfg)
   return L.strike({ x = wa.random(0, math.max(0, size.w - 1)), y = 0, side = side, owner = "none", effects = false })
 end
 
--- One invisible actor from the first turn on tries once a second.
-function sim.install(cfg)
+-- On the weather's clock: a try once a second while it rains.
+function sim.install(W)
+  local cfg = W.kinds.rain
   local chance = sim.per_second(cfg.chance)
   if chance == 0 then return end
-  local clock
-  wa.on.turn_start(function()
-    if clock then return end
-    local size = wa.world.size()
-    clock = wa.actors.spawn({
-      sprite = "sprites/flat.png", visible = false, gravity = false, collide = false,
-      owner = "none", x = size.w // 2, y = 0,
-      on = function()
-        if wa.world.frame() % SECOND ~= 0 then return end
-        if wa.random(1, MILLION) <= chance then sim.strike(cfg) end
-      end,
-    })
-  end)
+  W.ticks[#W.ticks + 1] = function(frame)
+    if frame % SECOND ~= 0 or W.target.rain == 0 then return end
+    if wa.random(1, MILLION) <= chance then sim.strike(cfg) end
+  end
 end
 
 return sim
