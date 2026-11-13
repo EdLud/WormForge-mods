@@ -3,7 +3,7 @@ local settings = {}
 
 local CLOUDS = 0.7 -- how opaque the band of clouds at the top of the level is
 local WIND = 1 -- how much the wind slants the rain and drives the flakes and clouds, as a factor
-local DARKNESS = 0.9 -- how much the storm darkens the world in rain
+local DARKNESS = 0.5 -- how much the storm darkens the world in rain
 
 function settings.rain(option)
   return {
