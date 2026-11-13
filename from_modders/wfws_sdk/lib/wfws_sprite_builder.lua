@@ -11,9 +11,12 @@
 --
 --   ROAM (`roam = true`): a roaming animal walks until the turn's player
 --     presses Space, then flies. WA draws the walk from `m.sprite`, which is
---     normal-flight art only, so it is never zeroed here; the generator zeroes
---     `sheep.flight_1/2` instead. The builder draws nothing until the Space
---     press, then owns the flown art.
+--     normal-flight art only; the generator zeroes `sheep.flight_1/2` (the
+--     flown art) and leaves the walk pose alone when WA can draw it, passing its
+--     id as `walk` so the classifier still knows the primary. When that pose
+--     cannot draw (an imported Project X sprite number, or none), the record
+--     `sprite` is zeroed too and the builder draws the walk itself: upright,
+--     with the owning role's frames.
 --
 --   DIG is not a state: a digging round has no art of its own. The record's
 --     dig sprite indexes are zeroed (a mole or the wsv* frames would draw
@@ -31,7 +34,7 @@
 --     is_bit = function(m) ... end,             -- optional classifier override
 --     roles  = { { name = "x", match = function(m) ... end, sheet = "..." } },
 --     dig    = true | { probe = 6, spread = 3, hold = 3, need = 2 },
---     roam   = true,                            -- roaming animal: wait for Space
+--     roam   = true | { walk = 153, fly = 699 }, -- roaming animal (see ROAM)
 --     states = {
 --       { scope = "main" | "bit" | "any" | <role name>,
 --         sig  = 245 | { 246, 247, 248 },       -- native sprite ids that mean
@@ -48,12 +51,14 @@
 -- arm/time in ms) or probe for it (dig) instead of matching ids. `sig` stays
 -- only for bundles that still pass one.
 --
--- Default bit test: "zero means cluster bit". WA seeds a missile's flight
--- sprite (`m.sprite`) from its fire params, and a cluster bit's params are the
--- *parent's* copy -- so the primary is the one carrying the record's `sprite`
--- (zeroed while the builder owns the art) and the bits are the zero ones, the
--- opposite of what the field's name suggests. `is_bit` overrides it; when the
--- engine exposes the pellet flag (`m.bit`, MissileEntity+0x150) that is exact.
+-- Default bit test: `m.sprite ~= 0` at first sight. `m.sprite` is the sprite
+-- WA blits for the missile (+0x2EC): for a fired round that is the record's
+-- `missile.sprite`, which the generator zeroes while the builder owns the art,
+-- and for a cluster bit it is the record's `clusters.bit.sprite` (WA's
+-- constructor picks the cluster half of the record when the pellet index is
+-- set), which the generator keeps nonzero. So a nonzero value at first sight is
+-- a bit. The exception is a roaming animal whose walk pose WA draws natively:
+-- the record `sprite` then holds that pose's id, passed back as `walk`.
 --
 -- Pure data at load: `wa` is touched only inside M.flight and its callbacks.
 --
@@ -71,6 +76,9 @@ local ANIM_TYPE = {
   medium = 1,
   fast = 1,
   none = 5,
+  -- Roaming animals: points along the velocity but clamped to a tilt range,
+  -- and rests at a fixed angle when the animal has no speed.
+  roam = 4,
 }
 local ANIM_SPEED = { slow = 0.5, medium = 0.8, fast = 1.35 }
 
@@ -101,6 +109,42 @@ end
 
 function M.spin_turn(prev_rot, vx, anim_speed)
   return (prev_rot or 0) + (anim_speed or 0.5) * 0.5 * sign(vx)
+end
+
+-- `anim = "roam"`: a walking animal's pose.
+--
+-- WA walks a roaming animal with no velocity of its own, so `track` leaves the
+-- art pointing at the last heading and a moving animal looks dead on the
+-- ground. On the ground (`grounded`) this holds `rest` and lets the art lean at
+-- most `up` degrees above it or `down` below it while the animal steps. In the
+-- air it tracks the velocity exactly like `track`: a flying animal points where
+-- it flies, which is what PX's own sheep art does. Angles are radians; the
+-- caller keeps the three limits.
+function M.roam_angle(vx, vy, rest, up, down, speed, grounded, prev)
+  if not grounded then
+    -- Airborne: full tracking. A hop with no velocity keeps the last heading
+    -- instead of snapping to nonsense (`track_angle(0, 0)` is due south).
+    if (speed or 0) < 0.05 then return prev or rest end
+    return M.track_angle(vx, vy)
+  end
+  if (speed or 0) < 0.05 then return rest end
+  -- The ground pose is mirrored by `facing` when it walks left, so measure the
+  -- lean on the right-facing side only. Using the signed `vx` made every step
+  -- left look like a steep climb and tilt the art up.
+  local ax = vx
+  if ax < 0 then ax = -ax end
+  local want = M.track_angle(ax, vy)
+  -- Shortest signed difference, so a heading across the wrap point still clamps
+  -- on the near side.
+  local delta = (want - rest + math.pi) % (2 * math.pi) - math.pi
+  -- Angles grow clockwise, so a positive delta leans the nose down (`down`
+  -- limits it) and a negative one raises it (`up` limits that side).
+  if delta > down then
+    delta = down
+  elseif delta < -up then
+    delta = -up
+  end
+  return rest + delta
 end
 
 -- ---------------------------------------------------------------------------
@@ -255,6 +299,15 @@ function M.flight(ctx, opts)
 
   local size = opts.size or 1.0
   local angle = opts.angle or 0.0
+  -- `anim = "roam"` limits: a resting angle and how far the art may tilt either
+  -- way from it, in degrees. One preset for every role, like `size`/`angle`.
+  -- `rest = 90` lays a walking animal flat (its sheet points up), which is the
+  -- editor's default; keep the two in step, or the art rests upright in game
+  -- while the preview shows it flat.
+  local tilt = opts.tilt or {}
+  local rest = math.rad(tilt.rest or 90.0)
+  local up = math.rad(math.abs(tilt.up or 25.0))
+  local down = math.rad(math.abs(tilt.down or 25.0))
 
   local main = resolve(opts, size)
 
@@ -293,17 +346,37 @@ function M.flight(ctx, opts)
   local active = {}      -- [id] = cfg in force this frame
   local follow = {}      -- [id] = { actor, cfg, gen, seen }
   local spin_ang = {}
+  local roam_side = {}   -- [id] = true while the walking pose faces left
   local cycl_phase = {}
   local dig_dir = {}     -- [id] = last heading, for the terrain probes
   local dig_hold = {}    -- [id] = frames left of "digging"
   local dig = dig_settings(opts.dig, size)
-  -- Roaming animals: WA walks the animal until the turn's player presses
-  -- Space, and only then does it fly. The press is synchronized lockstep input
-  -- (`wa.world.keys().space`), so every peer draws the flight art from the
-  -- same frame. `m.sprite` stays WA's walking pose; the generator zeroes
-  -- `sheep.flight_1/2` so nothing draws under ours once it takes off.
-  local roam = opts.roam == true
-  local flying = {}      -- [id] = true once the animal has taken off
+  -- Roaming animals: WA draws the walk from the record `sprite` (the ground
+  -- pose) and the flown art from `sheep.flight_1/2`. `roam` carries the ids
+  -- the generator wrote, when there are any:
+  --
+  --   roam = { walk = 153, fly = 699 }
+  --
+  -- `walk` (a stock ground pose) means WA keeps drawing the animal itself until
+  -- it takes off: the press is the turn player's synchronized Space
+  -- (`wa.world.keys().space`, lockstep input, so every peer switches on the same
+  -- frame), or, if WA moves the flown id into the render slot, that id showing
+  -- up. `fly` is that id (the unassigned sentinel the generator writes so the
+  -- Space takeoff stays enabled). With neither, the builder draws the animal
+  -- from the first frame and `roam` only documents the record's action.
+  --
+  -- A `sheet` in that table is the animal's own flight art: the builder draws it
+  -- from the takeoff instead of the primary sheet, with that role's own `anim`,
+  -- `cyclical`, `spin`, `scale` and `z`.
+  local roam = opts.roam == true or type(opts.roam) == "table"
+  local roam_ids = type(opts.roam) == "table" and opts.roam or nil
+  local walk_pose = roam_ids and tonumber(roam_ids.walk) or nil
+  local fly_pose = roam_ids and tonumber(roam_ids.fly) or nil
+  -- A roaming animal may fly on art of its own (`roam = { sheet = ...,
+  -- anim = ..., ... }`) instead of the primary sheet. It is still WA's animal
+  -- until Space, so this only takes over from the takeoff on.
+  local roam_cfg = roam_ids and roam_ids.sheet and resolve(roam_ids, size) or nil
+  local flying = {}      -- [id] = true once WA has the animal airborne
   local armed = {}       -- [id] = Space was seen up since the missile appeared
   local age = {}         -- [id] = frames since first sight, for homing ms
   local logged = {}      -- [id] = frames logged so far (opts.log)
@@ -321,13 +394,12 @@ function M.flight(ctx, opts)
       -- The engine's own answer (MissileEntity+0x150, `shoot_desc.pellet`).
       is_bit = m.bit and true or false
     else
-      -- Flipped default: with a bit sheet configured, the cluster bit is the
-      -- missile whose flight sprite is zero (WA hands the primary the
-      -- record's `sprite`; a bit inherits the parent's copy of it). Without a
-      -- bit sheet there are no bits to tell apart, so everything is the
-      -- primary -- otherwise a plain weapon would classify as a bit and draw
-      -- nothing, because the bit role is NATIVE.
-      is_bit = bit_art and (m.sprite == 0)
+      -- A cluster bit carries its own record sprite; the fired round carries
+      -- the record `sprite` unless the builder zeroed it. A roaming animal's
+      -- walk pose is the one nonzero sprite that is NOT a bit. Without a bit
+      -- role there is nothing to tell apart, so everything is the primary --
+      -- otherwise a plain weapon would classify as a bit and draw nothing.
+      is_bit = bit_art and (m.sprite ~= 0) and m.sprite ~= walk_pose
     end
     if is_bit then return { ident = "bit", base = bit_cfg } end
     return { ident = "main", base = main }
@@ -354,6 +426,7 @@ function M.flight(ctx, opts)
       if f.seen then f.seen = false return end
       follow[id] = nil
       spin_ang[id] = nil
+      roam_side[id] = nil
       cycl_phase[id] = nil
       kind[id] = nil
       sig[id] = nil
@@ -400,10 +473,11 @@ function M.flight(ctx, opts)
     end
 
     if m.phase == "pre" then
-      if roam and not flying[id] then
-        -- Walking. The Space press that takes off is the turn's player's, so
-        -- the turn's worm has to exist; `wa.world.keys()` is synchronized, so
-        -- every peer agrees on the frame the art starts.
+      if roam and ent.ident == "main" and not flying[id] then
+        -- The Space press that takes off is the turn player's, so the turn's
+        -- worm has to exist. `armed` needs to have seen Space released since
+        -- the animal appeared, so a key already held at launch cannot skip the
+        -- ground phase.
         local keys = wa.world.keys and wa.world.keys() or nil
         local held = keys and keys.space and true or false
         if not held then
@@ -411,20 +485,31 @@ function M.flight(ctx, opts)
         elseif armed[id] and current_worm() then
           flying[id] = true
         end
+        -- WA moves its flown sprite in at the takeoff; if that lands in the
+        -- render slot, it is an exact signal that beats the key.
+        if fly_pose and m.sprite == fly_pose then flying[id] = true end
       end
-      if roam and not flying[id] then
+      -- A stock walk pose is WA's own art: leave the ground to WA until the
+      -- animal is airborne. Without one nothing draws the walk, so the builder
+      -- keeps drawing it (`anim = roam` rests it on the ground).
+      if roam and ent.ident == "main" and walk_pose and not flying[id] then
         active[id] = NATIVE
         return
       end
       if m.sprite ~= 0 then sig[id] = m.sprite end   -- read BEFORE zeroing
       local cfg = pick(m, ent)
+      if roam_cfg and ent.ident == "main" then cfg = roam_cfg end
       active[id] = cfg
       if cfg == NATIVE then
         -- Hand the sprite back. If our earlier zero stuck, restore the last
         -- signal (VERIFY: m.sprite is writable and WA draws it again).
-        if not roam and m.sprite == 0 and sig[id] then m.sprite = sig[id] end
-      elseif not roam then
-        -- Roaming keeps `m.sprite`: it is the walking pose, not flight art.
+        if not (roam and ent.ident == "main") and m.sprite == 0 and sig[id] then
+          m.sprite = sig[id]
+        end
+      else
+        -- Hide WA's native sprite while our follower actor draws the custom
+        -- art. A walking wanderer with no usable walk pose reaches this too:
+        -- its record `sprite` was zeroed, so there was nothing to hide.
         m.sprite = 0
       end
       return
@@ -447,7 +532,7 @@ function M.flight(ctx, opts)
     -- sheet; any `anim`, `spin`, `anim_speed`, `cyclical`, `scale`, `mirror`,
     -- `z`, or `sheet` in `dig = { ... }` overrides the owning role while in
     -- the dirt and reverts smoothly in open air.
-    local digging = dig and update_dig(m, dig, dig_dir, dig_hold) or false
+    local digging = (dig and update_dig(m, dig, dig_dir, dig_hold)) or false
     if digging and dig.sheet and dig.sheet ~= cfg.sheet then
       local dig_cfg = {
         sheet = dig.sheet,
@@ -508,6 +593,7 @@ function M.flight(ctx, opts)
 
     local rot = 0
     local frame = 0
+    local roam_left = false
     local eff_vx = (digging and (m.vx or 0) == 0 and (m.vy or 0) ~= 0) and 0.001 or m.vx
     if cfg.turn_fn then
       rot = cfg.turn_fn(m, spin_ang[id])
@@ -519,6 +605,23 @@ function M.flight(ctx, opts)
       spin_ang[id] = rot
     elseif active_anim_type == 1 then
       rot = M.spin_turn(spin_ang[id], eff_vx, (ANIM_SPEED[active_anim] or 0.5) * (active_spin or 1.0))
+      spin_ang[id] = rot
+    elseif active_anim_type == 4 then
+      -- `anim = roam`: the walking pose. The sheet is authored facing right and
+      -- mirrored for left, so the heading is measured on the right-facing side
+      -- (`hx`) and the mirror supplies the side. Super sheep flight is drawn
+      -- from `roam = { sheet = ..., anim = ... }`, a different config with its
+      -- own anim, so it never reaches this branch.
+      local grounded = roam and ent.ident == "main" and not flying[id]
+      local vx = m.vx or 0
+      if active_mirror then
+        if vx < 0 then roam_side[id] = true
+        elseif vx > 0 then roam_side[id] = false end   -- vx == 0 keeps the side
+        roam_left = roam_side[id] or false
+      end
+      local hx = active_mirror and math.abs(vx) or vx
+      rot = M.roam_angle(hx, m.vy, rest, up, down,
+        math.sqrt(vx ^ 2 + (m.vy or 0) ^ 2), grounded, spin_ang[id])
       spin_ang[id] = rot
     end
 
@@ -535,13 +638,29 @@ function M.flight(ctx, opts)
       cycl_phase[id] = nil
     end
 
-    b.facing = active_mirror and (m.vx < 0 and -1 or 1) or 1
+    -- Walking pose (`anim = roam`): a real mirror about the sprite's vertical
+    -- axis, side kept in `roam_side` so a straight drop does not snap to the
+    -- right. Every other anim keeps the old rule: mirror by the sign of `vx`.
+    local roam_anim = active_anim_type == 4
+    if roam_anim then
+      b.facing = roam_left and -1 or 1
+    else
+      b.facing = active_mirror and (m.vx < 0 and -1 or 1) or 1
+    end
     b:frame(frame)
     -- `angle` is added in the drawn frame, and a mirrored sheet is flipped
     -- about the vertical axis, so the offset is negated on the left side to
     -- keep the art pointing the same way either way.
+    local drawn
+    if roam_anim and roam_left then
+      drawn = -(math.deg(rot) + angle)   -- screen mirror of the right-facing pose
+    elseif roam_anim then
+      drawn = math.deg(rot) + angle
+    else
+      drawn = math.deg(rot) + (b.facing < 0 and -angle or angle)
+    end
     b:gfx({
-      angle = (math.deg(rot) + (b.facing < 0 and -angle or angle)) % 360,
+      angle = drawn % 360,
       depth = active_z,
       scale = active_scale,
     })
