@@ -14,7 +14,7 @@ The mods players receive, selected by `catalogue.toml` with their profiles:
 - `from_modders/` — community mods, without their profiles (those stay out of
   the catalogue): reddaz's Effects SDK, Electric Mine, Sequential Fire
   (Megashark, FAMAS, Ripper Star), Saw, Keeper Bee, Curse of Death, Bouncy
-  Laser, Buffalo of Lies and Auto Kill the King.
+  Laser and Auto Kill the King.
 
 `examples/` holds developer and diagnostic bundles; none of them ships. Diagnostic components
 and their support files are removed during public staging.

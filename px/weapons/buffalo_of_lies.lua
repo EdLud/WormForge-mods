@@ -1,6 +1,6 @@
--- Buffalo of Lies: PX's charging buffalo, three per shot.
+-- Buffalo of Lies: a charging buffalo that explodes on impact, three per shot.
 
-local sb = require("wf-lib/px_sprite_builder")
+local sb = require("lib/px_sprite_builder")
 
 local POSTURE = {
   weaponlnk = sb.PX_POSTURE.wthrow, weaponlnku = sb.PX_POSTURE.wthrowu,
@@ -294,7 +294,7 @@ function M.install(ctx)
       },
       sounds = { SND .. "start.wav", SND .. "ride.wav",
         SND .. "roar1.wav", SND .. "roar2.wav" },
-      params = { gpu_prefix = "sprites/", sprite_columns = 1 },
+      params = { gpu_prefix = "sprites/buffalo/", sprite_columns = 1 },
       handling = { retreat = 3000, ends_turn = true },
       missile = { explosion = { power = 50 } },
       on_fire = on_fire,
