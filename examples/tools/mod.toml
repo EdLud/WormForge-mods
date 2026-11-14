@@ -2,7 +2,7 @@
 # profiler and the state logger on their own, and the stress test with the Highlander weapons it
 # fires (that one needs the px.ports bundle too).
 id = "example.tools"
-version = "0.6.0"
+version = "0.7.1"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -14,6 +14,65 @@ type = "feature"
 name = "Hello"
 description = "Logs the turn phases and every hurt, as the smallest add-on there is."
 entry = "hello.lua"
+
+[[components]]
+id = "tools.crate_odds"
+type = "feature"
+name = "Crate odds"
+description = "Sets the crate odds and one weapon's share of its crates each round, and drops a crate with a chosen weapon after every turn."
+entry = "crate_odds.lua"
+
+[[components.options]]
+key = "weapon"
+type = "int"
+min = 0
+max = 100
+default = 40
+label = "Weapon crates (%)"
+description = ""
+
+[[components.options]]
+key = "health"
+type = "int"
+min = 0
+max = 100
+default = 40
+label = "Health crates (%)"
+description = ""
+
+[[components.options]]
+key = "utility"
+type = "int"
+min = 0
+max = 100
+default = 20
+label = "Utility crates (%)"
+description = "Weapon, health and utility add up to 100 at most; the rest of 100 is no crate."
+
+[[components.options]]
+key = "favourite"
+type = "choice"
+choices = ["stock.holy_grenade", "stock.banana_bomb", "stock.super_sheep", "stock.teleport"]
+default = "stock.holy_grenade"
+label = "Weapon with a share"
+description = ""
+
+[[components.options]]
+key = "share"
+type = "int"
+min = 0
+max = 100
+default = 50
+label = "Its share of its crates (%)"
+description = "The other weapons of its kind share the rest."
+
+[[components.options]]
+key = "gift"
+type = "choice"
+choices = ["stock.banana_bomb", "stock.ninja_rope", "stock.crate_spy", "none"]
+default = "stock.banana_bomb"
+label = "Crate after every turn"
+description = "A crate holding one of it drops above the worm whose turn ended."
 
 [[components]]
 id = "tools.pass_over"

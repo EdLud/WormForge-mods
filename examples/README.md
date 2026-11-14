@@ -27,6 +27,10 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   `worm:hurt` and a shove, not explosions.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
+  - `tools.crate_odds` — sets the crate odds and one weapon's share of its
+    crates each round (`wa.crates.set_odds`, `wa.crates.set_shares`), logs
+    them (`wa.crates.odds`, `wa.crates.shares`), and drops a crate holding a
+    chosen weapon above the worm whose turn ended (`wa.crates.spawn{ contents }`).
   - `tools.perf` — the profiler, which writes a `perf:` line to `wkLua.log`
     every 10 s with each part of a rendered frame. Presentation only, so safe
     online. The FPS counter is Core utilities' **FPS counter** option.
