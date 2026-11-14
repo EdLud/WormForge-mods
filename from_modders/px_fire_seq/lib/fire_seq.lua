@@ -55,6 +55,11 @@ local running = {}
 local settled = {}
 local cancelled = {}
 
+-- Worm id -> `wa.world.frame()` of its last timer shot. Presentation only: a
+-- weapon passes this table to `wf-lib/px_hold_art` (`shots = seq.shot_at`) so a
+-- burst's firing sheet lights on each shot instead of for the whole burst.
+M.shot_at = {}
+
 local DRAIN = 10
 
 local NOT_FIRING = {
@@ -109,6 +114,15 @@ local function run(owner, count, delay, fire, weapon, on_done)
       cancelled[id] = nil
     end
   end
+  -- Presentation: the frame this burst's shot left on. A weapon hands this
+  -- table to `wf-lib/px_hold_art` (`shots = seq.shot_at`) so a firing sheet
+  -- lights for the shot only, as PX's `OnFiringAnim(isFiring)` did, instead of
+  -- for the whole burst. The mark is left behind deliberately: the helper
+  -- ignores one older than two frames, and a single-shot burst (`count == 1`)
+  -- has no timer to clear it.
+  local function mark()
+    if id ~= nil then M.shot_at[id] = wa.world.frame() end
+  end
   local left = count - 1
   local function settle()
     if id ~= nil then settled[id] = true end
@@ -128,6 +142,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
   end
 
   if id ~= nil then running[id] = true end
+  mark()
   fire(1)
   if count == 1 then
     release()
@@ -161,6 +176,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
       if left > 0 then
         left = left - 1
         local n = count - left
+        mark()
         fire(n)
         if cancelled[id] then
           settle()

@@ -45,6 +45,24 @@ seq.fire_seq_mis({ ... })           -- real WA missiles via wa.weapons.launch
 Both return the timer actor, and both return `nil` when a burst is already
 running for that worm or the worm is dead.
 
+## Held art on the firing frames
+
+`wf-lib/px_hold_art` redraws a held weapon over WA's 0x6A/0x6B states, which the
+engine only fills while its own `h.firing` is set - a burst's later shots never
+set it again. `hold_art.add(spec)` takes the claim's hold table plus:
+
+| key | meaning |
+|---|---|
+| `weapon`, `size` | the id `worm.weapon` reports, and the sheet's cell in px |
+| `hand`, `hand_radius`, `hand_rotation`, `hand_radial_rotation`, `hand_scale`, `hand_size` | the hand, drawn where `worm_hold` puts it |
+| `frames`, `anim_speed` | animate the strip at the engine's own rate |
+| `flash` | this entry is a *firing* sheet: drawn only around a shot |
+| `shots` | the sequencer's `seq.shot_at` table, used with `flash` |
+
+Add the plain hold for a burst (with `keep_while_firing` the engine draws it
+itself for a single shot); always add the `flash` entry. `hold_art.shot(worm)`
+marks a shot by hand when a weapon fires without `fire_seq`.
+
 ## Stopping a burst
 
 `seq.cancel(owner)` ends WA's counters immediately, so WA leaves its fire method

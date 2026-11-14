@@ -166,13 +166,14 @@ sb.flight(ctx, { weapon = ctx.id, sheet = "...", anim = "roam",
 `rest` is the walking pose (`90` lays a sheet that points up along the ground),
 and `up`/`down` are how far the art may lean above/below it as it steps. Below
 0.05 px/frame the art sits at `rest`. The ground heading is measured on the
-right-facing side, and the clamp uses the shortest signed difference from
-`rest`. Walking left **turns the whole pose through the left** instead of
-mirroring the sheet: the engine mirrors a sprite about its own vertical axis,
-which becomes a top-to-bottom flip once the pose lies flat, so `anim = "roam"`
-never sets `facing` (its role's Mirror toggle is ignored). The airborne pose is
-tracked on both sides and needs no mirror either. It replaces `track` for this
-animation only; the other roles keep their own `anim`.
+right-facing side (`abs(vx)`), and the clamp uses the shortest signed difference
+from `rest`. Walking left is a **true horizontal mirror**: the sheet is mirrored
+(`facing = -1`) and the drawn angle is negated (`-(deg(rot) + angle)`). The
+negation is required because the engine mirrors about the sprite's own vertical
+axis; a bare mirror would flip the walking pose top to bottom. The side is kept
+in `roam_side` through a straight drop (`vx == 0`). The role's Mirror toggle
+still controls this. It replaces `track` for this animation only; the other
+roles keep their own `anim`.
 
 ### Roaming (the builder owns the flying state)
 
