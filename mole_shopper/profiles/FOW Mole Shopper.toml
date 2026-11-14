@@ -1006,7 +1006,7 @@ crate_collect = 1
 crate_pct = 1.6181229773462784
 crate_type = "weapon"
 delay = 0
-rope_length = 273
+rope_length = 546
 shots = 6
 
 [weapon_settings."stock.ninja_rope".record.handling]

@@ -1,6 +1,8 @@
 -- Precipitator: fire 25 clouds that release falling explosive stones.
 
 local ART = "sprites/precipitator/"
+-- The ripple a stone sends through the picture where it lands.
+local RIPPLE = {amplitude = 4, wavelength = 24, speed = 180, duration_ms = 450, falloff = 36}
 local payload = {
   copy_from = "stock.grenade", sprite = ART .. "body.png",
   cluster = {sprite = ART .. "fragment.png"}, params = {sprite_columns = 1},
@@ -103,6 +105,29 @@ local payload = {
 
 return {
   install = function(ctx)
+    -- Stones are WA cluster bits, which no on_explode reaches: one that WA stops running has landed.
+    local seen = {} -- missile id -> {x, y, frame, cloud}
+    wa.on.missile_frame(function(m)
+      if m.weapon ~= ctx.id or m.phase ~= "post" then return end
+      local s = seen[m.id]
+      if not s then s = {}; seen[m.id] = s end
+      s.x, s.y, s.frame = m.x + m.vx, m.y + m.vy, wa.world.frame()
+    end)
+    if wa.on.draw and wa.view and wa.view.ripple then
+      wa.on.draw(function()
+        local now = wa.world.frame()
+        for id, s in pairs(seen) do
+          if now - s.frame >= 2 then
+            seen[id] = nil
+            if not s.cloud and s.x then
+              wa.view.ripple{x = s.x, y = s.y, amplitude = RIPPLE.amplitude,
+                wavelength = RIPPLE.wavelength, speed = RIPPLE.speed,
+                duration_ms = RIPPLE.duration_ms, falloff = RIPPLE.falloff}
+            end
+          end
+        end
+      end)
+    end
     wa.weapons.replace{
       copy_from = "stock.minigun", name = "Precipitator", panel_icon = ART .. "icon.png",
       handling = {remember_selection = false},
@@ -111,9 +136,10 @@ return {
       on_fire = function(ev)
         local worm = ev.worm
         local aim = worm.aim
-        wa.weapons.launch{weapon = ctx.id, owner = worm, x = ev.x, y = ev.y,
+        local id = wa.weapons.launch{weapon = ctx.id, owner = worm, x = ev.x, y = ev.y,
           vx = worm.facing * (0.5 - math.abs(0.5 - aim)) * 20,
           vy = (0.5 - aim) * 20}
+        if id then seen[id] = {frame = wa.world.frame(), cloud = true} end
       end,
     }
   end,

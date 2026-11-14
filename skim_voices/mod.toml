@@ -1,0 +1,14 @@
+# Skim voices: the turn's team cheers each skim off the water.
+id = "skim_voices"
+name = "Skim Voices"
+version = "0.1.0"
+author = "WormForge"
+api_version = 4
+format_version = 2
+
+[[components]]
+id = "skim_voices"
+type = "feature"
+name = "Skim Voices"
+description = "The team whose turn it is cheers each skim off the water: Amazing, Brilliant, Excellent, then Perfect."
+entry = "features/skim_voices.lua"

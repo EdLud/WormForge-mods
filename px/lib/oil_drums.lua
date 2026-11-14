@@ -44,7 +44,7 @@ local DEAL = { "explosive", "napalm", "nuke", "cluster", "icy", "electric", "min
 
 M.ARC = {
   sprites = {
-    "sprites/lightning/beam.png", "sprites/lightning/glow.png", "sprites/lightning/cloud.png",
+    "wf-lib/px/sprites/lightning/beam.png", "wf-lib/px/sprites/lightning/glow.png", "wf-lib/px/sprites/lightning/cloud.png",
     "sprites/electric_grenade/explosion.png", "sprites/electric_grenade/tazed1.png",
     "sprites/electric_grenade/tazed2.png",
   },

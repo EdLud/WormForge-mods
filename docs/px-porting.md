@@ -85,7 +85,7 @@ Super Tele places it immediately and plays its start sound at the destination.
 
 ## Ported by reddaz
 
-Eight weapons outside Highlander, ported by reddaz with their own files:
+Nine weapons outside Highlander, ported by reddaz with their own files:
 they take no part in Highlander's pools.
 
 - **Attack Helicopter** (`px.attack_helicopter`, `weapons/attack_helicopter.lua`):
@@ -96,6 +96,13 @@ they take no part in Highlander's pools.
   drill strike, from Project X's `bunkerbuster.txt`. Click a target; the buster
   falls, drills down through the land and blows up. The Super sprays fire as
   it drills and cuts sideways with five overlapping blasts.
+- **Buffalo of Lies** (`px.buffalo_of_lies`, `weapons/buffalo_of_lies.lua`),
+  by rafa``2: on the PX record (`weps/buffalo_w.wep`), whose roam moves it.
+  A buffalo charges along the land and explodes on what it hits; the next of
+  three pops back up and charges again. **After a collision** sets which way
+  it goes, for the whole match, where PX picks it with keys 1 to 3 each shot.
+  One that stands still for 10 frames hops forward up to three times, then
+  explodes. Its own pack (`px.buffalo`) until 0.20.75.
 
 Five more come from his Project X sprite-builder ports. Each is its own
 component (`weapons/<name>.lua`, the port in `lib/px_<name>.lua`) on PX's

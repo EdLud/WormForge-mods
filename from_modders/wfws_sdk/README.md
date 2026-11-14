@@ -69,13 +69,12 @@ sb.flight(ctx, {
     anim = "rotation", cyclical = 32,
   },
   -- bits = "inherit"            -- bits use the primary art
-  -- omit bits entirely         -- bits keep WA's own sprite
+  -- omit bits entirely         -- bits keep their stock sprite
 
   states = {
-    { scope = "main", sig = 245, sheet = "sprites/<mod>/state_homing.png",
-      anim = "track" },
-    { scope = "bit", sig = 246, sheet = "sprites/<mod>/state_homing_bit.png" },
-    { scope = "main", sig = { 247, 248 }, native = true },  -- hand back to WA
+    { scope = "main", when = function(m) return m.vy > 0 end,
+      sheet = "sprites/<mod>/falling.png" },
+    { scope = "bit", when = function(m) return m.vy > 0 end, native = true },
   },
 })
 ```
@@ -97,11 +96,12 @@ is exact.
 `log = true` prints the first three frames of each missile
 (`id`, `sprite`, `ident`) so the classification can be checked in the log.
 
-### State signals
+Homing is timed. WA arms the missile `arm` ms after firing and steers it for
+`time` ms, and a game frame is 20 ms on every machine, so the builder swaps to
+the `homing` art for that window. Use the homing delay and duration from the
+record.
 
-WA writes a nonzero `m.sprite` when a missile changes behaviour. The builder
-records the last nonzero value before zeroing, so `sig` matches the record's own
-sprite fields:
+### Digging
 
 | state | record field |
 |---|---|
@@ -245,4 +245,4 @@ These are engine behaviours, not static checks:
 - Dig: the probes find the crater walls; watch that the animation starts at the
   first contact and that no mole or `wsv*` frame appears under the sheet.
 - A state swap despawns and respawns the follower; watch for a one-frame flicker.
-- Roaming: check the `pre` phase still runs while the animal is on the ground.
+- Roaming: the `pre` phase still runs while the animal is on the ground.

@@ -13,6 +13,7 @@ return {
 
     wa.weapons.replace{
       copy_from = "stock.grenade",
+      panel_icon = "sprites/moon_grenade.png",
       missile = {
         gravity_pct = 35,
         explosion = { power = 20 },

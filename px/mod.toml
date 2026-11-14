@@ -12,12 +12,13 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.73"
+version = "0.20.75"
 author = "Project X authors"
 api_version = 4
 format_version = 2
-# Kill the King was its own pack until 0.17.0: installing this one retires it.
-replaces = ["example.kill_the_king"]
+# Kill the King was its own pack until 0.17.0, Buffalo of Lies until 0.20.75:
+# installing this one retires them.
+replaces = ["example.kill_the_king", "px.buffalo"]
 dependencies = ["wf.sdk"]
 
 # Joined frame folders retain their 15 fps looping playback.
@@ -2311,6 +2312,25 @@ default = 256
 label = "Size (radius)"
 description = "How much the shadow hides: a circle of this radius, flowing out of pockets up to twice as far."
 
+[[components]]
+id = "px.buffalo_of_lies"
+type = "weapon"
+name = "Buffalo of Lies"
+authors = ["rafa``2"]
+credits = "ported by reddaz"
+description = "A buffalo charges along the terrain and explodes on impact; the next of three follows."
+entry = "weapons/buffalo_of_lies.lua"
+icon = "sprites/buffalo/icon.png"
+default_position = { row = "F11", column = 6 }
+
+[[components.options]]
+key = "direction"
+type = "choice"
+choices = ["straight", "opposite", "random"]
+default = "straight"
+label = "After a collision"
+description = "After a collision the next buffalo keeps charging, turns around, or rolls a direction."
+
 [sprites."sprites/thrown_dynamite/tdynamite.png"]
 frames = 4
 
@@ -2664,3 +2684,7 @@ frames = 20
 frames = 1
 [sprites."sprites/platform/platform_broken.png"]
 frames = 1
+[sprites."sprites/buffalo/buffalo.png"]
+frames = 20
+fps = 32
+play = "loop"

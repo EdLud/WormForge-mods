@@ -1,0 +1,153 @@
+# Weather: rain, snow, or a cycle that turns between them.
+id = "core.weather"
+name = "Weather"
+version = "0.2.0"
+author = "WormForge"
+api_version = 4
+format_version = 2
+dependencies = ["wf.sdk"]
+
+[[components]]
+id = "core.weather"
+type = "feature"
+name = "Weather"
+description = "Rain or snow all match, or a cycle that turns between rain, snow and clear spells."
+entry = "features/weather.lua"
+credits = "Rain sound from Project X's Rain weather, blizzard sound from Project X's weather sounds"
+
+[[components.options]]
+key = "weather"
+type = "choice"
+choices = ["rain", "snow", "cycle"]
+default = "rain"
+label = "Weather"
+description = "rain or snow: it falls all match. cycle: at each turn cycle the weather may change, by the shares below."
+
+[[components.options]]
+key = "rain"
+type = "int"
+default = 60
+min = 0
+max = 100
+label = "Rain (%)"
+description = "How heavy the rain is. 0 means no rain."
+
+[[components.options]]
+key = "snow"
+type = "int"
+default = 60
+min = 0
+max = 100
+label = "Snow (%)"
+description = "How heavy the snowfall is. 0 means no snow."
+
+[[components.options]]
+key = "ripples"
+type = "bool"
+default = true
+label = "Ripples"
+description = "Drops make rings on the water and on puddles, stopping at the shore."
+
+[[components.options]]
+key = "lightning_chance"
+type = "int"
+default = 30
+min = 0
+max = 100
+label = "Lightning chance (% per minute)"
+description = "The chance of lightning in each minute of rain. Near 100 it strikes several times a minute."
+
+[[components.options]]
+key = "lightning_effect"
+type = "choice"
+choices = ["looks", "strike"]
+default = "looks"
+label = "Lightning"
+description = "looks: only light and thunder. strike: it heals worms, revives graves, starts mines and blows up crates and oil drums, as the Lightning Strike does."
+
+[[components.options]]
+key = "settle"
+type = "bool"
+default = false
+label = "Settling snow"
+description = "Snow builds up on open ground as land that worms stand on, dig and blow up."
+
+[[components.options]]
+key = "settle_depth"
+type = "int"
+default = 10
+min = 2
+max = 40
+label = "Deepest settled snow (px)"
+description = ""
+
+[[components.options]]
+key = "volume"
+type = "int"
+default = 70
+min = 0
+max = 100
+label = "Rain volume (%)"
+description = ""
+
+[[components.options]]
+key = "snow_volume"
+type = "int"
+default = 50
+min = 0
+max = 100
+label = "Snow volume (%)"
+description = ""
+
+[[components.options]]
+key = "change_chance"
+type = "int"
+default = 35
+min = 0
+max = 100
+label = "Cycle: change chance (% per turn cycle)"
+description = "The chance the weather changes once every team has had a turn."
+
+[[components.options]]
+key = "rain_weight"
+type = "int"
+default = 40
+min = 0
+max = 100
+label = "Cycle: rain share"
+description = "How often rain comes when the weather changes. 0 leaves it out."
+
+[[components.options]]
+key = "snow_weight"
+type = "int"
+default = 40
+min = 0
+max = 100
+label = "Cycle: snow share"
+description = "How often snow comes when the weather changes. 0 leaves it out."
+
+[[components.options]]
+key = "clear_weight"
+type = "int"
+default = 20
+min = 0
+max = 100
+label = "Cycle: clear share"
+description = "How often the sky clears when the weather changes."
+
+[[components.options]]
+key = "start"
+type = "choice"
+choices = ["random", "clear", "rain", "snow"]
+default = "random"
+label = "Cycle: first weather"
+description = ""
+
+[[components.options]]
+key = "melt"
+type = "int"
+default = 4
+min = 0
+max = 40
+label = "Cycle: melt (px per turn cycle)"
+description = "How much settled snow melts at the start of each turn cycle while it isn't snowing. Rain melts twice as much."
