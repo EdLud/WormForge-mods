@@ -31,6 +31,7 @@ local ORDER = {
   "weapons/helicopter",
   "weapons/hot_air_balloon",
   "weapons/hang_glider",
+  "weapons/wings",
   "weapons/swim_suit",
   "weapons/wind_changer",
   "weapons/gravity_control",

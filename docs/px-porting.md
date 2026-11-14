@@ -565,8 +565,8 @@ record throws like a grenade, but nothing leaves the worm:
   "Watch this" lines while the Jump is selected, and stops a fuse or bounce
   being chosen for it.
 
-**Parachute weapons.** The Hang-Glider and the Hot Air Balloon have WA's
-parachute as their record, and the pack flies the worm once WA opens it. WA
+**Parachute weapons.** The Hang-Glider, the Hot Air Balloon and the Wings
+have WA's parachute as their record, and the pack acts once WA opens it. WA
 also opens the selected one by itself when a falling worm would hit land at
 its fall-damage speed. That parachute can land the worm on the next frame's
 move, before the pack's frame sees it open, and WA then shows its parachute's
@@ -623,6 +623,25 @@ Here the pack takes the worm when that parachute opens and flies it with WA
   (see Parachute weapons), the balloon inflates and pops there.
 - **Art:** the worm's body is hidden behind the balloon, drawn in its team's
   colour, and the worm in its basket, as PX's `RenderWorm` override draws them.
+
+**Wings.** PX's `wingscript` (its header thanks Zed), its record its own `.wep`:
+WA's parachute with no wind (`parachute.wind_pct` 0). PX turns the worm's
+gravity off while it flies; so does the pack (`worm.gravity = 0`), and WA flies
+it. WA's parachute steering (0x513EB0) pushes the worm by half of the world's
+gravity for each arrow key, up and down too, and its damping slows it, so with
+no gravity the worm goes where the keys send it and hovers without them.
+- **Facing:** left and right turn the worm, as in PX.
+- **Ends:** when WA closes its parachute (on land, on the jump key, against a
+  wall) the worm's gravity is what it was before. At the turn's end it gets it
+  back too, so a hovering worm comes down under WA's parachute rather than
+  holding the turn.
+- **Art:** the worm's body is hidden behind its flapping wings (`fly.png`, 10
+  frames at 40 a second; PX stepped them on every worm message, so their pace
+  varied, and 40 is about what it gave at 50 frames a second). PX swaps WA's
+  parachute pack-away (`wparbak`, 289) for the wings folding (`fold.png`, 6
+  frames at 24 a second); here the fold is drawn over it, from the landing
+  until WA stands the worm up, and on a hard landing (see Parachute weapons)
+  too. PX's two slope variants of the fold were never used and are left out.
 
 Flight, cluster and plane sprites and the Ghost Sheep's two flying sheets
 (`sheep_sprites`, its own record's, so WA's Aqua Sheep keeps its look) take 22

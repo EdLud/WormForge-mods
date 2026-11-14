@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.76"
+version = "0.20.77"
 author = "Project X authors"
 api_version = 4
 format_version = 2
@@ -1750,6 +1750,19 @@ default_position = { row = "F8", column = 3 }
 pool = "movement"
 
 [[components]]
+id = "px.wings"
+type = "weapon"
+name = "Wings"
+credits = "with help from Zed"
+description = "Wings that fly the worm in any direction with the arrow keys, free of gravity and wind."
+entry = "components/weapon.lua"
+icon = "sprites/wings/icon.png"
+default_position = { row = "F8", column = 9 }
+
+[components.suggests."hl.rules"]
+pool = "movement"
+
+[[components]]
 id = "px.super_tele"
 type = "weapon"
 name = "Super Tele"
@@ -2687,4 +2700,12 @@ frames = 1
 [sprites."sprites/buffalo/buffalo.png"]
 frames = 20
 fps = 32
+play = "loop"
+
+[sprites."sprites/wings/fly.png"]
+fps = 40
+play = "loop"
+
+[sprites."sprites/wings/fold.png"]
+fps = 24
 play = "loop"
