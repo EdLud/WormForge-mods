@@ -59,13 +59,20 @@ game frames.
 
 - `libs/trail.lua` — PX's effect-manager trail; one trail per round, sampled in
   game frames from a WA missile or a Lua actor and drawn with `wa.draw.ribbon`.
-- `libs/px_effects.lua` — PX's effect manager: reach arcs, the electric
+- `libs/px_effects.lua` - PX's effect manager: reach arcs, the electric
   explosion, spark, glow, smoke and crater. Its spark, glow and smoke sheets
   are SDK-owned; a consumer can override them in `fx.install`.
   `fx.ring`/`fx.thin_spin` widths are full `wa.draw.ribbon` widths: PX's half
   widths are doubled in the module, and the `core_w`/`glow_w` overrides are
   full widths too. Small rings floor the core (and thin-spin maximum) at 6.4 px
   full, about 2 px visible through the beam texture, so tiny saws stay legible.
+  The burst's `thickness` is PX's half-width for both the sharp pass (0.9x) and
+  the glow (1x); an explicit `core` (half-width, px, floored at 1.25) replaces
+  the derived sharp pass for the ring and the lens. `fx.install{ depth = {
+  burst = wa.depth.FRONT } }` puts the burst over worms instead of on the SDK's
+  `EFFECTS` band, which WA's own blast animation covers: in `effect` mode (the
+  native blast playing on top) a ring there only surfaced once the boom had
+  finished, about a second in.
 - `libs/custom_explosion.lua` - PX's non-electric `do_custom_explosion`:
   falloff damage, push, crater and one effect burst. Call it from `on_explode`
   after zeroing the record's own `explosion.power`. The radial damage goes
