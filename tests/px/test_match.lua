@@ -393,7 +393,7 @@ local function new_match(opts)
       end,
     },
     msg = { FRAME_FINISH = 2, START_TURN = 0x34, FIRE_WEAPON = 0x26, JUMP = 0x24,
-      JUMP_UP = 0x25, RELEASE_WEAPON = 0x27 },
+      JUMP_UP = 0x25, RELEASE_WEAPON = 0x27, WEAPON_RELEASED = 0x49 },
     world = {
       cavern = function() return cavern end,
       retreat = function() return M.retreat or 0 end,
@@ -4590,6 +4590,82 @@ do
   w.weapon, w.state = "none", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
   check("putting the glider away removes its automatic claim", #M.spawned == 0 and not w.taken)
+end
+
+print("parachute weapons: WA opens one on a hard landing and lands the worm in the same frame")
+do
+  -- Replay 2026-11-14 11.08.18, frames 6981-6982: 0x79 -> 0x7D in the worm's frame, its
+  -- WEAPON_RELEASED, then 0x7D -> 0x7A on the next frame's move, before the pack's frame.
+  new_match()
+  frame()
+  M.gravity, M.wind, M.water, M.solid = 0.25, 0, nil, nil
+  local w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "jumping", 100, 50, 0, 8, 1, true
+  w.gravity, w.body_visible, w.keys = 1, true, {}
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y = -1000 * i, 0 end
+  end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "parachuting"
+  M.message(w, wa.msg.WEAPON_RELEASED)
+  w.state, w.vx, w.vy = "jump_falling", 0, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  local inflated, popped = false, false
+  for _, s in ipairs(M.sounds) do
+    inflated = inflated or s:find("inflate") ~= nil
+    popped = popped or s:find("pop") ~= nil
+  end
+  check("the balloon inflates and pops at once", inflated and popped)
+  check("WA's parachute landing cut short: the worm let go at rest", not w.taken
+    and w.state == "sliding" and w.vx == 0 and w.vy == 0 and w.body_visible == true)
+  check("no balloon art left behind", #M.spawned == 0)
+
+  -- A plain landing, with no fire from WA, is left to WA.
+  new_match()
+  frame()
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn = "bungee", "jumping", 100, 50, 0, 8, true
+  w.keys = {}
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state, w.vy = "jump_falling", 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("a landing without the balloon's fire is WA's", w.state == "jump_falling" and #M.sounds == 0)
+
+  -- Another weapon's fire is neither the balloon's nor the glider's.
+  w.state, w.weapon = "parachuting", "shotgun"
+  M.message(w, wa.msg.WEAPON_RELEASED)
+  w.state = "jump_falling"
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("another weapon's fire leaves both alone", w.state == "jump_falling" and #M.sounds == 0
+    and #M.spawned == 0)
+
+  -- The Hang-Glider, the same way: its own pack-away in place of WA's parachute's.
+  new_match()
+  frame()
+  M.gravity, M.wind, M.water, M.solid = 0.014373779296875, 0, nil, nil
+  w = worm(16)
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "jumping", 100, 50, 0, 8, 1, true
+  w.body_visible, w.keys = true, {}
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y = -1000 * i, 0 end
+  end
+  M.spawned, M.sounds = {}, {}
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.state = "parachuting"
+  M.message(w, wa.msg.WEAPON_RELEASED)
+  w.state, w.vx, w.vy = "jump_falling", 0, 0
+  M.message(w, wa.msg.FRAME_FINISH)
+  local pack = M.spawned[#M.spawned]
+  check("the glider packs away in place of WA's parachute", pack and pack.sprite == "sprites/hang_glider/pack.png"
+    and #M.spawned == 1 and w.body_visible == false and M.sounds[#M.sounds]:find("hangclose"))
+  check("the worm let go at rest", not w.taken and w.state == "sliding" and w.vx == 0 and w.vy == 0)
+  w.state = "standing"
+  for _ = 1, 20 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("the pack-away plays out, the worm shown again", pack.dead and w.body_visible == true)
 end
 
 print("hang-glider: PX's glider, flown by the pack")

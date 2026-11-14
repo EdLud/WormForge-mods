@@ -25,6 +25,8 @@ end
 function weapon.setup()
   local shared = require("lib/shared")
   local own_time = require("wf-lib/own_time")
+  local parachute = require("lib/parachute")
+  parachute.setup()
   local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
   shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
@@ -185,6 +187,7 @@ function weapon.setup()
 
     local function glider_frame(worm)
       local state = worm.state
+      local opened = parachute.fired(worm, "px.hang_glider")
       if state ~= "parachuting" then equipped_before[worm.id] = worm.weapon end
       local equipped = equipped_before[worm.id]
       local b = balloons[worm.id]
@@ -194,6 +197,14 @@ function weapon.setup()
         return
       end
       local g = gliders[worm.id]
+      if opened == "landed" and not (g and g.deployed) then
+        g = g or glider_of(worm)
+        if g.pack then g.pack:despawn(); g.pack = nil end
+        glider_begin_pack(worm, g)
+        wa.sound.play(worm, "sounds/hang_glider/hangclose.wav")
+        worm:release(0, 0)
+        return
+      end
       if not g then
         if (state == "parachuting" and equipped ~= "px.hang_glider")
             or (state ~= "parachuting" and worm.weapon ~= "px.hang_glider") then

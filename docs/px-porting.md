@@ -565,6 +565,17 @@ record throws like a grenade, but nothing leaves the worm:
   "Watch this" lines while the Jump is selected, and stops a fuse or bounce
   being chosen for it.
 
+**Parachute weapons.** The Hang-Glider and the Hot Air Balloon have WA's
+parachute as their record, and the pack flies the worm once WA opens it. WA
+also opens the selected one by itself when a falling worm would hit land at
+its fall-damage speed. That parachute can land the worm on the next frame's
+move, before the pack's frame sees it open, and WA then shows its parachute's
+pack-away (`wparbak`). `lib/parachute.lua` reports WA's fire of such a weapon
+(WEAPON_RELEASED, 0x49, which reaches the worm while it is parachuting) at the
+pack's next frame, as `"open"` or `"landed"`. On `"landed"` the weapon shows
+its own ending and lets the worm go at rest (`worm:release(0, 0)`), so WA
+lands it as from a fall. Every weapon of this kind calls it the same way.
+
 **Hang-Glider.** PX's `paratest` (`utility_hangglider_render`). Opened with
 the Hang-Glider, WA's parachute becomes PX's glider: the pack takes the worm
 (`worm:take`) and flies it itself, with gravity at 0.75, the wind along the
@@ -579,14 +590,15 @@ right push it. It needs normal gravity and wind, `wa.world.gravity()` /
   (`worm:release`) falling on with the glider's speed, and WA lands it.
   Weapons fire from it as from WA's parachute.
 - **Landing:** PX swaps the sheet WA packs a parachute away with (`wparbak`,
-  289) for the glider's own. Here WA never packs a parachute away: when the
-  glide ends coming down onto land, the glider sets the worm down under WA's
+  289) for the glider's own. Here the glide ends before WA's parachute lands:
+  when it ends coming down onto land, the glider sets the worm down under WA's
   8-pixel-per-frame fall-damage threshold (at most 7, however fast it dived),
   so it saves the worm, and its pack-away (6 frames at 24 a second) plays
-  once WA has the worm standing. A crash into something ahead plays no
-  pack-away; the worm falls on, and WA opens the glider again if it falls
-  fast enough (WA picks its automatic parachute by the record, so it does
-  past WA's 70).
+  once WA has the worm standing. When WA opens the glider and lands the worm
+  at once (see Parachute weapons), the pack-away plays there. A crash into
+  something ahead plays no pack-away; the worm falls on, and WA opens the
+  glider again if it falls fast enough (WA picks its automatic parachute by
+  the record, so it does past WA's 70).
 
 **Hot Air Balloon.** PX's `balloon_s` (r2_balloon by rafa''2, modified by
 0rang3), on the Bungee's slot, whose record the pack patches into a parachute.
@@ -607,6 +619,8 @@ Here the pack takes the worm when that parachute opens and flies it with WA
   balloon, so it pops there, as PX's pops when the worm leaves
   WS_PARACHUTE. The worm then goes back to WA, falling with the balloon's
   speed. Weapons fire from the basket as from WA's parachute.
+- **Hard landings:** when WA opens the balloon and lands the worm at once
+  (see Parachute weapons), the balloon inflates and pops there.
 - **Art:** the worm's body is hidden behind the balloon, drawn in its team's
   colour, and the worm in its basket, as PX's `RenderWorm` override draws them.
 

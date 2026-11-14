@@ -35,6 +35,8 @@ end
 function weapon.setup()
   local shared = require("lib/shared")
   local own_time = require("wf-lib/own_time")
+  local parachute = require("lib/parachute")
+  parachute.setup()
   shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
 
@@ -112,8 +114,9 @@ function weapon.setup()
       local b = balloon_of(worm)
       local state = worm.state
       local equipped = b.equipped_weapon
-      if not b.active and state == "parachuting" and not b.was_parachuting
-          and equipped == "px.hot_air_balloon" then
+      local fired = parachute.fired(worm, "px.hot_air_balloon")
+      if not b.active and (fired or state == "parachuting" and not b.was_parachuting
+          and equipped == "px.hot_air_balloon") then
         b.active, b.ticks = true, 0
         b.x, b.y, b.vx, b.vy = worm.x, worm.y, worm.vx, worm.vy
         worm:take{ turn = "run", fire = true }
