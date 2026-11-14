@@ -5130,6 +5130,26 @@ do
   local y0 = w.y
   M.message(w, wa.msg.FRAME_FINISH)
   check("swimming, its speed capped at 5", w.taken and w.y > y0 and w.y - y0 < 5, w.y - y0)
+  -- Swum up out of the water, WA's fall state kept: falling back, it dives again.
+  w.keys = { up = true }
+  frames = 0
+  while w.taken and frames < 400 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    frames = frames + 1
+  end
+  w.keys = {}
+  check("out of the water, released", not w.taken and w.y < M.water and w.state_id == 0x7E, frames)
+  fall(M.water - 40, 0, 7.5)
+  M.message(w, wa.msg.FRAME_FINISH)
+  check("jumped out, falling back fast: taken, kept in control", w.taken and w.taken.turn == "run")
+  frames = 0
+  while w.y < M.water and frames < 200 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    frames = frames + 1
+  end
+  check("back in the water: the splash, swimming", w.y >= M.water and w.taken
+    and M.sounds[#M.sounds] == 57, frames)
+  M.message(w, wa.msg.FRAME_FINISH)
   w.taken = nil
   M.message(w, wa.msg.FRAME_FINISH)
   w.taken, w.collision_mask = nil, 134342

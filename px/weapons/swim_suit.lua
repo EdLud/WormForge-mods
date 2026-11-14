@@ -289,7 +289,8 @@ function weapon.setup()
         if math.abs(s.px) < SWIM_STILL then s.px = 0 end
         if math.abs(s.py) < SWIM_STILL then s.py = 0 end
         if s.y < water then
-          s.floating = false
+          -- Out in WA's fall state, as it swam: a fall back in dives again.
+          s.floating, s.dived = false, false
           s.plopready, s.plopped = true, false
           s.px, s.py, s.knocked = 0, 0, false
           worm.x, worm.y = s.x, s.y
