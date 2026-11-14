@@ -234,6 +234,11 @@ return function(ctx)
 
     wa.log(string.format("[KTK] Win Condition Triggered: %s. Eliminating Team %d (Team %d Wins)", reason, losingTeamIndex, winnerIndex))
 
+    if wa.teams then
+      wa.teams.surrender(losingTeamIndex)
+      return
+    end
+    -- DLLs before wa.teams: no surrender, so the team's worms die.
     local worms = wa.worms.all()
     for _, w in ipairs(worms) do
       if w.team == losingTeamIndex and w.hp > 0 then
