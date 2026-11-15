@@ -10,8 +10,8 @@
 # this bundle only replaces the flight builder.
 id = "wfws.sdk"
 name = "WFWS Sprite Builder"
-version = "0.1.0"
-author = "reddaz"
+version = "0.6.0"
+author = "red / WFWS/E"
 api_version = 4
 format_version = 2
 dependencies = ["wf.sdk"]

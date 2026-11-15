@@ -13,6 +13,7 @@ local wa = {
   },
   random = function() return 0 end,
   log = function() end,
+  world = { frame = function() return 0 end },
 }
 local env = setmetatable({ wa = wa }, { __index = _G })
 local seq = assert(loadfile(PACK_ROOT .. "lib/fire_seq.lua", "t", env))()

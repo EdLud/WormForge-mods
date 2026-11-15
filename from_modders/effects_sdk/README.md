@@ -66,6 +66,11 @@ game frames.
   widths are doubled in the module, and the `core_w`/`glow_w` overrides are
   full widths too. Small rings floor the core (and thin-spin maximum) at 6.4 px
   full, about 2 px visible through the beam texture, so tiny saws stay legible.
+  The burst's `thickness` is PX's half-width for the sharp pass (0.9x) and the
+  glow (1x); a `core` half-width in px (at least 1.25) sets the sharp pass
+  instead. The stock blast draws over the `EFFECTS` band, so in `effect` mode a
+  burst there shows only after the boom; `fx.install{ depth = { burst =
+  wa.depth.FRONT } }` draws it over the worms.
 - `libs/custom_explosion.lua` - PX's non-electric `do_custom_explosion`:
   falloff damage, push, crater and one effect burst. Call it from `on_explode`
   after zeroing the record's own `explosion.power`. The radial damage goes

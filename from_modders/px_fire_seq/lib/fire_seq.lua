@@ -55,6 +55,8 @@ local running = {}
 local settled = {}
 local cancelled = {}
 
+M.shot_at = {} -- worm id -> frame of its last shot, for px_hold_art's `shots`
+
 local DRAIN = 10
 
 local NOT_FIRING = {
@@ -109,6 +111,10 @@ local function run(owner, count, delay, fire, weapon, on_done)
       cancelled[id] = nil
     end
   end
+  -- Never cleared: px_hold_art ignores a mark older than two frames.
+  local function mark()
+    if id ~= nil then M.shot_at[id] = wa.world.frame() end
+  end
   local left = count - 1
   local function settle()
     if id ~= nil then settled[id] = true end
@@ -128,6 +134,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
   end
 
   if id ~= nil then running[id] = true end
+  mark()
   fire(1)
   if count == 1 then
     release()
@@ -161,6 +168,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
       if left > 0 then
         left = left - 1
         local n = count - left
+        mark()
         fire(n)
         if cancelled[id] then
           settle()

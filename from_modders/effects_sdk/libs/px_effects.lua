@@ -54,7 +54,8 @@ local REACH_KEYS = { "from", "sky", "sky_side", "down", "down_side", "hold", "fa
 local TRAIL_KEYS = { "every", "max", "vanish", "core_w", "glow_w", "r", "g",
   "b", "depth", "beam", "glow" }
 local BURST_KEYS = { "r", "g", "b", "noise", "duration", "fade", "grow",
-  "live", "segments", "thickness", "ellipse", "rebuffer", "smoke", "depth" }
+  "live", "segments", "thickness", "core", "ellipse", "rebuffer", "smoke",
+  "depth" }
 local SMOKE_KEYS = { "count", "kinds", "r", "g", "b", "spread", "up", "life",
   "drag", "size", "depth", "sprite" }
 local RING_KEYS = { "radius", "segments", "noise", "r", "g", "b", "depth",
@@ -330,7 +331,7 @@ local function burst_state(o)
     fade = o.fade or 0.55, grow = o.grow or 3.0,
     live = o.live or 24, age = 0, timer = 0,
     segments = seg_count(o.segments, radius, 1.2),
-    thickness = o.thickness or 15,
+    thickness = o.thickness or 15, core = o.core,
     ellipse = o.ellipse or { 1.25, 0.45 },
     rebuffer = o.rebuffer, depth = o.depth, done = false,
     rng = new_rng(o), noise_vals = {},
@@ -389,12 +390,14 @@ local function draw_burst(b)
     end
     wa.draw.ribbon(RIBBON)
   end
-  local half = math.max(0.90 * b.thickness * env, 1.8)
-  pass(settings.beam, 2 * half, false)
-  pass(settings.glow, 2 * b.thickness * env, false)
-  local lens_half = math.max(b.thickness * env, 1.4)
-  pass(settings.beam, 2 * lens_half, true)
-  pass(settings.glow, 2 * b.thickness * env, true)
+  -- `core` is the sharp pass's half-width; without it, PX's 0.9x/1x thickness.
+  local glow_w = 2 * b.thickness * env
+  local core = b.core
+  local core_half = (core and core > 0) and math.max(core * env, 1.25) or nil
+  pass(settings.beam, 2 * (core_half or math.max(0.90 * b.thickness * env, 1.8)), false)
+  pass(settings.glow, glow_w, false)
+  pass(settings.beam, 2 * (core_half or math.max(b.thickness * env, 1.4)), true)
+  pass(settings.glow, glow_w, true)
 end
 
 local function update_spark(s)
