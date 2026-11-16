@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.17.4"
+version = "0.17.5"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -234,7 +234,7 @@ default = 0
 min = 0
 max = 700
 label = "Cone length"
-description = "Reach of the aim-directed view cone, in pixels. 0 means no cone."
+description = "Reach of the aim-directed view cone, in pixels. Only the worm whose turn it is has one, while it holds a weapon with a crosshair. 0 means no cone."
 
 [[components.options]]
 key = "shadow_cast"
