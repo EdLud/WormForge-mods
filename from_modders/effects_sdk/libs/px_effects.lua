@@ -488,6 +488,7 @@ local function draw_ring(st)
     ex, ey = st.ellipse[1] or st.ellipse.x or 1, st.ellipse[2] or st.ellipse.y or 1
   end
   local cr, cg, cb = colour_of(st, st.age)
+  local cos_rot, sin_rot = wa.math.cos(st.angle), wa.math.sin(st.angle)
   local function pass(sprite, width, scale, color, noise_scale)
     local pts = RIBBON.points
     for i = 1, n + 1 do pts[i] = POINTS[i] end
@@ -496,11 +497,15 @@ local function draw_ring(st)
     for i = 1, n + 1 do
       local j = (st.noise_vals[((i - 1) % #st.noise_vals) + 1] or 0)
         * st.noise * (noise_scale or 1)
-      local a = st.angle + (i - 1) * (2 * math.pi / n)
+      local a = (i - 1) * (2 * math.pi / n)
+      local ux = wa.math.cos(a) * ex
+      local uy = wa.math.sin(a) * ey
+      local rx = ux * cos_rot - uy * sin_rot
+      local ry = ux * sin_rot + uy * cos_rot
       local rr = (st.radius + j) * (scale or 1)
       local p = POINTS[i]
-      p.x = st.x + wa.math.cos(a) * rr * ex
-      p.y = st.y + wa.math.sin(a) * rr * ey
+      p.x = st.x + rx * rr
+      p.y = st.y + ry * rr
       p.width, p.u = width, (i - 1) / n
       if st.thin then
         local t = (i - 1) / n
