@@ -42,28 +42,35 @@ fx.PRESETS.thunder = {
 local installed, settings, driver
 local emitters, arcs, bursts, sparks, glows, smokes, rings = {}, {}, {}, {}, {}, {}, {}
 local next_key = -1
+-- Simulation ticks: the hue clock for rainbow effects, so every peer agrees.
+local clock = 0
 
 local SPARK_KEYS = { "sprite", "cell", "frames", "size", "rate", "pause",
-  "r", "g", "b", "depth" }
+  "r", "g", "b", "depth", "rainbow" }
 local GLOW_KEYS = { "sprite", "cell", "size", "passes", "r", "g", "b",
-  "depth", "life" }
+  "depth", "life", "rainbow" }
 local REACH_KEYS = { "from", "sky", "sky_side", "down", "down_side", "hold", "fade",
   "count", "first", "stagger", "cooldown", "distance",
   "speed", "bulge", "curve", "terrain", "noise", "segments", "core_w",
-  "glow_w", "core_dome", "glow_dome", "r", "g", "b", "depth" }
-local TRAIL_KEYS = { "every", "max", "vanish", "core_w", "glow_w", "r", "g",
-  "b", "depth", "beam", "glow" }
+  "glow_w", "core_dome", "glow_dome", "r", "g", "b", "depth", "rainbow" }
+local TRAIL_KEYS = { "every", "max", "vanish", "core_w", "glow_w", "noise",
+  "rainbow", "r", "g", "b", "depth", "beam", "glow" }
 local BURST_KEYS = { "r", "g", "b", "noise", "duration", "fade", "grow",
   "live", "segments", "thickness", "core", "ellipse", "rebuffer", "smoke",
-  "depth" }
+  "depth", "rainbow" }
 local SMOKE_KEYS = { "count", "kinds", "r", "g", "b", "spread", "up", "life",
   "drag", "size", "depth", "sprite" }
 local RING_KEYS = { "radius", "segments", "noise", "r", "g", "b", "depth",
-  "speed", "angle", "core_w", "glow_w", "thin", "follow", "owner" }
+  "speed", "angle", "core_w", "glow_w", "thin", "follow", "owner",
+  "ellipse", "rainbow", "track" }
 local REBUFFER_KEYS = { "at", "noise", "r", "g", "b", "fade", "segments" }
 
+-- `src` is an overrides table, so `fx.emitter{ spark = true }` means "on with
+-- the preset's own numbers". It used to index the boolean and throw, which takes
+-- the whole call down with it (a bundle's `on_fire` then does nothing at all), so
+-- anything that is not a table is read as "no overrides".
 local function merge(dst, src, keys)
-  if not src then return dst end
+  if type(src) ~= "table" then return dst end
   for _, k in ipairs(keys) do
     if src[k] ~= nil then dst[k] = src[k] end
   end
@@ -125,6 +132,28 @@ local function wrap(a)
   return a
 end
 
+-- `rainbow = true` or `{ speed, offset }`, as PX's SetRainbowMode.
+local function rainbow_of(v)
+  if v == true then return { speed = 0.012, offset = 0 } end
+  if type(v) == "table" then return v end
+  return nil
+end
+
+-- PX's HueToRGBLocal: centred at 180 so the colour never goes black.
+local function rainbow_colour(rb, age)
+  local hue = (rb.offset or 0) + (rb.speed or 0.012) * age
+  hue = hue - math.floor(hue)
+  local rad = hue * 6.2831853
+  return 180 + 75 * wa.math.sin(rad),
+    180 + 75 * wa.math.sin(rad + 2.0943951),
+    180 + 75 * wa.math.sin(rad + 4.1887902)
+end
+
+local function colour_of(o, age)
+  if o.rainbow then return rainbow_colour(o.rainbow, age) end
+  return o.r or 255, o.g or 255, o.b or 255
+end
+
 local function setup_arc(st)
   local dx, dy = st.to_x - st.from_x, st.to_y - st.from_y
   local dist = math.sqrt(dx * dx + dy * dy)
@@ -180,6 +209,7 @@ end
 local function make_arc(o)
   local f, t = o.from or {}, o.to or {}
   local st = {
+    mod = wa._mod or "",
     from_x = o.from_x or f[1] or o.x0 or 0,
     from_y = o.from_y or f[2] or o.y0 or 0,
     to_x = o.to_x or t[1] or o.x1 or 0,
@@ -190,6 +220,7 @@ local function make_arc(o)
     segments = math.min(255, math.max(1, math.floor(o.segments or 16))),
     core_w = o.core_w or 8.0, glow_w = o.glow_w or 13.0,
     r = o.r or 130, g = o.g or 180, b = o.b or 255,
+    rainbow = rainbow_of(o.rainbow),
     depth = o.depth, persist = o.persist or false,
     on_done = o.on_done, done = false, owner = o.owner,
     fade = o.fade, alpha = 1,
@@ -248,6 +279,7 @@ local function draw_arc(st)
     for i = n + 1, #pts do pts[i] = nil end
     RIBBON.sprite = sprite
     RIBBON.depth = st.depth or settings.depth.effect
+    local rr, gg, bb = colour_of(st, clock)
     for i = 1, n do
       local t = ((i - 1) / st.segments) * st.progress
       local x, y = arc_point(st, t)
@@ -263,7 +295,7 @@ local function draw_arc(st)
       local p = POINTS[i]
       p.x, p.y = x + jx * j, y + jy * j
       p.width, p.u = f * width, t
-      p.color = rgb(st.r, st.g, st.b, f * (st.alpha or 1))
+      p.color = rgb(rr, gg, bb, f * (st.alpha or 1))
     end
     wa.draw.ribbon(RIBBON)
   end
@@ -293,13 +325,15 @@ end
 local function draw_spark(s)
   if s.phase > 1 then return end
   local size = s.cell * s.size
-  draw_quad_at(s.sprite, s.x, s.y, size, rgb(s.r, s.g, s.b, 1),
+  local r, g, b = colour_of(s, clock)
+  draw_quad_at(s.sprite, s.x, s.y, size, rgb(r, g, b, 1),
     s.depth or settings.depth.spark, spark_frame(s))
 end
 
 local function draw_glow(g)
   local size = g.cell * g.size
-  local color = rgb(g.r, g.g, g.b, 1)
+  local r, gg, b = colour_of(g, clock)
+  local color = rgb(r, gg, b, 1)
   for _ = 1, g.passes do
     draw_quad_at(g.sprite, g.x, g.y, size, color,
       g.depth or settings.depth.glow, 0)
@@ -334,6 +368,7 @@ local function burst_state(o)
     thickness = o.thickness or 15, core = o.core,
     ellipse = o.ellipse or { 1.25, 0.45 },
     rebuffer = o.rebuffer, depth = o.depth, done = false,
+    rainbow = rainbow_of(o.rainbow),
     rng = new_rng(o), noise_vals = {},
   }
   if b.rebuffer == nil then
@@ -369,6 +404,7 @@ local function draw_burst(b)
   local p = clamp01(b.timer / b.duration)
   local env = 1 - p
   local radius = b.radius * (1 + b.grow * p)
+  local br, bg, bb = colour_of(b, b.age)
   local n = b.segments
   local angle_step = 2 * math.pi / n
   local function pass(sprite, width, lens)
@@ -386,7 +422,7 @@ local function draw_burst(b)
       q.x = b.x + wa.math.cos(a) * rx
       q.y = b.y + wa.math.sin(a) * ry
       q.width, q.u = width, (i - 1) / n
-      q.color = rgb(b.r, b.g, b.b, env)
+      q.color = rgb(br, bg, bb, env)
     end
     wa.draw.ribbon(RIBBON)
   end
@@ -421,18 +457,37 @@ end
 local function update_ring(st)
   if st.done then return end
   if st.follow then
-    local x, y = st.follow()
+    local x, y, vx, vy = st.follow()
     if x == nil then st.done = true; return end
     st.x, st.y = x, y
+    st.vx, st.vy = vx or 0, vy or 0
   end
   st.age = st.age + 1
-  st.angle = st.angle + st.speed
+  if st.track then
+    -- The bend follows the owner's heading (PX aligns the ring with the thing it
+    -- rides), so a lens ring faces where the round is going. `angle` becomes an
+    -- offset from that heading, and a spin would be overwritten every frame, so
+    -- `speed` is not applied while tracking. A ring on a muzzle that is moved by
+    -- `move_to` has no velocity, so it keeps its own angle and spins.
+    if (st.vx or 0) ~= 0 or (st.vy or 0) ~= 0 then
+      st.angle = wa.math.atan(st.vy or 0, st.vx or 0) + (st.angle_offset or 0)
+    else
+      st.angle = st.angle + st.speed
+    end
+  else
+    st.angle = st.angle + st.speed
+  end
   if st.age % 2 == 0 then fill_ring_noise(st) end
 end
 
 local function draw_ring(st)
   if st.done then return end
   local n = st.segments
+  local ex, ey = 1, 1
+  if st.ellipse then
+    ex, ey = st.ellipse[1] or st.ellipse.x or 1, st.ellipse[2] or st.ellipse.y or 1
+  end
+  local cr, cg, cb = colour_of(st, st.age)
   local function pass(sprite, width, scale, color, noise_scale)
     local pts = RIBBON.points
     for i = 1, n + 1 do pts[i] = POINTS[i] end
@@ -444,23 +499,23 @@ local function draw_ring(st)
       local a = st.angle + (i - 1) * (2 * math.pi / n)
       local rr = (st.radius + j) * (scale or 1)
       local p = POINTS[i]
-      p.x = st.x + wa.math.cos(a) * rr
-      p.y = st.y + wa.math.sin(a) * rr
+      p.x = st.x + wa.math.cos(a) * rr * ex
+      p.y = st.y + wa.math.sin(a) * rr * ey
       p.width, p.u = width, (i - 1) / n
       if st.thin then
         local t = (i - 1) / n
         local f = 4 * t * (1 - t) + 0.15
         if f > 1 then f = 1 end
         p.width = width * f
-        p.color = rgb(st.r, st.g, st.b, f)
+        p.color = rgb(cr, cg, cb, f)
       else
-        p.color = color or rgb(st.r, st.g, st.b, 1)
+        p.color = color or rgb(cr, cg, cb, 1)
       end
     end
     wa.draw.ribbon(RIBBON)
   end
-  local core = rgb(st.r, st.g, st.b, 1)
-  local glow = rgb(st.r * 0.72, st.g * 0.72, st.b * 0.72, 1)
+  local core = rgb(cr, cg, cb, 1)
+  local glow = rgb(cr * 0.72, cg * 0.72, cb * 0.72, 1)
   if not st.thin then pass(settings.beam, st.core_w, 0.85, glow, 0.5) end
   pass(settings.beam, st.core_w, 1, core)
   if st.glow_w > 0 and not st.thin then pass(settings.glow, st.glow_w, 1, glow) end
@@ -525,6 +580,7 @@ end
 
 local function make_smoke(o)
   local sm = {
+    mod = wa._mod or "",
     x = o.x or 0, y = o.y or 0, parts = {}, done = false,
     sprite = o.sprite or settings.smoke, depth = o.depth,
     rng = new_rng(o),
@@ -546,7 +602,14 @@ local function draw_emitter(e)
   for _, a in ipairs(e.arcs) do draw_arc(a) end
 end
 
-draw = function()
+-- Each install registers the callback for its own mod and draws only what that
+-- mod created. `px_effects` is required once, so a single shared callback used
+-- to draw another mod's spark under this mod's sprite claim, and the engine
+-- refused the quad (`sprite ... is not installed`). The effect lists stay
+-- shared, because the driver that ticks them is shared too.
+draw = function(mod)
+  if mod == nil then mod = wa._mod or "" end
+  local function mine(item) return item.mod == mod end
   local function safe(fn, item)
     local ok, err = pcall(fn, item)
     if not ok and not draw_warned then
@@ -554,13 +617,13 @@ draw = function()
       if wa.log then wa.log("px_effects draw: " .. tostring(err)) end
     end
   end
-  for _, sm in ipairs(smokes) do safe(draw_smoke, sm) end
-  for _, e in ipairs(emitters) do safe(draw_emitter, e) end
-  for _, a in ipairs(arcs) do safe(draw_arc, a) end
-  for _, b in ipairs(bursts) do safe(draw_burst, b) end
-  for _, s in ipairs(sparks) do safe(draw_spark, s) end
-  for _, g in ipairs(glows) do safe(draw_glow, g) end
-  for _, r in ipairs(rings) do safe(draw_ring, r) end
+  for _, sm in ipairs(smokes) do if mine(sm) then safe(draw_smoke, sm) end end
+  for _, e in ipairs(emitters) do if mine(e) then safe(draw_emitter, e) end end
+  for _, a in ipairs(arcs) do if mine(a) then safe(draw_arc, a) end end
+  for _, b in ipairs(bursts) do if mine(b) then safe(draw_burst, b) end end
+  for _, s in ipairs(sparks) do if mine(s) then safe(draw_spark, s) end end
+  for _, g in ipairs(glows) do if mine(g) then safe(draw_glow, g) end end
+  for _, r in ipairs(rings) do if mine(r) then safe(draw_ring, r) end end
 end
 
 ensure_driver = function(owner)
@@ -610,7 +673,8 @@ local function start_ray(e, i)
     noise = r.noise, segments = r.segments,
     core_w = r.core_w, glow_w = r.glow_w,
     core_dome = r.core_dome, glow_dome = r.glow_dome,
-    r = r.r, g = r.g, b = r.b, depth = r.depth, owner = e.owner, rng = e,
+    r = r.r, g = r.g, b = r.b, rainbow = r.rainbow,
+    depth = r.depth, owner = e.owner, rng = e,
     fade = r.fade,
   })
   a.ray_index = i
@@ -661,6 +725,7 @@ local function update_emitter(e)
 end
 
 tick = function(a)
+  clock = clock + 1
   for i = #emitters, 1, -1 do
     local e = emitters[i]
     if e.dead then
@@ -714,29 +779,39 @@ tick = function(a)
 end
 
 function fx.install(o)
-  if installed then return end
-  installed = true
   o = o or {}
-  settings = {
-    beam = o.beam or trail.BEAM,
-    glow = o.glow or trail.GLOW,
-    spark = o.spark or fx.SPARK,
-    blob = o.blob or fx.BLOB,
-    smoke = o.smoke or fx.SMOKE,
-    trail = o.trail ~= false,
-  }
-  local d = o.depth or {}
-  settings.depth = {
-    spark = d.spark or wa.depth.FRONT,
-    effect = d.effect or wa.depth.EFFECTS,
-    burst = d.burst or wa.depth.EFFECTS,
-    glow = d.glow or (wa.depth.OBJECTS + 0x1000),
-    trail = d.trail or (wa.depth.OBJECTS + 1),
-    smoke = d.smoke or wa.depth.EFFECTS,
-    ring = d.ring or wa.depth.EFFECTS,
-  }
-  if settings.trail then trail.install() end
-  wa.on.draw(draw)
+  if not installed then
+    installed = true
+    settings = {
+      beam = o.beam or trail.BEAM,
+      glow = o.glow or trail.GLOW,
+      spark = o.spark or fx.SPARK,
+      blob = o.blob or fx.BLOB,
+      smoke = o.smoke or fx.SMOKE,
+      trail = o.trail ~= false,
+    }
+    local d = o.depth or {}
+    settings.depth = {
+      spark = d.spark or wa.depth.FRONT,
+      effect = d.effect or wa.depth.EFFECTS,
+      burst = d.burst or wa.depth.EFFECTS,
+      glow = d.glow or (wa.depth.OBJECTS + 0x1000),
+      trail = d.trail or (wa.depth.OBJECTS + 1),
+      smoke = d.smoke or wa.depth.EFFECTS,
+      ring = d.ring or wa.depth.EFFECTS,
+    }
+  end
+  -- The first install fixed the shared sheets; a later mod can still ask for
+  -- the ribbon, and `trail.install` is idempotent.
+  if o.trail ~= false then
+    settings.trail = true
+    trail.install()
+  end
+  local mod = wa._mod or ""
+  fx._draws = fx._draws or {}
+  if fx._draws[mod] then return end
+  fx._draws[mod] = true
+  wa.on.draw(function() draw(mod) end)
 end
 
 function fx.emitter(o)
@@ -758,14 +833,23 @@ function fx.emitter(o)
   copy(tro, o.trail, TRAIL_KEYS)
   local owner = usable(o.owner) and o.owner or current_worm()
   local e = {
+    mod = wa._mod or "",
     owner = owner, x = o.x or 0, y = o.y or 0,
     vx = o.vx or 0, vy = o.vy or 0, follow = o.follow,
     random = o.random or "lcg", seed = o.seed or new_seed(),
     spark = spark, glow = glow, reach = reach,
+    rainbow = rainbow_of(o.rainbow),
     trail = (o.trail ~= false and settings.trail) and tro or false,
     trail_key = next_key, arcs = {}, cooldowns = {}, spark_phase = 0,
     ready = o.ready ~= false, dead = false,
   }
+  -- One switch colours the whole emitter, as PX's SetRainbowMode does.
+  if spark and e.rainbow and spark.rainbow == nil then spark.rainbow = e.rainbow end
+  if glow and e.rainbow and glow.rainbow == nil then glow.rainbow = e.rainbow end
+  if reach.rainbow == nil and e.rainbow then reach.rainbow = e.rainbow end
+  if e.trail and e.rainbow and e.trail.rainbow == nil then
+    e.trail.rainbow = e.rainbow
+  end
   if not ensure_driver(owner) then return nil end
   next_key = next_key - 1
   if e.trail then
@@ -791,6 +875,24 @@ function fx.emitter(o)
     e.cooldowns[i] = base + (i - 1) * reach.stagger
   end
   emitters[#emitters + 1] = e
+  -- PX's ring manager (type 2) is an arc around the emitter that can bend into
+  -- an ellipse and spin: it rides the same anchor as the emitter, which is how
+  -- a railgun's ring travels with the round.
+  if type(o.ring) == "table" then
+    local ro = copy({}, o.ring, RING_KEYS)
+    ro.x, ro.y, ro.owner, ro.follow = e.x, e.y, owner, o.follow
+    if ro.follow == nil then
+      -- No anchor of its own: the ring rides the emitter, which is how a ring
+      -- moved with `move_to` (the muzzle) stays on the muzzle. A dead emitter
+      -- returns nothing, so the ring goes with it.
+      ro.follow = function()
+        if e.dead then return nil end
+        return e.x, e.y, e.vx, e.vy
+      end
+    end
+    if e.rainbow and ro.rainbow == nil then ro.rainbow = e.rainbow end
+    e.ring = fx.ring(ro)
+  end
   e.move_to = function(self, x, y) self.x, self.y = x, y end
   e.reach_to = function(self, x, y, opts)
     opts = opts or {}
@@ -803,6 +905,7 @@ function fx.emitter(o)
       noise = self.reach.noise, segments = self.reach.segments,
       core_w = self.reach.core_w, glow_w = self.reach.glow_w,
       r = self.reach.r, g = self.reach.g, b = self.reach.b,
+      rainbow = self.rainbow,
       depth = self.reach.depth, owner = self.owner, rng = self,
     })
     self.arcs[#self.arcs + 1] = a
@@ -812,7 +915,7 @@ function fx.emitter(o)
     opts = opts or {}
     local b = fx.burst({
       x = self.x, y = self.y, radius = opts.radius,
-      smoke = opts.smoke, preset = opts.preset,
+      smoke = opts.smoke, preset = opts.preset, rainbow = self.rainbow,
       r = opts.r, g = opts.g, b = opts.b,
     })
     self:remove()
@@ -821,6 +924,7 @@ function fx.emitter(o)
   e.remove = function(self)
     self.dead = true
     if self.trail_key then trail.drop(self.trail_key) end
+    if self.ring then self.ring:remove() end
     if self.tracker and self.tracker.release then self.tracker.release() end
   end
   return e
@@ -830,6 +934,7 @@ function fx.ring(o)
   if not installed then wa.log("px_effects: fx.install(ctx) first") return nil end
   o = o or {}
   local st = copy({}, o, RING_KEYS)
+  st.mod = wa._mod or ""
   st.radius = o.radius or 0
   if st.radius <= 0 then return nil end
   st.x, st.y = o.x or 0, o.y or 0
@@ -837,7 +942,14 @@ function fx.ring(o)
   st.noise = o.noise or 0.67
   st.r, st.g, st.b = o.r or 130, o.g or 180, o.b or 255
   st.speed = o.speed or 0
-  st.angle = o.angle or 0
+  st.angle_offset = o.angle or 0
+  st.angle = st.angle_offset
+  st.track = o.track and true or false
+  if type(st.ellipse) == "table" then
+    st.ellipse = { st.ellipse[1] or st.ellipse.x or 1,
+      st.ellipse[2] or st.ellipse.y or 1 }
+  end
+  st.rainbow = rainbow_of(st.rainbow)
   local px_core = st.radius / 10
   if px_core < 2.3 then px_core = 2.3 end
   local px_glow = px_core * 3
@@ -898,6 +1010,7 @@ function fx.burst(o)
   b.rng = new_rng(o)
   local st = burst_state(b)
   if not st then return nil end
+  st.mod = wa._mod or ""
   if not ensure_driver(o.owner) then return nil end
   bursts[#bursts + 1] = st
   if o.smoke ~= false and b.smoke ~= false then
@@ -921,6 +1034,7 @@ function fx.spark(o)
   local s = copy({}, fx.PRESETS.electric.spark, SPARK_KEYS)
   copy(s, o, SPARK_KEYS)
   s.x, s.y = o.x or 0, o.y or 0
+  s.mod = wa._mod or ""
   s.sprite = s.sprite or settings.spark
   s.phase, s.age = 0, 0
   if not ensure_driver(o.owner) then return nil end
@@ -935,6 +1049,7 @@ function fx.glow(o)
   local g = copy({}, fx.PRESETS.electric.glow, GLOW_KEYS)
   copy(g, o, GLOW_KEYS)
   g.x, g.y = o.x or 0, o.y or 0
+  g.mod = wa._mod or ""
   g.sprite = g.sprite or settings.blob
   g.age, g.done = 0, false
   if not ensure_driver(o.owner) then return nil end
