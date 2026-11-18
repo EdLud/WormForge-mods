@@ -1,8 +1,8 @@
-# Diagnostics, a stress test and the pass-over test, as add-ons. profiles/ holds two: the
-# profiler and the state logger on their own, and the stress test with the Highlander weapons it
-# fires (that one needs the px.ports bundle too).
+# Diagnostics, a stress test and the pass-over test, as add-ons. profiles/ holds the profiler
+# and the state logger on their own, and the stress test with the Project X weapons it fires,
+# with and without the Weather mod's rain (those need the px.ports mod too).
 id = "example.tools"
-version = "0.7.1"
+version = "0.8.0"
 author = "wkLua"
 api_version = 4
 format_version = 2
@@ -146,7 +146,7 @@ id = "tools.stress"
 diagnostics = true
 type = "feature"
 name = "Stress test"
-description = "Four batches of projectiles in the first turn, WA's and WormForge's, for performance and sync: record a replay and play it back."
+description = "Eight batches of projectiles and effects in the first turn, stock and modded, for performance and sync. Record a replay and play it back; tools/stress-report.py gives each batch its frame rate."
 entry = "stress/stress.lua"
 
 [[components]]

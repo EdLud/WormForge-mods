@@ -1,21 +1,29 @@
--- Stress test: four batches of projectiles in the first turn, to record and replay.
+-- Stress test: batches of projectiles and effects in the first turn, each logged, to record and replay.
 
 return function()
   local START_DELAY = 50
-  local COUNT = 40 -- projectiles per batch
-  local BATCH_GAP = 400
+  local BATCH_GAP = 400 -- frames each batch has before the next
+  local COUNT = 40 -- projectiles in the stock and orb batches
   local DAMAGE = 15 -- each explosion's damage
   local BLAST = 40
   local PROFILE = true
   local SEED = 12345
-  local MAGNETS = 6 -- first; needs Highlander's Electromagnet placed
+  local MAGNETS = 6 -- with the stock batch
   local MAGNET = "px.electromagnet"
-  local BOWLING_STRIKES = 7 -- batch 3; needs its Bowling Ball Strike placed
+  local BOWLING_STRIKES = 7
   local BOWLING = "px.bowling_ball_strike"
-  local ELECTRIC_GRENADES = 50 -- batch 4; needs its Electric Grenade placed
+  local ELECTRIC_GRENADES = 50
   local ELECTRIC = "px.electric_grenade"
   local ELECTRIC_FUSE = 3000 -- ms, plus up to ELECTRIC_SPREAD
   local ELECTRIC_SPREAD = 1500
+  local FIRE_CLUSTERS = 8 -- five clustlets each, each bursting into fire
+  local FIRE_CLUSTER = "px.fire_cluster_bomb"
+  local LIGHTNING_STRIKES = 6
+  local LIGHTNING = "px.lightning_strike"
+  local SAWS = 5 -- only when the Saw (Red Saw mod) is placed
+  local SAW = "px.saw_grenade"
+  local TOXIC_GRENADES = 4 -- about 720 puffs; last, as the clouds stay
+  local TOXIC = "px.toxic_grenade"
   local ORB, GLOW = "stress/sprites/orb", "stress/sprites/glow"
   local TINTS = { 0xFF4040, 0xFFA030, 0xF0F040, 0x50E060, 0x40C0FF, 0xA070FF }
   local STYLES = {
@@ -30,8 +38,9 @@ return function()
 
   wa.assets.load({ sprites = { ORB, GLOW }, gpu_prefix = "stress/sprites/" })
 
+  -- One `perf:` line a second: tools/stress-report.py sums the ones inside each batch.
   if PROFILE then
-    wa.perf.enable({ profile = true })
+    wa.perf.enable({ profile = true, every = 1 })
     wa.hud.fps_counter()
   end
 
@@ -60,6 +69,18 @@ return function()
     return shots
   end
 
+  local function ground(x)
+    local size = wa.world.size()
+    local y = 20
+    while y < size.h and wa.land.solid(x, y) do y = y + 4 end
+    while y < size.h and not wa.land.solid(x, y) do y = y + 4 end
+    return y
+  end
+
+  local function report(name, done, wanted, reason)
+    wa.log(string.format("stress: %s, %d of %d%s", name, done, wanted, reason and (", " .. reason) or ""))
+  end
+
   local function electric_points()
     local size = wa.world.size()
     local water = wa.world.water() // 1
@@ -79,44 +100,46 @@ return function()
   end
 
   local function electric_batch(owner)
-    local launched, refused, reason = 0, 0, nil
+    local launched, reason = 0, nil
     for _, p in ipairs(electric_points()) do
       local ok, err = pcall(wa.weapons.launch, {
         weapon = ELECTRIC, owner = owner,
         x = p.x, y = p.y, vx = (rand(5) - 2) * (1 / 2), vy = 0,
         missile = { fuse = ELECTRIC_FUSE + rand(ELECTRIC_SPREAD) },
       })
-      if ok then
-        launched = launched + 1
-      else
-        refused, reason = refused + 1, reason or tostring(err)
-      end
+      if ok then launched = launched + 1 else reason = reason or tostring(err) end
     end
-    wa.log(string.format("stress: batch 4, %d of %d Electric Grenades launched%s", launched,
-      ELECTRIC_GRENADES, refused > 0 and (", " .. refused .. " refused: " .. reason) or ""))
+    report("Electric Grenades", launched, ELECTRIC_GRENADES, reason)
   end
 
-  local function ground(x)
+  -- `count` of a placed thrown weapon, spread over the map above the ground.
+  local function launch_batch(name, weapon, count, owner)
     local size = wa.world.size()
-    local y = 20
-    while y < size.h and wa.land.solid(x, y) do y = y + 4 end
-    while y < size.h and not wa.land.solid(x, y) do y = y + 4 end
-    return y
+    local launched, reason = 0, nil
+    for i = 1, count do
+      local x = size.w * i // (count + 1) + rand(41) - 20
+      local ok, err = pcall(wa.weapons.launch, {
+        weapon = weapon, owner = owner,
+        x = x, y = ground(x) - 60, vx = (rand(5) - 2) * (1 / 2), vy = 0,
+      })
+      if ok then launched = launched + 1 else reason = reason or tostring(err) end
+    end
+    report(name, launched, count, reason)
+    return launched
   end
 
-  local function bowling_batch(owner)
+  local function click_batch(name, weapon, count, owner)
     local size = wa.world.size()
     local fired, reason = 0, nil
-    for i = 1, BOWLING_STRIKES do
-      local x = size.w * i // (BOWLING_STRIKES + 1)
+    for i = 1, count do
+      local x = size.w * i // (count + 1)
       local ok, err = pcall(wa.weapons.click, {
-        weapon = BOWLING, worm = owner, x = x, y = ground(x),
-        vx = (i % 2 == 1) and 1 or -1, -- the strike's direction: odd ones from the left
+        weapon = weapon, worm = owner, x = x, y = ground(x),
+        vx = (i % 2 == 1) and 1 or -1, -- a strike's direction: odd ones from the left
       })
       if ok then fired = fired + 1 else reason = reason or tostring(err) end
     end
-    wa.log(string.format("stress: batch 3, %d of %d Bowling Ball Strikes%s", fired, BOWLING_STRIKES,
-      reason and (", " .. reason) or ""))
+    report(name, fired, count, reason)
   end
 
   local function magnet_batch(owner)
@@ -135,8 +158,7 @@ return function()
         reason = reason or tostring(err)
       end
     end
-    wa.log(string.format("stress: %d of %d Electromagnets (%d attracting)%s", fired, MAGNETS, attract,
-      reason and (", " .. reason) or ""))
+    report(string.format("Electromagnets (%d attracting)", attract), fired, MAGNETS, reason)
   end
 
   local function stock_batch(owner, shots)
@@ -149,6 +171,7 @@ return function()
         missile = { explosion = { power = DAMAGE }, fuse = cluster and 3000 or nil },
       })
     end
+    report("stock projectiles (mortar, cluster bomb)", #shots, COUNT)
   end
 
   local now = 0
@@ -197,6 +220,7 @@ return function()
       o.id = o.a.id
       orbs[o.id] = o
     end
+    report("custom projectiles (Lua actors, GPU orbs)", #shots, COUNT)
   end
 
   local function live_owner(first)
@@ -210,6 +234,26 @@ return function()
     end
   end
 
+  local function batches(shots)
+    return {
+      { name = "stock", run = function(w)
+        if MAGNETS > 0 then magnet_batch(w) end
+        stock_batch(w, shots)
+      end },
+      { name = "orbs", run = function(w) custom_batch(w, shots) end },
+      { name = "bowling", run = function(w) click_batch("Bowling Ball Strikes", BOWLING, BOWLING_STRIKES, w) end },
+      { name = "electric", run = electric_batch },
+      { name = "fire", run = function(w) launch_batch("Fire Cluster Bombs", FIRE_CLUSTER, FIRE_CLUSTERS, w) end },
+      { name = "lightning", run = function(w) click_batch("Lightning Strikes", LIGHTNING, LIGHTNING_STRIKES, w) end },
+      { name = "saws", run = function(w)
+        if launch_batch("Saws", SAW, SAWS, w) == 0 then
+          wa.log("stress: no saws: place the Saw from the Red Saw mod on the panel for this batch")
+        end
+      end },
+      { name = "toxic", run = function(w) launch_batch("Toxic Grenades", TOXIC, TOXIC_GRENADES, w) end },
+    }
+  end
+
   local started = false
   wa.on.turn_start(function(ev)
     if started then
@@ -218,6 +262,18 @@ return function()
     started = true
     local owner = ev.worm
     local shots = plan()
+    local list = batches(shots)
+    local size = wa.world.size()
+    local worms, teams = 0, {}
+    for _, w in ipairs(wa.worms.all()) do
+      worms = worms + 1
+      teams[w.team] = true
+    end
+    local team_count = 0
+    for _ in pairs(teams) do team_count = team_count + 1 end
+    wa.log(string.format("stress: start, %d worms in %d teams, map %dx%d, seed %d, %d batches %d frames apart",
+      worms, team_count, size.w, size.h, SEED, #list, BATCH_GAP))
+    local finish = START_DELAY + #list * BATCH_GAP
     wa.actors.spawn({
       sprite = false, x = shots[1].x, y = shots[1].y,
       gravity = false, collide = false, owner = owner,
@@ -228,44 +284,25 @@ return function()
             table.remove(flashes, i)
           end
         end
-        if now == START_DELAY then
-          local w = live_owner(owner)
-          if w then
-            if MAGNETS > 0 then magnet_batch(w) end
-            wa.log(string.format("stress: batch 1, %d stock projectiles (mortar, cluster bomb)", COUNT))
-            stock_batch(w, shots)
-          else
-            wa.log("stress: batch 1 skipped, no worm alive to fire it for")
+        local at = now - START_DELAY
+        if at >= 0 and at % BATCH_GAP == 0 then
+          local i = at // BATCH_GAP + 1
+          local batch = list[i]
+          if batch then
+            -- The marker tools/stress-report.py splits the log at.
+            wa.log(string.format("stress: batch %d %s at frame %d", i, batch.name, wa.world.frame()))
+            local w = live_owner(owner)
+            if w then
+              batch.run(w)
+            else
+              wa.log("stress: " .. batch.name .. " skipped, no worm alive to fire it for")
+            end
           end
         end
-        if now == START_DELAY + BATCH_GAP then
-          local w = live_owner(owner)
-          if w then
-            wa.log(string.format("stress: batch 2, %d custom projectiles (Lua actors, GPU orbs)", COUNT))
-            custom_batch(w, shots)
-          else
-            wa.log("stress: batch 2 skipped, no worm alive to fire it for")
-          end
+        if now == finish then
+          wa.log(string.format("stress: end at frame %d", wa.world.frame()))
         end
-        if now == START_DELAY + 2 * BATCH_GAP and BOWLING_STRIKES > 0 then
-          local w = live_owner(owner)
-          if w then
-            bowling_batch(w)
-          else
-            wa.log("stress: batch 3 skipped, no worm alive to fire it for")
-          end
-        end
-        if now == START_DELAY + 3 * BATCH_GAP and ELECTRIC_GRENADES > 0 then
-          local w = live_owner(owner)
-          if w then
-            electric_batch(w)
-          else
-            wa.log("stress: batch 4 skipped, no worm alive to fire it for")
-          end
-        end
-        local last = START_DELAY
-          + (ELECTRIC_GRENADES > 0 and 3 * BATCH_GAP or BOWLING_STRIKES > 0 and 2 * BATCH_GAP or BATCH_GAP)
-        if now > last and next(orbs) == nil and #flashes == 0 then
+        if now > finish and next(orbs) == nil and #flashes == 0 then
           a:despawn()
         end
       end,
@@ -276,35 +313,43 @@ return function()
     return (alpha << 24) | rgb
   end
 
-  local QUAD = { sprite = GLOW, blend = "add", colors = {0, 0, 0, 0},
-    points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
-  local function glow(x, y, half, c1, c2, c3, c4)
-    local p, c = QUAD.points, QUAD.colors
-    p[1][1], p[1][2] = x - half, y - half
-    p[2][1], p[2][2] = x + half, y - half
-    p[3][1], p[3][2] = x + half, y + half
-    p[4][1], p[4][2] = x - half, y + half
-    c[1], c[2], c[3], c[4] = c1, c2, c3, c4
-    wa.draw.quad(QUAD)
+  -- Every glow of a frame in one list: nine numbers a quad, drawn in one call.
+  local MAX = 4096
+  local batch = { sprite = GLOW, blend = "add", quads = {}, count = 0 }
+  local q, n = batch.quads, 0
+  local function glow(x, y, half, color)
+    q[n + 1], q[n + 2] = x - half, y - half
+    q[n + 3], q[n + 4] = x + half, y - half
+    q[n + 5], q[n + 6] = x + half, y + half
+    q[n + 7], q[n + 8] = x - half, y + half
+    q[n + 9] = color
+    n = n + 9
+    if n == MAX * 9 then
+      batch.count = MAX
+      wa.draw.quads(batch)
+      n = 0
+    end
   end
 
   wa.on.draw(function()
+    n = 0
     for _, o in pairs(orbs) do
       local x, y, t = o.a.x, o.a.y, o.tint
-      local c = TINTS[(o.a.id % #TINTS) + 1]
-      glow(x, y, 48, argb(0xFF, t), argb(0xFF, c), argb(0xFF, c), argb(0xFF, t))
-      glow(x, y, 16, argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF), argb(0xFF, 0xFFFFFF))
+      glow(x, y, 48, argb(0xFF, t))
+      glow(x, y, 16, argb(0xFF, 0xFFFFFF))
       for i, p in ipairs(o.trail) do
-        local a = argb(0xFF - (i - 1) * 0x1C, t)
-        glow(p.x, p.y, (30 - i * 2), a, a, a, a)
+        glow(p.x, p.y, (30 - i * 2), argb(0xFF - (i - 1) * 0x1C, t))
       end
     end
     for _, f in ipairs(flashes) do
       local age = now - f.born
       local alpha = 0xFF * (FLASH - age) // FLASH
-      local a, white = argb(alpha, f.tint), argb(alpha, 0xFFFFFF)
-      glow(f.x, f.y, (30 + age * 26 // 10), a, a, a, a)
-      glow(f.x, f.y, (16 + age), white, white, white, white)
+      glow(f.x, f.y, (30 + age * 26 // 10), argb(alpha, f.tint))
+      glow(f.x, f.y, (16 + age), argb(alpha, 0xFFFFFF))
+    end
+    if n > 0 then
+      batch.count = n // 9
+      wa.draw.quads(batch)
     end
   end)
 end

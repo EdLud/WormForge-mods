@@ -1,7 +1,10 @@
-description = "The stress test, with the three Highlander weapons it fires (needs the Project X ports bundle)."
+description = "The stress test, with the six Project X weapons it fires (needs the Project X ports mod). Place the Saw from the Red Saw mod for its saw batch."
 features = ["tools.stress"]
 
 [weapons]
 "px.electromagnet" = true
 "px.bowling_ball_strike" = true
 "px.electric_grenade" = true
+"px.fire_cluster_bomb" = true
+"px.lightning_strike" = true
+"px.toxic_grenade" = true

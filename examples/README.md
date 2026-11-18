@@ -39,14 +39,20 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   - `tools.audit` — offline native firing through `worm:input`, with home and
     cyclically moved stock profiles and a comparison tool. Requires the optional
     `input-audit` test build; see [audit setup](tools/audit/README.md).
-  - `tools.stress` — WA's projectiles against ours, to record and replay: 40
-    stock missiles, then 40 Lua actors from the same positions, drawn on the
-    GPU in four styles, then Highlander's magnets, Bowling Ball Strikes and
-    Electric Grenades. Its sprites load as assets (`wa.assets.load`).
+  - `tools.stress` — stock projectiles against modded ones, to record and
+    replay: 40 stock missiles, then 40 Lua actors from the same positions,
+    drawn on the GPU in four styles, then Project X's magnets, Bowling Ball
+    Strikes, Electric Grenades, Fire Cluster Bombs, Lightning Strikes, Saws
+    (when placed) and Toxic Grenades, one batch every 8 seconds. Each batch
+    writes a `stress: batch` line to `wkLua.log`, and
+    `tools/stress-report.py` gives each one its frame rate. Its sprites load
+    as assets (`wa.assets.load`), and its glows are drawn with
+    `wa.draw.quads`.
   - `profiles/Diagnostics.toml` selects the profiler and the state logger over
     the lobby's weapons;
-    `profiles/Stress.toml` places the three Highlander weapons the stress test
-    fires (it needs `mods/px` too).
+    `profiles/Stress.toml` places the six Project X weapons the stress test
+    fires (it needs `mods/px` too), and `profiles/Stress with weather.toml`
+    adds the Weather mod's heavy rain.
 
 Profiles hold WSC settings too: unset settings take Intermediate. Use the
 loader's **Manage Scheme (.WSC)** page or a profile's `[scheme]`; gravity and

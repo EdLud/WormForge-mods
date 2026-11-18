@@ -1,0 +1,14 @@
+description = "The stress test under heavy rain from the Weather mod, with the six Project X weapons it fires. Compare its numbers with the Stress profile for the cost of the weather."
+features = ["tools.stress", "core.weather"]
+
+[weapons]
+"px.electromagnet" = true
+"px.bowling_ball_strike" = true
+"px.electric_grenade" = true
+"px.fire_cluster_bomb" = true
+"px.lightning_strike" = true
+"px.toxic_grenade" = true
+
+[options."core.weather"]
+weather = "rain"
+rain = 100
