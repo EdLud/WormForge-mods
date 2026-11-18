@@ -31,6 +31,11 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     crates each round (`wa.crates.set_odds`, `wa.crates.set_shares`), logs
     them (`wa.crates.odds`, `wa.crates.shares`), and drops a crate holding a
     chosen weapon above the worm whose turn ended (`wa.crates.spawn{ contents }`).
+  - `tools.own_panel` — a weapon panel drawn in Lua in place of the stock one
+    (`wa.panel.replace`, `wa.panel.mouse`, `wa.panel.capture`,
+    `wa.panel.select`, `wa.hud.sprite`, `wa.hud.rect`, `wa.hud.text`): the
+    right click opens and shuts it, and a click picks the weapon under the
+    cursor. Its rows and columns are the panel places of the profile.
   - `tools.perf` — the profiler, which writes a `perf:` line to `wkLua.log`
     every 10 s with each part of a rendered frame. Presentation only, so safe
     online. The FPS counter is Core utilities' **FPS counter** option.
