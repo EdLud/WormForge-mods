@@ -231,7 +231,6 @@ function M.install(opts)
             w:release(w.vx, w.vy)
           end
           wa.land.cut({ x = w.x, y = w.y, shape = "circle", radius = 25 })
-          if w.hp > 1 then w:hurt(30) end
         end
         w:freeze()
       end
