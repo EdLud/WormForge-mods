@@ -4,6 +4,8 @@ local trail = {}
 
 trail.MAX, trail.EVERY, trail.VANISH = 12, 2, 2
 trail.CORE_W, trail.GLOW_W = 8.0, 13.0
+-- Lateral jitter in pixels and PX's hue cycle for the additive pass.
+trail.NOISE, trail.RAINBOW = 0.0, false
 trail.R, trail.G, trail.B = 255, 255, 255
 trail.DEPTH = nil
 trail.BEAM = "wf-lib/effects/sprites/px_effects/beam.png"
@@ -13,6 +15,32 @@ local trails = {}
 local live = {} -- round id -> trail while it is in the air
 local driver, tick = nil, 0
 local STALE = 3
+-- Fixed unit noise: the same wobble on every peer.
+local NOISE = {}
+for i = 1, 257 do
+  local h = (i * 1103515245 + 12345) % 2147483648
+  NOISE[i] = (h / 1073741824) - 1
+end
+
+local function rainbow_of(v)
+  if v == true then return { speed = 0.012, offset = 0 } end
+  if type(v) == "table" then return v end
+  return nil
+end
+
+-- PX's HueToRGBLocal on WA's sine table.
+local function hue_hex(hue, f)
+  hue = hue - math.floor(hue)
+  local rad = hue * 6.2831853
+  local r = 180 + 75 * wa.math.sin(rad)
+  local g = 180 + 75 * wa.math.sin(rad + 2.0943951)
+  local b = 180 + 75 * wa.math.sin(rad + 4.1887902)
+  r, g, b = math.floor(r * f), math.floor(g * f), math.floor(b * f)
+  if r < 0 then r = 0 elseif r > 255 then r = 255 end
+  if g < 0 then g = 0 elseif g > 255 then g = 255 end
+  if b < 0 then b = 0 elseif b > 255 then b = 255 end
+  return (255 << 24) | (r << 16) | (g << 8) | b
+end
 
 local function current_worm()
   local first
@@ -61,14 +89,17 @@ function trail.add(id, owner, opts)
     id = id, pts = {}, live = true, seen = tick,
     max = trail.MAX, every = trail.EVERY, vanish = trail.VANISH,
     core_w = trail.CORE_W, glow_w = trail.GLOW_W,
+    noise = trail.NOISE, rainbow = trail.RAINBOW,
     r = trail.R, g = trail.G, b = trail.B,
     depth = trail.DEPTH, beam = trail.BEAM, glow = trail.GLOW,
   }
   for _, k in ipairs({
-    "max", "every", "vanish", "core_w", "glow_w", "r", "g", "b", "depth", "beam", "glow",
+    "max", "every", "vanish", "core_w", "glow_w", "noise", "rainbow",
+    "r", "g", "b", "depth", "beam", "glow",
   }) do
     if opts and opts[k] ~= nil then t[k] = opts[k] end
   end
+  t.rainbow = rainbow_of(t.rainbow)
   if t.depth == nil then t.depth = wa.depth.OBJECTS end
   if not start_driver(t, owner) then return nil end
   trails[#trails + 1] = t
@@ -131,9 +162,27 @@ function trail.install()
         if f < 0.1 then f = 0.1 end
         local p = rp[i]
         if not p then p = {}; rp[i] = p end
-        p.x, p.y, p.u, p.width = pts[i][1], pts[i][2], f, f * width
-        p.color = (255 << 24) | (math.floor(t.r * f) << 16)
-          | (math.floor(t.g * f) << 8) | math.floor(t.b * f)
+        local x, y = pts[i][1], pts[i][2]
+        if t.noise > 0 then
+          -- Perpendicular to the local tangent, as PX jitters a reach arc.
+          local a = pts[i - 1] or pts[i]
+          local b = pts[i + 1] or pts[i]
+          local dx, dy = b[1] - a[1], b[2] - a[2]
+          local len = math.sqrt(dx * dx + dy * dy)
+          if len > 0.0001 then
+            local j = NOISE[((i - 1) % 256) + 1] * t.noise
+            x, y = x - dy / len * j, y + dx / len * j
+          end
+        end
+        p.x, p.y, p.u, p.width = x, y, f, f * width
+        if t.rainbow then
+          -- Hue runs along the ribbon and with the clock.
+          p.color = hue_hex(tick * t.rainbow.speed + f * 0.35
+            + (t.rainbow.offset or 0), f)
+        else
+          p.color = (255 << 24) | (math.floor(t.r * f) << 16)
+            | (math.floor(t.g * f) << 8) | math.floor(t.b * f)
+        end
       end
       for i = #rp, n + 1, -1 do rp[i] = nil end
       wa.draw.ribbon(RIBBON)

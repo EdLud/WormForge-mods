@@ -3,8 +3,8 @@
 local M = {}
 
 local EFFECT_KEYS = { "radius", "r", "g", "b", "noise", "duration", "fade",
-  "grow", "live", "segments", "thickness", "ellipse", "rebuffer", "smoke",
-  "depth", "preset", "owner", "seed", "random" }
+  "grow", "live", "segments", "thickness", "core", "ellipse", "rebuffer",
+  "smoke", "depth", "preset", "owner", "seed", "random", "rainbow" }
 
 local function numbers(o)
   local damage = math.floor(o.damage or o.power or 0)
