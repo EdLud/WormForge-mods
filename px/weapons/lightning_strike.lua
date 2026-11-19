@@ -34,6 +34,7 @@ function weapon.setup()
   local shared = require("lib/shared")
   local electrical = require("lib/electrical")
   local L = require("wf-lib/lightning")
+  shared.revived_by_lightning = shared.revived_by_lightning or {}
   local revived_by_lightning = shared.revived_by_lightning
   local function sq(v) return v * v end
 
