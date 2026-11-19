@@ -107,12 +107,13 @@ return {
   install = function(ctx)
     -- Stones are WA cluster bits, which no on_explode reaches: one that WA stops running has landed.
     local seen = {} -- missile id -> {x, y, frame, cloud}
-    wa.on.missile_frame(function(m)
+    local function landing(m)
       if m.weapon ~= ctx.id or m.phase ~= "post" then return end
       local s = seen[m.id]
       if not s then s = {}; seen[m.id] = s end
       s.x, s.y, s.frame = m.x + m.vx, m.y + m.vy, wa.world.frame()
-    end)
+    end
+    if not pcall(wa.on.missile_frame, landing, { weapons = { ctx.id }, phase = "post" }) then wa.on.missile_frame(landing) end
     if wa.on.draw and wa.view and wa.view.ripple then
       wa.on.draw(function()
         local now = wa.world.frame()

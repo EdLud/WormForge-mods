@@ -1,5 +1,6 @@
 -- Homing Digger: click a target, then throw: a rocket that bursts on contact into a digger that homes on the target through the land.
 
+local on_missile = require("lib/on_missile")
 local homing = require("lib/px_homing")
 local weapon = {}
 
@@ -143,7 +144,7 @@ end
 function weapon.setup()
   diggers, last, pending, blasts, shooter, target, launching = {}, {}, {}, {}, nil, nil, false
 
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.homing_digger" then return end
     local d = diggers[m.id]
     if not d then
@@ -151,7 +152,7 @@ function weapon.setup()
       return
     end
     if m.phase == "pre" then drill(m, d) else homing.step(m, d) end
-  end)
+  end, { weapons = { "px.homing_digger" } })
 
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FIRE_WEAPON and worm.weapon == "px.homing_digger" then

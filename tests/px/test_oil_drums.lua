@@ -17,6 +17,7 @@ local function mock(opts)
   opts = opts or {}
   M = { drums = {}, worms = {}, actors = {}, fires = {}, mines = {}, launches = {}, sounds = {},
     quads = {}, randoms = {}, frame = 0, cavern = opts.cavern or false,
+    view = { cx = 500, cy = 300, w = 1920, h = 1080, zoom = 1 },
     rng = function(lo) return lo end }
   local function worm(id, team, x, y, hp)
     local w = { id = id, team = team, x = x, y = y, hp = hp or 100 }
@@ -44,10 +45,14 @@ local function mock(opts)
     msg = { FRAME_FINISH = 2 },
     math = { sin = math.sin, cos = math.cos },
     random = function(lo, hi) M.randoms[#M.randoms + 1] = { lo, hi }; return M.rng(lo, hi) end,
-    world = { cavern = function() return M.cavern end, frame = function() return M.frame end },
-    oil = { all = function()
+    world = { cavern = function() return M.cavern end, frame = function() return M.frame end,
+      view = function() return M.view end },
+    oil = { all = function(opts)
+      local near = opts and opts.near
       local out = {}
-      for _, d in ipairs(M.drums) do out[#out + 1] = d end
+      for _, d in ipairs(M.drums) do
+        if not near or (d.x - near[1]) ^ 2 + (d.y - near[2]) ^ 2 <= near[3] ^ 2 then out[#out + 1] = d end
+      end
       return out
     end },
     worms = { all = function() return M.worms end },
@@ -63,7 +68,14 @@ local function mock(opts)
     mines = { spawn = function(spec) M.mines[#M.mines + 1] = spec end },
     weapons = { launch = function(spec) M.launches[#M.launches + 1] = spec; return 1 end },
     sound = { play = function(target, s) M.sounds[#M.sounds + 1] = { target, s } end },
-    draw = { quad = function(q) M.quads[#M.quads + 1] = q end },
+    -- As the engine, a quad is read when it is drawn: a pack may reuse its table.
+    draw = { quad = function(q)
+      local copy = {}
+      for k, v in pairs(q) do copy[k] = v end
+      copy.points = {}
+      for i, p in ipairs(q.points) do copy.points[i] = { p[1], p[2] } end
+      M.quads[#M.quads + 1] = copy
+    end },
     on = {
       worm_message = function(f) M.tick = f end,
       oil_explode = function(f) M.explode = f end,
@@ -261,6 +273,18 @@ do
     and body.depth == 16 * 0x10000 and (body.points[2][1] - body.points[1][1]) == 90 * 1.2, body and body.sprite)
   check("its extra in front, at PX's opacity", extra and extra.sprite == "sprites/oil_drums/explosive_fallout.png"
     and extra.depth == 14 * 0x10000 and (extra.color >> 24) == 160)
+  M.view = { cx = 3000, cy = 300, w = 1920, h = 1080, zoom = 1 }
+  M.quads = {}
+  M.draw()
+  check("a drum off the screen is not drawn", #M.quads == 0, #M.quads)
+  M.view = { cx = 1600, cy = 300, w = 1920, h = 1080, zoom = 2 }
+  M.quads = {}
+  M.draw()
+  check("zoomed in, the screen shows less", #M.quads == 0, #M.quads)
+  M.view.zoom = 1
+  M.quads = {}
+  M.draw()
+  check("zoomed out to 1, it shows again", #M.quads == 2, #M.quads)
 end
 
 print("oil drums: every sheet drawn is loaded")

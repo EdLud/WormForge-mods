@@ -17,6 +17,7 @@ end
 
 local function trunc(n) return n < 0 and math.ceil(n) or math.floor(n) end
 
+local on_missile = require("lib/on_missile")
 local trail = require("lib/px_trail")
 
 local function orientation(vx, vy)
@@ -55,13 +56,13 @@ function M.install(ctx)
   end
 
   local speed = {}
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.ninja_star" then return end
     speed[m.id] = { m.vx, m.vy }
     if m.phase == "pre" and not trail.has(m.id) then
       trail.add(m.id, current_worm(), TRAIL)
     end
-  end)
+  end, { weapons = { "px.ninja_star" } })
 
   local sb = require("lib/px_sprite_builder")
   sb.flight(ctx, {

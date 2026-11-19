@@ -1,5 +1,6 @@
 -- The zones' visuals, from PX's art and particles.
 
+local on_missile = require("lib/on_missile")
 local zone = require("lib/px_zone")
 local M = { ROOT = "sprites/zone_fx/", FADE = 150 }
 M.HEAL, M.DAMAGE, M.AIM_DAMAGE, M.GLOW = M.ROOT .. "mcrate0.png",
@@ -100,13 +101,13 @@ end
 
 function M.flight(weapon, healing)
   local count = 0
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= weapon or m.phase ~= "post" then return end
     count = count + 1
     local owner = not driver and flight_owner() or nil
     emit(healing and healing() and M.HEAL or M.DAMAGE, m.x, m.y, false, false, owner)
     if count % 2 == 0 then emit(M.GLOW, m.x, m.y, false, true, owner) end
-  end)
+  end, { weapons = { weapon }, phase = "post" })
 end
 
 function M.clear_aim()

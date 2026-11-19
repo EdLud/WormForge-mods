@@ -63,13 +63,14 @@ return {
         explosion_sound = {enabled = false}, trail = {sprite = 0, speed = 0}},
       on_explode = explode,
     }
-    wa.on.missile_frame(function(m)
+    local function track_trail(m)
       if m.weapon ~= ctx.id then return end
       if m.phase == "pre" and not children[m.id] then parents[m.id] = true end
       if m.phase == "post" then
         trails[m.id] = {x = m.x, y = m.y, frame = wa.world.frame()}
       end
-    end)
+    end
+    if not pcall(wa.on.missile_frame, track_trail, { weapons = { ctx.id } }) then wa.on.missile_frame(track_trail) end
     wa.on.draw(function()
       local now = wa.world.frame()
       for _, id in ipairs(wa.sorted(trails)) do

@@ -1,5 +1,6 @@
 -- Girder Launcher: fires four mini-girders that push what they strike or become terrain.
 
+local on_missile = require("lib/on_missile")
 local holds = require("wf-lib/holds")
 local weapon = {}
 local launch, impact
@@ -63,11 +64,11 @@ function weapon.setup()
     if not ok then error(id) end
     if id and not flight.exploded then flights[id]=flight end
   end
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.girder_launcher" then return end
     local flight=flights[m.id]
     if flight then flight[1],flight[2],flight.uid=m.vx,m.vy,m.uid end
-  end)
+  end, { weapons = { "px.girder_launcher" } })
   local function orientation(vx,vy)
     if vx==0 then return vy>0 and 16 or 0 end
     if vy==0 then return vx>0 and 8 or 24 end

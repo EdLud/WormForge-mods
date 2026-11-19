@@ -1,5 +1,6 @@
 -- Bulldozer: a walking digger that tunnels and shoves what it touches.
 
+local on_missile = require("lib/on_missile")
 local holds = require("wf-lib/holds")
 local weapon = {}
 
@@ -38,7 +39,7 @@ end
 function weapon.setup()
   local current_worm = require("lib/shared").current_worm
   local newest = 0
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.bulldozer" or m.phase ~= "pre" then return end
     if m.id > newest then newest = m.id end
     if m.id == newest then
@@ -58,7 +59,7 @@ function weapon.setup()
         if vx then o:hit(1, vx, vy) end
       end
     end
-  end)
+  end, { weapons = { "px.bulldozer" }, phase = "pre" })
 end
 
 return weapon

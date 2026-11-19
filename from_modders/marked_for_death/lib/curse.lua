@@ -273,7 +273,11 @@ local function current_pass()
   return math.floor(frame() / cooldown())
 end
 
-local function choose_target(key, x, y, skip_id)
+local function choose_target(key, x, y)
+  -- Nobody cursed is the usual case: no list, no turn worm.
+  if next(cursed) == nil then return nil end
+  local turn = turn_worm()
+  local skip_id = turn and turn.id
   local best, best_d2
   for _, id in ipairs(wa.sorted(cursed)) do
     local c = cursed[id]
@@ -294,7 +298,7 @@ local function choose_target(key, x, y, skip_id)
   return best
 end
 
-local function target_for(key, x, y, skip_id, cap)
+local function target_for(key, x, y, cap)
   local h = homing[key]
   if not h then
     h = { iters = 0 }
@@ -305,7 +309,7 @@ local function target_for(key, x, y, skip_id, cap)
   h.pass = p
   h.target = nil
   if cap and h.iters >= cap then return h, true end
-  local target = choose_target(key, x, y, skip_id)
+  local target = choose_target(key, x, y)
   if target then
     h.target = target
     h.iters = h.iters + 1
@@ -335,9 +339,9 @@ local HOMING = {
   arrow = { speed = 12.5, turn = 0.25, cap = false },
 }
 
-local function chase(key, kind, x, y, vx, vy, skip_id)
+local function chase(key, kind, x, y, vx, vy)
   local spec = HOMING[kind]
-  local h, due = target_for(key, x, y, skip_id, spec.cap)
+  local h, due = target_for(key, x, y, spec.cap)
   if not due or not h.target then return end
   local w = live_worm(h.target)
   if not w then return end
@@ -540,22 +544,21 @@ function curse.install()
     stop_magnet(v.id)
   end)
 
-  wa.on.missile_frame(function(m)
+  local function home_missile(m)
     if m.phase ~= "post" or frame() < 50 then return end
     if m.y > wa.world.water() then return end
-    local w = turn_worm()
-    local vx, vy = chase("m:" .. m.id, "missile", m.x, m.y, m.vx, m.vy, w and w.id)
+    local vx, vy = chase("m:" .. m.id, "missile", m.x, m.y, m.vx, m.vy)
     if vx then
       m.vx, m.vy = vx, vy
     end
-  end)
+  end
+  if not pcall(wa.on.missile_frame, home_missile, { phase = "post" }) then wa.on.missile_frame(home_missile) end
 
   wa.on.body_move(function(b)
     local kind = b.kind
     if not HOMING[kind] or frame() < 50 then return end
     if b.y > wa.world.water() then return end
-    local w = turn_worm()
-    local vx, vy = chase("b:" .. b.uid, kind, b.x, b.y, b.vx, b.vy, w and w.id)
+    local vx, vy = chase("b:" .. b.uid, kind, b.x, b.y, b.vx, b.vy)
     if vx then
       b:warp({ x = b.x, y = b.y, vx = vx, vy = vy })
     end

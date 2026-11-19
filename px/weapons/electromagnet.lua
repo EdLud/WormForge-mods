@@ -1,5 +1,6 @@
 -- Electromagnet: a placed magnet that pulls or pushes mines and missiles for four turns.
 
+local on_missile = require("lib/on_missile")
 local weapon = {}
 
 -- What its field drags can't push it by running into it: stock mines and
@@ -269,7 +270,7 @@ function weapon.setup()
     for _, m in ipairs(magnets) do m.ended_at = m.age end
   end)
 
-  wa.on.missile_frame(function(missile)
+  on_missile(function(missile)
     if missile.phase ~= "pre" or not DAMPED[missile.weapon] then return end
     for _, m in ipairs(magnets) do
       if m.field:contains(missile.x, missile.y) then
@@ -277,7 +278,7 @@ function weapon.setup()
         return
       end
     end
-  end)
+  end, { weapons = wa.sorted(DAMPED), phase = "pre" })
 
   wa.on.worm_message(function(worm)
     local id = worm.id

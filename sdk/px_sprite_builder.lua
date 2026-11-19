@@ -75,7 +75,7 @@ function M.flight(ctx, opts)
     end
   end
 
-  wa.on.missile_frame(function(m)
+  local function draw_as_px(m)
     if m.weapon ~= opts.weapon then return end
     if m.phase == "pre" then
       m.sprite = 0 -- hide WA's sprite; ours is drawn below
@@ -121,7 +121,8 @@ function M.flight(ctx, opts)
     b.facing = mirror and (m.vx < 0 and -1 or 1) or 1
     b:frame(frame)
     b:gfx({ angle = math.deg(rot) % 360, depth = z, scale = scale })
-  end)
+  end
+  if not pcall(wa.on.missile_frame, draw_as_px, { weapons = { opts.weapon } }) then wa.on.missile_frame(draw_as_px) end
 end
 
 M.PX_POSTURE = shared.PX_POSTURE

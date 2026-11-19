@@ -1,5 +1,6 @@
 -- Javelin: pierces the first worm or object it hits, or sticks in the land as terrain.
 
+local on_missile = require("lib/on_missile")
 local weapon = {}
 
 weapon.record = {
@@ -61,7 +62,7 @@ function weapon.setup()
       if not ok then error(id) end
       if id and not flight.exploded then speed[id] = flight end
     end
-    wa.on.missile_frame(function(m)
+    on_missile(function(m)
       if m.weapon == "px.javelin" then
         local flight = speed[m.id]
         if not flight then
@@ -71,7 +72,7 @@ function weapon.setup()
         end
         flight[1], flight[2], flight.uid = m.vx, m.vy, m.uid
       end
-    end)
+    end, { weapons = { "px.javelin" } })
 
     local JAVELIN_BURIED = { soften = 3, blend = "mix" }
 

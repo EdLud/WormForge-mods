@@ -1,5 +1,6 @@
 -- Swim Suit: worn, a worm swims instead of drowning, steered with the arrow keys.
 
+local on_missile = require("lib/on_missile")
 local weapon = {}
 
 weapon.record = {}
@@ -415,11 +416,11 @@ function weapon.setup()
     turn_over = true
   end)
 
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if swim_in_game and m.phase == "pre" and m.collision_mask == SWIM_WATER then
       m.collision_mask = SWIM_MISSILE_MASK
     end
-  end)
+  end, { phase = "pre" })
 
   if wa.on.contact then
     wa.on.contact(function(worm, other)

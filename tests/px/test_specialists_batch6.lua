@@ -14,7 +14,8 @@ local worms,mines,crates,oil={}, {}, {}, {}
 wa={
   msg={FRAME_FINISH=2},depth={OBJECTS=0xE0000},
   world={frame=function()return frame end,keys=function()return {digit=turn_worm and turn_worm.digit}end,
-    collides=function()return collides end,cavern=function()return false end},
+    collides=function()return collides end,cavern=function()return false end,
+    view=function()return {cx=0,cy=0,w=100000,h=100000,zoom=1} end},
   land={cut=function(c)log.cuts[#log.cuts+1]=c end},
   worms={all=function()return worms end},
   mines={all=function()return mines end,spawn=function(s)

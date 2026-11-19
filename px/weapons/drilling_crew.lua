@@ -1,5 +1,6 @@
 -- Drilling Crew: a roaming drill followed by a bouncing worker.
 
+local on_missile = require("lib/on_missile")
 local holds = require("wf-lib/holds")
 local weapon = {}
 weapon.definition = {
@@ -135,7 +136,7 @@ weapon.definition = {
 function weapon.setup()
   local parent_sprite
   local seen = {}
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.drilling_crew" then seen[m.id]=nil; return end
     if not parent_sprite then
       parent_sprite=wa.weapons.data("px.drilling_crew").missile.sprite
@@ -155,7 +156,7 @@ function weapon.setup()
         end
       end
     end
-  end)
+  end, { weapons = { "px.drilling_crew" } })
   local particles, emit, previous = {}, {}, nil
   local LIFE, LIMIT = 20, 256
   wa.on.draw(function()

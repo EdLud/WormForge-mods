@@ -1,5 +1,6 @@
 -- TNT: the Soldier's dynamite: a smaller blast that bursts into three more around it.
 
+local on_missile = require("lib/on_missile")
 local weapon = {}
 local ART = "sprites/tnt/"
 
@@ -116,12 +117,12 @@ function weapon.setup()
         angle = random() * 2.31, alpha = 255, end_alpha = 50, size = 1, end_size = 0.3,
         pixels = 80, frames = 32, anim = 0.05 }
   end
-  wa.on.missile_frame(function(m)
+  on_missile(function(m)
     if m.weapon ~= "px.tnt" or m.phase ~= "post" then return end
     count = count + 1
     emit(m.x, m.y - 20, false)
     if count % 2 == 0 then emit(m.x, m.y - 20, true) end
-  end)
+  end, { weapons = { "px.tnt" }, phase = "post" })
   local quad = { frame = 0, blend = "add", depth = wa.depth.EFFECTS,
     points = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } } }
   wa.on.draw(function()
