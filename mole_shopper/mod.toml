@@ -28,7 +28,7 @@ frames = 1
 id = "px.lantern"
 type = "weapon"
 name = "Lantern"
-description = "Throw a permanent coalition light. It disappears when drowned."
+description = "Throw a permanent coalition light that disappears when drowned."
 entry = "weapons/lantern.lua"
 icon = "sprites/lantern/icon.png"
 default_position = { row = "F1", column = 1 }
@@ -53,7 +53,7 @@ description = "Terrain blocks the light and placement inside it; off places and 
 id = "px.power_shotgun"
 type = "weapon"
 name = "Power Shotgun"
-description = "Five simultaneous shotgun shots with the Mole Shopper damage, spread and push."
+description = "Five simultaneous shotgun shots with more damage, spread and push."
 entry = "weapons/power_shotgun.lua"
 icon = "sprites/power_shotgun/icon.png"
 default_position = { row = "F5", column = 1 }

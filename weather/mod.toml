@@ -1,7 +1,7 @@
 # Weather: rain, snow, or a cycle that turns between them.
 id = "core.weather"
 name = "Weather"
-version = "0.2.0"
+version = "0.2.1"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -63,7 +63,7 @@ type = "choice"
 choices = ["looks", "strike"]
 default = "looks"
 label = "Lightning"
-description = "looks: only light and thunder. strike: it heals worms, revives graves, starts mines and blows up crates and oil drums, as the Lightning Strike does."
+description = "looks: only light and thunder. strike: it heals worms, revives graves, arms mines and blows up crates and oil drums, as the Lightning Strike does."
 
 [[components.options]]
 key = "settle"

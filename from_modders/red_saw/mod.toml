@@ -3,7 +3,7 @@
 # and report_saw.md for the source-verified behaviour.
 id = "px.saw"
 name = "Saw"
-version = "0.6.10"
+version = "0.6.11"
 author = "reddaz"
 api_version = 4
 format_version = 2
@@ -26,7 +26,7 @@ default = 50
 min = 10
 max = 100
 label = "Saw size (%)"
-description = "Art and collision scale. PX's fired saw is 50%; the editor default is 100%."
+description = "Art and collision scale; 50% is the size of the Project X saw."
 
 [[components]]
 id = "px.saw_place"
@@ -44,7 +44,7 @@ default = 50
 min = 10
 max = 100
 label = "Saw size (%)"
-description = "Art and collision scale. PX's fired saw is 50%; the editor default is 100%."
+description = "Art and collision scale; 50% is the size of the Project X saw."
 
 [[components]]
 id = "px.saw_random"

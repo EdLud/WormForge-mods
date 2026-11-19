@@ -4,7 +4,7 @@
 # px.ports' ktk.control); the automatic placement is this port's own.
 id = "px.auto_ktk"
 name = "[ALPHA] Auto KTK"
-version = "0.0.03"
+version = "0.0.04"
 author = "reddaz"
 api_version = 4
 format_version = 2
@@ -28,7 +28,7 @@ type = "choice"
 choices = ["left", "right", "random"]
 default = "left"
 label = "Defenders' side"
-description = "The king is placed around the middle of the map's left or right fifth. Random rolls it once per round."
+description = "The king is placed around the middle of the left or right fifth of the map. Random picks it once per round."
 
 [[components.options]]
 key = "king_size"
@@ -98,7 +98,7 @@ min = 1
 max = 100
 default = 70
 label = "King destruction (%)"
-description = "Share of the king's terrain that must be gone for the attackers to win."
+description = "Share of the king terrain that must be gone for the attackers to win."
 
 [[components.options]]
 key = "show_timer"
