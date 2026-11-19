@@ -12,7 +12,7 @@ fx.PRESETS = {
   electric = {
     spark = { cell = 60, frames = 10, size = 0.4, rate = 0.02, pause = 0.1,
       r = 255, g = 255, b = 255 },
-    glow = { cell = 128, size = 0.18, passes = 3, r = 20, g = 40, b = 70 },
+    glow = { cell = 128, size = 0.18, passes = 3, r = 130, g = 180, b = 255 },
     reach = { count = 2, first = { 6, 22 }, stagger = 12, cooldown = { 13, 51 },
       distance = 35, speed = { 0.08, 0.18 }, bulge = { -130, 130 },
       curve = "arc", terrain = true, noise = 4.0, segments = 16,
@@ -50,7 +50,7 @@ local SPARK_KEYS = { "sprite", "cell", "frames", "size", "rate", "pause",
 local GLOW_KEYS = { "sprite", "cell", "size", "passes", "r", "g", "b",
   "depth", "life", "rainbow" }
 local REACH_KEYS = { "from", "sky", "sky_side", "down", "down_side", "hold", "fade",
-  "count", "first", "stagger", "cooldown", "distance",
+  "direction", "spread", "count", "first", "stagger", "cooldown", "distance",
   "speed", "bulge", "curve", "terrain", "noise", "segments", "core_w",
   "glow_w", "core_dome", "glow_dome", "r", "g", "b", "depth", "rainbow" }
 local TRAIL_KEYS = { "every", "max", "vanish", "core_w", "glow_w", "noise",
@@ -154,6 +154,57 @@ local function colour_of(o, age)
   return o.r or 255, o.g or 255, o.b or 255
 end
 
+-- Which draw callback will paint a new effect.
+--
+-- `wa._mod` is the component, not the bundle: the engine scopes `[fog]`, the
+-- relative sprite paths and the binds to it, and it resolves a sheet through
+-- any selected component of the same bundle (spawn::resolve_key falls back to
+-- "mates"). The callback that paints, though, is registered by whichever
+-- component called `fx.install`, and it paints only its own. So a bundle that
+-- installs from its first weapon and makes effects from its second lost every
+-- one of them without a word: PX's death mark, whose second weapon starts the
+-- thunder, drew no bolt at all, and every saw the third component placed had no
+-- aura.
+--
+-- An effect made by a component that never installed is therefore assigned to
+-- the installer sharing the longest id prefix with it, which is the same
+-- bundle's component for every catalogue naming scheme (px.saw_place against
+-- px.saw_grenade, px.marked_for_death against px.death_mark). Install order
+-- breaks a tie, so every peer picks the same one. When nothing is shared, no
+-- callback can paint it, and the log says so instead of losing it silently.
+local function claimant()
+  local mod = wa._mod or ""
+  if fx._draws and fx._draws[mod] then return mod end
+  local owners = fx._mods
+  if not owners or #owners == 0 then return mod end
+  local best, best_len = nil, -1
+  for i = 1, #owners do
+    local owner = owners[i]
+    local n, limit = 0, math.min(#owner, #mod)
+    while n < limit and owner:sub(n + 1, n + 1) == mod:sub(n + 1, n + 1) do n = n + 1 end
+    if n > best_len then best, best_len = owner, n end
+  end
+  fx._paired = fx._paired or {}
+  if best and best_len > 0 and best ~= mod then
+    if fx._paired[mod] ~= best then
+      fx._paired[mod] = best
+      if wa.log then
+        wa.log("px_effects: " .. mod .. " made an effect without fx.install{}; it is drawn as "
+          .. best .. " (call fx.install{} from this component to be exact)")
+      end
+    end
+    return best
+  end
+  if fx._paired[mod] ~= false then
+    fx._paired[mod] = false
+    if wa.log then
+      wa.log("px_effects: " .. mod .. " made an effect without fx.install{}, and no installer"
+        .. " shares its id, so nothing draws it")
+    end
+  end
+  return mod
+end
+
 local function setup_arc(st)
   local dx, dy = st.to_x - st.from_x, st.to_y - st.from_y
   local dist = math.sqrt(dx * dx + dy * dy)
@@ -209,7 +260,7 @@ end
 local function make_arc(o)
   local f, t = o.from or {}, o.to or {}
   local st = {
-    mod = wa._mod or "",
+    mod = claimant(),
     from_x = o.from_x or f[1] or o.x0 or 0,
     from_y = o.from_y or f[2] or o.y0 or 0,
     to_x = o.to_x or t[1] or o.x1 or 0,
@@ -585,7 +636,7 @@ end
 
 local function make_smoke(o)
   local sm = {
-    mod = wa._mod or "",
+    mod = claimant(),
     x = o.x or 0, y = o.y or 0, parts = {}, done = false,
     sprite = o.sprite or settings.smoke, depth = o.depth,
     rng = new_rng(o),
@@ -647,6 +698,19 @@ local function start_ray(e, i)
   local from_x, from_y = e.x, e.y
   local to_x = e.x + rand_int(e, -r.distance, r.distance)
   local to_y = e.y + rand_int(e, -r.distance, r.distance)
+  local directed = r.direction ~= nil
+    and (r.from ~= "below" or r.direction ~= 90 or (r.spread or 0) ~= 0)
+  if directed then
+    local half = math.max(0, r.spread or 0) * 0.5
+    local degrees = r.direction + rand_float(e, -half, half)
+    local angle = degrees * math.pi / 180
+    local distance = r.distance
+    if r.from == "below" and r.down then
+      distance = rand_int(e, r.down[1], r.down[2])
+    end
+    to_x = e.x + wa.math.cos(angle) * distance
+    to_y = e.y + wa.math.sin(angle) * distance
+  end
   if r.from == "sky" then
     local side = r.sky_side or 0
     local height = rand_int(e, r.sky[1], r.sky[2])
@@ -663,7 +727,7 @@ local function start_ray(e, i)
     end
     from_x, from_y = e.x + sx, e.y - height
     to_x, to_y = e.x, e.y
-  elseif r.from == "below" then
+  elseif r.from == "below" and not directed then
     local side = r.down_side or 0
     local depth = rand_int(e, r.down[1], r.down[2])
     local sx = side > 0 and rand_int(e, -side, side) or 0
@@ -814,8 +878,10 @@ function fx.install(o)
   end
   local mod = wa._mod or ""
   fx._draws = fx._draws or {}
+  fx._mods = fx._mods or {}
   if fx._draws[mod] then return end
   fx._draws[mod] = true
+  fx._mods[#fx._mods + 1] = mod
   wa.on.draw(function() draw(mod) end)
 end
 
@@ -824,21 +890,44 @@ function fx.emitter(o)
   o = o or {}
   local preset = fx.PRESETS[o.preset or "electric"] or fx.PRESETS.electric
   local spark, glow
-  if preset.spark and o.spark ~= false then
-    spark = copy({}, preset.spark, SPARK_KEYS)
+  if o.spark ~= false and (preset.spark or o.spark == true or type(o.spark) == "table") then
+    local base_spark = type(preset.spark) == "table" and preset.spark or fx.PRESETS.electric.spark
+    spark = copy({}, base_spark, SPARK_KEYS)
     copy(spark, o.spark, SPARK_KEYS)
+    local has_spark_rgb = type(o.spark) == "table" and (o.spark.r ~= nil or o.spark.g ~= nil or o.spark.b ~= nil)
+    if type(o.color) == "table" and spark.rainbow == nil and not has_spark_rgb then
+      spark.r, spark.g, spark.b = o.color.r or spark.r, o.color.g or spark.g, o.color.b or spark.b
+    end
   end
-  if preset.glow and o.glow ~= false then
-    glow = copy({}, preset.glow, GLOW_KEYS)
+  if o.glow ~= false and (preset.glow or o.glow == true or type(o.glow) == "table") then
+    local base_glow = type(preset.glow) == "table" and preset.glow or fx.PRESETS.electric.glow
+    glow = copy({}, base_glow, GLOW_KEYS)
     copy(glow, o.glow, GLOW_KEYS)
+    local has_glow_rgb = type(o.glow) == "table" and (o.glow.r ~= nil or o.glow.g ~= nil or o.glow.b ~= nil)
+    if type(o.color) == "table" and glow.rainbow == nil and not has_glow_rgb then
+      glow.r, glow.g, glow.b = o.color.r or glow.r, o.color.g or glow.g, o.color.b or glow.b
+    end
   end
   local reach = copy({}, preset.reach, REACH_KEYS)
   copy(reach, o.reach, REACH_KEYS)
+  -- A boolean false is the card's explicit disable signal, not an empty table.
+  -- Without this, copying the preset back above silently re-enabled its bolts.
+  if o.reach == false then reach.count = 0 end
   local tro = copy({}, preset.trail, TRAIL_KEYS)
   copy(tro, o.trail, TRAIL_KEYS)
+  if type(o.color) == "table" then
+    local has_reach_rgb = type(o.reach) == "table" and (o.reach.r ~= nil or o.reach.g ~= nil or o.reach.b ~= nil)
+    local has_trail_rgb = type(o.trail) == "table" and (o.trail.r ~= nil or o.trail.g ~= nil or o.trail.b ~= nil)
+    if reach.rainbow == nil and not has_reach_rgb then
+      reach.r, reach.g, reach.b = o.color.r or reach.r, o.color.g or reach.g, o.color.b or reach.b
+    end
+    if tro.rainbow == nil and not has_trail_rgb then
+      tro.r, tro.g, tro.b = o.color.r or tro.r, o.color.g or tro.g, o.color.b or tro.b
+    end
+  end
   local owner = usable(o.owner) and o.owner or current_worm()
   local e = {
-    mod = wa._mod or "",
+    mod = claimant(),
     owner = owner, x = o.x or 0, y = o.y or 0,
     vx = o.vx or 0, vy = o.vy or 0, follow = o.follow,
     random = o.random or "lcg", seed = o.seed or new_seed(),
@@ -939,7 +1028,7 @@ function fx.ring(o)
   if not installed then wa.log("px_effects: fx.install(ctx) first") return nil end
   o = o or {}
   local st = copy({}, o, RING_KEYS)
-  st.mod = wa._mod or ""
+  st.mod = claimant()
   st.radius = o.radius or 0
   if st.radius <= 0 then return nil end
   st.x, st.y = o.x or 0, o.y or 0
@@ -1015,7 +1104,7 @@ function fx.burst(o)
   b.rng = new_rng(o)
   local st = burst_state(b)
   if not st then return nil end
-  st.mod = wa._mod or ""
+  st.mod = claimant()
   if not ensure_driver(o.owner) then return nil end
   bursts[#bursts + 1] = st
   if o.smoke ~= false and b.smoke ~= false then
@@ -1039,7 +1128,7 @@ function fx.spark(o)
   local s = copy({}, fx.PRESETS.electric.spark, SPARK_KEYS)
   copy(s, o, SPARK_KEYS)
   s.x, s.y = o.x or 0, o.y or 0
-  s.mod = wa._mod or ""
+  s.mod = claimant()
   s.sprite = s.sprite or settings.spark
   s.phase, s.age = 0, 0
   if not ensure_driver(o.owner) then return nil end
@@ -1054,7 +1143,7 @@ function fx.glow(o)
   local g = copy({}, fx.PRESETS.electric.glow, GLOW_KEYS)
   copy(g, o, GLOW_KEYS)
   g.x, g.y = o.x or 0, o.y or 0
-  g.mod = wa._mod or ""
+  g.mod = claimant()
   g.sprite = g.sprite or settings.blob
   g.age, g.done = 0, false
   if not ensure_driver(o.owner) then return nil end

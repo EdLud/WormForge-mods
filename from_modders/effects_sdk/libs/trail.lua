@@ -1,5 +1,7 @@
 -- Project X's effect-manager trail: a short ribbon sampled in game frames and
--- drawn with `wa.draw.ribbon`.
+-- drawn with `wa.draw.ribbon`. Consume with `require("wf-lib/effects/trail")`
+-- and list `trail.BEAM`/`trail.GLOW` in the component's sprites.
+-- See README.md for the sampling and width rules.
 
 local trail = {}
 
@@ -9,6 +11,7 @@ trail.CORE_W, trail.GLOW_W = 8.0, 13.0
 -- Lateral jitter in pixels and PX's hue cycle for the additive pass.
 trail.NOISE, trail.RAINBOW = 0.0, false
 trail.R, trail.G, trail.B = 255, 255, 255
+-- nil -> `wa.depth.OBJECTS`, resolved inside a game frame.
 trail.DEPTH = nil
 trail.BEAM = "wf-lib/effects/sprites/px_effects/beam.png"
 trail.GLOW = "wf-lib/effects/sprites/px_effects/beam_glow.png"
@@ -18,6 +21,8 @@ local live = {} -- round id -> trail while it is in the air
 local driver, tick = nil, 0
 -- Frames a live trail may go unsampled; 3 tolerates one skipped actor frame.
 local STALE = 3
+-- A fixed table of unit noise keeps the wobble identical on every peer: no
+-- random numbers are drawn while drawing.
 local NOISE = {}
 for i = 1, 257 do
   local h = (i * 1103515245 + 12345) % 2147483648
@@ -56,6 +61,8 @@ local function current_worm()
   return first
 end
 
+-- Event owners can be a zero handle: `ev.worm` wraps 0, which is still a
+-- truthy userdata and `or` will not replace it. `wa.actors.spawn` refuses 0.
 local function usable(owner)
   return owner ~= nil and (owner.id or 0) ~= 0
 end

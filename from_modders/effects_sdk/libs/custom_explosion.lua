@@ -1,10 +1,20 @@
--- PX's do_custom_explosion, without the electric taze: falloff damage, push, a crater and one px_effects burst. PX originals:
+-- PX's do_custom_explosion, without the electric taze: falloff damage, push,
+-- a crater and one px_effects burst. PX originals:
+-- wklua_and_px/utils/custom_explosion.c:17-295. The caller silences WA's own
+-- blast (explosion.power = 0) and calls this from on_explode.
+--
+-- PX walks Env->Objs and sends M_GUNEXP to every object in range (:46-125).
+-- wa.world.blast is that walk: worms, mines, crates, oil drums, missiles,
+-- arrows, and Lua actors whose `body.hit_by` takes blasts. Objects receive an
+-- ordinary hit, so a mine can be set off by the blast, as in PX.
+-- `o.kind` names the hit the engine delivers ("taze", a bundle's own kind);
+-- left out, it is a plain blast.
 
 local M = {}
 
 local EFFECT_KEYS = { "radius", "r", "g", "b", "noise", "duration", "fade",
-  "grow", "live", "segments", "thickness", "ellipse", "rebuffer", "smoke",
-  "depth", "preset", "owner", "seed", "random" }
+  "grow", "live", "segments", "thickness", "core", "ellipse", "rebuffer",
+  "smoke", "depth", "preset", "owner", "seed", "random", "rainbow" }
 
 local function numbers(o)
   local damage = math.floor(o.damage or o.power or 0)
@@ -39,6 +49,10 @@ function M.explode(o)
   play_sound(o)
 
   if damage > 0 and radius > 0 then
+    -- The engine's blast leaves out a worm already at 0 HP that WA has not
+    -- started killing; PX's object loop does not, and such a worm still
+    -- launches. Remember those before the blast, or a worm the blast kills
+    -- would be hit a second time here.
     local zero = {}
     for _, w in ipairs(wa.worms.all()) do
       if w.hp <= 0 and not dead(w) then zero[w.id] = true end

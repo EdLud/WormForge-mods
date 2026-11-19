@@ -6,7 +6,16 @@
 threw, taking the caller's `on_fire` down) and adds `ring.track`. 0.4.2 makes
 each installing mod draw only the effects it created, so a shared library loaded
 once no longer draws another mod's spark under a claim that has no spark sheet,
-and a `[sprites."sprites/px_effects/spark"]` manifest typo is fixed.
+and a `[sprites."sprites/px_effects/spark"]` manifest typo is fixed. 0.4.3 fixes
+what 0.4.2 cost a bundle with more than one weapon: `wa._mod` is the component,
+not the bundle, so an effect made by a second weapon of the same bundle was
+painted by no callback at all (the saw's aura on a placed saw, the death mark's
+thunder). An effect whose component never installed `fx` is now assigned to the
+installer whose id shares the longest prefix with it, once, in install order,
+and the log names it. 0.4.4 fixes `custom_explosion.explode` forwarding
+`core` and `rainbow` to `fx.burst`, allows explicit `spark = true`/`glow = true`
+when `preset = "thunder"`, and preserves explicit `trail` / `reach` RGB when
+top-level `color` is set.
 
 Shared effect helpers for the Project X ports. This is a library bundle: it
 declares no components, so it never takes a panel slot. A weapon bundle pulls
@@ -31,6 +40,15 @@ wa.weapons.replace({
 
 The effect manager's spark, glow and smoke sheets are SDK-owned too. A consumer
 can override `spark`, `blob` or `smoke` in `fx.install` with its own paths.
+
+### Who draws what
+
+`fx.install` registers one draw callback per caller and paints the effects that
+caller created, which is why a bundle must call it from every component that
+makes effects (`wa._mod` is the component's id). A bundle that installs once
+from its first weapon is still fine: an effect made by another component of the
+same bundle is assigned to that installer and logged once. Without that, an
+effect with no callback is not an error, it is simply invisible.
 
 `trail.BEAM` and `trail.GLOW` are qualified `wf-lib/effects/...` asset paths.
 Put both in the component's `sprites` table; the engine resolves them from this

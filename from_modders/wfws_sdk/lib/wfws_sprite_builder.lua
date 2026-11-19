@@ -13,10 +13,10 @@
 --     presses Space, then flies. WA draws the walk from `m.sprite`, which is
 --     normal-flight art only; the generator zeroes `sheep.flight_1/2` (the
 --     flown art) and leaves the walk pose alone when WA can draw it, passing its
---     id as `walk` so the classifier still knows the primary. When that pose
---     cannot draw (an imported Project X sprite number, or none), the record
---     `sprite` is zeroed too and the builder draws the walk itself: upright,
---     with the owning role's frames.
+--     id as `walk` so the builder knows WA is drawing the ground pose. When that
+--     pose cannot draw (an imported Project X sprite number, or none), the
+--     record `sprite` is zeroed too and the builder draws the walk itself:
+--     upright, with the owning role's frames.
 --
 --   DIG is not a state: a digging round has no art of its own. The record's
 --     dig sprite indexes are zeroed (a mole or the wsv* frames would draw
@@ -32,6 +32,10 @@
 --     angle = 90,                               -- degrees added to the draw
 --     bits  = { sheet = "...", ... } | "inherit" | nil/false (native)
 --     is_bit = function(m) ... end,             -- optional classifier override
+--     bit_window = 8,                           -- frames after the round for
+--                                               --   its burst (default 8)
+--     bit_radius = 64,                          -- px from the round's last
+--                                               --   position (default 64)
 --     roles  = { { name = "x", match = function(m) ... end, sheet = "..." } },
 --     dig    = true | { probe = 6, spread = 3, hold = 3, need = 2 },
 --     roam   = true | { walk = 153, fly = 699 }, -- roaming animal (see ROAM)
@@ -63,14 +67,19 @@
 -- arm/time in ms) or probe for it (dig) instead of matching ids. `sig` stays
 -- only for bundles that still pass one.
 --
--- Default bit test: `m.sprite ~= 0` at first sight. `m.sprite` is the sprite
--- WA blits for the missile (+0x2EC): for a fired round that is the record's
--- `missile.sprite`, which the generator zeroes while the builder owns the art,
--- and for a cluster bit it is the record's `clusters.bit.sprite` (WA's
--- constructor picks the cluster half of the record when the pellet index is
--- set), which the generator keeps nonzero. So a nonzero value at first sight is
--- a bit. The exception is a roaming animal whose walk pose WA draws natively:
--- the record `sprite` then holds that pose's id, passed back as `walk`.
+-- Default bit test: when a missile appears and where, not `m.sprite`. Cluster
+-- bits are built by the round's own burst, so the first missile of the weapon is
+-- the round, and a missile that first appears in the frames right after the
+-- round was last seen (`bit_window`, default 8 frames) and at the round's own
+-- position (`bit_radius`, default 64 px) is one of its bits. This is deliberate:
+-- `m.sprite` is WA's render slot and not the pellet index (a round that hides
+-- its own art can carry the cluster sprite there, which made a cluster
+-- grenade's main missile classify as a frag), and the pellet flag
+-- (MissileEntity+0x150) is not exposed to Lua. A missile fired while another
+-- round is still in the air is another round, not a frag.
+--
+-- A roaming animal's walk pose needs no exception any more either: the first
+-- missile is the round whatever its sprite holds.
 --
 -- Pure data at load: `wa` is touched only inside M.flight and its callbacks.
 --
@@ -453,7 +462,98 @@ function M.flight(ctx, opts)
 
   local owner = opts.owner
 
+  -- Bit identity is decided by when a missile first appears, not by its
+  -- sprite. `m.sprite` is WA's render slot and it is not the pellet index: a
+  -- round whose record hides its own art can carry the cluster sprite there
+  -- (a cluster grenade's main missile came out with `clustlet`), and the bit
+  -- index lives in MissileEntity+0x150, which Lua does not expose. What is
+  -- reliable is the burst: a round exists first, and its bits are built by the
+  -- round's own explosion, so they first appear in the frames right after the
+  -- round stopped being seen. A missile fired while another round is still in
+  -- the air (a fire sequence) is another round, not a frag.
+  --
+  -- `opts.bit_window` is how many 50 Hz frames after the last sighting still
+  -- count as the burst. Cluster bits are built in the round's detonation, so
+  -- one or two frames later; eight leaves room for the message order and for a
+  -- burst the engine builds on the same frame the round was last seen, without
+  -- reaching into the next turn (a turn change takes far longer).
+  local BIT_WINDOW = tonumber(opts.bit_window) or 8
+  local BURST_RADIUS = tonumber(opts.bit_radius) or 64
+  local main_last = {}   -- [id] = the frame the round was last seen
+  local main_x = {}      -- [id] = where it was last seen
+  local main_y = {}
+  local main_ids = {}    -- round ids in first-sight order (bounded)
+  local main_count = 0
+  local last_main_frame = 0
+
+  local function frame_now()
+    return (wa.world.frame and wa.world.frame()) or 0
+  end
+
+  local function note_main(id, now, x, y)
+    if main_last[id] == nil then
+      if main_count >= 64 then
+        -- Bound the round history (a match can fire a weapon forever). The
+        -- burst window only ever looks at the newest few, so forgetting the
+        -- oldest cannot change a classification.
+        for i = 1, main_count do
+          local old = main_ids[i]
+          main_last[old], main_x[old], main_y[old] = nil, nil, nil
+        end
+        main_ids, main_count = {}, 0
+      end
+      main_count = main_count + 1
+      main_ids[main_count] = id
+    end
+    main_last[id] = now
+    if x and y then main_x[id], main_y[id] = x, y end
+    if now > last_main_frame then last_main_frame = now end
+  end
+
+  -- Is this missile at a round seen on this same frame? The engine can build a
+  -- burst and list its bits before it drops the round, so at that moment the
+  -- round is both "seen this frame" and about to disappear. That one case is
+  -- left unclassified for a frame (see `deferred`): the next frame says whether
+  -- the round survived, which is the difference between a frag and a second
+  -- shot.
+  local function live_main_near(m, now)
+    if last_main_frame ~= now then return false end
+    local r2 = BURST_RADIUS * BURST_RADIUS
+    for i = 1, main_count do
+      local id = main_ids[i]
+      local px, py = main_x[id], main_y[id]
+      if main_last[id] == now and px then
+        local dx, dy = (m.x or 0) - px, (m.y or 0) - py
+        if dx * dx + dy * dy <= r2 then return true end
+      end
+    end
+    return false
+  end
+
+  -- Is this missile at a round that is gone and was seen recently? A cluster
+  -- burst builds its bits at the round's own position, in the frames right
+  -- after it stopped being seen. A second round of a fire sequence leaves the
+  -- worm's muzzle instead, so distance is what separates the two.
+  local function dead_main_near(m, now)
+    if last_main_frame == 0 or now - last_main_frame > BIT_WINDOW then
+      return false
+    end
+    local r2 = BURST_RADIUS * BURST_RADIUS
+    for i = 1, main_count do
+      local id = main_ids[i]
+      local last = main_last[id]
+      local px, py = main_x[id], main_y[id]
+      if px and last and last < now and now - last <= BIT_WINDOW then
+        local dx, dy = (m.x or 0) - px, (m.y or 0) - py
+        if dx * dx + dy * dy <= r2 then return true end
+      end
+    end
+    return false
+  end
+
   local kind = {}        -- [id] = { ident = "main"|"bit"|role name, base = cfg }
+  local deferred = {}    -- [id] = true: ambiguous same-frame burst, ask next frame
+  local deferred_at = {} -- [id] = the frame it was deferred on
   local sig = {}         -- [id] = last nonzero m.sprite seen (the state signal)
   local active = {}      -- [id] = cfg in force this frame
   local follow = {}      -- [id] = { actor, cfg, gen, seen }
@@ -519,6 +619,7 @@ function M.flight(ctx, opts)
         kind[id], sig[id], age[id], armed[id] = nil, nil, nil, nil
         flying[id], logged[id], dig_dir[id], dig_hold[id] = nil, nil, nil, nil
         active[id], spin_ang[id], cycl_phase[id], roam_side[id] = nil, nil, nil, nil
+        deferred[id], deferred_at[id] = nil, nil
       end
       -- An id with a follower is `gone`'s to clear; either way it leaves the
       -- queue, so the sweep only ever holds ids that are still in flight.
@@ -539,26 +640,41 @@ function M.flight(ctx, opts)
     end
   end
 
-  -- Identity: first sight, before this module has zeroed m.sprite.
-  local function classify(m)
+  -- Identity: first sight. The order is: an author's own matcher, the engine's
+  -- pellet flag when a build exposes it, then the burst timing above. Returns
+  -- nil for the one ambiguous frame (a missile at a round seen this frame),
+  -- and the caller asks again next frame with `forced`, when the round has
+  -- either survived or gone.
+  local function classify(m, forced)
     for i = 1, #extra do
-      if extra[i].match(m) then return { ident = extra[i].name, base = extra[i].cfg } end
+      if extra[i].match and extra[i].match(m) then
+        return { ident = extra[i].name, base = extra[i].cfg }
+      end
     end
+    local now = frame_now()
     local is_bit
     if opts.is_bit then
       is_bit = opts.is_bit(m) and true or false
     elseif m.bit ~= nil then
-      -- The engine's own answer (MissileEntity+0x150, `shoot_desc.pellet`).
+      -- The engine's own answer (MissileEntity+0x150, `shoot_desc.pellet`),
+      -- when a build exposes it.
       is_bit = m.bit and true or false
+    elseif bit_art then
+      if dead_main_near(m, now) then
+        is_bit = true
+      elseif not forced and live_main_near(m, now) then
+        return nil
+      else
+        is_bit = false
+      end
     else
-      -- A cluster bit carries its own record sprite; the fired round carries
-      -- the record `sprite` unless the builder zeroed it. A roaming animal's
-      -- walk pose is the one nonzero sprite that is NOT a bit. Without a bit
-      -- role there is nothing to tell apart, so everything is the primary --
-      -- otherwise a plain weapon would classify as a bit and draw nothing.
-      is_bit = bit_art and (m.sprite ~= 0) and m.sprite ~= walk_pose
+      -- Without a bit role there is nothing to tell apart.
+      is_bit = false
     end
     if is_bit then return { ident = "bit", base = bit_cfg } end
+    -- Note it now, so another missile first seen in this same frame (a fire
+    -- sequence) is measured from this position and is not a frag by accident.
+    note_main(m.id, now, m.x, m.y)
     return { ident = "main", base = main }
   end
 
@@ -594,6 +710,7 @@ function M.flight(ctx, opts)
       armed[id] = nil
       logged[id] = nil
       age[id] = nil
+      deferred[id], deferred_at[id] = nil, nil
       b:despawn()
     end
   end
@@ -613,14 +730,36 @@ function M.flight(ctx, opts)
 
     local ent = kind[id]
     if ent == nil then
-      ent = classify(m)
+      local now = frame_now()
+      local was_deferred = deferred[id] == true
+      if was_deferred and deferred_at[id] == now then
+        -- Same frame, other phase: the round has not had time to go.
+        return
+      end
+      ent = classify(m, was_deferred)
+      if ent == nil then
+        -- The round was seen this frame and this missile is at it: a burst
+        -- built and listed before the round is dropped looks exactly like a
+        -- second shot for one frame. Ask next frame, when the round has
+        -- either survived (a shot) or gone (one of its bits).
+        if seen_at[id] == nil then
+          seen_ids[#seen_ids + 1] = id
+          seen_at[id] = now
+        end
+        sweep_stale(now)
+        deferred[id], deferred_at[id] = true, now
+        return
+      end
+      deferred[id], deferred_at[id] = nil, nil
       kind[id] = ent
       remember_role(id, ent.ident)
       age[id] = 0
       -- First sight is where this missile enters every per-missile table, so it
       -- is the one place the staleness sweep is due.
-      seen_ids[#seen_ids + 1] = id
-      seen_at[id] = (wa.world.frame and wa.world.frame()) or 0
+      if seen_at[id] == nil then
+        seen_ids[#seen_ids + 1] = id
+        seen_at[id] = (wa.world.frame and wa.world.frame()) or 0
+      end
       sweep_stale(seen_at[id])
       -- `log = true` for one line per missile's first three frames: what the
       -- identity test actually saw. Turn it off once a convention is settled.
@@ -634,6 +773,7 @@ function M.flight(ctx, opts)
       wa.log(string.format("wfws: id=%s sprite=%s ident=%s phase=%s",
         tostring(m.id), tostring(m.sprite), tostring(ent.ident), tostring(m.phase)))
     end
+    if ent.ident == "main" then note_main(id, frame_now(), m.x, m.y) end
 
     if m.phase == "pre" then
       if roam and ent.ident == "main" and not flying[id] then
@@ -1402,6 +1542,19 @@ local function hold_melee_sound(spec, role)
   return { sound = id, priority = math.floor(tonumber(spec[role .. "_priority"]) or 8) }
 end
 
+-- A strike's own sample (`wav` / `sound` / `priority` on its row), for a combo
+-- whose jabs and haymakers are heard differently. `nil` falls back to the
+-- weapon's own `hit_wav` / `hit_sound` in `hold_melee_strike`.
+local function hold_melee_hit_audio(h)
+  local wav = h.wav
+  if type(wav) == "string" and wav ~= "" then
+    return { sound = wav, priority = math.floor(tonumber(h.priority) or 8) }
+  end
+  local id = math.floor(tonumber(h.sound) or 0)
+  if id == 0 then return nil end
+  return { sound = id, priority = math.floor(tonumber(h.priority) or 8) }
+end
+
 local function hold_melee_hits(spec, push_aim)
   local out = {}
   local listed = type(spec.hits) == "table" and spec.hits or nil
@@ -1416,6 +1569,7 @@ local function hold_melee_hits(spec, push_aim)
           lift = h.lift ~= nil and tonumber(h.lift) or (tonumber(spec.lift) or 0),
           vx = h.vx ~= nil and tonumber(h.vx) or nil,
           vy = h.vy ~= nil and tonumber(h.vy) or nil,
+          audio = hold_melee_hit_audio(h),
         }
       end
     end
@@ -1531,7 +1685,9 @@ local function hold_melee_strike(entry, w, st, index)
   -- `wa.sound` arrived with 0.9.x, so an older engine keeps the strike and loses
   -- only the sound.
   if wa.sound and wa.sound.play then
-    local audio = hits > 0 and m.hit_audio or m.miss_audio
+    -- The strike's own sample wins over the weapon's, which is what lets a
+    -- combo open with a light hit and close with a heavy one.
+    local audio = hits > 0 and (hit.audio or m.hit_audio) or m.miss_audio
     if audio then
       local emitter = hits > 0 and first_hit or w
       if emitter then pcall(wa.sound.play, emitter, audio.sound, audio.priority) end
@@ -1855,9 +2011,17 @@ local function swing_ensure()
         elseif holds and space and not st.space then
           -- One press, one swing: the edge is the turn player's synchronised
           -- keyboard, so every peer starts on the same frame. No aiming state
-          -- test: the claim eats WA's fire, and a melee record resolves its own
-          -- hit in a frame, so the state is never there to be tested.
-          local took = w.take and w:take{ turn = "freeze" } or false
+          -- test: a clip-only claim eats WA's fire, and a melee claim fires the
+          -- ghost shot WA ends the turn for, so the swing starts from the key
+          -- edge and never from what WA says about the worm.
+          -- `fire = true` is the half that lets the melee's ghost shot happen:
+          -- a taken worm's fire messages are the engine's to eat, so a hold that
+          -- took the worm silently swallowed the press and WA never fired, never
+          -- took the ammo and never ran its own retreat, which is the turn flow a
+          -- melee weapon wants (WA ends the turn when the shot is gone). A
+          -- clip-only claim still eats the shot at dispatch (`eat_fire`), so this
+          -- changes nothing for one that did not ask for a shot.
+          local took = w.take and w:take{ turn = "freeze", fire = true } or false
           st.worm = w
           st.worm_id = w.id
           st.start = now
@@ -2015,7 +2179,8 @@ function M.hold(ctx, spec)
       -- half is one of WA's own ids (`hit_sound`) or a pack WAV played by path
       -- (`hit_wav`), and the file wins, like the firing art's fire_draw. 0 and
       -- no path is silent; the editor's default whiff is 96, WA's grenade throw
-      -- and bat miss.
+      -- and bat miss. A strike row can name its own sample instead, which the
+      -- weapon's becomes the fallback for.
       hit_audio = hold_melee_sound(melee_spec, "hit"),
       miss_audio = hold_melee_sound(melee_spec, "miss"),
       once = melee_spec.once ~= false,
@@ -2074,7 +2239,14 @@ function M.hold(ctx, spec)
           rotation = spec.extra_hand.rotation or 1.0,
           radial_rotation = spec.extra_hand.radial_rotation or 1.0,
           scale = spec.extra_hand.scale or 1.0,
-          size = spec.extra_hand.size or HOLD_HAND_CELL,
+          -- The cell is a length in pixels, never a percentage: the hand sheet
+          -- is drawn into `size * scale` game pixels, so `size = 90` is a 90 px
+          -- hand and not "90%". `scale` is the size knob the first hand calls
+          -- `hand_scale`, and an unset cell follows the first hand's, so
+          -- `scale = 1` means "the same size as the first hand". The nudge
+          -- (`ox`/`oy`) is multiplied by `scale` alone, exactly like the first
+          -- hand's, so changing the cell never moves the grip.
+          size = spec.extra_hand.size or spec.hand_size or HOLD_HAND_CELL,
           ox = (type(spec.extra_hand.offset) == "table" and spec.extra_hand.offset.x) or 0,
           oy = (type(spec.extra_hand.offset) == "table" and spec.extra_hand.offset.y) or 0,
           fire_draw = spec.extra_hand.fire_draw,

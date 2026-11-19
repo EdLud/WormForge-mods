@@ -82,6 +82,17 @@ to know which part burst. `nil` means this builder never classified it (another
 weapon, or one it left to WA), which is the only case a caller has to fall back
 on. Both answers are per missile id, so they are lockstep stable.
 
+The identity is filled by the `wa.on.missile_frame` handler `sb.flight`
+registers, and the engine runs a mod's handlers in registration order. A reader
+that has to ask on the missile's first frame registers its own handler after
+`sb.flight` (the editor's ribbon trail does), so the answer is already there.
+One case is undecided on purpose: a missile at a round that was seen on that
+same frame, because the engine can list a burst's bits before it drops the
+round. That answer stays `nil` for exactly one frame, and the next frame says
+whether the round survived (another shot) or went (one of its bits). Waiting is
+correct; guessing there is what made cluster bits read as rounds and lose their
+ribbon.
+
 ```lua
 sb.flight(ctx, {
   weapon = ctx.id,
@@ -117,17 +128,31 @@ sb.flight(ctx, {
 
 ### Identity
 
-The default classifier distinguishes the primary missile from cluster bits using
-`m.sprite`: the generator zeroes the primary's `sprite` in the record (so the
-primary spawns with `m.sprite == 0`), while cluster bits keep a nonzero stock
-sprite (e.g. `clustlet` = 54). Therefore, a missile is classified as a cluster bit
-when `m.sprite ~= 0`.
+The classifier does not use `m.sprite` for identity. That field is WA's render
+slot, not the cluster pellet index: a round that hides its own art can carry the
+cluster sprite there (a cluster grenade's main missile came out with
+`clustlet`), and the pellet flag (`MissileEntity+0x150`) is not exposed to Lua.
+The reliable signal is timing:
 
-When no `bits` table is configured, `bit_cfg` defaults to `NATIVE`: cluster bits are
-left untouched so WA draws them natively. `bits = "inherit"` draws cluster bits with
-the primary sheet. `is_bit = function(m)` overrides the test, and if the engine ever
-passes `m.bit` (MissileEntity+0x150, the pellet flag) that is used first because it
-is exact.
+- the **first** missile of the weapon is the round;
+- a missile that first appears within `bit_window` frames (default 8) after the
+  round was last seen, **at the round's last position** (`bit_radius`, default
+  64 px), is one of its bits, because a cluster burst builds the bits in the
+  round's own detonation;
+- a missile that appears while another round is still in the air, or away from
+  the dead round, is another round (a fire sequence), not a frag.
+
+A missile that is at a round seen on that same frame is the one ambiguous case:
+the engine can build the burst and list its bits before it drops the round, so
+the builder decides that missile on the next frame, when the round has either
+survived (a shot) or gone (one of its bits).
+
+`bits` with no table leaves cluster bits to WA (`bit_cfg` is `NATIVE`).
+`bits = "inherit"` draws them with the primary sheet but still calls them bits.
+`is_bit = function(m)` overrides the test, and if a build passes `m.bit`
+(`MissileEntity+0x150`, the pellet flag) that is used first because it is exact.
+`bit_window = <frames>` widens or narrows the burst window for an unusual
+record, and `bit_radius = <px>` widens or narrows where its frags are expected.
 
 `log = true` prints the first three frames of each missile
 (`id`, `sprite`, `ident`) so the classification can be checked in the log.
@@ -221,11 +246,11 @@ draw underneath.
 The walk has two routes:
 
 - **`roam = { walk = <id>, fly = <sentinel> }`**, WA can draw the ground pose
-  (it is a stock sprite), so the record keeps it and its id is passed along. It
-  is the one nonzero `m.sprite` that means *primary*, not bit, so the classifier
-  needs it, and the builder leaves the animal to WA until the takeoff: the turn
-  player's synchronized Space edge, or WA moving the flown sentinel into the
-  render slot.
+  (it is a stock sprite), so the record keeps it and its id is passed along. The
+  first missile is the round whatever its `m.sprite` holds, so the classifier
+  needs no exception for it; the builder leaves the animal to WA until the
+  takeoff: the turn player's synchronized Space edge, or WA moving the flown
+  sentinel into the render slot.
 - **`roam = true`**, the pose cannot draw (unset, a bundle path, or an imported
   Project X number such as `34464`, which WA reads as an unassigned pack slot).
   The generator zeroes the record `sprite` and the builder draws the animal from
@@ -394,7 +419,8 @@ two-handed grip) is the layer's:
 ```lua
 extra_hand = {
   sheet = "sprites/<mod>/hand2.png",  -- optional: the first hand's art otherwise
-  radius = -6, rotation = 1, radial_rotation = 1, scale = 0.9, size = 60,
+  radius = -6, rotation = 1, radial_rotation = 1, scale = 0.9,
+  -- size = 60,  -- optional: the cell in pixels, defaults to the first hand's
   offset = { x = 2, y = -3 },
 },
 ```
@@ -403,6 +429,14 @@ extra_hand = {
   `radius` (mirrored by `facing`), drawn angle `rot + PI*rotation`, cell `size`
   scaled by `grow(counter) * scale` (the first hand's rule), and `offset` in the
   hand cell's pixels, mirrored with the side and turned with the drawn angle.
+- **`size` is a length in pixels, never a percentage.** The sheet is drawn into
+  `size * scale` game pixels, so `size = 90` is a 90 px hand next to the first
+  hand's 60 px cell, and `size = 120` is twice it. Leave it unset and it follows
+  the weapon's `hand_size`, so `scale = 1` always means "the same size as the
+  first hand". `scale` is the size knob (the first hand calls it `hand_scale`).
+- `offset` is multiplied by `scale` alone, exactly like the first hand's
+  `hand_offset`, so changing the cell never moves the grip off the weapon. The
+  editor writes `size = 60` because its two hands are always 60 px cells.
 - It carries a swing's `dx`/`dy` with the weapon, so a two-handed swing does not
   slide apart, and it is skipped on the echo ghosts and on the firing pass (the
   firing role has its own hand).
@@ -560,8 +594,8 @@ worms.
 
   ```lua
   hits = {
-    { frame = 8,  damage = 10, power = 2 },
-    { frame = 16, damage = 12, power = 4, lift = 1 },
+    { frame = 8,  damage = 10, power = 2, sound = 6 },
+    { frame = 16, damage = 12, power = 4, lift = 1, wav = "sounds/x/hit2.wav" },
     { frame = 22, damage = 16, power = 6, lift = 3 },
   }
   ```
@@ -572,6 +606,11 @@ worms.
   box with the clip's angle at *its* frame, and `once` is per strike, so a worm
   that stands in the box for the whole swing takes all three. `hit_frame` stays
   the first strike's frame.
+- **A strike can name its own sample** (`sound` / `wav` / `priority` on the row):
+  it is played where that strike lands and falls back to the weapon's
+  `hit_sound` / `hit_wav` when the row names none, which is how a light jab before
+  a heavy finisher is heard as light and then heavy. `wav` is a declared pack
+  path, exactly like `hit_wav`.
 - **`hit_sound` / `miss_sound`** are WA's own sound ids (0 is silent). Each strike
   plays one: `hit_sound` at the first worm the box took, `miss_sound` at the
   striker when it took nobody, once per strike however many worms it took. A
