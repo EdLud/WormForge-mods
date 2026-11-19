@@ -18,7 +18,7 @@ live_hp = true
 | Setting | Type | What it does |
 |---|---|---|
 | Heal at turn start | number, 0–50 | Heals the worm by the set amount at the start of its turn. |
-| ExTurnSide | switch | Left and right turn the worm during jumps, flights and other actions. By red. |
+| ExTurnSide | switch | Left and right turn the worm during jumps, flights and other actions. By reddaz. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by reddaz. |
 | Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X. |
 | Fast aim | switch, and a speed, 1–400 % | Holding Shift makes the aim faster, at the speed set. Weapons that aim in coarse steps, like the Blow Torch, keep the normal aim. From Project X. |
@@ -26,9 +26,22 @@ live_hp = true
 | Instant Death | off, settled, in flight | Settled: a worm at 0 HP dies as soon as it's still. In flight: it dies at once, wherever it is, and flies on while it dies, as in Project X. |
 | Collect viewer | switch | A pop-up icon when a crate is collected. |
 | Kill counter | switch | A badge behind each worm counts its kills, 1 to 9, then infinity. The worm whose turn it is gets the kill and the victim's count with it. From Project X; useful for Highlander. |
-| Damage numbers | switch, and a side | Damage and healing float over the worm, Worms Reloaded style. By red. |
+| Damage numbers | switch, and a side | Damage and healing float over the worm, Worms Reloaded style. By reddaz. |
 | FPS counter | switch | Each player's frame rate at the top right of their screen. |
 | Disable zoom | switch | Every player sees the match at 1x, whatever their zoom setting. |
+
+## Cursor
+
+\+ switches the mode, and each worm keeps its own.
+
+| Mode | What it does |
+|---|---|
+| Light | A light round the cursor, 300 pixels, blocked by terrain. |
+| Magnet attract, Magnet repel | Pulls or pushes what is within 300 pixels. |
+| Revive | Click a gravestone to revive its worm. |
+| Freeze | Click a worm to freeze it. |
+| Fire | Hold the left mouse button for rainbow fire. |
+| Hurt | Click a worm to deal 10 HP damage. |
 
 ## Tests
 

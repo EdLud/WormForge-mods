@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.17.5"
+version = "0.17.6"
 author = "WormForge"
 api_version = 4
 format_version = 2
@@ -20,7 +20,7 @@ type = "feature"
 name = "Utilities"
 description = "A collection of features that could fit a diverse set of schemes"
 entry = "features/utilities.lua"
-credits = "ExTurnSide and Live HP by reddaz, Agility by Zed and 0rang3 (port by reddaz)"
+credits = "ExTurnSide, Live HP and Damage numbers by reddaz, Agility by Zed and 0rang3 (port by reddaz)"
 
 [[components.options]]
 key = "heal_per_turn"
@@ -43,7 +43,7 @@ key = "agility"
 type = "bool"
 default = false
 label = "Agility"
-description = "The arrow keys steer the worm a little in the air. By Zed and 0rang3, port by reddaz."
+description = "The arrow keys steer the worm a little in the air."
 
 [[components.options]]
 key = "parkour"
@@ -104,7 +104,7 @@ key = "damage_numbers"
 type = "bool"
 default = false
 label = "Damage numbers"
-description = "Damage and healing float over the worm, Worms Reloaded style. By red"
+description = "Damage and healing float over the worm, Worms Reloaded style."
 
 [[components.options]]
 key = "damage_numbers_side"
@@ -159,6 +159,8 @@ description = "Slows down everything except the active worm (including the turn 
 entry = "weapons/bullet_time.lua"
 icon = "sprites/bullet_time.png"
 default_position = { row = "utility", column = 7 }
+# The music always slows with the world.
+deprecated_options = ["music"]
 
 [[components.options]]
 key = "world_speed"
@@ -186,13 +188,6 @@ min = 1
 max = 60
 label = "Duration (s)"
 description = "How long Bullet Time lasts, in real seconds."
-
-[[components.options]]
-key = "music"
-type = "bool"
-default = true
-label = "Music slows too"
-description = ""
 
 [[components.options]]
 key = "tab"
@@ -241,7 +236,7 @@ key = "shadow_cast"
 type = "bool"
 default = true
 label = "Shadow casting"
-description = "Shadow casting: terrain blocks worms' and animals' vision. Off lights the full circle, whatever the terrain."
+description = "Terrain blocks worms' and animals' vision. Off lights the full circle, whatever the terrain."
 
 [[components.options]]
 key = "discover"
@@ -249,7 +244,7 @@ type = "choice"
 choices = ["off", "texture", "live", "premapped"]
 default = "texture"
 label = "Terrain memory"
-description = "Terrain memory: 0 off, 1 stale terrain, 2 live terrain, 3 premapped."
+description = "What players see of terrain out of sight. off: nothing. texture: the land as last seen. live: the land as it is now. premapped: the walls of the whole map from the start."
 
 [[components.options]]
 key = "view_ownership"
@@ -257,7 +252,7 @@ type = "choice"
 choices = ["alliance", "active", "everyone"]
 default = "alliance"
 label = "Vision ownership"
-description = "Whose vision players see: 1 their alliance, 2 the active worm only, 3 everyone."
+description = "Whose vision players see. alliance: their alliance. active: the active worm only. everyone: everyone."
 
 [[components.options]]
 key = "animal_circle_radius"
@@ -381,7 +376,7 @@ key = "hide_enemy_hud"
 type = "bool"
 default = true
 label = "Hide enemy labels and arrows"
-description = "Hide enemy labels and arrows."
+description = ""
 
 [[components.options]]
 key = "placement_vision"
@@ -475,7 +470,7 @@ description = "The glow's colour, blue part: 0 to 255."
 id = "cursors.cursor"
 type = "weapon"
 name = "Cursor"
-description = "Press + to cycle through Light, Magnet attract, Magnet repel, Revive, Freeze, Fire and Hurt. Click to revive, freeze or deal 10 HP damage; hold the left mouse button for rainbow fire."
+description = "A cursor that carries a light, a magnet or fire, or revives, freezes or hurts what you click; + switches the mode."
 entry = "weapons/cursor.lua"
 icon = "sprites/cursor.png"
 default_position = { row = "F8", column = 1 }

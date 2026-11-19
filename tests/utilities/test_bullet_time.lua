@@ -63,7 +63,7 @@ end
 local function fire(list) for _, f in ipairs(list) do f({ worm = worm }) end end
 local function running() return speeds[#speeds] ~= nil and speeds[#speeds] < 1 end
 
-local options = { world_speed = 40, worm_speed = 100, seconds = 20, music = false, tab = true }
+local options = { world_speed = 40, worm_speed = 100, seconds = 20, tab = true }
 local weapon = assert(loadfile(root .. "weapons/bullet_time.lua"))()
 weapon.install({ id = "utilities.bullet_time", option = function(k) return options[k] end })
 

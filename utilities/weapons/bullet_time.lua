@@ -22,7 +22,7 @@ return {
     local worm_speed = ctx.option("worm_speed") / 100
     local total = ctx.option("seconds")
     local ramp = math.min(RAMP, total / 2)
-    local music = ctx.option("music") and wa.music and wa.music.set_pitch
+    local music = wa.music and wa.music.set_pitch
     local tab = ctx.option("tab") and wa.world.worm_selecting ~= nil
     local tray = tab and wa.hud and wa.hud.tray
     local cells = {} -- team -> its tray entry
