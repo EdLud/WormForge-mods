@@ -194,13 +194,13 @@ local function hit_worm(s, w, now)
       worm_taze[id] = now + frames + 7
     else
       w.vx, w.vy = out_x, out_y
-      w:hurt(math.floor(dmg))
+      w:hit(math.floor(dmg))
     end
   elseif s.electric then
-    w:hurt(math.floor(dmg))
+    w:hit(math.floor(dmg))
   elseif w.state ~= "frozen" and w.state ~= "drilling" then
     if out_x then w.vx, w.vy = out_x, out_y end
-    w:hurt(math.floor(dmg))
+    w:hit(math.floor(dmg))
   elseif out_x then
     w.vx, w.vy = out_x, out_y
   end
@@ -328,9 +328,8 @@ local function spawn_controller(s)
   local a = wa.actors.spawn{
     owner = fetchWorm() or current_worm(),
     sprite = mask_for(s.radius), x = s.x, y = s.y,
-    kind = "saw", mask = true,
-    mask_land = false, mask_actors = false, as_object = true,
-    gravity = false, collide = false, drown = false, persist = true,
+    kind = "saw", body = { mask = { worms = true, weapons = true, rope = true } },
+    persist = true,
     on = function(actor) tick(actor, s) end,
   }
   if not a then return nil end

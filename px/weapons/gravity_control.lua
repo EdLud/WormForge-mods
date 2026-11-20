@@ -35,7 +35,7 @@ function weapon.setup()
   local clock_seen = {}
   local retreating = false
   local settling = false -- the turn has ended with Gravity Control on
-  local crate_floor = 0 -- the newest crate's uid when the turn ended
+  local crate_floor = 0 -- the newest crate's id when the turn ended
 
   local function gravity_back()
     gravity_factor, clock_seen, settling = nil, {}, false
@@ -64,7 +64,7 @@ function weapon.setup()
     if settling then gravity_back() end
   end)
   wa.on.body_move(function(crate)
-    if settling and (crate.uid or 0) > crate_floor then gravity_back() end
+    if settling and crate.id > crate_floor then gravity_back() end
   end, { kinds = { "crate" } })
 
   require("lib/turn_controls").register("px.gravity_control", {
@@ -94,7 +94,7 @@ function weapon.setup()
       if gravity_factor and not settling then
         settling, clock_seen, crate_floor = true, {}, 0
         for _, crate in ipairs(wa.crates.all()) do
-          crate_floor = math.max(crate_floor, crate.uid or 0)
+          crate_floor = math.max(crate_floor, crate.id)
         end
       end
       gravity_choice = nil

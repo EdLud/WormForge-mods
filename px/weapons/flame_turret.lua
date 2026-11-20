@@ -26,7 +26,7 @@ function weapon.setup()
     wa.fire.spawn({ owner = t.owner(a, s), x = shot.x, y = shot.y,
       vx = shot.dx * force, vy = shot.dy * force,
       count = 0, duration = 1500, up_power = 1, damage = -1, damage_scale = 5 })
-    a:sound(FLAME_SOUND)
+    wa.sound.play(a, FLAME_SOUND)
     return true
   end
 

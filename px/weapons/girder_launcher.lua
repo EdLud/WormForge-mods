@@ -67,7 +67,7 @@ function weapon.setup()
   on_missile(function(m)
     if m.weapon ~= "px.girder_launcher" then return end
     local flight=flights[m.id]
-    if flight then flight[1],flight[2],flight.uid=m.vx,m.vy,m.uid end
+    if flight then flight[1],flight[2],flight.id=m.vx,m.vy,m.id end
   end, { weapons = { "px.girder_launcher" } })
   local function orientation(vx,vy)
     if vx==0 then return vy>0 and 16 or 0 end
@@ -85,7 +85,7 @@ function weapon.setup()
     local o=pushed(ev.x,ev.y,flight and flight.shooter)
     if not o then
       local sentry=turrets.projectile_target(ev.x,ev.y)
-      if sentry and turrets.projectile_hit(sentry,3,vx/4,vy/4,flight and flight.uid) then return end
+      if sentry and turrets.projectile_hit(sentry,3,vx/4,vy/4,flight and flight.id) then return end
     end
     local frame=orientation(vx,vy)
     local x,y,deeper
@@ -101,7 +101,7 @@ function weapon.setup()
     end
     if o then
       o.vx,o.vy=vx/4,vy/4
-      if o.kind=="worm" then o:hurt(3)
+      if o.kind=="worm" then o:hit(3)
       else o:hit(3,vx/2,vy/2,"bullet") end
       return
     end
@@ -119,7 +119,7 @@ function weapon.setup()
         local x,y=worm.x+12*dx,worm.y+12*dy
         local x1,y1=x+15000*dx,y+15000*dy
         local hit=wa.world.trace{x0=x,y0=y,x1=x1,y1=y1,radius=1,with={"terrain"}}
-        if hit then x1,y1=hit.x,hit.y end
+        if hit and hit.hit then x1,y1=hit.x,hit.y end
         wa.draw.ribbon{sprite="sprites/girder_launcher/laser.png",visibility=worm,
           blend="add",depth=wa.depth.FRONT,points={
             {x=x,y=y,width=2,u=0,color=0xC0FF6060},

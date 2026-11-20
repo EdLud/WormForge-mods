@@ -32,7 +32,7 @@ local function new_match()
         local a = { sprite = spec.sprite, x = spec.x, y = spec.y }
         function a:gfx(g) for k, v in pairs(g) do self[k] = v end end
         function a:frame(i) self.shown = i end
-        function a:despawn() self.dead = true end
+        function a:remove() self.dead = true end
         spawned[#spawned + 1] = a
         return a
       end,

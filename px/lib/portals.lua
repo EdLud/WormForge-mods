@@ -39,7 +39,7 @@ local function crossing(p, x, y, vx, vy)
 end
 local function identity(body)
   local kind = body.kind or "worm"
-  return kind .. ":" .. tostring((kind == "worm" or kind == "actor") and body.id or body.uid)
+  return kind .. ":" .. tostring(body.id)
 end
 
 function Network.new(options)

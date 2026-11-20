@@ -146,9 +146,9 @@ function weapon.setup()
     bursts = {}
     for _, p in ipairs(blasts) do
       local a = wa.actors.spawn({ sprite = false, x = p.x, y = p.y,
-        gravity = false, collide = false, owner = owner, on = function() end })
+        owner = owner, on = function() end })
       a:explode({ id = PUSH, damage = DAMAGE, below = false })
-      a:despawn()
+      a:remove()
     end
     blasts = {}
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })

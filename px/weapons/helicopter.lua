@@ -61,16 +61,15 @@ function weapon.setup()
 
   local function heli_actor(worm, sheet)
     local a = wa.actors.spawn({
-      sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-      collide = false, owner = worm, visibility = worm, on = function() end,
+      sprite = sheet, x = worm.x, y = worm.y, owner = worm, visibility = worm, on = function() end,
     })
     a:gfx({ glow_of = worm, follow = worm })
     return a
   end
 
   local function heli_drop_art(h, worm)
-    if h.body then h.body:despawn(); h.body = nil end
-    if h.climb then h.climb:despawn(); h.climb = nil end
+    if h.body then h.body:remove(); h.body = nil end
+    if h.climb then h.climb:remove(); h.climb = nil end
     worm.body_visible = true
   end
 
@@ -88,8 +87,7 @@ function weapon.setup()
     local size = trunc((worm.fuel - 75) / 10 * speed)
     if size < 10 then size = 10 end
     wa.actors.spawn({
-      sprite = false, x = worm.x, y = worm.y, gravity = false, collide = false,
-      owner = worm, explode = { damage = size * 2, id = size, now = true },
+      sprite = false, x = worm.x, y = worm.y, owner = worm, explode = { damage = size * 2, id = size, now = true },
     })
     worm.gravity = 1
     worm.wind = 0
@@ -135,7 +133,7 @@ function weapon.setup()
         heli_drop_art(h, worm)
         return
       end
-      if h.body then h.body:despawn(); h.body = nil end
+      if h.body then h.body:remove(); h.body = nil end
       h.climb_out, h.jump_phase = true, 1
     end
     if h.flying then
@@ -204,7 +202,7 @@ function weapon.setup()
     end
     local f = worm.facing
     if h.flying then
-      if h.climb then h.climb:despawn(); h.climb = nil end
+      if h.climb then h.climb:remove(); h.climb = nil end
       h.body = h.body or heli_actor(worm, "sprites/helicopter/flying.png")
       local a = h.body
       a.x, a.y, a.vx, a.vy, a.facing = worm.x, worm.y, 0, 0, f

@@ -338,7 +338,7 @@ return function(ctx)
     winReason = reason
     wa.log(string.format("[AutoKTK] %s; team %d loses", reason, losingTeam))
     for _, w in ipairs(wa.worms.all()) do
-      if w.team == losingTeam and w.hp > 0 then w:hurt(w.hp) end
+      if w.team == losingTeam and w.hp > 0 then w:hit(w.hp) end
     end
   end
 

@@ -57,7 +57,7 @@ function M.explode(o)
               local force = (dmg / 5) * (push / 100)
               px, py = dx / dist * force, dy / dist * force
             end
-            w:hurt{ amount = dmg, vx = px, vy = py }
+            w:hit{ amount = dmg, vx = px, vy = py }
             hits = hits + 1
           end
         end

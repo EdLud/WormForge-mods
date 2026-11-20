@@ -6,7 +6,7 @@ wa = {
   weapons = {replace = function(spec) claim = spec end},
   cursor = {spawn = function(spec)
     local actor = {spec = spec, freed = false}
-    function actor:despawn()
+    function actor:remove()
       assert(not self.freed, "cursor must not be freed twice")
       self.freed = true
     end

@@ -253,14 +253,14 @@ return function(ctx)
     local busy = not (w.state_id == 0x65 or w.state_id == 0x67)
     for _, m in ipairs(wa.missiles.all()) do
       busy = true
-      parts[#parts + 1] = tostring(m.uid) .. ":" .. tostring(m.x) .. ":" .. tostring(m.y)
+      parts[#parts + 1] = tostring(m.id) .. ":" .. tostring(m.x) .. ":" .. tostring(m.y)
     end
     for _, a in ipairs(wa.actors.all()) do
       if not driver or a.id ~= driver.id then busy = true end
     end
     for _, kind in ipairs({ "mines", "crates", "oil" }) do
       for _, obj in ipairs(wa[kind].all()) do
-        local key = kind .. ":" .. tostring(obj.uid)
+        local key = tostring(obj.id)
         if not seen_objects[key] then
           seen_objects[key] = true
           emit("body", { kind = kind, x = obj.x, y = obj.y })
@@ -520,7 +520,7 @@ return function(ctx)
     status = "Audit: waiting for team 1's first worm's normal turn"
     wa.world.set_wind(0)
     driver = wa.actors.spawn{
-      owner = first, sprite = false, gravity = false, collide = false, persist = true,
+      owner = first, sprite = false, persist = true,
       x = 64, y = 64,
       on = function()
         local ok, err = pcall(tick)

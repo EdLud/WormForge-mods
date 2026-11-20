@@ -97,9 +97,9 @@ function turret.projectile_target(x, y)
   end
 end
 
-function turret.projectile_hit(entry, damage, vx, vy, uid)
+function turret.projectile_hit(entry, damage, vx, vy, id)
   if entry and entry.t.state[entry.body.id] == entry.s then
-    entry.t.projectile_hit(entry.body, entry.s, damage, vx, vy, uid)
+    entry.t.projectile_hit(entry.body, entry.s, damage, vx, vy, id)
     return true
   end
   return false
@@ -175,7 +175,7 @@ local function turn_toward(cur, want, speed)
 end
 
 local function play(a, sound)
-  if sound then a:sound(sound) end
+  if sound then wa.sound.play(a, sound) end
 end
 
 local function angle_gap(a, b)
@@ -380,14 +380,13 @@ function turret.new(cfg)
       local owner = t.owner(a, s)
       if owner ~= a then
         local e = wa.actors.spawn({ sprite = false, owner = owner,
-          x = a.x, y = a.y - t.boom_up, gravity = false, collide = false,
-          explode = { damage = t.boom.damage, id = t.boom.id, now = true } })
-        e:despawn()
+          x = a.x, y = a.y - t.boom_up, explode = { damage = t.boom.damage, id = t.boom.id, now = true } })
+        e:remove()
       else
         a:explode(t.boom)
       end
     end
-    a:despawn()
+    a:remove()
   end
 
   local function hit(a, ev)
@@ -413,8 +412,8 @@ function turret.new(cfg)
   local function touched(a, ev)
     local s = state[a.id]
     if not s or not ev.other then return end
-    local uid = ev.other.uid
-    if uid and s.script_hits[uid] then s.script_hits[uid] = nil; return end
+    local id = ev.other.id
+    if id and s.script_hits[id] then s.script_hits[id] = nil; return end
     if ev.other.kind == "worm" and s.phase ~= 3 then return end
     if ev.other.kind == "actor" then
       for _, other_t in ipairs(turrets) do
@@ -425,8 +424,8 @@ function turret.new(cfg)
     t.push(a, s, (ev.vx or 0) * fraction, (ev.vy or 0) * fraction)
   end
 
-  function t.projectile_hit(a, s, damage, vx, vy, uid)
-    if uid then s.script_hits[uid] = wa.world.frame() end
+  function t.projectile_hit(a, s, damage, vx, vy, id)
+    if id then s.script_hits[id] = wa.world.frame() end
     hit(a, { damage = damage, vx = vx, vy = vy })
   end
 
@@ -465,8 +464,8 @@ function turret.new(cfg)
     if not s then return end
     s.tick = s.tick + 1
     local frame = wa.world.frame()
-    for uid, at in pairs(s.script_hits) do
-      if at < frame - 1 then s.script_hits[uid] = nil end
+    for id, at in pairs(s.script_hits) do
+      if at < frame - 1 then s.script_hits[id] = nil end
     end
     if s.recoil > 0 then s.recoil = s.recoil - 1 end
     if s.firing or s.recoil > 0 then s.anim = s.anim + 1 end
@@ -617,9 +616,8 @@ function turret.new(cfg)
     local body = wa.actors.spawn({
       sprite = false, x = x, y = y,
       vx = 0, vy = 0,
-      loop = false, origin = "bottom", owner = worm, kind = t.kind, persist = true,
-      gravity = true, drown = false,
-      body = { shape = t.art.mask, hits = { land = true, objects = true },
+      origin = "bottom", owner = worm, kind = t.kind, persist = true,
+      gravity = 1, body = { shape = t.art.mask, hits = { land = true, objects = true },
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
       on = { frame = brain, hit = hit, contact = touched },
     })

@@ -119,7 +119,7 @@ function M.install(ctx)
       end
       if target then
         target.vx, target.vy = trunc(vx / 4), trunc(vy / 4)
-        if target.kind == "worm" then target:hurt(DAMAGE)
+        if target.kind == "worm" then target:hit(DAMAGE)
         else target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "bullet") end
         return
       end

@@ -19,17 +19,17 @@ wa={
   land={cut=function(c)log.cuts[#log.cuts+1]=c end},
   worms={all=function()return worms end},
   mines={all=function()return mines end,spawn=function(s)
-    local m={uid=500+#log.mines,gravity=1,visible=true}
+    local m={id=500+#log.mines,gravity=1,visible=true}
     for k,v in pairs(s) do m[k]=v end
     log.mines[#log.mines+1]=m;return m end},
   crates={all=function()return crates end},
   oil={all=function()return oil end,spawn=function(s)
-    local d={uid=100+#log.drums,x=s.x,y=s.y,vx=0,vy=0,snap=s.snap,visible=true,damage=0,max_damage=50}
+    local d={id=100+#log.drums,x=s.x,y=s.y,vx=0,vy=0,snap=s.snap,visible=true,damage=0,max_damage=50}
     log.drums[#log.drums+1]=d;oil[#oil+1]=d;return d end},
   fire={spawn=function(s)log.fires[#log.fires+1]=s end},
   actors={spawn=function(spec)
     local a={id=#log.spawned+1,x=spec.x,y=spec.y,vx=spec.vx or 0,vy=spec.vy or 0,spec=spec,booms={}}
-    function a:despawn()self.id=0 end
+    function a:remove()self.id=0 end
     function a:explode(e)self.booms[#self.booms+1]=e end
     log.spawned[#log.spawned+1]=a;return a end},
   sound={play=function(t,s)log.sounds[#log.sounds+1]=s end},
@@ -58,7 +58,7 @@ bulldozer.setup()
 check(bulldozer.definition.wep=="weps/bulldozer.wep","Bulldozer: PX's scheme record")
 local function worm(id,x,y)
   local w={id=id,x=x,y=y,hp=100,kind="worm",alliance=0}
-  function w:hurt(h)log.hurts[#log.hurts+1]={id=self.id,h=h}end
+  function w:hit(h)log.hurts[#log.hurts+1]={id=self.id,h=h}end
   return w
 end
 local function object(x,y)
@@ -122,7 +122,7 @@ press(2);barrel.definition.on_fire({worm=shooter,x=0,y=0,vx=0,vy=0})
 each(hooks.explode,{drum=log.drums[4],x=10,y=20,team=0,replace=function()end})
 check(#log.mines==5 and log.mines[1].damage==40 and log.mines[1].fuse==3000 and log.mines[1].arm==3000,
   "Barrel Launcher: the mines drum lays five 40-damage mines")
-local map={uid=999,x=0,y=0}
+local map={id=999,x=0,y=0}
 local map_replaced=false
 each(hooks.explode,{drum=map,x=0,y=0,team=0,replace=function()map_replaced=true end})
 check(not map_replaced,"Barrel Launcher: a map drum stays WA's without the oil drums add-on")
@@ -143,7 +143,7 @@ turn_worm=thrower
 trampoline.definition.on_fire({worm=thrower})
 local t=log.spawned[#log.spawned]
 check(t.x==103 and t.y==94 and t.vx==2 and t.vy==-3 and t.spec.persist and t.spec.body.hits.land
-  and t.spec.gravity==true,
+  and t.spec.gravity==1,
   "Trampoline: thrown from the worm's x+3, y-12, 2 across and 3 up; it lands")
 local function hit_by(o)t.spec.on.contact(t,{other=o})end
 local jumper={kind="worm",state="jumping",x=90,vx=0,vy=4}

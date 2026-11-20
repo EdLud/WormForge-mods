@@ -25,7 +25,7 @@ local function follow_missile(id)
       flying[id] = nil
       matched[id] = nil
     end
-    a:despawn()
+    a:remove()
   end
 end
 
@@ -87,8 +87,7 @@ wa.on.missile_frame(function(m)
     end
     f = { phase = 0, rot = 0 }
     f.actor = wa.actors.spawn({
-      sprite = p.sheet, x = m.x, y = m.y, gravity = false, collide = false,
-      owner = owner, on = follow_missile(m.id),
+      sprite = p.sheet, x = m.x, y = m.y, owner = owner, on = follow_missile(m.id),
     })
     flying[m.id] = f
   end

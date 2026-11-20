@@ -40,8 +40,7 @@ end
 -- An invisible actor that runs `frame` every frame.
 function lightning.effect_actor(x, y, owner, frame)
   return wa.actors.spawn({
-    sprite = GLOW, visible = false, gravity = false, collide = false,
-    owner = owner, x = x, y = y, on = frame,
+    sprite = GLOW, visible = false, owner = owner, x = x, y = y, on = frame,
   })
 end
 
@@ -224,7 +223,7 @@ function lightning.strike(spec)
       for i, held in ipairs(strikes) do
         if held == s then table.remove(strikes, i); break end
       end
-      a:despawn()
+      a:remove()
     end
   end)
   if not spec.thunder_on and effect then wa.sound.play(effect, THUNDER) end

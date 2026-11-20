@@ -18,7 +18,7 @@ local function setup()
   }
   local w = { id = 3, x = 0, y = 0, vx = 0, vy = 0, hp = 100, state = "standing", hurts = {} }
   -- The engine runs the hurt hook for a react = false hurt too, as a hit.
-  function w:hurt(o)
+  function w:hit(o)
     local h = { worm = self, kind = "bullet", phase = "pre", amount = o.amount, expected = o.amount }
     hooks.hurt(h)
     o.took = h.amount

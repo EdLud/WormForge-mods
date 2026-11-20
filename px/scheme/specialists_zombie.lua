@@ -81,7 +81,7 @@ function zombie.install(is_soldier, soldier_name)
     end
     for _, worm in ipairs(theirs) do
       if not humans[worm.team] then
-        worm:hurt({ amount = worm.hp, react = false })
+        worm:hit({ amount = worm.hp, react = false })
         if not out[worm.id] then
           wa.log("Specialists: team " .. worm.team .. " has only zombies left")
         end

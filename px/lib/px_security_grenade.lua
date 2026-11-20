@@ -42,9 +42,9 @@ function M.install(ctx)
       for _, p in ipairs(pending) do
         for _, off in ipairs(RING) do
           local a = wa.actors.spawn({ sprite = false, x = p.x + off[1], y = p.y + off[2],
-            gravity = false, collide = false, owner = shooter, on = function() end })
+            owner = shooter, on = function() end })
           a:explode({ id = PUSH, damage = DAMAGE, below = false })
-          a:despawn()
+          a:remove()
         end
       end
       pending = {}

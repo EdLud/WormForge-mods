@@ -247,8 +247,7 @@ return function(cfg)
     if spawned then return end
     spawned = true
     wa.actors.spawn({
-      sprite = false, x = 0, y = 0, gravity = false, collide = false,
-      owner = worm,
+      sprite = false, x = 0, y = 0, owner = worm,
       on = observe,
     })
   end, { msgs = { wa.msg.FRAME_FINISH } })

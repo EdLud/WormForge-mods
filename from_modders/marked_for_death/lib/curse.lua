@@ -69,7 +69,7 @@ local function stop_magnet(id)
   magnets[id] = nil
   if m.field then pcall(function() m.field:remove() end) end
   if m.actor and not m.actor.dead then
-    pcall(function() m.actor:despawn() end)
+    pcall(function() m.actor:remove() end)
   end
 end
 
@@ -77,13 +77,12 @@ local function start_magnet(w)
   if magnets[w.id] or not (wa.magnetism and wa.magnetism.field) then return end
   local id = w.id
   local ok, a = pcall(wa.actors.spawn, {
-    sprite = false, x = w.x, y = w.y - 5, gravity = false, collide = false,
-    solid = false, persist = true, drown = false, owner = w,
+    sprite = false, x = w.x, y = w.y - 5, persist = true, owner = w,
     on = function(actor)
       local v = live_worm(id)
       if not v or not cursed[id] then
         magnets[id] = nil
-        actor:despawn()
+        actor:remove()
         return
       end
       actor.x, actor.y = v.x, v.y - 5
@@ -100,7 +99,7 @@ local function start_magnet(w)
     polarity = "attract", native = false,
   })
   if not made then
-    a:despawn()
+    a:remove()
     wa.log("curse magnet: " .. tostring(field))
     return
   end
@@ -210,9 +209,7 @@ ensure_ticker = function()
   end
 
   ticker = wa.actors.spawn({
-    sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false,
-    on = function(a)
+    sprite = false, x = 0, y = 0, persist = true, on = function(a)
       a.vx, a.vy = 0, 0
       local f, any = frame(), false
       for _, id in ipairs(wa.sorted(cursed)) do
@@ -227,7 +224,7 @@ ensure_ticker = function()
       end
       if not any then
         ticker = nil
-        a:despawn()
+        a:remove()
       end
     end,
   })
@@ -498,7 +495,7 @@ function curse.install()
       end
     elseif kind == "blast" and hit.expected == nil and hit.lost > 0 then
       adding = true
-      w:hurt{ amount = scaled(hit.lost, m.pct) - hit.lost, react = false }
+      w:hit{ amount = scaled(hit.lost, m.pct) - hit.lost, react = false }
       adding = false
     end
   end)
@@ -558,7 +555,7 @@ function curse.install()
     local kind = b.kind
     if not HOMING[kind] or frame() < 50 then return end
     if b.y > wa.world.water() then return end
-    local vx, vy = chase("b:" .. b.uid, kind, b.x, b.y, b.vx, b.vy)
+    local vx, vy = chase("b:" .. b.id, kind, b.x, b.y, b.vx, b.vy)
     if vx then
       b:warp({ x = b.x, y = b.y, vx = vx, vy = vy })
     end

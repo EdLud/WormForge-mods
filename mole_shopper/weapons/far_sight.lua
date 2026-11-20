@@ -14,7 +14,7 @@ return {
         and worm:ammo(ctx.id) ~= 0
     end
     local function stop_cursor()
-      if cursor then cursor:despawn(); cursor = nil end
+      if cursor then cursor:remove(); cursor = nil end
     end
     local function start_cursor(worm, x, y)
       stop_cursor()
@@ -44,7 +44,7 @@ return {
         end
         local actor = wa.actors.spawn{
           owner = ev.worm, sprite = false, x = ev.x, y = ev.y,
-          gravity = false, collide = false, drown = false, persist = true, solid = false,
+          persist = true,
         }
         lights.attach(actor, 155, terrain_blocking)
         worm:ammo(ctx.id, -1)

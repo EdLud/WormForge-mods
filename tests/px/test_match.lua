@@ -174,7 +174,7 @@ function Worm:ammo(name, change)
   return change.set
 end
 function Worm:heal(amount) if self.hp > 0 then self.hp = self.hp + amount end end
-function Worm:hurt(amount)
+function Worm:hit(amount)
   self.reacted = not (type(amount) == "table" and amount.react == false)
   if type(amount) == "table" then
     self.knock = { amount.vx or 0, amount.vy or 0 }
@@ -657,6 +657,10 @@ local function new_match(opts)
         M.sounds[#M.sounds + 1] = name
         M.sound_flags[#M.sound_flags + 1] = flags
         M.sound_positions[#M.sound_positions + 1] = { x = target.x, y = target.y }
+        if target.kind == "actor" then
+          M.actor_sounds = M.actor_sounds or {}
+          M.actor_sounds[#M.actor_sounds + 1] = name
+        end
         -- A pack WAV plays only once an entry registers it (`sounds`);
         -- otherwise the engine plays nothing, without a word.
         if type(name) == "string" then
@@ -677,19 +681,23 @@ local function new_match(opts)
         if spec.owner == nil then
           error("spawn needs an owner worm or actor", 2)
         end
+        -- As the engine: collision is the body's, gravity a factor.
+        for _, key in ipairs({ "collide", "collide_terrain", "collide_worms", "as_object", "shape", "solid", "mask" }) do
+          if spec[key] ~= nil then error("spawn." .. key .. " is gone", 2) end
+        end
+        if spec.gravity ~= nil and type(spec.gravity) ~= "number" then error("spawn.gravity is a factor", 2) end
         M.next_actor_id = (M.next_actor_id or 0) + 1
         -- `on` is a frame function or a table of handlers (frame, land, hit).
         local on, hit, contact = spec.on, nil, nil
         if type(on) == "table" then on, hit, contact = spec.on.frame, spec.on.hit, spec.on.contact end
         local a = { id = M.next_actor_id, kind = "actor", sprite = spec.sprite, x = spec.x, y = spec.y,
                     vx = spec.vx or 0, vy = spec.vy or 0, dead = false,
-                    explode = spec.explode, on = on, hit = hit, contact = contact, owner = spec.owner, as_object = spec.as_object,
-                    shape = spec.shape, spec = spec }
-        a.solid = spec.solid ~= false
+                    explode = spec.explode, on = on, hit = hit, contact = contact, owner = spec.owner, as_object = false,
+                    shape = "worm", spec = spec }
         if spec.body then
           a.shape = spec.body.shape or (spec.body.physics == "mine" and "missile" or "worm")
           if a.shape ~= "worm" and a.shape ~= "missile" then a.shape = "sprite" end
-          a.as_object = true
+          a.as_object = spec.body.layer ~= "missile"
           a.hits, a.hit_by = deep_copy(spec.body.hits), deep_copy(spec.body.hit_by or "all")
         end
         function a:warp(v)
@@ -767,14 +775,13 @@ local function new_match(opts)
         end
         -- As the engine's auto physics, simply: gravity, a step, and land
         -- where M.solid says.
-        function a:gravity() self.vy = (self.vy or 0) + (M.gravity or 0) end
         function a:move()
           self.x, self.y = self.x + (self.vx or 0), self.y + (self.vy or 0)
           return { land = M.solid ~= nil and M.solid(self.x, self.y) or false }
         end
         function a:advance() end
         function a:in_water() return self.y >= (M.water or 32767.99998474121) end
-        function a:despawn() self.dead = true; self.ignored_worms = {} end
+        function a:remove() self.dead = true; self.ignored_worms = {} end
         -- a.explode is the spawn's explode spec and a:explode(opts) the
         -- method, as on the engine's actor: a callable table.
         a.explode = setmetatable(a.explode or {}, { __call = function(_, self, opts)
@@ -782,10 +789,6 @@ local function new_match(opts)
           M.actor_booms[#M.actor_booms + 1] = { x = self.x, y = self.y, opts = opts }
           self.dead = true
         end })
-        function a:sound(id)
-          M.actor_sounds = M.actor_sounds or {}
-          M.actor_sounds[#M.actor_sounds + 1] = id
-        end
         M.spawned = M.spawned or {}
         M.spawned[#M.spawned + 1] = a
         if spec.explode and spec.explode.now then a:explode(spec.explode) end
@@ -2231,7 +2234,7 @@ do
     check(kind .. ": settles and friction stops ground sliding", s.planted and s.vx == 0 and s.vy == 0 and s.health == hp)
     -- Reset position between independent obstacle cases, without new bodies.
     s.x, s.y, a.x, a.y = x, y, x, y
-    a.contact(a, { other = { kind = "arrow", uid = 501, alive = false }, vx = -8, vy = 0 })
+    a.contact(a, { other = { kind = "arrow", id = 501, alive = false }, vx = -8, vy = 0 })
     check(kind .. ": a freed stock arrow supplies quarter incoming momentum", s.vx == -2 and s.health == hp)
     a.on(a)
     check(kind .. ": a horizontal push slides on supported ground", a.x < x and s.planted and s.vx > -2)
@@ -2263,7 +2266,7 @@ do
       not require("lib/sentry_mask").intersects(a.x, a.y, other.x, other.y) and a.x < other.x and s.vx == 0)
     a.vx, a.vy = 0, 0
     t.projectile_hit(a, s, 20, 2, -1, 777)
-    a.contact(a, { other = { kind = "missile", uid = 777, alive = false }, vx = 8, vy = -4 })
+    a.contact(a, { other = { kind = "missile", id = 777, alive = false }, vx = 8, vy = -4 })
     check(kind .. ": Javelin contact does not add its impulse twice", s.vx == 2 and s.vy == -1 and s.health == hp - 20)
     M.solid, M.gravity = nil, nil
   end
@@ -2423,17 +2426,17 @@ do
       check(kind .. ": full feet art remains 8px below the buried mask anchor", math.abs(visible_feet-body.y-8) < 0.000001
         and visible_feet > 100 and body.y >= 99 and body.y < 100
         and base.depth == wa.depth.BEHIND_TERRAIN)
-      body:despawn(); t.state[body.id] = nil
+      body:remove(); t.state[body.id] = nil
       -- An allied worm stands exactly where the first candidate would be.
       ally.x, ally.y = owner.x, owner.y
       local other, os = t.place({ worm = owner })
       check(kind .. ": searches around another worm, allied or enemy", other and mask.clear(other.x, other.y, { owner, ally }, owner.id, t.settle_px)
         and (other.x ~= ally.x or other.y ~= owner.y - 8))
-      other:despawn(); t.state[other.id] = nil
+      other:remove(); t.state[other.id] = nil
       ally.visible, ally.alliance = false, 1
       local hidden = t.place({ worm = owner })
       check(kind .. ": hidden opponents also retain body clearance", hidden and mask.clear(hidden.x, hidden.y, { owner, ally }, owner.id, t.settle_px))
-      hidden:despawn(); t.state[hidden.id] = nil
+      hidden:remove(); t.state[hidden.id] = nil
       ally.visible = true
       ally.x, ally.y = 1000, 1000
       -- Thin wall next to the worm. Free terrain beyond it is inaccessible.
@@ -3763,7 +3766,7 @@ do
   check("a ball rolling at 8 hurts the worm it rolls through, once: 5 + 55 * (speed - 4) / 11",
     v.hp < 80 and v.hp >= 75 and #M.actor_sounds == 1 and M.actor_sounds[1] == 101,
     v.hp .. " " .. table.concat(M.actor_sounds, ","))
-  check("and knocks it on and up, by 0.7 of how the ball moved (worm:hurt's vx, vy)",
+  check("and knocks it on and up, by 0.7 of how the ball moved (worm:hit's vx, vy)",
     v.knock and v.knock[1] > 4 and v.knock[1] < 6 and v.knock[2] < 0,
     v.knock and (v.knock[1] .. "," .. v.knock[2]))
   rolling(100, 3)
@@ -5457,20 +5460,20 @@ do
   M.turn_end({ worm = worm(32), active = worm(32) })
   -- WA's crates between turns fall in the match's gravity; one that was
   -- there when the turn ended does not end it.
-  M.crates = { { kind = "crate", uid = 40 }, { kind = "crate", uid = 41 } }
+  M.crates = { { kind = "crate", id = 40 }, { kind = "crate", id = 41 } }
   M.digit = 5
   M.message(w, wa.msg.FRAME_FINISH)
   M.digit = nil
   M.message(w, wa.msg.FRAME_FINISH)
   M.message(w, wa.msg.FIRE_WEAPON)
-  M.body_move({ kind = "crate", uid = 41 })
+  M.body_move({ kind = "crate", id = 41 })
   check("a crate in the turn (a Crate Shower) keeps it", M.gravity == (0.014373779296875 * 2.4))
   M.turn_end({ worm = w, active = w })
-  M.body_move({ kind = "crate", uid = 41 })
-  M.body_move({ kind = "crate", uid = 40 })
+  M.body_move({ kind = "crate", id = 41 })
+  M.body_move({ kind = "crate", id = 40 })
   check("a crate already there, moving in the settling, keeps it", M.gravity == (0.014373779296875 * 2.4))
-  M.crates[#M.crates + 1] = { kind = "crate", uid = 42 }
-  M.body_move({ kind = "crate", uid = 42 })
+  M.crates[#M.crates + 1] = { kind = "crate", id = 42 }
+  M.body_move({ kind = "crate", id = 42 })
   check("a crate dropped between turns restores the match's gravity", M.gravity == 0.014373779296875)
   M.turn_start({ worm = worm(32), active = worm(32) })
   check("the next turn after that leaves it", M.gravity == 0.014373779296875)
@@ -6278,7 +6281,7 @@ do
   local id = 0
   local function impact(vx, vy, before_explode)
     id = id + 1
-    M.missile({ weapon = "prod", id = id, uid = id + 1000, phase = "pre", vx = vx, vy = vy })
+    M.missile({ weapon = "prod", id = id, phase = "pre", vx = vx, vy = vy })
     if before_explode then before_explode(id) end
     -- WA's explosion reports the missile's owner, which is not a worm.
     spec.on_explode({ x = 100, y = 100, missile = id, worm = { owner_object = true } })
@@ -6300,7 +6303,7 @@ do
   check("thrower receives neither thrust nor damage", owner.vx == 0 and owner.vy == 0)
   -- Handles are not table identities: native queries can wrap the same worm again.
   local owner_alias = { id = owner.id, kind = "worm", x = owner.x, y = owner.y }
-  function owner_alias:hurt() error("Javelin selected another handle for its thrower") end
+  function owner_alias:hit() error("Javelin selected another handle for its thrower") end
   nearby = { owner_alias, enemy }
   impact(8, -4)
   check("thrower exclusion uses stable worm identity", owner.hp == owner_hp and enemy.hp == enemy_hp - 40)
@@ -6310,7 +6313,7 @@ do
   nearby = { owner, enemy }
   impact(8, -4, function(missile)
     owner.turn, enemy.turn = false, true
-    M.missile({ weapon = "prod", id = missile, uid = missile + 1000, phase = "post", vx = 8, vy = -4 })
+    M.missile({ weapon = "prod", id = missile, phase = "post", vx = 8, vy = -4 })
   end)
   check("the thrower's identity survives a control/turn change", owner.hp == owner_hp and enemy.hp == enemy_hp - 80)
   owner.turn, enemy.turn = true, false
@@ -6388,14 +6391,14 @@ do
   owner.x, owner.y = 100, 100
   nearby = { owner_alias }
   stamps_before = #M.stamps
-  M.missile({ weapon = "prod", id = 7001, uid = 8001, phase = "pre", vx = -1, vy = 8 })
+  M.missile({ weapon = "prod", id = 7001, phase = "pre", vx = -1, vy = 8 })
   spec.on_explode({ x = 99, y = 108, missile = 7001, worm = { owner_object = true } })
   local deep = M.stamps[#M.stamps]
   check("a throw into the ground at the thrower's feet sticks deeper instead of holding him",
     owner.hp == 100 and #M.stamps == stamps_before + 1 and deep.frame == 16
     and deep.x == 99 and deep.y == 127)
   -- WA bursts it on the last free pixel, in his own bottom row: deeper still.
-  M.missile({ weapon = "prod", id = 7002, uid = 8002, phase = "pre", vx = -1, vy = 8 })
+  M.missile({ weapon = "prod", id = 7002, phase = "pre", vx = -1, vy = 8 })
   spec.on_explode({ x = 99, y = 106, missile = 7002, worm = { owner_object = true } })
   deep = M.stamps[#M.stamps]
   check("an impact on the worm's own bottom row still sticks, its tail in the ground",
@@ -6456,7 +6459,7 @@ do
   owner.turn, enemy.turn = true, false
   wa.weapons.launch = function() return 8003 end
   spec.on_fire({ worm = owner, x = 100, y = 100, vx = 12, vy = -4 })
-  M.missile({ weapon = "prod", id = 8003, uid = 9003, phase = "pre", vx = 8, vy = 4 })
+  M.missile({ weapon = "prod", id = 8003, phase = "pre", vx = 8, vy = 4 })
   nearby = { enemy }
   spec.on_explode({ x = 100, y = 100, missile = 8003 })
   check("later impacts use incoming flight velocity rather than initial launch speed",
@@ -6484,7 +6487,7 @@ do
   check("Javelin finds scripted sentry bodies and deals 20 damage without a terrain stamp",
     state.health == hp - 20 and state.disabled and #M.stamps == stamps)
   check("Javelin gives the sentry quarter incoming velocity", state.vx == 2 and state.vy == -1)
-  a.contact(a, { other = { kind = "missile", uid = id + 1000, alive = false }, vx = 8, vy = -4 })
+  a.contact(a, { other = { kind = "missile", id = id, alive = false }, vx = 8, vy = -4 })
   check("the same native Javelin contact cannot double the push", state.vx == 2 and state.vy == -1)
   M.solid = nil
 

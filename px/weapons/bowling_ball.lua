@@ -70,7 +70,7 @@ function weapon.setup()
     local x0 = drops[1] - lead * STRIKE_SPACING * dir
     local step = 0
     local plane = wa.actors.spawn({
-      sprite = PLANE, x = x0, y = y0, gravity = false, collide = false, owner = ev.worm,
+      sprite = PLANE, x = x0, y = y0, owner = ev.worm,
       on = function(a)
         local k = step - lead + 1
         if k >= 1 and k <= STRIKE_BALLS then
@@ -79,7 +79,7 @@ function weapon.setup()
         step = step + 1
         a.x, a.y, a.vx, a.vy = x0 + step * STRIKE_SPACING * dir, y0, 0, 0
         if (dir > 0 and a.x > width + PLANE_EDGE) or (dir < 0 and a.x < -PLANE_EDGE) then
-          a:despawn()
+          a:remove()
         end
       end,
     })

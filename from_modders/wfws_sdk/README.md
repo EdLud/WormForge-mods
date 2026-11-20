@@ -639,7 +639,7 @@ worms.
   passes `(victim, vx, vy, hit)`, the throw the layer computed and the strike that
   landed (`hit.frame`, `hit.damage`, `hit.power`, `hit.lift`), and the callback
   calls
-  `victim:hurt{ amount = 24, vx = vx, vy = vy }` or, for an electrical strike,
+  `victim:hit{ amount = 24, vx = vx, vy = vy }` or, for an electrical strike,
   `zap.hurt_electric(victim, 24, { push_x = vx, push_y = vy, retain = true })`.
   Damage, kind, sound and any extra effect stay in the weapon, so the SDK needs no
   new hit kinds. A callback that raises is `pcall`ed, so one broken weapon cannot

@@ -20,19 +20,18 @@ local function place(shot)
     if s.health<=0 then
       s.alive=false
       a:explode{damage=10,id=100}
-      a:despawn()
+      a:remove()
     end
   end
   s.actor = wa.actors.spawn{
     sprite=false,owner=shot.worm,x=x,y=y,origin="center",persist=true,
-    gravity=false,drown=false,
     body={shape=ART.."body.png",hits={},hit_by="all"},
     on={frame=function(a)
       a.x,a.y,a.vx,a.vy=s.x,s.y,0,0
     end,hit=hit},
   }
   platforms[#platforms+1]=s
-  s.actor:sound(112)
+  wa.sound.play(s.actor, 112)
 end
 
 weapon.definition = {

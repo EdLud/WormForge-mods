@@ -26,7 +26,7 @@ function weapon.setup()
     local force = pyro.force(s)
     local owner = t.owner(a, s)
     if owner == a then return false end
-    a:sound(LAUNCH_SOUND)
+    wa.sound.play(a, LAUNCH_SOUND)
     wa.weapons.launch({ weapon = "stock.petrol_bomb", owner = owner,
       x = shot.x, y = shot.y, vx = shot.dx * force, vy = shot.dy * force,
       missile = { explosion = { power = DAMAGE } } })

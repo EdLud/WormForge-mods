@@ -11,7 +11,7 @@ end
 local function setup()
   local worm = { id = 1, kind = "worm", x = 100, y = 200, hp = 100,
     taken = false, hurts = 0 }
-  function worm:hurt(arg)
+  function worm:hit(arg)
     if type(arg) == "table" then
       self.last = { amount = arg.amount, vx = arg.vx, vy = arg.vy, push = true }
     else
@@ -46,7 +46,7 @@ local function setup()
         local dmg = math.floor(o.damage * (o.radius - dist) / o.radius)
         if dist < o.radius and dmg > 0 then
           if obj.kind == "worm" then
-            if obj.hp > 0 then obj:hurt(dmg); n = n + 1 end
+            if obj.hp > 0 then obj:hit(dmg); n = n + 1 end
           elseif obj.hit and obj:hit(dmg, 0, 0) then
             n = n + 1
           end

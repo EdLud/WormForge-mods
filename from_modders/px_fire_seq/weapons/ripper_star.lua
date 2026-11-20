@@ -152,7 +152,7 @@ function M.install(ctx)
       end
       if target then
         if target.kind == "worm" then
-          target:hurt{ amount = DAMAGE, vx = trunc(vx / 4), vy = trunc(vy / 4) }
+          target:hit{ amount = DAMAGE, vx = trunc(vx / 4), vy = trunc(vy / 4) }
         else
           target:hit(DAMAGE, trunc(vx / 2), trunc(vy / 2), "bullet")
         end

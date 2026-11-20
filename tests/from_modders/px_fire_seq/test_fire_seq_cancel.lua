@@ -6,7 +6,7 @@ local wa = {
   actors = {
     spawn = function(spec)
       local a = { dead = false, on = spec.on, x = spec.x or 0, y = spec.y or 0,
-        despawn = function(self) self.dead = true end }
+        remove = function(self) self.dead = true end }
       spawned[#spawned + 1] = a
       return a
     end,

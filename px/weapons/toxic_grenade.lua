@@ -89,11 +89,10 @@ local function detonate(event)
       s.age=s.age+1
     elseif #puffs==0 then
       for i,c in ipairs(clouds) do if c==s then table.remove(clouds,i);break end end
-      a:despawn()
+      a:remove()
     end
   end
-  s.actor=wa.actors.spawn{sprite=false,owner=owner,x=s.x,y=s.y,gravity=false,collide=false,
-    persist=true,drown=false,light=false,on=step}
+  s.actor=wa.actors.spawn{sprite=false,owner=owner,x=s.x,y=s.y,persist=true,light=false,on=step}
   clouds[#clouds+1]=s
 end
 

@@ -37,6 +37,7 @@ local function mock()
       return keys
     end,
     random = function(lo, hi) return M.rng(lo, hi) end,
+    sound = { play = function(target, name) if target.sounds then target.sounds[#target.sounds + 1] = name end end },
     assets = { load = function(spec) M.loads[#M.loads + 1] = spec end },
     worms = { all = function() return M.worms end },
     land = { solid = function(x, y) return M.solid(x, y) end, trace = function() return nil end },
@@ -69,9 +70,8 @@ local function mock()
         function a:on_feet() return true end
         function a:in_water() return false end
         function a:warp(w) self.x, self.y = w.x, w.y end
-        function a:sound(s) self.sounds[#self.sounds + 1] = s end
         function a:explode(b) self.boom = b end
-        function a:despawn() self.dead = true end
+        function a:remove() self.dead = true end
         M.actors[#M.actors + 1] = a
         return a
       end,

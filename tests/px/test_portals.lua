@@ -24,7 +24,7 @@ wa = {
     function a:scale(v) self.scale_value=v end
     function a:gfx(v) self.gfx_value=v end
     function a:frame(v) self.frame_value=v end
-    function a:despawn() self.dead=true end
+    function a:remove() self.dead=true end
     actors[#actors+1]=a; return a
   end },
   on = {}, msg = { FRAME_FINISH = 2 },
@@ -62,8 +62,8 @@ for _, name in ipairs({"body_move", "worm_message", "turn_start", "turn_end", "d
     end
   end
 end
-local function body(kind, uid, x, y, vx, vy)
-  local b = { kind=kind, uid=uid, id=uid, x=x, y=y, vx=vx or 0, vy=vy or 0, facing=1, hp=100 }
+local function body(kind, id, x, y, vx, vy)
+  local b = { kind=kind, id=id, x=x, y=y, vx=vx or 0, vy=vy or 0, facing=1, hp=100 }
   function b:fits(_, _, mode) assert(mode=="terrain"); return not solid_exit end
   function b:warp(s)
     self.warps=(self.warps or 0)+1

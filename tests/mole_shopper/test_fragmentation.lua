@@ -12,7 +12,7 @@ wa = {
   view = {ripple=function(v) ripples[#ripples+1]=v end},
   actors = {spawn=function(spec)
     local a={spec=spec,dead=false}
-    function a:despawn() self.dead=true end
+    function a:remove() self.dead=true end
     speakers[#speakers+1]=a
     return a
   end},
@@ -69,7 +69,7 @@ assert(blasts[1].push_pct==60 and blasts[1].terrain_radius==90)
 assert(#launches==4 and #sounds==1)
 assert(sounds[1][1]==speakers[1] and sounds[1][1]~=w, "audio must use the blast emitter, not the event owner")
 assert(speakers[1].spec.x==50 and speakers[1].spec.y==60)
-assert(speakers[1].spec.persist and speakers[1].spec.solid==false)
+assert(speakers[1].spec.persist and speakers[1].spec.body==nil)
 frame=150
 speakers[1].spec.on(speakers[1])
 assert(not speakers[1].dead)

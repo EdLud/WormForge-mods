@@ -13,14 +13,13 @@ function target:poison(n)
   if poison_dose==0 then poison_dose=n;return true end
   return false
 end
-wa={msg={TURN_STARTED=56},depth={OBJECTS=13,TERRAIN=0x180000},world={frame=function()return frame end},
+wa={sound={play=function(_,n)assert(n==112)end},msg={TURN_STARTED=56},depth={OBJECTS=13,TERRAIN=0x180000},world={frame=function()return frame end},
   worms={all=function()return {target}end},
   land={solid=function()return blocked end},
   random=function(lo,hi)sim_random=sim_random+1;return math.floor((lo+hi)/2)end,
   actors={spawn=function(spec)
     local a={id=#bodies+1,x=spec.x,y=spec.y,vx=0,vy=0,spec=spec,booms=0}
-    function a:despawn()self.id=0 end
-    function a:sound(n)assert(n==112)end
+    function a:remove()self.id=0 end
     function a:explode(e)
       assert(e.damage==10 and e.id==100);self.booms=self.booms+1
       -- Native explosions can deliver another hit before the caller returns.
@@ -68,7 +67,7 @@ local cloud=bodies[3]
 local function step()
   frame=frame+1;cloud.spec.on(cloud)
 end
-assert(cloud.spec.persist and not cloud.spec.collide and not cloud.spec.gravity)
+assert(cloud.spec.persist and cloud.spec.body == nil and not cloud.spec.gravity)
 step();render();assert(#draws==6 and #bodies==3)
 local before=sim_random
 for _=1,10 do render();assert(#draws==6)end

@@ -68,7 +68,7 @@ local function begin(worm, opts, damage)
     if damage > 0 then
       if opts.damage_now then
         applying = true
-        worm:hurt(damage)
+        worm:hit(damage)
         applying = false
       else
         t.damage = t.damage + damage
@@ -78,7 +78,7 @@ local function begin(worm, opts, damage)
   end
   if opts.damage_now and damage > 0 then
     applying = true
-    worm:hurt(damage)
+    worm:hit(damage)
     applying = false
     damage = 0
   end
@@ -116,7 +116,7 @@ local function finish(t)
   end
   if t.damage > 0 and (worm.hp or 0) > 0 then
     applying = true
-    worm:hurt(t.damage)
+    worm:hit(t.damage)
     applying = false
   end
   local s = t.push_scale or 1
@@ -156,8 +156,7 @@ wa.on.worm_message(function(worm)
   if spawned then return end
   spawned = true
   wa.actors.spawn({
-    sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false, owner = worm, on = tick,
+    sprite = false, x = 0, y = 0, persist = true, owner = worm, on = tick,
   })
 end, { msgs = { wa.msg.FRAME_FINISH } })
 

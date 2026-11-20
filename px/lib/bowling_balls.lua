@@ -238,11 +238,11 @@ function balls.setup()
         fx, fy = fx * DAMAGE_FORCE, fy * DAMAGE_FORCE
       end
       if obj.kind == "worm" then
-        obj:hurt({ amount = damage, vx = fx, vy = fy })
+        obj:hit({ amount = damage, vx = fx, vy = fy })
       else
         obj:hit(damage, fx, fy)
       end
-      a:sound(crushed and SOUND_CRUSH or SOUND_HIT)
+      wa.sound.play(a, crushed and SOUND_CRUSH or SOUND_HIT)
     end
     for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
       for _, obj in ipairs(group.all() or {}) do hit(obj) end
@@ -365,13 +365,13 @@ function balls.setup()
     if not b.sinking then
       b.sinking, b.asleep, b.low = true, false, false
       shared.bowling_balls[a.id] = nil
-      a:sound(SOUND_SPLASH)
+      wa.sound.play(a, SOUND_SPLASH)
     end
     b.vx, b.vy = b.vx * SEA_DRAG, b.vy * SEA_DRAG + SEA_SINK
     b.rvx, b.rvy = b.vx, b.vy
     b.x, b.y = b.x + b.vx, b.y + b.vy
     if b.y >= wa.world.water() + SUNK then
-      a:despawn()
+      a:remove()
       return
     end
     spin(b)
@@ -387,13 +387,12 @@ function balls.setup()
       asleep = false, alliance = owner and owner.alliance,
     }
     local a = wa.actors.spawn({
-      sprite = SHEET, x = x, y = y + SPRITE_DROP, gravity = false, collide = false, owner = owner,
-      as_object = true,
+      sprite = SHEET, x = x, y = y + SPRITE_DROP, owner = owner, body = {},
       on = {
         hit = function(_, hit) take_hit(b, hit) end,
         frame = function(a)
           if b.gone then
-            a:despawn()
+            a:remove()
             return
           end
           if b.sinking or b.y >= wa.world.water() then
@@ -428,7 +427,7 @@ function balls.setup()
           local speed = think(b)
           if b.gone then
             shared.bowling_balls[a.id] = nil
-            a:despawn()
+            a:remove()
             return
           end
           if speed > PUSH_SPEED then push_balls(a.id, b, speed) end

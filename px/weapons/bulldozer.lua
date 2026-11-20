@@ -49,7 +49,7 @@ function weapon.setup()
     for _, w in ipairs(wa.worms.all()) do
       if w.hp > 0 and not (turn and w.id == turn.id) then
         local vx, vy = push_of(m, w, RADIUS.worm)
-        if vx then w:hurt({ amount = 1, vx = vx, vy = vy }) end
+        if vx then w:hit({ amount = 1, vx = vx, vy = vy }) end
       end
     end
     for _, kind in ipairs({ "mine", "crate", "oil" }) do

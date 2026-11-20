@@ -32,7 +32,7 @@ function weapon.setup()
         return
       end
       drills[id] = nil
-      a:despawn()
+      a:remove()
     end
   end
 
@@ -42,7 +42,7 @@ function weapon.setup()
       local id = worm.id
       drills[id] = wa.actors.spawn({
         sprite = false, x = worm.x, y = worm.y,
-        gravity = false, collide = false, owner = worm,
+        owner = worm,
         on = follow_drill(worm, id),
       })
     end

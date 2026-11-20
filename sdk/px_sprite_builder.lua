@@ -71,7 +71,7 @@ function M.flight(ctx, opts)
       follow[id] = nil
       spin_ang[id] = nil
       cycl_phase[id] = nil
-      b:despawn()
+      b:remove()
     end
   end
 
@@ -85,7 +85,6 @@ function M.flight(ctx, opts)
     if not f then
       f = { actor = wa.actors.spawn({
         sprite = opts.sheet, x = m.x, y = m.y,
-        gravity = false, collide = false,
         owner = owner or current_worm(), on = gone(m.id),
       }) }
       follow[m.id] = f

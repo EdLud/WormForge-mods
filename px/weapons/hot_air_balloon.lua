@@ -72,8 +72,8 @@ function weapon.setup()
         worm.id, b.ticks, why, wa.world.turn_clock()
       ))
       b.active, b.ticks = false, 0
-      if b.balloon then b.balloon:despawn(); b.balloon = nil end
-      if b.basket then b.basket:despawn(); b.basket = nil end
+      if b.balloon then b.balloon:remove(); b.balloon = nil end
+      if b.basket then b.basket:remove(); b.basket = nil end
       worm.body_visible = true
       balloon_sound(worm, "pop", 4)
       local vy = against_land and math.max(b.vy, 0) or b.vy
@@ -87,8 +87,7 @@ function weapon.setup()
       local f = worm.facing
       local function art(sheet)
         local a = wa.actors.spawn({
-          sprite = sheet, x = b.x, y = b.y, gravity = false,
-          collide = false, owner = worm, visibility = worm, on = function() end,
+          sprite = sheet, x = b.x, y = b.y, owner = worm, visibility = worm, on = function() end,
         })
         a:gfx({ follow = worm })
         return a

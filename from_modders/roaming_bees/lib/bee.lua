@@ -358,7 +358,7 @@ local function detonate(a, s)
   wa.sound.play(a,54)
   a:explode({ damage = s.supercharged and 55 or 40, id = 100 })
   state[a.id] = nil
-  a:despawn()
+  a:remove()
 end
 
 local STING_MIN    = 39
@@ -555,7 +555,7 @@ local function hatDropTick(h)
   h:angle(d.rot)
   if d.age >= HAT_DROP_FRAMES or h:in_water() then
     hatDrops[h.id] = nil
-    h:despawn()
+    h:remove()
   end
 end
 
@@ -574,7 +574,7 @@ local function dropHat(a, s)
     origin = "center",
     owner = s.owner,
     body = { shape = M.HAT, hits = { land = true }, hit_by = {} },
-    gravity = true,
+    gravity = 1,
     drown = true,
     on = { frame = hatDropTick },
   })
@@ -621,7 +621,7 @@ local function brain(a, ev)
   if s.freeMe then
     letGo(s, 0, 0)
     state[a.id] = nil
-    a:despawn()
+    a:remove()
     return
   end
 

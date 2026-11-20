@@ -162,7 +162,7 @@ return {
       return function(a)
         if worm.weapon ~= "pooz.runner" or a:in_water() then
           restore(worm, a)
-          a:despawn()
+          a:remove()
           return
         end
 
@@ -416,9 +416,6 @@ return {
           y = worm.y,
           vx = 0,
           vy = 0,
-          gravity = false,
-          collide = false,
-          loop = false,
           owner = worm,
           on = brain(worm),
         })

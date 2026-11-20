@@ -54,11 +54,10 @@ function M.install(ctx)
 
   local function boom(z, obj)
     local b = wa.actors.spawn({
-      sprite = false, x = z.x, y = z.y, gravity = false, collide = false,
-      owner = z.owner, on = function() end,
+      sprite = false, x = z.x, y = z.y, owner = z.owner, on = function() end,
     })
     b:explode({ damage = DAMAGE, id = PUSH, below = false })
-    if not b.dead then b:despawn() end
+    if not b.dead then b:remove() end
     if obj.kind == "mine" then
       local fuse = obj.fuse
       if not fuse or fuse < 0 then fuse = wa.random(MINE_FUSE_MIN, MINE_FUSE_MAX) end

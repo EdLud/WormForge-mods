@@ -20,7 +20,7 @@ function Worm:heal(n, opts)
   self.healed = (self.healed or 0) + 1
   return self.hp
 end
-function Worm:hurt(spec)
+function Worm:hit(spec)
   self.hp = self.hp - spec.amount
   self.hits = self.hits or {}
   self.hits[#self.hits + 1] = spec

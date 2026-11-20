@@ -56,10 +56,10 @@ function M.install(ctx)
 
   local function blast(m, x, y)
     local b = wa.actors.spawn({ sprite = ART .. "idle.png", x = x, y = y,
-      gravity = false, collide = false, owner = m.owner, on = function() end })
+      owner = m.owner, on = function() end })
     b:scale(0)
     b:explode({ damage = DAMAGE, id = BLAST, below = false })
-    if not b.dead then b:despawn() end
+    if not b.dead then b:remove() end
     if super_buster and m.owner then
       wa.fire.spawn({ owner = m.owner, x = x, y = y, count = 6,
         duration = FIRE.duration, up_power = FIRE.up_power, damage = FIRE.damage })
@@ -74,8 +74,8 @@ function M.install(ctx)
 
   local function remove(m)
     busters[m.body.id] = nil
-    if not m.body.dead then m.body:despawn() end
-    if m.glow and not m.glow.dead then m.glow:despawn() end
+    if not m.body.dead then m.body:remove() end
+    if m.glow and not m.glow.dead then m.glow:remove() end
   end
 
   local function boom(m)
@@ -142,7 +142,7 @@ function M.install(ctx)
           if m.dig_time <= 0 then boom(m) return end -- PX: out of fuel -> explode
           m.snd_timer = m.snd_timer - 1
           if m.snd_timer <= 0 then
-            a:sound(SND .. LOOP_SOUNDS[m.piece])
+            wa.sound.play(a, SND .. LOOP_SOUNDS[m.piece])
             m.piece = m.piece % #LOOP_SOUNDS + 1
             m.snd_timer = LOOP_FRAMES
           end
@@ -168,7 +168,7 @@ function M.install(ctx)
         if hit then
           m.x, m.y = (hit.x or nx + tip_x) - tip_x, (hit.y or ny + tip_y) - tip_y
           m.dig, m.fire_timer = true, 0
-          a:sound(SND .. IMPACT_SOUND)
+          wa.sound.play(a, SND .. IMPACT_SOUND)
           m.piece, m.snd_timer = 1, IMPACT_FRAMES
         else
           m.x, m.y = nx, ny
@@ -210,12 +210,12 @@ function M.install(ctx)
       mask_timer = 0, snd_timer = 0, piece = 1 } -- both timers fire on the first frame they can
     m.body = wa.actors.spawn({
       sprite = ART .. "idle.png", x = x, y = SKY, vx = 0, vy = 0,
-      gravity = false, collide = false, owner = worm, as_object = true,
+      owner = worm, body = {},
       on = frame_of(m),
     })
     if super_buster then
       m.glow = wa.actors.spawn({ sprite = ART .. "glow.png", x = x, y = SKY,
-        gravity = false, collide = false, owner = worm, on = function() end })
+        owner = worm, on = function() end })
     end
     busters[m.body.id] = m
     return m

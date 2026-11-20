@@ -60,8 +60,7 @@ local function begin()
   if #W.ticks > 0 then
     local size = wa.world.size()
     wa.actors.spawn({
-      sprite = "sprites/flat.png", visible = false, gravity = false, collide = false,
-      owner = "none", x = size.w // 2, y = 0,
+      sprite = "sprites/flat.png", visible = false, owner = "none", x = size.w // 2, y = 0,
       on = function()
         local frame = wa.world.frame()
         for _, tick in ipairs(W.ticks) do tick(frame) end

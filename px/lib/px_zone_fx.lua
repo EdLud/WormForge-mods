@@ -52,10 +52,9 @@ local function emit(sheet, x, y, aim, glow, owner)
   if not driver then
     if not owner then return end
     driver = wa.actors.spawn({ sprite = false, x = x, y = y, owner = owner,
-      gravity = false, collide = false,
       on = function(a)
         step()
-        if #particles == 0 then driver = nil; a:despawn() end
+        if #particles == 0 then driver = nil; a:remove() end
       end })
   end
   local speed, heading = -3 - random() * 4, random() * 2 * math.pi

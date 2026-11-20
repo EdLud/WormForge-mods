@@ -129,7 +129,7 @@ local function new_match(options, extra)
     actors = {
       spawn = function(spec)
         local a = { x = spec.x, y = spec.y, on = spec.on, owner = spec.owner }
-        function a:despawn() self.dead = true end
+        function a:remove() self.dead = true end
         M.spawned[#M.spawned + 1] = a
         return a
       end,

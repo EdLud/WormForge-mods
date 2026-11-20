@@ -28,7 +28,7 @@ wa={
     quad=function(q)quads[#quads+1]=q end},
   land={cut=function(q)cuts[#cuts+1]=q end},
   worms={all=function()return {w,{id=18,x=114,y=100,hp=100,turn=false,
-    hurt=function(_,q)hits[#hits+1]=q end}}end},
+    hit=function(_,q)hits[#hits+1]=q end}}end},
   missiles={all=function()return bodies end},
 }
 local drilling=require("weapons/drilling_crew")
@@ -47,7 +47,7 @@ assert(#cuts==1 and cuts[1].x==100 and cuts[1].y==93 and cuts[1].radius==7)
 assert(#hits==1 and hits[1].amount==0 and hits[1].vx>2 and hits[1].vy==0)
 sample(1,321,"post");sample(2,322,"pre");sample(2,322,"post")
 assert(#cuts==1 and #hits==1 and randoms==0,"children do not cut/push; simulation does not emit particles")
-bodies={{id=2,uid=22,x=100,y=100}}
+bodies={{id=2,x=100,y=100}}
 assert(draw()==0 and randoms==0)
 tick=1;sample(2,322,"post")
 assert(draw()==1 and randoms==2)
@@ -56,7 +56,7 @@ assert(draw()==1 and randoms==n and quads[1].points[1][1]==rx and quads[1].point
   "paused/repeated draws neither emit nor age a particle")
 assert(#cuts==1 and #hits==1,"drawing does not alter gameplay")
 bodies={};tick=25;assert(draw()==0,"a skipped render expires visual data")
-for i=1,500 do bodies[i]={id=100+i,uid=100+i,x=100,y=100};sample(100+i,322,"post")end
+for i=1,500 do bodies[i]={id=100+i,x=100,y=100};sample(100+i,322,"post")end
 tick=26;draw();tick=27;for _,b in ipairs(bodies)do sample(b.id,322,"post")end
 assert(draw()<=256,"the visual pool stays bounded even with many projectiles")
 bodies={};tick=1;assert(draw()==0,"replay rewind clears the old visual trail")

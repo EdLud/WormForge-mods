@@ -195,7 +195,7 @@ local function think(t, a, s)
     s.reload_time = s.reload_time + s.reload_time * t.fire_increase_pct // 100 // FRAME_MS * FRAME_MS
     s.ammo = s.ammo - 1
     if s.aim_sound <= 0 then
-      a:sound(AIM_SOUND)
+      wa.sound.play(a, AIM_SOUND)
       s.aim_sound = t.aim_sound_gap
     end
   else

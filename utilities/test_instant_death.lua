@@ -48,7 +48,7 @@ for _, instant in ipairs({ "off", "settled", "in_flight", true }) do
         return true
       end
       function w:commit_health() self.commits = self.commits + 1; return true end
-      function w:hurt() error("must not add damage") end
+      function w:hit() error("must not add damage") end
       function w:release() error("must not change movement") end
       return w
     end

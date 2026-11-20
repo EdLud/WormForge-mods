@@ -181,13 +181,13 @@ return function()
   local function orb_brain(o)
     local spin = 0
     return function(a)
-      a:gravity()
+      a.vy = a.vy + wa.world.gravity()
       local hit = a:move({ terrain = true, worms = true })
       if hit.terrain or hit.land or hit.worm then
         flashes[#flashes + 1] = { x = a.x, y = a.y, tint = o.tint, born = now }
         orbs[o.id] = nil
         a:explode({ damage = DAMAGE, id = BLAST })
-        a:despawn()
+        a:remove()
         return
       end
       if now % TRAIL_EVERY == 0 then
@@ -203,7 +203,7 @@ return function()
       a:advance()
       if a:in_water() then
         orbs[o.id] = nil
-        a:despawn()
+        a:remove()
       end
     end
   end
@@ -214,7 +214,7 @@ return function()
       o.a = wa.actors.spawn({
         sprite = ORB,
         x = s.x, y = s.y, vx = s.vx, vy = s.vy,
-        gravity = false, collide = false, owner = owner,
+        owner = owner,
         on = orb_brain(o),
       })
       o.id = o.a.id
@@ -276,7 +276,7 @@ return function()
     local finish = START_DELAY + #list * BATCH_GAP
     wa.actors.spawn({
       sprite = false, x = shots[1].x, y = shots[1].y,
-      gravity = false, collide = false, owner = owner,
+      owner = owner,
       on = function(a)
         now = now + 1
         for i = #flashes, 1, -1 do
@@ -303,7 +303,7 @@ return function()
           wa.log(string.format("stress: end at frame %d", wa.world.frame()))
         end
         if now > finish and next(orbs) == nil and #flashes == 0 then
-          a:despawn()
+          a:remove()
         end
       end,
     })

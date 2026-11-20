@@ -136,7 +136,7 @@ return {
       sparks[a.id] = n
       if n >= SPARK_LIFE then
         sparks[a.id] = nil
-        a:despawn()
+        a:remove()
       end
     end
 
@@ -147,10 +147,6 @@ return {
         y = y,
         vx = 0,
         vy = 0,
-        gravity = false,
-        collide = false,
-        drown = false,
-        loop = false,
         origin = "center",
         on = spark_brain,
       })
@@ -161,14 +157,14 @@ return {
       s.firing = true
       s.anim = 0
       s.fire_sound = 35
-      a:sound("sounds/sentryfireloop.wav")
+      wa.sound.play(a, "sounds/sentryfireloop.wav")
     end
 
     local function stop_firing(a, s)
       if not s.firing then return end
       s.firing = false
       s.anim = 0
-      a:sound("sounds/sentryfireend.wav")
+      wa.sound.play(a, "sounds/sentryfireend.wav")
     end
 
     local function fire(a, s)
@@ -212,7 +208,7 @@ return {
       end
 
       if victim then
-        victim:hurt(DAMAGE)
+        victim:hit(DAMAGE)
         victim.vx = victim.vx + (dx * KNOCK)
         victim.vy = victim.vy + (dy * KNOCK)
       end
@@ -245,7 +241,7 @@ return {
       if target then
         if not s.had_target then
           if s.beep <= 0 then
-            a:sound("sounds/sentrybeeps2.wav")
+            wa.sound.play(a, "sounds/sentrybeeps2.wav")
             s.beep = BEEP_FRAMES
           end
         end
@@ -268,7 +264,7 @@ return {
         start_firing(a, s)
         if s.fire_sound <= 0 then
           s.fire_sound = 35
-          a:sound("sounds/sentryfireloop.wav")
+          wa.sound.play(a, "sounds/sentryfireloop.wav")
         end
         if s.cooldown <= 0 then
           fire(a, s)
@@ -303,7 +299,7 @@ return {
         s.health = s.health - ev.damage
         if s.health <= 0 then
           state[a.id] = nil
-          a:despawn()
+          a:remove()
           return
         end
       end
@@ -311,7 +307,7 @@ return {
       if s.firing then s.anim = s.anim + 1 end
 
       if not s.planted then
-        a:gravity()
+        a.vy = a.vy + wa.world.gravity()
         local hit = a:move({ terrain = true, worms = false })
 
         if hit.land then
@@ -319,7 +315,7 @@ return {
           s.planted = true
           s.px, s.py = a.x, a.y + SINK_PX
           s.arm = ARM_FRAMES
-          a:sound("sounds/sentryplace.wav")
+          wa.sound.play(a, "sounds/sentryplace.wav")
           sync(a, s)
           return
         end
@@ -328,7 +324,7 @@ return {
 
         if a:in_water() then
           state[a.id] = nil
-          a:despawn()
+          a:remove()
           return
         end
       else
@@ -369,7 +365,6 @@ return {
           y = worm.y,
           vx = (worm.vx / 2) + facing * 0.3000030517578125,
           vy = (worm.vy / 2) - 0.149993896484375,
-          loop = false,
           origin = "bottom",
           owner = worm,
           kind = "sentry",

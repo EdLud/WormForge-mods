@@ -83,9 +83,7 @@ return function(ctx)
     local out, seen = {}, {}
     local function add(obj)
       if not cleanable(obj) then return end
-      local uid = obj.uid
-      if uid == nil or uid == 0 then uid = obj.id end
-      local key = obj.kind .. ":" .. tostring(uid)
+      local key = obj.id
       if seen[key] then return end
       seen[key] = true
       local x = obj.x
@@ -242,7 +240,7 @@ return function(ctx)
     local worms = wa.worms.all()
     for _, w in ipairs(worms) do
       if w.team == losingTeamIndex and w.hp > 0 then
-        w:hurt(w.hp)
+        w:hit(w.hp)
       end
     end
   end

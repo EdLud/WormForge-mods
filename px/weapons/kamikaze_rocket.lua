@@ -63,11 +63,11 @@ function weapon.setup()
     r.life = r.life - 20
     if r.life <= 0 then
       local boom = wa.actors.spawn({
-        sprite = false, x = r.x, y = r.y, gravity = false, collide = false, owner = worm,
+        sprite = false, x = r.x, y = r.y, owner = worm,
         on = function() end,
       })
       boom:explode(BOOM)
-      boom:despawn()
+      boom:remove()
       worm.x, worm.y = -2500, wa.world.water() + 1000
       r.done = true
       return

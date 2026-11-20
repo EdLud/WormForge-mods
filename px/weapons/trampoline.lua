@@ -24,7 +24,7 @@ local function damage(s, a, amount)
   if s.health <= 0 then
     s.alive = false
     a:explode({ damage = BREAK_BLAST, id = 100 })
-    a:despawn()
+    a:remove()
   end
 end
 
@@ -95,7 +95,7 @@ local function place(fire)
 
   s.actor = wa.actors.spawn({
     sprite = false, owner = worm, x = worm.x + 3 * side, y = worm.y - 12 + HALF,
-    vx = 2 * side, vy = -3, origin = "center", persist = true, gravity = true, drown = true,
+    vx = 2 * side, vy = -3, origin = "center", persist = true, gravity = 1, drown = true,
     body = { shape = ART .. "body.png", hits = { land = true }, hit_by = "all" },
     on = { frame = frame, contact = contact, hit = hit },
   })

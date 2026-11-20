@@ -10,7 +10,7 @@ local hold_sheet=0
 local worm={id=1,kind="worm",x=100,y=100,vx=0,vy=0,hp=100,aim=0.5,facing=1,aiming=true,turn=true,
   weapon="px.gravity_gun",state="standing",alliance=0}
 function worm:ammo(id,n)ammo[#ammo+1]={id,n}end
-local mine={kind="mine",uid=7,x=0,y=0,vx=0,vy=0}
+local mine={kind="mine",id=7,x=0,y=0,vx=0,vy=0}
 local mines={mine}
 wa={msg={FRAME_FINISH=2},depth={EFFECTS=0xC0000,WORMS=0xD0000},
   math={sin=math.sin,cos=math.cos},

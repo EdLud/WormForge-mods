@@ -121,7 +121,7 @@ function weapon.setup()
     if s.before <= 0 then
       if not plane_frame(s, a) then
         subs[s.id] = nil
-        a:despawn()
+        a:remove()
         return
       end
       s.after = s.after - 1
@@ -144,8 +144,7 @@ function weapon.setup()
     s.x, s.y = s.x0, s.y0
     plane_start(s, water, wa.world.size().w)
     local a = wa.actors.spawn({
-      sprite = false, gravity = false, collide = false,
-      owner = ev.worm, x = ev.x, y = ev.y, on = function(a) sub_frame(s, a) end,
+      sprite = false, owner = ev.worm, x = ev.x, y = ev.y, on = function(a) sub_frame(s, a) end,
     })
     s.id = a.id
     subs[s.id] = s

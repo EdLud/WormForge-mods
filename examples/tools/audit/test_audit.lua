@@ -86,12 +86,12 @@ local function make(team, health)
       if #presses == 1 then
         assert(current_frame == launcher_phase_start + 40, 'launcher fires after aiming')
         launcher_seq = launcher_seq + 1
-        launcher_body = { id=launcher_seq, uid=launcher_seq, x=384, y=420, vx=8, vy=-3,
+        launcher_body = { id=launcher_seq, x=384, y=420, vx=8, vy=-3,
           weapon='stock.sheep_launcher', born=current_frame, kind='rocket' }
       elseif launcher_phase == 'airborne' and #presses == 2 then
         assert(current_frame == 90 and launcher_body.kind == 'rocket', 'second press must happen in the air')
         launcher_seq = launcher_seq + 1
-        launcher_body.id, launcher_body.uid, launcher_body.kind = launcher_seq, launcher_seq, 'sheep'
+        launcher_body.id, launcher_body.kind = launcher_seq, 'sheep'
       elseif launcher_phase == 'airborne' and #presses == 3 then
         assert(current_frame == 140 and launcher_body.kind == 'sheep', 'third airborne-path press detonates the walking sheep')
         launcher_body = nil
@@ -279,7 +279,7 @@ for _=1,60000 do
     if (lands or (scenario == 'launcher_early_land' and current_frame >= launcher_body.born + 20))
         and launcher_body.kind == 'rocket' then
       launcher_seq = launcher_seq + 1
-      launcher_body.id, launcher_body.uid, launcher_body.kind = launcher_seq, launcher_seq, 'sheep'
+      launcher_body.id, launcher_body.kind = launcher_seq, 'sheep'
       launcher_body.y, launcher_body.vy = 493, 0
     end
     launcher_body.phase = 'pre'; hooks.missile_frame(launcher_body)

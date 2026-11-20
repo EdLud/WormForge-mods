@@ -9,7 +9,7 @@ function M.install(ctx, spec)
   end
   local function stop()
     if spec.stop then spec.stop(cursor) end
-    if cursor then cursor:despawn(); cursor = nil end
+    if cursor then cursor:remove(); cursor = nil end
     owner = nil
   end
   local function start(worm, x, y)

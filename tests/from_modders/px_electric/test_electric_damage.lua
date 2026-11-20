@@ -38,7 +38,7 @@ local function setup()
   }
   function w:take(o) self.taken = true; self.take_opts = o end
   function w:release(vx, vy, opts) self.taken = false; self.vx = vx; self.vy = vy; self.release_opts = opts end
-  function w:hurt(n) self.hp = self.hp - n; self.hurts = self.hurts + 1 end
+  function w:hit(n) self.hp = self.hp - n; self.hurts = self.hurts + 1 end
   -- The frame observer spawns on the first FRAME_FINISH.
   hooks.worm_message(w, 2)
   assert(actor and actor.on, "the frame observer was not spawned")
@@ -168,7 +168,7 @@ g.tick(3)
 assert(not g.worm.taken, "not taken again")
 
 -- A worm already at 0 is taken and drawn for the hit's frame, then released
--- with its push on the next (`worm:release` carries it; `worm:hurt` does not).
+-- with its push on the next (`worm:release` carries it; `worm:hit` does not).
 local n = setup()
 n.worm.hp = 0
 n.M.taze(n.worm, { frames = 2, push_x = 3, push_y = -5 })

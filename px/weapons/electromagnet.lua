@@ -155,7 +155,7 @@ function weapon.setup()
       a:warp { x = m.x, y = m.y, vx = 0, vy = 0 }
       if m.y >= wa.world.water() + SUNK then
         remove(m)
-        a:despawn()
+        a:remove()
         return
       end
     end
@@ -164,7 +164,7 @@ function weapon.setup()
       remove(m)
       a.y = m.y - 20
       a:explode(BOOM)
-      a:despawn()
+      a:remove()
       return
     end
     planter_grace(m, a, previous_x, previous_y)
@@ -232,7 +232,7 @@ function weapon.setup()
     local a = wa.actors.spawn({
       sprite = BODY .. (pol < 0 and "magnet.png" or "magnet2.png"),
       x = m.x, y = m.y, vx = m.vx, vy = m.vy, owner = worm,
-      drown = false, body = { physics = "mine", pushed_by = PUSHED_BY }, on = {
+      body = { physics = "mine", pushed_by = PUSHED_BY }, on = {
         frame = function(actor) frame(m, actor) end,
         hit = function(actor, event) hit(m, actor, event) end,
       },

@@ -98,9 +98,9 @@ for i,v in ipairs({{0,-4,0},{4,0,8},{0,4,16},{-4,0,24},{4,-4,3},{4,4,11},{-4,4,1
   fire(v[1],v[2]);def.on_explode{missile=100,x=200,y=200}
   assert(stamps[#stamps].frame==v[3])
 end
-local target={kind="worm",id=18,x=200,y=200,hurt=function(self,n)damage[#damage+1]=n end}
+local target={kind="worm",id=18,x=200,y=200,hit=function(self,n)damage[#damage+1]=n end}
 objects={w,target};w.kind="worm";w.x,w.y=200,200
-fire(12,-4);missile_hook{id=100,uid=50,weapon="px.girder_launcher",vx=8,vy=-8}
+fire(12,-4);missile_hook{id=100,weapon="px.girder_launcher",vx=8,vy=-8}
 local before=#stamps
 def.on_explode{missile=100,x=200,y=200}
 assert(target.vx==2 and target.vy==-2 and damage[1]==3 and #stamps==before)

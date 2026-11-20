@@ -88,8 +88,8 @@ function M.install(opts)
   installed = true
   local shared = require("lib/shared")
   local current_worm = shared.current_worm
-  local kinds = {} -- drum uid -> its kind
-  local launched = {} -- drum uid -> true: a Barrel Launcher's
+  local kinds = {} -- drum id -> its kind
+  local launched = {} -- drum id -> true: a Barrel Launcher's
   local particles = {} -- the icy drums' bursts, drawn only
   local seed = 1 -- their own generator: they never touch wa.random
   local last_frame
@@ -102,10 +102,10 @@ function M.install(opts)
   end
 
   local function take(drum)
-    if kinds[drum.uid] then return kinds[drum.uid] end
+    if kinds[drum.id] then return kinds[drum.id] end
     if not settings.deal then return nil end
     local kind = deal()
-    kinds[drum.uid] = kind
+    kinds[drum.id] = kind
     drum.visible = false
     return kind
   end
@@ -134,11 +134,11 @@ function M.install(opts)
     if frame == last_frame then return end
     last_frame = frame
     if settings.deal then
-      -- New drums get their kinds in uid order; the sort waits for one.
+      -- New drums get their kinds in id order; the sort waits for one.
       local all = wa.oil.all()
       for _, drum in ipairs(all) do
-        if not kinds[drum.uid] then
-          table.sort(all, function(a, b) return a.uid < b.uid end)
+        if not kinds[drum.id] then
+          table.sort(all, function(a, b) return a.id < b.id end)
           for _, d in ipairs(all) do take(d) end
           break
         end
@@ -152,8 +152,7 @@ function M.install(opts)
   end
 
   shared.no_team_owner = function(x, y)
-    return wa.actors.spawn({ owner = "none", sprite = false, gravity = false, collide = false,
-      x = x, y = y, on = function(a) a:despawn() end })
+    return wa.actors.spawn({ owner = "none", sprite = false, x = x, y = y, on = function(a) a:remove() end })
   end
 
   local function owner_for(team)
@@ -247,8 +246,7 @@ function M.install(opts)
   end
 
   BURST.mine = function(ev, owner)
-    local layer = wa.actors.spawn({ sprite = false, gravity = false, collide = false,
-      owner = owner, x = ev.x, y = ev.y, on = function(a) a:despawn() end })
+    local layer = wa.actors.spawn({ sprite = false, owner = owner, x = ev.x, y = ev.y, on = function(a) a:remove() end })
     for _ = 1, 7 do
       local vx = between(-7, 7)
       local vy = between(-7, -4)
@@ -276,8 +274,7 @@ function M.install(opts)
   end
 
   LAUNCHED.mine = function(ev, owner)
-    local layer = wa.actors.spawn({ sprite = false, gravity = false, collide = false,
-      owner = owner, x = ev.x, y = ev.y, on = function(a) a:despawn() end })
+    local layer = wa.actors.spawn({ sprite = false, owner = owner, x = ev.x, y = ev.y, on = function(a) a:remove() end })
     for _ = 1, 5 do
       local vx = between(-7, 7)
       local vy = between(-7, -4)
@@ -291,17 +288,17 @@ function M.install(opts)
     assert(KINDS[kind], "oil drums: no kind " .. tostring(kind))
     local drum = wa.oil.spawn({ x = x, y = y, snap = false })
     if not drum then return nil end
-    kinds[drum.uid] = kind
-    launched[drum.uid] = true
+    kinds[drum.id] = kind
+    launched[drum.id] = true
     drum.visible = false
     drum.vx, drum.vy = vx, vy
-    wa.log(("oil drums: launched drum %d is %s"):format(drum.uid, kind))
+    wa.log(("oil drums: launched drum %d is %s"):format(drum.id, kind))
     return drum
   end
 
   wa.on.oil_explode(function(ev)
     local kind = take(ev.drum)
-    local burst = launched[ev.drum.uid] and LAUNCHED[kind] or BURST[kind]
+    local burst = launched[ev.drum.id] and LAUNCHED[kind] or BURST[kind]
     if not burst then return end
     ev:replace()
     burst(ev, owner_for(ev.team) or shared.no_team_owner(ev.x, ev.y))
@@ -354,7 +351,7 @@ function M.install(opts)
       local a = frame * 0.02
       local sparks = (frame * 0.01) % 1
       for _, drum in ipairs(wa.oil.all({ near = { v.cx, v.cy, math.sqrt(hw * hw + hh * hh) } })) do
-        local kind = kinds[drum.uid]
+        local kind = kinds[drum.id]
         local k = kind and KINDS[kind]
         if k then
           local x, y = drum.x, drum.y

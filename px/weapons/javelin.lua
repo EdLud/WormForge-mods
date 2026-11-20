@@ -70,7 +70,7 @@ function weapon.setup()
           flight = { shooter = shooter and shooter.id }
           speed[m.id] = flight
         end
-        flight[1], flight[2], flight.uid = m.vx, m.vy, m.uid
+        flight[1], flight[2], flight.id = m.vx, m.vy, m.id
       end
     end, { weapons = { "px.javelin" } })
 
@@ -111,7 +111,7 @@ function weapon.setup()
       end
       if not target then
         local sentry = turrets.projectile_target(ev.x, ev.y)
-        if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.uid) then return end
+        if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.id) then return end
       end
       local frame = orientation(vx, vy)
       local sx, sy, deeper
@@ -127,7 +127,7 @@ function weapon.setup()
       end
       if target then
         target.vx, target.vy = vx / 4, vy / 4
-        if target.kind == "worm" then target:hurt(20)
+        if target.kind == "worm" then target:hit(20)
         else target:hit(20, vx / 2, vy / 2, "bullet") end
         return
       end

@@ -105,7 +105,7 @@ return {
     end
 
     local function despawn(a)
-      if a and not a.dead then a:despawn() end
+      if a and not a.dead then a:remove() end
     end
     local function drop(h)
       helis[h.body.id] = nil
@@ -338,13 +338,13 @@ return {
       }
       h.body = wa.actors.spawn({
         sprite = ART .. "empty.png", x = h.x, y = h.y, vx = 0, vy = 0,
-        gravity = false, collide = true, owner = worm, as_object = true,
+        owner = worm, body = { hits = { land = true, worms = true } },
         on = { frame = frame, hit = hit },
       })
       h.aim = wa.actors.spawn({ sprite = ART .. "aim.png", x = h.x, y = h.y,
-        gravity = false, collide = false, owner = worm, on = function() end })
+        owner = worm, on = function() end })
       h.gun_actor = wa.actors.spawn({ sprite = ART .. "gun.png", x = h.x, y = h.y,
-        gravity = false, collide = false, owner = worm, on = function() end })
+        owner = worm, on = function() end })
       helis[h.body.id] = h
     end
 

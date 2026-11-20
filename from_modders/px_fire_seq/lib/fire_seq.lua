@@ -146,21 +146,20 @@ local function run(owner, count, delay, fire, weapon, on_done)
   local ticker
   ticker = wa.actors.spawn({
     sprite = false, x = owner.x, y = owner.y,
-    gravity = false, collide = false, persist = true, drown = false,
-    owner = owner,
+    persist = true, owner = owner,
     on = function(a)
       a.vx, a.vy = 0, 0
       if drain > 0 then
         drain = drain - 1
         if drain <= 0 then
           release()
-          a:despawn()
+          a:remove()
         end
         return
       end
       if interrupted() then
         settle()
-        a:despawn()
+        a:remove()
         return
       end
       wait = wait - 1
@@ -172,7 +171,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
         fire(n)
         if cancelled[id] then
           settle()
-          a:despawn()
+          a:remove()
           return
         end
         if left > 0 then

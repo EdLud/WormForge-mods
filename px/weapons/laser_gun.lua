@@ -118,7 +118,7 @@ function weapon.setup()
             if obj.hp > 0 then
               local taken = r.taken[key] or 0
               local amount = taken >= 45 and 0 or taken >= 10 and 1 or 2
-              obj:hurt({ amount = amount, vx = r.dx, vy = r.dy })
+              obj:hit({ amount = amount, vx = r.dx, vy = r.dy })
               r.taken[key] = taken + amount
             end
           elseif obj.kind == "oil" or obj.kind == "crate" then
@@ -161,14 +161,14 @@ function weapon.setup()
       wa.sound.play(w, "sounds/laser_gun/laser_start.wav")
       wa.sound.play(w, "sounds/laser_gun/laser_loop.wav")
       wa.actors.spawn({
-        sprite = false, x = w.x, y = w.y, gravity = false, collide = false, owner = w,
+        sprite = false, x = w.x, y = w.y, owner = w,
         on = function(a)
           r.life = r.life - 1
           laser.step(r)
           if r.dead then
             if r.life <= -10 and #r.fx == 0 then
               lasers[r.worm_id] = nil
-              a:despawn()
+              a:remove()
             end
             return
           end

@@ -41,7 +41,7 @@ local function check(what, ok) if not ok then error("FAIL: " .. what, 2) end pri
 local function shooter(x, y, facing)
   local w = { id = 17, kind = "worm", x = x, y = y, hp = 100, turn = true, weapon = "px.girder_launcher",
     aim = 0.5, facing = facing or 1 }
-  function w:hurt(n) self.hurt_by = n end
+  function w:hit(n) self.hurt_by = n end
   return w
 end
 

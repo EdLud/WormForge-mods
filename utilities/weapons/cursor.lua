@@ -93,7 +93,7 @@ return {
           local worm = cursor.nearest(wa.worms.all(), ev.x, ev.y, function(w)
             return w.hp > 0
           end)
-          if worm then worm:hurt(10) end
+          if worm then worm:hit(10) end
         end
       end,
     })

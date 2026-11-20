@@ -11,7 +11,7 @@ local INACTIVE_FRAMES = 7 * FPS
 local CRATE_RADIUS = 9
 
 local function forget(o)
-  if o.actor then o.actor:despawn() end
+  if o.actor then o.actor:remove() end
   for i, other in ipairs(objects) do
     if other == o then
       table.remove(objects, i)
@@ -31,7 +31,7 @@ local function before(a, b)
   if ra ~= rb then return ra < rb end
   local sa, sb = stable(a), stable(b)
   if sa ~= sb then return sa < sb end
-  return (a.uid or 0) < (b.uid or 0)
+  return a.id < b.id
 end
 
 local function activator(o)
@@ -57,7 +57,7 @@ local function crates(o)
   local rx, ry = spec.radius + CRATE_RADIUS, spec.half_height + CRATE_RADIUS
   local near = { near = { o.x, o.y, math.max(rx, ry) * 1.5 } }
   for _, crate in ipairs(wa.crates.all(near)) do
-    local key = (crate.uid or 0) ~= 0 and crate.uid or crate.id
+    local key = crate.id
     if not o.crates_hit[key]
         and math.abs(crate.x - o.x) <= rx and math.abs(crate.y - o.y) <= ry then
       o.crates_hit[key] = true
@@ -161,7 +161,7 @@ function M.register(spec)
     o.armed = spec.one_shot and true or false
     o.crates_hit = {}
     o.actor = wa.actors.spawn({
-      sprite = false, x = x, y = y, gravity = false, collide = false, solid = false,
+      sprite = false, x = x, y = y,
       owner = o.owner, on = { frame = function() tick(o) end },
     })
     objects[#objects + 1] = o

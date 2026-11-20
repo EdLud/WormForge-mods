@@ -24,7 +24,7 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
   jump, Shift. Switch weapon to drop out.
 - `turret` (`example.turret`) — Space plants a persistent Lua turret, placed
   as WA places a mine. Line of sight is `wa.land.trace`; rounds are
-  `worm:hurt` and a shove, not explosions.
+  `worm:hit` and a shove, not explosions.
 - `tools` (`example.tools`) — add-ons for diagnostics and testing:
   - `tools.hello` — logs the turn phases and every hurt.
   - `tools.crate_odds` — sets the crate odds and one weapon's share of its

@@ -74,23 +74,22 @@ function weapon.setup()
 
     local function glider_art(worm, x, y, sheet)
       local a = wa.actors.spawn({
-        sprite = sheet, x = x, y = y, gravity = false,
-        collide = false, owner = worm, visibility = worm, on = function() end,
+        sprite = sheet, x = x, y = y, owner = worm, visibility = worm, on = function() end,
       })
       a:gfx({ glow_of = worm, follow = worm })
       return a
     end
 
     local function glider_drop_art(worm, g)
-      if g.art then g.art:despawn(); g.art = nil end
-      if g.pack then g.pack:despawn(); g.pack = nil end
+      if g.art then g.art:remove(); g.art = nil end
+      if g.pack then g.pack:remove(); g.pack = nil end
       g.pack_x, g.pack_y = nil, nil
       worm.body_visible = true
     end
 
     local function glider_begin_pack(worm, g)
       g.landing = nil
-      if g.art then g.art:despawn(); g.art = nil end
+      if g.art then g.art:remove(); g.art = nil end
       g.pack, g.pack_t = glider_art(worm, worm.x, worm.y, "sprites/hang_glider/pack.png"), 0
       g.pack_x, g.pack_y = worm.x, worm.y
       g.pack.facing = -worm.facing
@@ -199,7 +198,7 @@ function weapon.setup()
       local g = gliders[worm.id]
       if opened == "landed" and not (g and g.deployed) then
         g = g or glider_of(worm)
-        if g.pack then g.pack:despawn(); g.pack = nil end
+        if g.pack then g.pack:remove(); g.pack = nil end
         glider_begin_pack(worm, g)
         wa.sound.play(worm, "sounds/hang_glider/hangclose.wav")
         worm:release(0, 0)
@@ -302,7 +301,7 @@ function weapon.setup()
       end
       g.deployed, g.ang, g.target, g.cycle, g.landing, g.unstand = true, 0, 0, 0, nil, nil
       g.x, g.y = worm.x, worm.y
-      if g.pack then g.pack:despawn(); g.pack = nil end
+      if g.pack then g.pack:remove(); g.pack = nil end
       worm:take{ turn = "run", fire = true }
       wa.sound.play(worm, "sounds/hang_glider/hangopen.wav")
       return glider_frame(worm)

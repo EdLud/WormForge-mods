@@ -146,18 +146,18 @@ function weapon.setup()
 
   local function ray_actor(r, body)
     wa.actors.spawn({
-      sprite = false, x = r.x, y = r.y, gravity = false, collide = false, owner = body,
+      sprite = false, x = r.x, y = r.y, owner = body,
       on = function(a)
         laser.step(r)
         r.life = r.life - 1
         r.size = r.size - 0.07
         if r.size < 0.5 then r.size = 1.0 end
-        if r.life == 0 then a:sound("sounds/laser_gun/laser_end.wav") end
+        if r.life == 0 then wa.sound.play(a, "sounds/laser_gun/laser_end.wav") end
         if r.life <= 0 and #r.fx == 0 then
           for i, other in ipairs(rays) do
             if other == r then table.remove(rays, i) break end
           end
-          a:despawn()
+          a:remove()
         end
       end,
     })
@@ -178,12 +178,12 @@ function weapon.setup()
       ang = ang, rgb = BEAM_RGB[s.alliance + 1] or { 125, 125, 125 },
       seed = (x0 // 1 * 7919 + y0 // 1) % 0x80000000 }
     rays[#rays + 1] = r
-    a:sound("sounds/laser_gun/laser_start.wav")
+    wa.sound.play(a, "sounds/laser_gun/laser_start.wav")
 
     wa.land.cut({ x = hx, y = hy, shape = "circle", radius = HOLE })
     for _, obj in ipairs(touched(x0, y0, dx, dy, length, target.obj and target.obj.id)) do
       if obj.kind == "worm" then
-        if obj.hp > 0 then obj:hurt(WORM_DAMAGE) end
+        if obj.hp > 0 then obj:hit(WORM_DAMAGE) end
       elseif obj.kind == "crate" or obj.kind == "oil" then
         obj:hit(OBJECT_DAMAGE, dx, dy)
       elseif obj.kind == "mine" and not s.armed[obj.id] then
@@ -200,7 +200,7 @@ function weapon.setup()
         target.obj:remove()
       end
       fx_disintegrate(r, target.x, target.y)
-      a:sound(SND .. "sentrylaserdisin.wav")
+      wa.sound.play(a, SND .. "sentrylaserdisin.wav")
       s.tid, s.had_target = nil, false
     end
     ray_actor(r, a)

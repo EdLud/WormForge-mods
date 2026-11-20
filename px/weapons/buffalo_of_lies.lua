@@ -78,7 +78,7 @@ local function gone(id)
     local t = info[id]
     if t and t.seen then t.seen = false return end
     info[id] = nil
-    a:despawn()
+    a:remove()
   end
 end
 
@@ -233,7 +233,6 @@ function M.install(ctx)
 
     if not t.actor then
       t.actor = wa.actors.spawn({ sprite = SHEET, x = m.x, y = m.y - 10,
-          gravity = false, collide = false,
           owner = t.owner or current_worm(), on = gone(m.id) })
     end
 

@@ -89,7 +89,7 @@ function weapon.setup()
   end
 
   local function swim_drop_art(worm, s)
-    if s.body then s.body:despawn(); s.body = nil end
+    if s.body then s.body:remove(); s.body = nil end
     worm.body_visible = true
   end
 
@@ -364,8 +364,7 @@ function weapon.setup()
     end
     local function art(sheet)
       local a = wa.actors.spawn({
-        sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-        collide = false, owner = worm, visibility = worm, on = function() end,
+        sprite = sheet, x = worm.x, y = worm.y, owner = worm, visibility = worm, on = function() end,
       })
       a:gfx({ follow = worm })
       return a
@@ -373,7 +372,7 @@ function weapon.setup()
     if s.plopped then
       local sheet = s.floating and "sprites/swim_suit/float.png" or "sprites/swim_suit/swim.png"
       if s.body and s.body_sheet ~= sheet then
-        s.body:despawn()
+        s.body:remove()
         s.body = nil
       end
       s.body = s.body or art(sheet)
@@ -385,7 +384,7 @@ function weapon.setup()
       s.body:gfx({ depth = SWIM_BODY_DEPTH })
       worm.body_visible = false
     elseif s.body then
-      s.body:despawn()
+      s.body:remove()
       s.body = nil
       worm.body_visible = true
     end
@@ -467,8 +466,7 @@ function weapon.setup()
       local s = swimmers[worm.id]
       if s and s.plopped and other.kind == "missile" then
         wa.actors.spawn({
-          sprite = false, x = other.x, y = other.y, gravity = false, collide = false,
-          owner = worm, explode = { damage = 100, id = 50, now = true },
+          sprite = false, x = other.x, y = other.y, owner = worm, explode = { damage = 100, id = 50, now = true },
         })
         other.y = wa.world.water() + 4096
       end

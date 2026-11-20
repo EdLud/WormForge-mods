@@ -70,7 +70,7 @@ function weapon.setup()
       local alive = {}
       for _, worm in ipairs(wa.worms.all()) do alive["worm:" .. worm.id] = true end
       for _, list in ipairs({wa.missiles, wa.mines, wa.crates, wa.oil, wa.graves, wa.arrows}) do
-        for _, body in ipairs(list.all()) do alive[body.kind .. ":" .. body.uid] = true end
+        for _, body in ipairs(list.all()) do alive[body.id] = true end
       end
       if shared.portal_bowling_balls then
         for _, body in ipairs(shared.portal_bowling_balls()) do alive["actor:" .. body.id] = true end
@@ -83,7 +83,7 @@ function weapon.setup()
   local function ensure_ticker(worm)
     if ticker then return end
     ticker = wa.actors.spawn({ sprite = ART .. "portal_glow.png", x = 0, y = -1000,
-      owner = worm, gravity = false, collide = false, on = { frame = tick } })
+      owner = worm, on = { frame = tick } })
     ticker:scale(0)
   end
 
@@ -117,7 +117,7 @@ function weapon.setup()
   end
   local function remove(b)
     bolts[b.id] = nil
-    b.a:despawn()
+    b.a:remove()
   end
   local function bolt_frame(b)
     b.age = b.age + 1
@@ -162,7 +162,7 @@ function weapon.setup()
       colour = colour, age = 0 }
     if not fire.airborne then worm:ammo(ID, 1) end
     local a = wa.actors.spawn({ sprite = ART .. "portal_ball.png", x = b.x, y = b.y,
-      owner = worm, gravity = false, collide = false, on = { frame = function() bolt_frame(b) end } })
+      owner = worm, on = { frame = function() bolt_frame(b) end } })
     b.a, b.id = a, a.id
     a:gfx({ scale = 0.12, tint = colours[colour] & 0xFFFFFF, depth = wa.depth.OBJECTS })
     bolts[b.id] = b

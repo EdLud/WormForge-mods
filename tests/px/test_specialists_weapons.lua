@@ -48,7 +48,7 @@ wa = {
   world={water=function()return 1000 end,gravity=function()return 0.12 end},
   draw={quad=function(q)draws[#draws+1]=q end},
   actors={spawn=function(s)
-    local a={on=s.on};function a:despawn()self.dead=true end
+    local a={on=s.on};function a:remove()self.dead=true end
     actors[#actors+1]=a;return a
   end},
 }
@@ -86,7 +86,7 @@ wa = {
   worms={all=function()return {owner} end},
   draw={quad=function(q)draws[#draws+1]={sprite=q.sprite,color=q.color} end},
   actors={spawn=function(s)
-    local a={on=s.on};function a:despawn()self.dead=true end
+    local a={on=s.on};function a:remove()self.dead=true end
     actors[#actors+1]=a;return a
   end},
 }

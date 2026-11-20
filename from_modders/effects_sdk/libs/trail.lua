@@ -58,8 +58,7 @@ end
 local function start_driver(t, owner)
   if driver then return true end
   driver = wa.actors.spawn({
-    sprite = t.beam, visible = false, gravity = false, collide = false,
-    persist = true, owner = owner,
+    sprite = t.beam, visible = false, persist = true, owner = owner,
     on = function(a)
       tick = tick + 1
       for i = #trails, 1, -1 do
@@ -76,7 +75,7 @@ local function start_driver(t, owner)
           end
         end
       end
-      if #trails == 0 then driver = nil; a:despawn() end
+      if #trails == 0 then driver = nil; a:remove() end
     end,
   })
   return driver ~= nil

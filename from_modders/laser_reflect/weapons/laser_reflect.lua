@@ -85,7 +85,7 @@ function M.install(ctx)
     for _, h in ipairs(hits) do
       local obj, vx, vy = h.obj, h.dx * PUSH, h.dy * PUSH
       if obj.kind == "worm" then
-        obj:hurt{ amount = WORM_DAMAGE, vx = vx, vy = vy }
+        obj:hit{ amount = WORM_DAMAGE, vx = vx, vy = vy }
       elseif obj.kind == "oil" then
         obj:hit(OIL_DAMAGE, vx, vy)
       elseif obj.kind == "crate" then
@@ -106,7 +106,7 @@ function M.install(ctx)
   local function release(r, a)
     stop_fire(r.worm)
     shots[r.id] = nil
-    if a then a:despawn() end
+    if a then a:remove() end
   end
 
   wa.on.turn_end(function(ev)
@@ -157,13 +157,12 @@ function M.install(ctx)
     shots[w.id] = r
     wa.sound.play(w, SND .. "laser_start.wav")
     wa.actors.spawn({
-      sprite = false, x = x, y = y, gravity = false, collide = false, owner = w,
-      persist = true, drown = false,
-      on = function(a)
+      sprite = false, x = x, y = y, owner = w,
+      persist = true, on = function(a)
         local worm = r.worm
         r.frames = r.frames + 1
         if shots[r.id] ~= r or not worm then
-          if a then a:despawn() end
+          if a then a:remove() end
           return
         end
         if r.phase == 3 then

@@ -28,16 +28,15 @@ function weapon.setup()
 
   local function art(worm, sheet)
     local a = wa.actors.spawn({
-      sprite = sheet, x = worm.x, y = worm.y, gravity = false,
-      collide = false, owner = worm, visibility = worm, on = function() end,
+      sprite = sheet, x = worm.x, y = worm.y, owner = worm, visibility = worm, on = function() end,
     })
     a:gfx({ glow_of = worm, follow = worm, depth = DEPTH })
     return a
   end
 
   local function drop_art(worm, w)
-    if w.fly then w.fly:despawn(); w.fly = nil end
-    if w.fold then w.fold:despawn(); w.fold = nil end
+    if w.fly then w.fly:remove(); w.fly = nil end
+    if w.fold then w.fold:remove(); w.fold = nil end
     worm.body_visible = true
   end
 

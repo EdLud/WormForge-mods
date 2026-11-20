@@ -15,7 +15,7 @@ local mode = 1
 local sticky = {}
 
 local function bump(mine, ev)
-  local s = sticky[mine.uid]
+  local s = sticky[mine.id]
   if not s or s.released then return end
   if not s.stuck then
     mine.x, mine.y, mine.vx, mine.vy = ev.x, ev.y, 0, 0
@@ -39,7 +39,7 @@ local function launch(fire)
   })
   if not mine then return end
   if m.hidden then mine.visible = false end
-  if m.sticky then sticky[mine.uid] = { mine = mine } end
+  if m.sticky then sticky[mine.id] = { mine = mine } end
 end
 
 weapon.definition = {
@@ -67,15 +67,15 @@ function weapon.setup()
       last = frame
       local live = {}
       for _, mine in ipairs(wa.mines.all()) do
-        live[mine.uid] = true
-        local s = sticky[mine.uid]
+        live[mine.id] = true
+        local s = sticky[mine.id]
         if s and s.stuck and not s.released and (mine.vx ~= 0 or mine.vy ~= 0) then
           mine.gravity = 1
           s.released = true
         end
       end
-      for uid in pairs(sticky) do
-        if not live[uid] then sticky[uid] = nil end
+      for id in pairs(sticky) do
+        if not live[id] then sticky[id] = nil end
       end
     end
     local digit

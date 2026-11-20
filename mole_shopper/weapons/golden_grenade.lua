@@ -26,9 +26,9 @@ return {
       if sound_owner then
         local born = wa.world.frame()
         local speaker = wa.actors.spawn{sprite = false, owner = sound_owner,
-          x = ev.x, y = ev.y, gravity = false, collide = false, solid = false, persist = true,
+          x = ev.x, y = ev.y, persist = true,
           on = function(a)
-            if wa.world.frame() - born >= 150 then a:despawn() end
+            if wa.world.frame() - born >= 150 then a:remove() end
           end}
         wa.sound.play(speaker, wa.random(69, 71))
       end

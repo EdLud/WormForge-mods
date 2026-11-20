@@ -6,7 +6,7 @@ wa = {
   actors = { spawn = function(spec)
     actor = { x = spec.x, y = spec.y, vx = spec.vx, vy = spec.vy,
       in_water = function() return false end, look = function() end,
-      advance = function() end, despawn = function() end }
+      advance = function() end, remove = function() end }
     actor.tick = spec.on
   end },
   world = { keys = function() return keys end },

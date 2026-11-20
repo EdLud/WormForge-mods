@@ -53,7 +53,7 @@ local function exists(obj)
   end
   local list = obj.kind == "mine" and wa.mines.all() or obj.kind == "crate" and wa.crates.all()
     or obj.kind == "oil" and wa.oil.all() or obj.kind == "grave" and wa.graves.all() or {}
-  for _, o in ipairs(list) do if o.uid == obj.uid then return true end end
+  for _, o in ipairs(list) do if o.id == obj.id then return true end end
   return false
 end
 
@@ -183,7 +183,7 @@ end
 local function throw(worm, s)
   local dx, dy = aim_dir(worm)
   local hit = trace(worm, REACH)
-  if not hit then
+  if not (hit and hit.hit) then
     sound(worm, "gg_dryfire")
     return
   end

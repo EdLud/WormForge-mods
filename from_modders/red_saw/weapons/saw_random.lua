@@ -46,7 +46,7 @@ end
 
 local function attempt(a, st)
   if st.spawned >= st.quantity or st.slice >= st.quantity then
-    a:despawn()
+    a:remove()
     return
   end
 
@@ -93,7 +93,7 @@ local function attempt(a, st)
         st.slice = st.slice + 1
         st.attempts = 0
         st.size = size()
-        if st.spawned >= st.quantity then a:despawn() end
+        if st.spawned >= st.quantity then a:remove() end
         return
       end
     end
@@ -106,7 +106,7 @@ local function attempt(a, st)
     st.attempts = 0
     st.size = size()
   end
-  if st.slice >= st.quantity then a:despawn() end
+  if st.slice >= st.quantity then a:remove() end
 end
 
 local function fetchWorm()
@@ -132,8 +132,7 @@ return {
       if not owner then return end
       wa.actors.spawn{
         owner = owner,
-        sprite = false, x = 0, y = 0, gravity = false, collide = false,
-        drown = false, persist = true,
+        sprite = false, x = 0, y = 0, persist = true,
         on = function(a) attempt(a, st) end,
       }
     end)

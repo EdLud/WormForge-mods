@@ -217,7 +217,7 @@ function weapon.setup()
     forget(f)
     a.x, a.y = f.x, f.y + DROP
     a:explode(BOOM)
-    if a.id ~= 0 then a:despawn() end
+    if a.id ~= 0 then a:remove() end
   end
 
   local function frame(f, a)
@@ -225,7 +225,7 @@ function weapon.setup()
     f.age = f.age + 1
     if f.gone then
       f.dead = true
-      a:despawn()
+      a:remove()
       return
     end
     if not f.planted then
@@ -263,8 +263,8 @@ function weapon.setup()
     }
     alive[#alive + 1] = f
     local a = wa.actors.spawn({
-      sprite = WALK, x = f.x, y = f.y, gravity = false, collide = false, owner = worm,
-      shape = "missile", on = function(actor) frame(f, actor) end,
+      sprite = WALK, x = f.x, y = f.y, owner = worm,
+      body = { shape = "missile", layer = "missile" }, on = function(actor) frame(f, actor) end,
     })
     f.a = a
     rise_clear(f)

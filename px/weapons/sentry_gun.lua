@@ -71,11 +71,11 @@ function weapon.setup()
     wa.actors.spawn({
       sprite = CASING, x = a.x, y = a.y - t.muzzle_up,
       vx = (wa.math.sin(eject) * speed), vy = (wa.math.cos(eject) * speed),
-      gravity = false, collide = false, owner = t.owner(a, s), kind = "casing",
+      owner = t.owner(a, s), kind = "casing",
       on = function(c)
         life = life - 1
-        if life <= 0 then c:despawn(); return end
-        c:gravity()
+        if life <= 0 then c:remove(); return end
+        c.vy = c.vy + wa.world.gravity()
         c:move({ terrain = false, worms = false })
         spin = (spin + 1) % CASING_FRAMES
         c:frame(spin)

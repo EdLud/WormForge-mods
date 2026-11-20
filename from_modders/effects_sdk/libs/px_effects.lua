@@ -686,8 +686,7 @@ ensure_driver = function(owner)
   if not usable(owner) then owner = current_worm() end
   if not usable(owner) then return false end
   driver = wa.actors.spawn({
-    sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false, owner = owner,
+    sprite = false, x = 0, y = 0, persist = true, owner = owner,
     on = function(a) tick(a) end,
   })
   return driver ~= nil
@@ -842,7 +841,7 @@ tick = function(a)
   if #emitters == 0 and #arcs == 0 and #bursts == 0 and #sparks == 0
       and #glows == 0 and #smokes == 0 and #rings == 0 then
     driver = nil
-    a:despawn()
+    a:remove()
   end
 end
 
@@ -1180,11 +1179,11 @@ function fx.tracker(o)
   local group = o.group or wa.mines
   local x0, y0, radius = o.x or 0, o.y or 0, o.radius or 16
   local give_up = o.give_up or 30
-  local id, uid, tries
+  local id, tries
   local function release()
     if id ~= nil then
       claimed[id] = nil
-      id, uid = nil, nil
+      id = nil
     end
   end
   local function follow()
@@ -1204,14 +1203,14 @@ function fx.tracker(o)
         end
       end
       if best then
-        id, uid = best.id, best.uid
-        claimed[id] = uid or true
+        id = best.id
+        claimed[id] = true
         return best.x, best.y, best.vx, best.vy, true
       end
       return x0, y0, 0, 0, false
     end
     for _, m in ipairs(list) do
-      if m.id == id and (uid == nil or m.uid == uid) then
+      if m.id == id then
         return m.x, m.y, m.vx, m.vy, true
       end
     end

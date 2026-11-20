@@ -114,7 +114,7 @@ function electrical.context()
     release_taze(pending.key)
     if not obj then return end
     if obj.kind == "worm" then
-      obj:hurt({ amount = 24, kind = "taze" })
+      obj:hit({ amount = 24, kind = "taze" })
       obj.vx, obj.vy = pending.side * 1.2, -4
     elseif obj.kind == "mine" then
       obj:arm(400)
@@ -219,7 +219,7 @@ function electrical.context()
         for i, held in ipairs(arcs) do
           if held == arc then table.remove(arcs, i); break end
         end
-        a:despawn()
+        a:remove()
       end
     end)
     wa.sound.play(driver, "sounds/lightning/tazer_loop.wav")

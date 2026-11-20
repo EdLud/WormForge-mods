@@ -103,7 +103,7 @@ local exploded, dead, gfx
 local actor = {
   id = 1, x = 10, y = 10, vx = 23, vy = 0, owner = owner,
   explode = function(_, opts) exploded = opts end,
-  despawn = function() dead = true end,
+  remove = function() dead = true end,
   in_water = function() return false end,
   gfx = function(_, opts) gfx = opts end,
 }
@@ -117,7 +117,7 @@ exploded, dead = nil, false
 local land_actor = {
   id = 2, x = 10, y = 10, vx = 23, vy = 0, owner = owner,
   explode = function(_, opts) exploded = opts end,
-  despawn = function() dead = true end,
+  remove = function() dead = true end,
   in_water = function() return false end,
   gfx = function() end,
 }

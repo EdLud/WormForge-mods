@@ -19,7 +19,7 @@ wa = {
   weapons = {replace = function(spec) selected=spec end},
   cursor = {spawn = function(spec)
     actor = {x=spec.x,y=spec.y,on=spec.on}
-    function actor:despawn() self.dead=true end
+    function actor:remove() self.dead=true end
     return actor
   end},
   magnetism = {field = function(spec)

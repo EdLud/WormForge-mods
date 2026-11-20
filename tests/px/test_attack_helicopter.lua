@@ -22,7 +22,7 @@ local function actor(spec)
   function a:gfx() end
   function a:gravity() end
   function a:move() end
-  function a:despawn() self.dead = true end
+  function a:remove() self.dead = true end
   actors[#actors + 1] = a
   return a
 end

@@ -84,7 +84,7 @@ local function tick()
   for i = #order, 1, -1 do
     local e = order[i]
     local m = present[e.id]
-    if m and m.uid == e.uid then
+    if m and m.id == e.id then
       e.x, e.y = m.x, m.y
       local a = (now + e.id) * 0.12
       local c, sn = wa.math.cos(a), wa.math.sin(a)
@@ -102,8 +102,7 @@ end
 local function ensure_driver(owner)
   if driver and driver.id ~= 0 then return driver end
   driver = wa.actors.spawn{
-    sprite = false, x = 0, y = 0, gravity = false, collide = false,
-    persist = true, drown = false, owner = owner, on = tick,
+    sprite = false, x = 0, y = 0, persist = true, owner = owner, on = tick,
   }
   return driver
 end
@@ -115,10 +114,10 @@ end, { msgs = { wa.msg.FRAME_FINISH } })
 function M.taze(mine, opts)
   opts = opts or {}
   if not mine or not mine.id then return nil end
-  local id, uid = mine.id, mine.uid
+  local id = mine.id
   local existing = tazed[id]
   if existing then
-    if existing.uid == uid then return existing end
+    if existing.id == id then return existing end
     remove_entry(existing)
   end
   local damage = opts.damage or STOCK_DAMAGE
@@ -127,7 +126,7 @@ function M.taze(mine, opts)
   local owner = opts.owner or any_worm()
   local blast = math.floor(damage * 1.25)
   local e = {
-    id = id, uid = uid, x = mine.x, y = mine.y, owner = owner,
+    id = id, x = mine.x, y = mine.y, owner = owner,
     radius = opts.radius or ((blast + 2) * 2),
     effect_radius = opts.effect_radius or math.floor((blast + 2) / 2),
     frames = opts.frames or DEFAULT_FRAMES,
@@ -143,13 +142,13 @@ function M.taze(mine, opts)
       x = e.x, y = e.y, owner = owner, preset = "electric", trail = false,
       follow = function()
         for _, m in ipairs(wa.mines.all()) do
-          if m.id == id and m.uid == uid then return m.x, m.y end
+          if m.id == id then return m.x, m.y end
         end
       end,
     }
   end
   local preset = fx.PRESETS and fx.PRESETS.electric and fx.PRESETS.electric.trail
-  e.trail_key = "taze_mine:" .. id .. ":" .. uid
+  e.trail_key = "taze_mine:" .. id
   trail.add(e.trail_key, owner, {
     every = preset and preset.every, max = preset and preset.max,
     vanish = preset and preset.vanish,

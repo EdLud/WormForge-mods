@@ -99,7 +99,7 @@ function weapon.setup()
         p.vy = p.vy / (1 + p.drag)
       end
     end
-    if #particles == 0 then driver = nil; a:despawn() end
+    if #particles == 0 then driver = nil; a:remove() end
   end
   local function emit(x, y, glow)
     if y >= wa.world.water() or #particles >= LIMIT then return end
@@ -107,7 +107,7 @@ function weapon.setup()
       local owner = shared.current_worm() or wa.worms.all()[1]
       if not owner then return end
       driver = wa.actors.spawn{ sprite = false, owner = owner, x = x, y = y,
-        gravity = false, collide = false, on = step }
+        on = step }
     end
     local speed, heading = -3 - random() * 4, random() * 2 * math.pi
     particles[#particles + 1] = glow

@@ -50,7 +50,7 @@ function M.electric(o)
               zap.taze(obj, { frames = o.taze_frames or 20,
                 push_x = px, push_y = py })
             elseif zero[obj.id] then
-              obj:hurt{ amount = dmg, vx = px, vy = py }
+              obj:hit{ amount = dmg, vx = px, vy = py }
               hits = hits + 1
             end
           end

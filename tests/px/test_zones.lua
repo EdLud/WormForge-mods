@@ -66,8 +66,8 @@ local function reset(rate, turns, both)
       for _, path in ipairs(s.sprites) do assets[path] = true end
     end },
     actors = { spawn = function(s)
-      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite, solid = s.solid }
-      function a:despawn() self.dead = true end
+      local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite, body = s.body }
+      function a:remove() self.dead = true end
       function a:explode(e) assert(e.damage == 30 and e.id == 30); blasts = blasts + 1 end
       function a:gfx() end
       function a:frame() end
@@ -98,7 +98,7 @@ local function worm(x)
   function w:heal(n) assert(math.type(n)=="integer"); self.hp=self.hp+n end
   -- The zone's damage is a drain, not a hit: a hit a second on the turn's
   -- worm kept WA's damage pause up, and the turn never resumed.
-  function w:hurt() error("zone damage must not be a hit") end
+  function w:hit() error("zone damage must not be a hit") end
   function w:reduce_health(n)
     assert(math.type(n)=="integer")
     if self.hp <= n then return false end
@@ -155,7 +155,7 @@ for _, ids in ipairs({{0x2000, 0x1000}, {0x1000, 0x2000}}) do
   health = reset(30)
   local first
   local function stacked(id, worm_id)
-    local g = {kind="grave",id=id,uid=id,x=100,y=100,worm_id=worm_id}
+    local g = {kind="grave",id=id,x=100,y=100,worm_id=worm_id}
     function g:revive(wid) first = first or wid end
     return g
   end
@@ -185,7 +185,7 @@ event("turn_end"); frames(360); event("turn_start"); frames(5); assert(blasts==2
 -- A crate sets the zone off whenever it touches it, asleep or spent, each
 -- crate once: crates drop at a turn's start, while the zone sleeps.
 local function crate(id, x, y)
-  local c = { kind = "crate", id = id, uid = id, x = x, y = y, hits = 0 }
+  local c = { kind = "crate", id = id, x = x, y = y, hits = 0 }
   function c:hit(d) assert(d == 30); self.hits = self.hits + 1 end
   return c
 end
@@ -268,7 +268,7 @@ local function fire(claim)
   claim.on_explode({ x = 350, y = 200 })
   local a = actors[#actors]
   assert(a.x == 350 and a.y == 200 and a.sprite == false)
-  assert(a.solid == false, "a blast must not knock the zone (and its darkness) away")
+  assert(a.body == nil, "no body: a blast must not knock the zone (and its darkness) away")
   return a, shooter
 end
 local function four_turns()

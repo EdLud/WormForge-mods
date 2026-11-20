@@ -152,7 +152,7 @@ function weapon.setup()
         local d=math.sqrt(dx*dx+dy*dy)
         if rx*rx+ry*ry<=36 and d>0 then
           local force=0.6*math.sqrt(15)
-          worm:hurt{amount=0,vx=force*dx/d,vy=force*dy/d}
+          worm:hit{amount=0,vx=force*dx/d,vy=force*dy/d}
         end
       end
     end
@@ -174,7 +174,7 @@ function weapon.setup()
       for _,body in ipairs(wa.missiles.all()) do
         local source=seen[body.id]
         if source and source.worker and frame>=source.frame and frame-source.frame<=2 and body.y<wa.world.water() then
-          local key=body.uid
+          local key=body.id
           live[key]=true
           local n=(emit[key] or 0)+0.8*dt -- source trail power 20 / 25 each frame
           local count=math.floor(n);emit[key]=n-count

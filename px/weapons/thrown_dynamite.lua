@@ -55,7 +55,7 @@ function weapon.setup()
         p.vx, p.vy = p.vx / 2, p.vy / 2 - 3 * wa.world.gravity()
       end
     end
-    if #particles == 0 then driver = nil; a:despawn() end
+    if #particles == 0 then driver = nil; a:remove() end
   end
   wa.on.worm_message(function(worm)
     if not worm.turn or worm.hp <= 0 or not worm.aiming or worm.weapon ~= "px.thrown_dynamite"
@@ -65,7 +65,7 @@ function weapon.setup()
     local y = worm.y - wa.math.cos(angle) * 23
     if y >= wa.world.water() then return end
     if not driver then
-      driver = wa.actors.spawn{sprite=false,owner=worm,x=x,y=y,gravity=false,collide=false,on=step}
+      driver = wa.actors.spawn{sprite=false,owner=worm,x=x,y=y,on=step}
     end
     local direction, speed = random() * math.pi * 2, 1 + random() * 4
     particles[#particles+1] = {x=x,y=y,age=0,

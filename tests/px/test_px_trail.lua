@@ -32,7 +32,7 @@ wa = {
   actors = {
     spawn = function(spec)
       driver = { on = spec.on, gone = false }
-      function driver:despawn() self.gone = true end
+      function driver:remove() self.gone = true end
       return driver
     end,
   },

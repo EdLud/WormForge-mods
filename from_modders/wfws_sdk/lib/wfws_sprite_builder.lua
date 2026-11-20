@@ -711,7 +711,7 @@ function M.flight(ctx, opts)
       logged[id] = nil
       age[id] = nil
       deferred[id], deferred_at[id] = nil, nil
-      b:despawn()
+      b:remove()
     end
   end
 
@@ -719,7 +719,7 @@ function M.flight(ctx, opts)
     local f = follow[id]
     if f then
       follow[id] = nil
-      f.actor:despawn()
+      f.actor:remove()
     end
     cycl_phase[id] = nil
   end
@@ -880,7 +880,6 @@ function M.flight(ctx, opts)
         cfg = cfg, gen = gen,
         actor = wa.actors.spawn({
           sprite = cfg.sheet, x = m.x, y = m.y,
-          gravity = false, collide = false,
           -- No worm has the turn while a worm that lost control is still
           -- flying its shot, and a spawn without an owner errors: the bits
           -- then flew with the stock sprite hidden and no art at all. The follower

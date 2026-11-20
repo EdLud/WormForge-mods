@@ -26,8 +26,8 @@ local function mock(opts)
     return w
   end
   M.worm = worm
-  M.drum = function(uid, x, y)
-    local d = { uid = uid, id = uid, kind = "oil", x = x, y = y, damage = 0, max_damage = 50, visible = true }
+  M.drum = function(id, x, y)
+    local d = { id = id, kind = "oil", x = x, y = y, damage = 0, max_damage = 50, visible = true }
     M.drums[#M.drums + 1] = d
     return d
   end
@@ -60,7 +60,7 @@ local function mock(opts)
       -- As the engine: an actor needs an owner, or owner = "none" for no team.
       if spec.owner == nil then error("spawn needs an owner worm or actor", 2) end
       local a = { id = #M.actors + 1, spec = spec }
-      function a:despawn() self.dead = true end
+      function a:remove() self.dead = true end
       M.actors[#M.actors + 1] = a
       return a
     end },
@@ -124,7 +124,7 @@ do
   M.rng = function(lo, hi) seen[#seen + 1] = hi; return lo end
   local c, a, b = M.drum(3, 0, 0), M.drum(1, 10, 0), M.drum(2, 20, 0)
   frame()
-  check("every drum dealt once, in uid order: kinds drawn for 1, 2, 3",
+  check("every drum dealt once, in id order: kinds drawn for 1, 2, 3",
     #M.randoms == 3 and M.randoms[1][1] == 1)
   check("seven kinds on an open map", seen[1] == 7, seen[1])
   check("WA stops drawing each", not a.visible and not b.visible and not c.visible)
