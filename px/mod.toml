@@ -2303,7 +2303,7 @@ description = "Shadow: an opaque darkness spreading from where it lands, stopped
 key = "hides_for"
 type = "choice"
 choices = ["everyone", "enemies"]
-default = "everyone"
+default = "enemies"
 label = "Hides for"
 description = "Enemies: the shooter's side sees through the shadow at half its darkness."
 
@@ -2311,8 +2311,8 @@ description = "Enemies: the shooter's side sees through the shadow at half its d
 key = "spread_seconds"
 type = "int"
 min = 0
-max = 30
-default = 4
+max = 60
+default = 30
 label = "Spread (seconds)"
 description = "How long the shadow takes to spread out from where the round lands to its full size."
 
@@ -2321,7 +2321,7 @@ key = "radius"
 type = "int"
 min = 10
 max = 350
-default = 256
+default = 125
 label = "Size (radius)"
 description = "How much the shadow hides: a circle of this radius, flowing out of pockets up to twice as far."
 
