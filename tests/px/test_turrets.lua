@@ -66,7 +66,7 @@ local function mock()
     actors = {
       spawn = function(spec)
         local a = { id = 100 + #M.actors, x = spec.x, y = spec.y, vx = 0, vy = 0, on = spec.on,
-          kind = spec.kind, hit_by = spec.body and spec.body.hit_by, sounds = {} }
+          kind = "actor", hit_by = spec.body and spec.body.hit_by, sounds = {} }
         function a:on_feet() return true end
         function a:in_water() return false end
         function a:warp(w) self.x, self.y = w.x, w.y end

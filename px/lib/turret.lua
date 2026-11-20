@@ -616,7 +616,7 @@ function turret.new(cfg)
     local body = wa.actors.spawn({
       sprite = false, x = x, y = y,
       vx = 0, vy = 0,
-      origin = "bottom", owner = worm, kind = t.kind, persist = true,
+      origin = "bottom", owner = worm, persist = true,
       gravity = 1, body = { shape = t.art.mask, hits = { land = true, objects = true },
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
       on = { frame = brain, hit = hit, contact = touched },

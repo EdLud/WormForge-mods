@@ -328,7 +328,7 @@ local function spawn_controller(s)
   local a = wa.actors.spawn{
     owner = fetchWorm() or current_worm(),
     sprite = mask_for(s.radius), x = s.x, y = s.y,
-    kind = "saw", body = { mask = { worms = true, weapons = true, rope = true } },
+    body = { mask = { worms = true, weapons = true, rope = true } },
     persist = true,
     on = function(actor) tick(actor, s) end,
   }

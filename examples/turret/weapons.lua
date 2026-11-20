@@ -367,7 +367,6 @@ return {
           vy = (worm.vy / 2) - 0.149993896484375,
           origin = "bottom",
           owner = worm,
-          kind = "sentry",
           persist = true,
           on = brain,
         })

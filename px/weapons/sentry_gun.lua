@@ -71,7 +71,7 @@ function weapon.setup()
     wa.actors.spawn({
       sprite = CASING, x = a.x, y = a.y - t.muzzle_up,
       vx = (wa.math.sin(eject) * speed), vy = (wa.math.cos(eject) * speed),
-      owner = t.owner(a, s), kind = "casing",
+      owner = t.owner(a, s),
       on = function(c)
         life = life - 1
         if life <= 0 then c:remove(); return end

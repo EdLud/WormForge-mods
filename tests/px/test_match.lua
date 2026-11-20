@@ -682,7 +682,7 @@ local function new_match(opts)
           error("spawn needs an owner worm or actor", 2)
         end
         -- As the engine: collision is the body's, gravity a factor.
-        for _, key in ipairs({ "collide", "collide_terrain", "collide_worms", "as_object", "shape", "solid", "mask" }) do
+        for _, key in ipairs({ "collide", "collide_terrain", "collide_worms", "as_object", "shape", "solid", "mask", "kind" }) do
           if spec[key] ~= nil then error("spawn." .. key .. " is gone", 2) end
         end
         if spec.gravity ~= nil and type(spec.gravity) ~= "number" then error("spawn.gravity is a factor", 2) end
