@@ -4,11 +4,11 @@ local homing = require("lib/px_homing")
 local weapon = {}
 
 local ART = "sprites/homing_cluster/"
-local GRENADE_SPRITE = 50 -- the stock grenade's, which the bomb keeps
 local CLUSTLET_SPRITE = 54 -- the stock cluster bit's, which the clustlets fly with
 
 weapon.record = {
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     burst = "nothing",
     explosion = {
       bias = 0,
@@ -54,7 +54,7 @@ local MIDDLE = 3 -- the one PX nudges less
 local HOME = { speed = 10, turn = 0.15, delay = 40, frames = 180, sound = 44 }
 
 weapon.missile_sprite = {
-  { sheet = ART .. "bomb.png", frames = 1, spin = true, hide = true, first_sprite = GRENADE_SPRITE },
+  { sheet = ART .. "bomb.png", frames = 1, spin = true, hide = true, first_sprite = 0 },
   { sheet = ART .. "clustlet.png", frames = 1, hide = true, first_sprite = CLUSTLET_SPRITE },
 }
 
@@ -84,7 +84,7 @@ function weapon.definition()
     name = "Homing Cluster Bomb",
     click = "homing",
     panel_icon = ART .. "homing_cluster_ico.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
     on_explode = on_explode,
     worm_sprites = sdk.PX_POSTURE,
     sprites = { ART .. "bomb.png", ART .. "clustlet.png" },

@@ -21,12 +21,13 @@ weapon.definition = {
   copy_from = "stock.super_banana",
   name = "Chilli Bomb",
   panel_icon = "sprites/chilli_bomb/chilli_ico.png",
-  sprite = "banana",
+  hold_as = "stock.super_banana",
   on_explode = on_explode,
   handling = {
     retreat = 3000,
   },
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     alarm_worms = true,
     bounce = {
       hits = {

@@ -3467,7 +3467,8 @@ do
   end
   check("Valyrian Fire takes the scheme's record, its icon and PX's bottle in hand and flight", spec
     and spec.wep == "weps/petrol_bomb.wep" and spec.panel_icon == "sprites/valyrian_fire/icon.png"
-    and spec.sprite == "petrolbm" and type(spec.on_fire) == "function"
+    and spec.sprite == nil and spec.missile.sprite == 0 and spec.hold_as == "stock.petrol_bomb"
+    and type(spec.on_fire) == "function"
     and spec.hold and spec.hold.sheet == "sprites/px_hold/valyrian_fire.png")
   local w = worm(17)
   w.x, w.y = 100, 100
@@ -4091,9 +4092,10 @@ do
   for _, r in ipairs(replaced) do
     if r.weapon == "super_banana" then spec = r end
   end
-  check("the Chilli Bomb on the super banana slot, with its icon, the banana kept, and an explode step", spec
+  check("the Chilli Bomb on the super banana slot, with its icon, the banana pose, and an explode step", spec
     and spec.copy_from == "stock.super_banana" and spec.panel_icon == "sprites/chilli_bomb/chilli_ico.png"
-    and spec.sprite == "banana" and type(spec.on_explode) == "function")
+    and spec.sprite == nil and spec.missile.sprite == 0 and spec.hold_as == "stock.super_banana"
+    and type(spec.on_explode) == "function")
   local w = worm(16)
   w.weapon = "super_banana"
   M.launched = nil
@@ -4126,12 +4128,12 @@ do
   check("the parent has no cluster parameters and cannot be set off with Space",
     spec.missile.burst == "nothing" and spec.missile.explode_on_space == false and spec.clusters == nil
     and (not spec.raw or (spec.raw[0xFC] == nil and spec.raw[0x100] == nil)))
-  local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 51 }
+  local m = { id = 610, phase = "pre", weapon = "super_banana", x = 0, y = 0, vx = 1, vy = 0, sprite = 0 }
   local was_turn = w.turn
   w.turn = true -- thrown in its turn
   M.missile(m)
   w.turn = was_turn
-  check("the thrown Chilli's own banana hidden in flight", m.sprite == 0)
+  check("the thrown Chilli flies with no stock sprite", m.sprite == 0)
   local b = { id = 611, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 1, vy = 0, sprite = 48 }
   M.missile(b)
   check("other missiles keep theirs", b.sprite == 48)
@@ -5990,23 +5992,24 @@ do
   M.crates = {}
 end
 
-print("sticky bomb: PX's bomb drawn over WA's hidden grenade, WA's Grenade left alone")
+print("sticky bomb: PX's bomb drawn where WA draws no sprite, the grenade's pose lent")
 do
   new_match()
   local spec
   for _, r in ipairs(replaced) do if r.weapon == "grenade" then spec = r end end
-  check("the stock grenade for the worm's throw sheet, not overridden for the match",
-    spec.sprite == "grenade" and (spec.sprite_overrides or {}).grenade == nil
+  check("the record flies with sprite 0 and the worm throws in the grenade's pose",
+    spec.sprite == nil and spec.missile.sprite == 0 and spec.hold_as == "stock.grenade"
+      and (spec.sprite_overrides or {}).grenade == nil
       and (spec.sprite_overrides or {}).wsvclnku == "sprites/sticky_bomb/bomb.png",
-    tostring((spec.sprite_overrides or {}).grenade))
+    tostring(spec.sprite) .. " " .. tostring(spec.hold_as))
   local owner = worm(16)
   owner.turn = true
   M.spawned = {}
-  local m = { id = 601, phase = "pre", weapon = "grenade", x = 10, y = 20, vx = 1, vy = 0, sprite = 50 }
+  local m = { id = 601, phase = "pre", weapon = "grenade", x = 10, y = 20, vx = 1, vy = 0, sprite = 0 }
   M.missile(m)
   m.phase = "post"
   M.missile(m)
-  check("thrown: WA's grenade hidden, PX's bomb follows it", m.sprite == 0
+  check("thrown: nothing of WA's drawn, PX's bomb follows it", m.sprite == 0
     and M.spawned[1] and M.spawned[1].sprite == "sprites/sticky_bomb/bomb.png")
   -- Its next frame: hidden already, it is still the bomb thrown.
   m.phase = "pre"
@@ -6062,22 +6065,22 @@ do
       string.format("%d ribbons, %d quads, %.1f KB", ribbons, quads, kb))
   end
   local spec, owner = setup()
-  check("a stock grenade for the worm's throw sheet, PX's hold over it",
-    spec.sprite == "grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png"
+  check("the grenade pose for the throw, PX's hold over it",
+    spec.sprite == nil and spec.missile.sprite == 0 and spec.hold_as == "stock.grenade" and spec.worm_sprites and spec.worm_sprites.weaponlnk == "wf-lib/px/sprites/px_hold/aim.png"
     and spec.params.gpu_prefix == "sprites/px_hold/")
-  -- In flight: the stock grenade hidden, PX's grenade drawn in its place.
+  -- In flight: no stock sprite, PX's grenade drawn in its place.
   M.spawned = {}
   owner.turn = true
-  local m = { id = 501, phase = "pre", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 50 }
+  local m = { id = 501, phase = "pre", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 0 }
   M.missile(m)
   m.phase = "post"
   M.missile(m)
-  check("thrown: WA's sprite hidden, PX's grenade follows it", m.sprite == 0
+  check("thrown: nothing of WA's drawn, PX's grenade follows it", m.sprite == 0
     and M.spawned[1] and M.spawned[1].sprite == "sprites/px_hold/electric_grenade.png")
   -- Its sprite's owner when no worm holds the turn: the last turn's worm;
   -- if that one died since (WA frees a dead worm, its handle dangles), a
-  -- living worm, never the dead one, so PX's grenade is still drawn (WA's
-  -- own sprite is the stock grenade).
+  -- living worm, never the dead one, so PX's grenade is still drawn (WA
+  -- draws none).
   do
     local before = M.spawned
     owner.turn = false
@@ -6091,7 +6094,7 @@ do
     M.spawned = {}
     local late = { id = 502, phase = "post", weapon = "earthquake", x = 10, y = 20, vx = 1, vy = 0, sprite = 0 }
     late.phase = "pre"
-    late.sprite = 50
+    late.sprite = 0
     M.missile(late)
     late.phase = "post"
     M.missile(late)

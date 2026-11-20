@@ -80,7 +80,8 @@ function M.install(ctx)
   local spec = {
     wep = "weps/security_grenade_wep.wep",
     panel_icon = ART .. "icon.png", -- PX's security_nade_ico.png
-    sprite = "grenade",
+    hold_as = "stock.grenade",
+    missile = { sprite = 0 }, -- WA draws no round; the art spec draws it
     worm_sprites = sb.PX_POSTURE,
     hold = hold,
     sprites = { ART .. "bullet.png" },

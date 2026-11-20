@@ -3,12 +3,13 @@
 local weapon = {}
 
 local ART = "sprites/digging_cluster/"
-local GRENADE_SPRITE = 50 -- the stock grenade's, which the grenade keeps
+local GRENADE_SPRITE = 50 -- the stock grenade sprite, which the bomb shows while it digs
 local CLUSTLET_SPRITE = 54 -- the stock cluster bit's, which the clustlets fly with
 local DIG_SOUND = 65574 -- the Mole Bomb's digging sound
 
 weapon.record = {
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     action = "dig",
     animation = 2,
     burst = "nothing",
@@ -62,7 +63,7 @@ local CLUSTLET = {
 local SPEEDS = { { 0, -10 }, { 5, -6 }, { -5, -6 }, { 6, 4 }, { -6, 6 } }
 
 weapon.missile_sprite = {
-  { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = GRENADE_SPRITE },
+  { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = 0 },
   -- PX draws each clustlet as the bomb itself.
   { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = CLUSTLET_SPRITE },
 }
@@ -87,7 +88,7 @@ function weapon.definition()
     copy_from = "stock.grenade",
     name = "Digging Cluster Bomb",
     panel_icon = ART .. "digging_cluster_ico.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
     on_explode = on_explode,
     worm_sprites = sdk.PX_POSTURE,
     sprites = { ART .. "bullet.png" },

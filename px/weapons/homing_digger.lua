@@ -10,6 +10,7 @@ local SHEET = ART .. "digger.png"
 -- The rocket goes off on contact with no blast; its burst is the digger.
 weapon.record = {
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     animation = 2,
     burst = "nothing",
     countdown = 0, -- no timer: it goes off on contact, or after PX's default 5 seconds
@@ -128,7 +129,7 @@ function weapon.definition()
     name = "Homing Digger",
     click = "homing",
     panel_icon = ART .. "homing_digger_ico.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
     on_explode = on_explode,
     worm_sprites = sdk.PX_POSTURE,
     sprites = { SHEET },

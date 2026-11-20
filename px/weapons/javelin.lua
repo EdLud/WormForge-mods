@@ -23,7 +23,7 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/prod.wep",
     panel_icon = "sprites/javelin/icon.png",
-    sprite = "missile",
+    missile = { sprite = 0 }, -- WA draws no round; the art spec draws it
     worm_sprites = PX_POSTURE,
     sprites = { "sprites/javelin/hold.png", "sprites/javelin/flight.png", "sprites/javelin/stamp.png" },
     sounds = { "sounds/javelin_impact.wav" },

@@ -275,7 +275,6 @@ function M.install(ctx)
   wa.weapons.replace({
       wep = "weps/buffalo_w.wep",
       name = "Buffalo of Lies",
-      sprite = "missile",
       sprites = { SHEET },
       panel_icon = ICON,
       worm_sprites = POSTURE,
@@ -296,7 +295,7 @@ function M.install(ctx)
         SND .. "roar1.wav", SND .. "roar2.wav" },
       params = { gpu_prefix = "sprites/buffalo/", sprite_columns = 1 },
       handling = { retreat = 3000, ends_turn = true },
-      missile = { explosion = { power = 50 } },
+      missile = { sprite = 0, explosion = { power = 50 } }, -- WA draws no buffalo; the pack draws it
       on_fire = on_fire,
       on_explode = on_explode,
     })

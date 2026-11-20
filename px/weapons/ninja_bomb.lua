@@ -32,9 +32,10 @@ weapon.definition = {
   copy_from = "stock.grenade",
   name = "Ninja Bomb",
   panel_icon = ART .. "ninja_bomb_ico.png",
-  sprite = "grenade",
+  hold_as = "stock.grenade",
   on_explode = on_explode,
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     explosion = { power = 0 },
   },
   worm_sprites = holds.PX_POSTURE,

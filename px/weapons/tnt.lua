@@ -12,6 +12,7 @@ weapon.record = {
     remember_selection = false,
   },
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     burst = "clusters",
     explosion = {
       power = 50,
@@ -58,6 +59,7 @@ function weapon.definition()
   local PX_POSTURE, PX_HANDS = sdk.PX_POSTURE, sdk.PX_HANDS
   return require("lib/weapon").merge(weapon.record, {
     copy_from = "stock.dynamite",
+    hold_as = "stock.dynamite", -- the pose its wdynlnk sheets replace
     name = "TNT",
     panel_icon = ART .. "ico_tnt.png",
     worm_sprites = {

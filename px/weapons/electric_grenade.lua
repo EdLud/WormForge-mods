@@ -22,7 +22,8 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/earthquake.wep",
     panel_icon = "sprites/electric_grenade/icon.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
+    missile = { sprite = 0 }, -- WA draws no round; the art spec draws it
     worm_sprites = PX_POSTURE,
     sprites = { "sprites/px_hold/electric_grenade.png" },
     sounds = { "sounds/lightning/tazer_loop.wav" },

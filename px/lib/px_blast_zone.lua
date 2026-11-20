@@ -134,7 +134,7 @@ function M.install(ctx)
   local spec = {
     wep = "weps/blast_zone_wep.wep",
     panel_icon = ART .. "icon.png", -- PX's bz_ico.png
-    sprite = "missile",
+    missile = { sprite = 0 }, -- WA draws no round; the art spec draws it
     worm_sprites = sb.PX_POSTURE,
     hold = hold,
     sprites = { ART .. "bullet.png", ART .. "exp.png" },

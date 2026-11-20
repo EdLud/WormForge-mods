@@ -147,7 +147,7 @@ function M.install(ctx)
   local spec = {
     wep = "weps/spot_hider_wep.wep",
     panel_icon = ART .. "icon.png", -- PX's sh_ico.png
-    sprite = "missile",
+    missile = { sprite = 0 }, -- WA draws no round; the art spec draws it
     worm_sprites = sb.PX_POSTURE,
     hold = hold,
     sprites = shadow and { PULSE_SHEET } or { PULSE_SHEET, MASK_SHEET },

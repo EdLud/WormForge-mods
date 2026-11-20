@@ -68,8 +68,7 @@ weapon.record = {
 weapon.missile_sprite = {
     sheet = "sprites/sticky_bomb/bomb.png", frames = 1,
     spin = true, -- its record's WAT_Rotation
-    hide = true,
-    first_sprite = 50,
+    first_sprite = 0, -- the bomb flies with no stock sprite; its bit keeps the cluster sheet
   }
 
 function weapon.definition()
@@ -79,7 +78,7 @@ function weapon.definition()
     copy_from = "stock.grenade",
     name = "Sticky Bomb",
     panel_icon = "sprites/sticky_bomb/sbico.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
     cluster = { sprite = "sprites/sticky_bomb/bomb.png" },
         sprite_overrides = {
           wsvclnku = "sprites/sticky_bomb/bomb.png", -- 467

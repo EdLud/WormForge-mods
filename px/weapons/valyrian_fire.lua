@@ -8,6 +8,7 @@ weapon.record = {
     ends_turn = true,
   },
   missile = {
+    sprite = 0, -- WA draws no round; the art spec draws it
     ends_on_contact = {
       land = true, worms = true, worms_frozen = true, crates = true,
       donor_cards = true, objects = true, water = true,
@@ -30,7 +31,7 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/petrol_bomb.wep",
     panel_icon = "sprites/valyrian_fire/icon.png",
-    sprite = "petrolbm",
+    hold_as = "stock.petrol_bomb",
     worm_sprites = PX_POSTURE,
     sprites = { "sprites/px_hold/valyrian_fire.png" },
     params = { gpu_prefix = "sprites/px_hold/" },

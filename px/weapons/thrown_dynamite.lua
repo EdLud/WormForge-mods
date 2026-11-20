@@ -6,9 +6,10 @@ local weapon = {
     copy_from = "stock.grenade",
     name = "Thrown Dynamite",
     panel_icon = "sprites/thrown_dynamite/ico_tdynamite.png",
-    sprite = "grenade",
+    hold_as = "stock.grenade",
     handling = { remember_selection = false },
     missile = {
+      sprite = 0, -- WA draws no round; the art spec draws it
       animation = 0,
       countdown = 3000,
       flight_sound = 65602,

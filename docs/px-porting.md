@@ -349,10 +349,17 @@ draws the GPU weapon and optional hand over WA's worm pose. Walking hides the
 hold immediately, and aiming restores it. Holds are presentation only and do
 not spawn simulation actors.
 
-**Sticky Bomb.** PX's record leaves the bomb's sprite 0. That gives a
-grenade-type slot no throw sheet, so the pack keeps the stock grenade sprite
-and overrides it with PX's bomb. Its bits, once stuck, draw with the
-Salvation Army's frame 467, which PX overrides too; so does the pack.
+**Sticky Bomb.** PX's record leaves the bomb's sprite 0, and so does the
+pack. WA picks the worm pose of a thrown weapon by that sprite, and 0 gives
+none, so the claim lends the pose of the stock grenade with `hold_as = "stock.grenade"`
+(wkLua 1.0.0). PX's bomb is drawn over the round. Its bits, once stuck, draw
+with the Salvation Army's frame 467, which PX overrides too; so does the pack.
+
+Every PX port that draws its own round leaves the record's sprite at 0 the
+same way, and lends a stock pose with `hold_as` where the old sprite gave
+one. Hiding the round with `m.sprite = 0` on its first `missile_frame`
+instead would show the stock round for one frame at the throw: WA draws a
+launched missile before its first frame.
 
 **Fire Jump.** This is WA's fire punch, whose speed then follows PX's
 timeline:
@@ -481,9 +488,8 @@ a random spread: real WA missiles of the same slot (`wa.weapons.launch`), each
 with damage 30, an 8 s fuse, no countdown, the fire key setting it off, and a
 burst of fire where it ends. They do not burst again: a missile PX's script
 makes has no weapon of its own. PX draws the chilli turned to its flight
-and leaves WA's sprite 0; so does the pack. The record keeps WA's banana,
-because a thrown weapon's worm posture is picked by its sprite, and each
-missile's own copy is set to 0 in flight instead (`m.sprite`). Not ported: PX's particles, the five's smoke trail power
+and leaves WA's sprite 0; so does the pack, with `hold_as =
+"stock.super_banana"` for the throw pose. Not ported: PX's particles, the five's smoke trail power
 of 20, and PX writing the five's changes into the weapon's own launch data,
 so that every later Chilli Bomb flies with them.
 
