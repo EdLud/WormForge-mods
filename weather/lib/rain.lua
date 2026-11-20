@@ -31,7 +31,7 @@ function rain.install(W)
   local dense = math.min(3, math.floor(cfg.amount * 4))
   local light = 0.5 + 0.5 * cfg.amount
   for _, layer in ipairs(layers) do
-    layer.drift, layer.batches = 0, {}
+    layer.drift, layer.batches, layer.counts = 0, {}, {}
     layer.full = 255 * layer.alpha * light
     for f = 0, 3 do
       layer.batches[f] = { sprite = sheet, frame = f, blend = "alpha", depth = layer.depth, quads = {}, count = 0 }
@@ -53,6 +53,9 @@ function rain.install(W)
     PIECE.frame, PIECE.depth = f, layer.depth
     wa.draw.quad(PIECE)
   end
+  -- The engine builds the tiles from these where it can (wa.draw.tiles); the loop below is the same, in Lua.
+  local tiles = wa.draw.tiles
+  local TILES = { sprite = sheet, frame = 0, thin = 3, blend = "alpha", fade = FADE_IN, view = {} }
   local slant, last
   return function(st)
     -- How much of the rain is falling now: it fades in and out as the weather changes.
@@ -71,52 +74,61 @@ function rain.install(W)
       layer.drift = layer.drift + step * layer.speed * slant
       local ox = st.cx * (1 - layer.parallax) + layer.drift
       local oy = st.cy * (1 - layer.parallax) + fall
-      local counts = { [0] = 0, 0, 0, 0 }
-      local j0 = math.floor((st.top - oy) / T) - 1
-      -- With clouds, the rain comes out of them: nothing above the layer's line.
-      local line = layer.top
-      if line then j0 = math.max(j0, math.floor((line - oy) / T)) end
-      local full = line and line + FADE_IN or -math.huge
-      -- No rain under the water: the row across the water line fades out.
-      local j1 = math.min(math.floor((st.bottom - oy) / T), math.floor((st.water - oy) / T))
-      local sx = T * slant
-      for j = j0, j1 do
-        local y = oy + j * T
-        local x0 = ox + j * sx
-        local reach = math.abs(sx)
-        -- A cell across the clouds' line or the water line shows only its part between them.
-        local cut = y + T > st.water or y < full
-        for i = math.floor((st.left - reach - x0) / T) - 1, math.floor((st.right + reach - x0) / T) do
-          local h = hash(i, j)
-          local f = dense - (h % 3 == 0 and 1 or 0)
-          if f >= 0 then
-            local x = x0 + i * T
-            if cut then
-              local bottom = math.min(y + T, st.water)
-              if line then
-                local ya, yb = math.max(y, line), math.min(bottom, full)
-                if yb > ya then piece(layer, f, x, y, T, sx, ya, yb, (ya - line) / FADE_IN, (yb - line) / FADE_IN) end
+      if tiles then
+        TILES.frame, TILES.depth, TILES.size, TILES.x, TILES.y = dense, layer.depth, T, ox, oy
+        TILES.slant, TILES.color, TILES.from, TILES.to = slant, layer.colour, layer.top, st.water
+        local v = TILES.view
+        v.left, v.top, v.right, v.bottom = st.left, st.top, st.right, st.bottom
+        tiles(TILES)
+      else
+        local counts = layer.counts
+        counts[0], counts[1], counts[2], counts[3] = 0, 0, 0, 0
+        local j0 = math.floor((st.top - oy) / T) - 1
+        -- With clouds, the rain comes out of them: nothing above the layer's line.
+        local line = layer.top
+        if line then j0 = math.max(j0, math.floor((line - oy) / T)) end
+        local full = line and line + FADE_IN or -math.huge
+        -- No rain under the water: the row across the water line fades out.
+        local j1 = math.min(math.floor((st.bottom - oy) / T), math.floor((st.water - oy) / T))
+        local sx = T * slant
+        for j = j0, j1 do
+          local y = oy + j * T
+          local x0 = ox + j * sx
+          local reach = math.abs(sx)
+          -- A cell across the clouds' line or the water line shows only its part between them.
+          local cut = y + T > st.water or y < full
+          for i = math.floor((st.left - reach - x0) / T) - 1, math.floor((st.right + reach - x0) / T) do
+            local h = hash(i, j)
+            local f = dense - (h % 3 == 0 and 1 or 0)
+            if f >= 0 then
+              local x = x0 + i * T
+              if cut then
+                local bottom = math.min(y + T, st.water)
+                if line then
+                  local ya, yb = math.max(y, line), math.min(bottom, full)
+                  if yb > ya then piece(layer, f, x, y, T, sx, ya, yb, (ya - line) / FADE_IN, (yb - line) / FADE_IN) end
+                end
+                piece(layer, f, x, y, T, sx, math.max(y, full), bottom, 1, 1)
+              else
+                local b = layer.batches[f]
+                local n = counts[f]
+                local l = b.quads
+                l[n + 1], l[n + 2] = x, y
+                l[n + 3], l[n + 4] = x + T, y
+                l[n + 5], l[n + 6] = x + T + sx, y + T
+                l[n + 7], l[n + 8] = x + sx, y + T
+                l[n + 9] = layer.colour
+                counts[f] = n + 9
               end
-              piece(layer, f, x, y, T, sx, math.max(y, full), bottom, 1, 1)
-            else
-              local b = layer.batches[f]
-              local n = counts[f]
-              local l = b.quads
-              l[n + 1], l[n + 2] = x, y
-              l[n + 3], l[n + 4] = x + T, y
-              l[n + 5], l[n + 6] = x + T + sx, y + T
-              l[n + 7], l[n + 8] = x + sx, y + T
-              l[n + 9] = layer.colour
-              counts[f] = n + 9
             end
           end
         end
-      end
-      for f = 0, 3 do
-        if counts[f] > 0 then
-          local b = layer.batches[f]
-          b.count = counts[f] // 9
-          wa.draw.quads(b)
+        for f = 0, 3 do
+          if counts[f] > 0 then
+            local b = layer.batches[f]
+            b.count = counts[f] // 9
+            wa.draw.quads(b)
+          end
         end
       end
     end

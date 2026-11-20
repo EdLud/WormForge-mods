@@ -37,6 +37,9 @@ function snow.install(W)
       layer.batches[b] = { sprite = sheet, frame = layer.frames[b], blend = "alpha", depth = layer.depth, quads = {}, count = 0 }
     end
   end
+  -- wa.draw.flakes builds the flakes in the engine; the loop below draws the same in Lua.
+  local flakes = wa.draw.flakes
+  local FLAKES = { sprite = sheet, blend = "alpha", classes = CLASSES, fade = FADE_IN, view = {} }
   local slant, last
   return function(st)
     local shown = st.snow or 1
@@ -68,54 +71,64 @@ function snow.install(W)
       local C = layer.cell * SPREAD
       local half, sway = layer.size / 2, layer.sway
       local alpha = 255 * layer.alpha * shown
-      local b1, b2 = layer.batches[1], layer.batches[2]
-      local l1, l2, n1, n2 = b1.quads, b2.quads, 0, 0
-      local reach = sway + half
-      for c, factor in ipairs(CLASSES) do
-        local ox = st.cx * (1 - layer.parallax) + layer.drift * factor
-        local oy = st.cy * (1 - layer.parallax) + now * layer.speed * factor
-        local seed = (k * #CLASSES + c) * 7919
-        local i0, i1 = floor((st.left - reach - ox) / C), floor((st.right + reach - ox) / C)
-        local j0, j1 = floor((top - half - oy) / C), floor((bottom + half - oy) / C)
-        for j = j0, j1 do
-          local jy = (j + seed) * 19349663
-          for i = i0, i1 do
-            local h = (i * 73856093) ~ jy
-            h = h ~ (h >> 13)
-            h = (h * 0x5bd1e995) & 0xffffffff
-            h = h ~ (h >> 15)
-            if h >> 16 < keep then
-              local y = oy + (j + ((h >> 8) & 255) / 256) * C
-              if y > top and y < bottom then
-                -- A second hash for the sway, swing, size and brightness of the flake.
-                local g = (h * 0x27d4eb2d) & 0xffffffff
-                g = g ~ (g >> 15)
-                local x = ox + (i + (h & 255) / 256) * C
-                  + sway * (0.5 + ((g >> 10) & 63) / 128) * sin(now * (0.02 + ((g >> 16) & 31) / 1000) + (g & 1023) / 163)
-                local a = alpha * (0.6 + ((g >> 21) & 63) / 160)
-                if y < fade then a = a * (y - line) / FADE_IN end
-                if a >= 1 then
-                  local s = half * (0.75 + ((g >> 4) & 63) / 126)
-                  local colour = ((a // 1) << 24) | 0xFFFFFF
-                  if (g >> 27) & 1 == 0 then
-                    l1[n1 + 1], l1[n1 + 2], l1[n1 + 3], l1[n1 + 4] = x - s, y - s, x + s, y - s
-                    l1[n1 + 5], l1[n1 + 6], l1[n1 + 7], l1[n1 + 8] = x + s, y + s, x - s, y + s
-                    l1[n1 + 9] = colour
-                    n1 = n1 + 9
-                  else
-                    l2[n2 + 1], l2[n2 + 2], l2[n2 + 3], l2[n2 + 4] = x - s, y - s, x + s, y - s
-                    l2[n2 + 5], l2[n2 + 6], l2[n2 + 7], l2[n2 + 8] = x + s, y + s, x - s, y + s
-                    l2[n2 + 9] = colour
-                    n2 = n2 + 9
+      if flakes then
+        FLAKES.frames, FLAKES.depth, FLAKES.cell, FLAKES.size, FLAKES.sway = layer.frames, layer.depth, C, half, sway
+        FLAKES.alpha, FLAKES.x, FLAKES.y = alpha, st.cx * (1 - layer.parallax), st.cy * (1 - layer.parallax)
+        FLAKES.drift, FLAKES.fall, FLAKES.seed, FLAKES.keep, FLAKES.now = layer.drift, now * layer.speed, k, keep, now
+        FLAKES.from = line
+        local v = FLAKES.view
+        v.left, v.top, v.right, v.bottom = st.left, top, st.right, bottom
+        flakes(FLAKES)
+      else
+        local b1, b2 = layer.batches[1], layer.batches[2]
+        local l1, l2, n1, n2 = b1.quads, b2.quads, 0, 0
+        local reach = sway + half
+        for c, factor in ipairs(CLASSES) do
+          local ox = st.cx * (1 - layer.parallax) + layer.drift * factor
+          local oy = st.cy * (1 - layer.parallax) + now * layer.speed * factor
+          local seed = (k * #CLASSES + c) * 7919
+          local i0, i1 = floor((st.left - reach - ox) / C), floor((st.right + reach - ox) / C)
+          local j0, j1 = floor((top - half - oy) / C), floor((bottom + half - oy) / C)
+          for j = j0, j1 do
+            local jy = (j + seed) * 19349663
+            for i = i0, i1 do
+              local h = (i * 73856093) ~ jy
+              h = h ~ (h >> 13)
+              h = (h * 0x5bd1e995) & 0xffffffff
+              h = h ~ (h >> 15)
+              if h >> 16 < keep then
+                local y = oy + (j + ((h >> 8) & 255) / 256) * C
+                if y > top and y < bottom then
+                  -- A second hash for the sway, swing, size and brightness of the flake.
+                  local g = (h * 0x27d4eb2d) & 0xffffffff
+                  g = g ~ (g >> 15)
+                  local x = ox + (i + (h & 255) / 256) * C
+                    + sway * (0.5 + ((g >> 10) & 63) / 128) * sin(now * (0.02 + ((g >> 16) & 31) / 1000) + (g & 1023) / 163)
+                  local a = alpha * (0.6 + ((g >> 21) & 63) / 160)
+                  if y < fade then a = a * (y - line) / FADE_IN end
+                  if a >= 1 then
+                    local s = half * (0.75 + ((g >> 4) & 63) / 126)
+                    local colour = ((a // 1) << 24) | 0xFFFFFF
+                    if (g >> 27) & 1 == 0 then
+                      l1[n1 + 1], l1[n1 + 2], l1[n1 + 3], l1[n1 + 4] = x - s, y - s, x + s, y - s
+                      l1[n1 + 5], l1[n1 + 6], l1[n1 + 7], l1[n1 + 8] = x + s, y + s, x - s, y + s
+                      l1[n1 + 9] = colour
+                      n1 = n1 + 9
+                    else
+                      l2[n2 + 1], l2[n2 + 2], l2[n2 + 3], l2[n2 + 4] = x - s, y - s, x + s, y - s
+                      l2[n2 + 5], l2[n2 + 6], l2[n2 + 7], l2[n2 + 8] = x + s, y + s, x - s, y + s
+                      l2[n2 + 9] = colour
+                      n2 = n2 + 9
+                    end
                   end
                 end
               end
             end
           end
         end
+        if n1 > 0 then b1.count = n1 // 9; wa.draw.quads(b1) end
+        if n2 > 0 then b2.count = n2 // 9; wa.draw.quads(b2) end
       end
-      if n1 > 0 then b1.count = n1 // 9; wa.draw.quads(b1) end
-      if n2 > 0 then b2.count = n2 // 9; wa.draw.quads(b2) end
     end
   end
 end

@@ -37,6 +37,10 @@ function sky.install(W)
   local drift, last = 0, nil
   local glimmer
   local QUAD = { sprite = flat, frame = 0, points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} }, colors = { 0, 0, 0, 0 } }
+  -- wa.draw.puffs builds the band in the engine when no flash lights it; the loop below draws the same in Lua.
+  local puffs_verb = wa.draw.puffs
+  local PUFFS = { sprite = g.cloud_sprite, frame = 0, blend = "alpha", depth = band_depth, y = CLOUD_Y, rows = ROWS,
+    spacing = SPACING, gap = ROW_GAP, view = {} }
 
   local function cover(st, blend, depth, top, bottom)
     local p = QUAD.points
@@ -83,7 +87,13 @@ function sky.install(W)
     local power, lx = brightest(st)
     -- The band stands in the world: only puffs a view can reach are made.
     local band_top, band_bottom = CLOUD_Y - 120, CLOUD_Y + ROW_GAP * ROWS + 120
-    if clouds > 0 and st.bottom > band_top and st.top < band_bottom then
+    if clouds > 0 and st.bottom > band_top and st.top < band_bottom and power <= 0 and puffs_verb then
+      local d = style.dark
+      PUFFS.drift, PUFFS.now, PUFFS.alpha, PUFFS.color = drift, st.now, style.alpha, (d[1] << 16) | (d[2] << 8) | d[3]
+      local v = PUFFS.view
+      v.left, v.top, v.right, v.bottom = st.left, st.top, st.right, st.bottom
+      puffs_verb(PUFFS)
+    elseif clouds > 0 and st.bottom > band_top and st.top < band_bottom then
       local n = 0
       for row = 0, ROWS - 1 do
         local offset = drift + row * SPACING * 0.5
@@ -91,7 +101,7 @@ function sky.install(W)
         local i1 = math.floor((st.right + SPACING * 3 - offset) / SPACING)
         for i = i0, i1 do
           local r = hash(i, row)
-          local breathe = 0.08 * wa.math.sin(st.now * 0.01 + r * 6.28)
+          local breathe = 0.08 * math.sin(st.now * 0.01 + r * 6.28)
           n = n + 1
           local p = puffs[n] or {}
           puffs[n] = p
