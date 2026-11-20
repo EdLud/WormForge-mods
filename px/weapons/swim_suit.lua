@@ -119,6 +119,38 @@ function weapon.setup()
       or wa.land.solid(x, y - SWIM_HALF_H) or wa.land.solid(x, y + SWIM_HALF_H)
   end
 
+  -- Where a swimmer leaving the water at (x, y) comes out: there, or the
+  -- nearest spot up to EXIT_REACH pixels away, above the water and reached in
+  -- a straight line, where WA's worm shape is clear of land. swim_blocked looks
+  -- at four points, so a slope can reach into the shape between them, and WA
+  -- stands a worm released there inside the land. Nil when nothing is clear.
+  local EXIT_REACH = 8
+  local exit_offsets = {}
+  for dy = -EXIT_REACH, EXIT_REACH do
+    for dx = -EXIT_REACH, EXIT_REACH do
+      local d = dx * dx + dy * dy
+      if d > 0 and d <= EXIT_REACH * EXIT_REACH then
+        exit_offsets[#exit_offsets + 1] = { dx = dx, dy = dy, d = d }
+      end
+    end
+  end
+  table.sort(exit_offsets, function(a, b)
+    if a.d ~= b.d then return a.d < b.d end
+    if a.dy ~= b.dy then return a.dy < b.dy end
+    return a.dx < b.dx
+  end)
+
+  local function exit_spot(worm, x, y, water)
+    if worm:fits(x, y, "terrain") then return x, y end
+    local fx, fy = math.floor(x), math.floor(y)
+    for _, o in ipairs(exit_offsets) do
+      local nx, ny = fx + o.dx, fy + o.dy
+      if ny < water and worm:fits(nx, ny, "terrain") and not wa.land.trace(x, y, nx, ny) then
+        return nx, ny
+      end
+    end
+  end
+
   local function swim_push(v, dir, cap)
     if dir > 0 then
       if v < cap then return v + SWIM_PUSH * swim_speed end
@@ -289,12 +321,20 @@ function weapon.setup()
         s.px, s.py = px / SWIM_DRAG, py / SWIM_DRAG
         if math.abs(s.px) < SWIM_STILL then s.px = 0 end
         if math.abs(s.py) < SWIM_STILL then s.py = 0 end
+        local ox, oy
         if s.y < water then
+          ox, oy = exit_spot(worm, s.x, s.y, water)
+          if not ox then
+            -- Land over the worm here: it stays at the surface.
+            s.y, s.vy, s.py = water, 0, 0
+          end
+        end
+        if ox then
           -- Out in WA's fall state, as it swam: a fall back in dives again.
           s.floating, s.dived = false, false
           s.plopready, s.plopped = true, false
           s.px, s.py, s.knocked = 0, 0, false
-          worm.x, worm.y = s.x, s.y
+          worm.x, worm.y = ox, oy
           worm:release(vx + px, vy + py)
           wa.sound.play(worm, SWIM_PLOP)
           out = true

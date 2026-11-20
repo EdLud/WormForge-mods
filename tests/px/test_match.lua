@@ -5008,6 +5008,73 @@ do
   check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
 end
 
+print("swim suit: out of the water only where WA's worm shape is clear of land")
+do
+  new_match()
+  frame()
+  M.water, M.solid, M.trace_hit = 500, nil, nil
+  local w = worm(16)
+  for i, o in ipairs(worms) do
+    if o ~= w then o.x, o.y, o.turn = -1000 * i, 0, false end
+  end
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "laser_sight", "standing", 100, 400, 0, 0, 1, true
+  w.gravity, w.body_visible, w.keys, w.collision_mask = 1, true, {}, 0x420CC6
+  function w:ammo() end
+  M.message(w, wa.msg.FIRE_WEAPON)
+  -- WA's worm shape (9 by 16, hotspot (4, 9)), against the land's pixels.
+  function w:fits(x, y)
+    if not M.solid then return true end
+    x, y = math.floor(x), math.floor(y)
+    for py = y - 9, y + 6 do
+      for px = x - 4, x + 4 do
+        if M.solid(px, py) then return false end
+      end
+    end
+    return true
+  end
+  M.trace_hit = function(x0, y0, x1, y1)
+    for i = 0, 16 do
+      local x, y = math.floor(x0 + (x1 - x0) * i / 16), math.floor(y0 + (y1 - y0) * i / 16)
+      if M.solid and M.solid(x, y) then return { x = x, y = y, hit = true } end
+    end
+  end
+  local function swim_up(x)
+    w.taken, w.carried, w.state, w.state_id = nil, false, "sliding", 0x7E
+    w.x, w.y, w.vx, w.vy, w.keys = x, 520, 0, 0, {}
+    M.message(w, wa.msg.FRAME_FINISH)
+    w.keys = { up = true }
+    local frames = 0
+    while w.taken and frames < 200 do
+      M.message(w, wa.msg.FRAME_FINISH)
+      frames = frames + 1
+    end
+    w.keys = {}
+    return frames
+  end
+  -- A column of land 3 pixels right of the worm, above the water: inside WA's
+  -- shape, between the suit's own four points.
+  M.solid = function(x, y) return x == 103 and y >= 470 and y < 500 end
+  swim_up(100)
+  check("out beside the land, clear of it", not w.taken and w.y < M.water and w:fits(w.x, w.y)
+    and w.x <= 98, w.x .. " " .. w.y)
+  -- A second column 3 pixels left: no spot near clears both, nor reaches past
+  -- one in a straight line. It stays in the water, at the surface.
+  M.solid = function(x, y) return (x == 103 or x == 97) and y >= 300 and y < 500 end
+  local frames = swim_up(100)
+  check("no room out: still swimming, at the surface", w.taken and frames == 200 and w.y == M.water,
+    w.y .. " " .. frames)
+  -- Swum out from under it: out as usual.
+  w.keys = { left = true }
+  local tries = 0
+  while w.taken and tries < 200 do
+    M.message(w, wa.msg.FRAME_FINISH)
+    if w.x < 90 then w.keys = { up = true } end
+    tries = tries + 1
+  end
+  check("swum clear of it, out", not w.taken and w.y < M.water and w:fits(w.x, w.y), w.x .. " " .. w.y)
+  M.solid, M.trace_hit = nil, nil
+end
+
 print("swim suit: knocked flying into the water, it gives out")
 do
   new_match()
