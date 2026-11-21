@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.18.0"
+version = "0.19.0"
 author = "WormForge"
 api_version = 5
 format_version = 2
@@ -346,6 +346,13 @@ choices = ["everyone", "active"]
 default = "everyone"
 label = "Explosion vision"
 description = "Explosion vision ownership: everyone, active"
+
+[[components.options]]
+key = "explosion_shadow_cast"
+type = "bool"
+default = true
+label = "Explosion shadow casting"
+description = "Shadow casting for explosions' light: terrain blocks it. Off lights the full circle."
 
 [[components.options]]
 key = "crate_circle"

@@ -17,6 +17,7 @@ local KEYS = {
   "proj_ownership",
   "explosion_circle",
   "explosion_ownership",
+  "explosion_shadow_cast",
   "crate_circle",
   "crate_shadow_cast",
   "spectator_mode",
