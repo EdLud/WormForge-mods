@@ -28,7 +28,7 @@ function weapon.definition()
           colours = { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 },
         },
     sprites = {
-          "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_body.png",
+          "sprites/sentry_laser/turret_base.png", "sprites/sentry_laser/turret_head.png",
           "sprites/sentry_laser/turret_barrel.png", "sprites/sentry_laser/turret_light.png",
           "sprites/laser_gun/laser_beam.png", "sprites/laser_gun/laser_glow.png",
         },
@@ -217,7 +217,7 @@ function weapon.setup()
     muzzle_out = MUZZLE_OUT,
     sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
     rot_active = 5.0, aim_tolerance = 5.0, health = 35,
-    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_body.png", barrel = ART .. "turret_barrel.png", light = ART .. "turret_light.png" },
+    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 36, barrel = ART .. "turret_barrel.png", light = ART .. "turret_light.png" },
     sounds = {
       place = SND .. "sentrylaserplace.wav", beep = SND .. "sentrylaserbeep.wav",
       servo_start = SND .. "sentrylaserstart.wav", servo_loop = SND .. "sentrylaserloop.wav",

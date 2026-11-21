@@ -565,7 +565,7 @@ play = "loop"
 fps = 15
 play = "loop"
 
-[sprites."sprites/sentry_gun/turret_gun.png"]
+[sprites."sprites/sentry_gun/turret_head.png"]
 fps = 15
 play = "loop"
 
@@ -625,7 +625,7 @@ play = "loop"
 fps = 15
 play = "loop"
 
-[sprites."sprites/sentry_laser/turret_body.png"]
+[sprites."sprites/sentry_laser/turret_head.png"]
 fps = 15
 play = "loop"
 

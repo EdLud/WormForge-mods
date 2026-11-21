@@ -517,7 +517,16 @@ function turret.new(cfg)
     local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
     if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
     local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
-    sheet(t.art.gun, x, y, look, angle, t.tints[s.alliance + 1] or t.tints[1], t.head_depth)
+    local tint = t.tints[s.alliance + 1] or t.tints[1]
+    if t.art.turns then
+      -- pre-turned head (tools/bake_turret_rotations.py): the nearest angle's frame, drawn upright;
+      -- it is lit per angle, so a laser body needs no mirrored frame facing left
+      local turn = math.floor(angle * t.art.turns / 360 + 0.5) % t.art.turns
+      local row = t.art.barrel and 0 or pose
+      sheet(t.art.gun, x, y, row * t.art.turns + turn, 0, tint, t.head_depth, nil, t.art.gun_size)
+    else
+      sheet(t.art.gun, x, y, look, angle, tint, t.head_depth)
+    end
     if t.art.flare then
       sheet(t.art.flare, x, y, pose == 1 and 1 or 0, angle, 0xFFFFFF, t.head_depth, "add")
     end

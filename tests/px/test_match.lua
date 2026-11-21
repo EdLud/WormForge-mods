@@ -1712,7 +1712,7 @@ do
   end
   M.quads = {}; M.draw()
   local head
-  for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_gun.png" then head = q end end
+  for _, q in ipairs(M.quads) do if q.sprite == "sprites/sentry_gun/turret_head.png" then head = q end end
   check("its head is drawn in its coalition colour", head and (head.color & 0xFFFFFF) == 0xFF6447 and head.depth == wa.depth.FRONT)
   local ammo_left, fired = state.ammo, impacts()
   enemy.state = "frozen"

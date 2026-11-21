@@ -29,7 +29,7 @@ function weapon.definition()
         },
     sprites = {
           "sprites/sentry_gun/impact.png", "sprites/sentry_gun/casing.png", "sprites/sentry_gun/turret_base.png",
-          "sprites/sentry_gun/turret_gun.png", "sprites/sentry_gun/turret_flare.png", "sprites/sentry_gun/turret_light.png",
+          "sprites/sentry_gun/turret_head.png", "sprites/sentry_gun/turret_flare.png", "sprites/sentry_gun/turret_light.png",
         },
     sounds = {
           "sounds/sentry_gun/sentryplace.wav", "sounds/sentry_gun/sentrybeeps2.wav",
@@ -110,7 +110,7 @@ function weapon.setup()
     tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun)
     damage = 2, push_pct = 100,
     muzzle_out = MUZZLE_OUT,
-    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_gun.png", flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
+    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 52, flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
     sounds = {
       place = SND .. "sentryplace.wav", beep = SND .. "sentrybeeps2.wav",
       fire_loop = SND .. "sentryfireloop.wav", fire_end = SND .. "sentryfireend.wav",
