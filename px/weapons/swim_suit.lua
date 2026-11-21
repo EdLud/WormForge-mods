@@ -415,6 +415,35 @@ function weapon.setup()
     end)
   end
 
+  -- The swimmer's weapon, as on the rope: its panel icon over the worm's
+  -- name and health, at 1x as they are.
+  local ICON_ABOVE = 52 -- world pixels above the worm's centre
+  local NO_ICON = { ["stock.none"] = true, ["px.swim_suit"] = true }
+  local icons = {}
+  local function icon_of(id)
+    if icons[id] == nil then
+      local ok, v = pcall(wa.weapons.visual, id)
+      icons[id] = ok and v or false
+    end
+    return icons[id]
+  end
+  if wa.on.hud and wa.hud.sprite then
+    wa.on.hud(function()
+      local worm = current_worm()
+      local s = worm and swimmers[worm.id]
+      local id = worm and worm.weapon
+      if not (s and s.plopped and id and not NO_ICON[id] and worm.visible ~= false) then return end
+      local icon = icon_of(id)
+      local v = wa.world.view()
+      if not icon or v.w <= 0 then return end
+      local zoom = v.zoom > 0 and v.zoom or 1
+      local x = (worm.x - v.cx) * zoom + v.w / 2
+      local y = (worm.y - v.cy) * zoom + v.h / 2 - ICON_ABOVE
+      wa.hud.sprite({ sprite = icon.sprite, frame = icon.frame,
+        x = math.floor(x - icon.width / 2), y = math.floor(y - icon.height / 2) })
+    end)
+  end
+
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
       if pending == worm.id and worm.turn then

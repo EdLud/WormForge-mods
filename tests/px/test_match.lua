@@ -366,6 +366,11 @@ local function new_match(opts)
     assets = { load = function() end },
     hud = {
       line = function(text) M.hud_lines = M.hud_lines or {}; M.hud_lines[#M.hud_lines + 1] = text end,
+      sprite = function(spec)
+        assert(M.in_hud, "hud.sprite draws inside wa.on.hud only")
+        M.hud_sprites = M.hud_sprites or {}
+        M.hud_sprites[#M.hud_sprites + 1] = spec
+      end,
       message_top = function(text, options)
         assert(not M.in_hud, "native messages must run in simulation callbacks")
         assert(#text > 0 and #text <= 127)
@@ -397,6 +402,8 @@ local function new_match(opts)
       frame = function() return M.frame or 0 end,
       turn_clock = function() return M.turn_clock or 0 end,
       water = function() return M.water or 32767.99998474121 end,
+      -- No screen unless a test gives one.
+      view = function() return M.view or { cx = 0, cy = 0, w = 0, h = 0, zoom = 1 } end,
       size = function() return { w = M.map_w or 2000, h = M.map_h or 1000 } end,
       gravity = function() return M.gravity or 0 end,
       wind = function() return M.wind or 0 end,
@@ -800,6 +807,7 @@ local function new_match(opts)
       end,
     },
     weapons = {
+      visual = function(id) return M.visuals and M.visuals[id] end,
       -- A weapon's record as wa.weapons.data reads it: what a test gives.
       data = function(id)
         local d = M.weapon_data and M.weapon_data[id]
@@ -5008,6 +5016,18 @@ do
   w.state, w.x, w.y = "falling", 300, 520
   M.message(w, wa.msg.FRAME_FINISH)
   check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
+  -- Its weapon's icon over it, as on the rope, on this machine's screen.
+  M.visuals = { ["px.crate_strike"] = { sprite = "icon:crate_strike", frame = 0, width = 32, height = 32 } }
+  M.view = { cx = 300, cy = 520, w = 800, h = 600, zoom = 1 }
+  w.weapon, M.hud_sprites = "donkey", {}
+  M.hud()
+  local icon = M.hud_sprites[1]
+  check("its weapon's icon over it, above its name", #M.hud_sprites == 1 and icon.sprite == "icon:crate_strike"
+    and icon.x == 400 - 16 and icon.y == 300 - 52 - 16)
+  w.weapon, M.hud_sprites = "stock.none", {}
+  M.hud()
+  check("no weapon, no icon", #M.hud_sprites == 0)
+  M.view = nil
 end
 
 print("swim suit: out of the water only where WA's worm shape is clear of land")
