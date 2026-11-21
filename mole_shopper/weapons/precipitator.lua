@@ -5,7 +5,7 @@ local ART = "sprites/precipitator/"
 local RIPPLE = {amplitude = 4, wavelength = 24, speed = 180, duration_ms = 450, falloff = 36}
 local payload = {
   copy_from = "stock.grenade", sprite = ART .. "body.png",
-  cluster = {sprite = ART .. "fragment.png"}, params = {sprite_columns = 1},
+  cluster_sprite = ART .. "fragment.png", params = {sprite_columns = 1},
 
     fires = {
       launch_power_pct = 99,

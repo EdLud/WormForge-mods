@@ -27,7 +27,7 @@ function weapon.definition()
     copy_from = "stock.cluster_bomb",
     name = "Windy Cluster",
     panel_icon = "sprites/windy_cluster/ico_windyc.png",
-    cluster = { sprite = "sprites/windy_cluster/cluster.png" },
+    cluster_sprite = "sprites/windy_cluster/cluster.png",
   })
 end
 

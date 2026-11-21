@@ -50,7 +50,7 @@ return {
     end
     wa.weapons.replace{
       copy_from = "stock.grenade", name = "Golden Grenade", panel_icon = ART .. "icon.png",
-      sprite = ART .. "body", cluster = {sprite = ART .. "fragment"}, params = {sprite_columns = 1},
+      sprite = ART .. "body", cluster_sprite = ART .. "fragment", params = {sprite_columns = 1},
       worm_sprites = holds.PX_POSTURE,
       hold = {sheet = ART .. "hold.png", frames = 1, thrown = true,
         hand = holds.PX_HANDS[1], hand_type = 1, hand_scale = 1.2,

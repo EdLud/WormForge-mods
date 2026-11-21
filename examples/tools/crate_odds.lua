@@ -46,6 +46,6 @@ return function(ctx)
 
   wa.on.hud(function()
     if not favourite then return end
-    wa.hud.line(string.format("%s: %.2f%% of its crates", favourite, share_of(wa.crates.shares(), favourite)), 14, 10)
+    wa.hud.line(string.format("%s: %.2f%% of its crates", favourite, share_of(wa.crates.shares(), favourite)))
   end)
 end

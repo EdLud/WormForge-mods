@@ -89,7 +89,7 @@ function weapon.definition()
     name = "Thumper Nade Strike",
     panel_icon = "sprites/thumper_nade/thumpernst_ico.png",
     sprite = "sprites/thumper_nade/flight.png",
-    cluster = { sprite = "sprites/thumper_nade/cluster.png" },
+    cluster_sprite = "sprites/thumper_nade/cluster.png",
   })
 end
 

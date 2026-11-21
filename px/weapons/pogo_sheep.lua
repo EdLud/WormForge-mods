@@ -70,7 +70,7 @@ function weapon.definition()
     name = "Pogo Sheep",
     panel_icon = "sprites/pogo_sheep/psheep_ico.png",
     sprite = "sprites/pogo_sheep/flight.png",
-    cluster = { sprite = "sprites/pogo_sheep/cluster.png" },
+    cluster_sprite = "sprites/pogo_sheep/cluster.png",
   })
 end
 

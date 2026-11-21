@@ -22,7 +22,7 @@ assert(not a.on_fire and not b.on_fire and not a.on_explode and not b.on_explode
   "native records own both stages; there are no theme scripts or extra simulation drivers")
 for _, spec in ipairs(specs) do
   assert(not spec.sounds, "no theme audio ships with the neutral bombs")
-  assert(spec.sprite:find("sprites/") and spec.cluster.sprite:find("sprites/"))
+  assert(spec.sprite:find("sprites/") and spec.cluster_sprite:find("sprites/"))
   assert(spec.hold.thrown and spec.hold.sheet:find("hold.png"))
 end
 print("Neutral bombs preserve native parent/child gameplay and use scoped neutral artwork")

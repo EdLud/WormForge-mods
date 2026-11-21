@@ -8,7 +8,7 @@ return {
     wa.weapons.replace{
       copy_from = "stock.grenade", name = "i-bomb", panel_icon = ART .. "icon.png",
       sprite = ART .. "body",
-      cluster = {sprite = ART .. "fragment", sprite_columns = 1},
+      cluster_sprite = ART .. "fragment",
       worm_sprites = holds.PX_POSTURE,
       params = {sprite_columns = 1},
       hold = {sheet = ART .. "hold.png", frames = 1, thrown = true,

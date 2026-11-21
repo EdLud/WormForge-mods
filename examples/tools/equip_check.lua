@@ -113,5 +113,5 @@ return function()
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  wa.on.hud(function() wa.hud.line(status, 14, 10) end)
+  wa.on.hud(function() wa.hud.line(status) end)
 end

@@ -308,7 +308,7 @@ return function(ctx)
 
     if CONFIG.showTimer then
       local timerStr = string.format("%s %s", CONFIG.timerCaption or "Remaining attack time:", format_time(timerMs))
-      wa.hud.line(timerStr, 14, 40)
+      wa.hud.line(timerStr)
     end
 
     if CONFIG.showKingHp then
@@ -324,14 +324,14 @@ return function(ctx)
             local healthPercent = math.max(0, 100 - king.currentPercentDestroyed)
             statusStr = string.format("%s HP: %d%%", king.name, healthPercent)
           end
-          wa.hud.line(statusStr, 14, 80 + (i - 1) * 16)
+          wa.hud.line(statusStr)
         end
       end
     end
 
     if matchOver and winningTeam then
       local teamName = (winningTeam == 1) and "RED TEAM" or ("TEAM " .. winningTeam)
-      wa.hud.line(string.format("=== %s WINS! (%s) ===", teamName, winReason), 14, 120)
+      wa.hud.line(string.format("=== %s WINS! (%s) ===", teamName, winReason))
     end
   end)
 end

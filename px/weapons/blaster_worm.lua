@@ -72,7 +72,7 @@ function weapon.definition()
     name = "Blaster Worm",
     panel_icon = "sprites/blaster_worm/bworm_ico.png",
     sprite = "sprites/blaster_worm/flight.png",
-    cluster = { sprite = "sprites/blaster_worm/cluster.png" },
+    cluster_sprite = "sprites/blaster_worm/cluster.png",
     sprite_overrides = { wsvbu = "sprites/blaster_worm/cluster_trail.png" },
         worm_sprites = {
           weaponlnk = "sprites/blaster_worm/aim.png",

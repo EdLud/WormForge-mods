@@ -103,7 +103,7 @@ function weapon.definition()
     name = "Thumper Nade",
     panel_icon = "sprites/thumper_nade/thumpern_ico.png",
     sprite = "sprites/thumper_nade/flight.png",
-    cluster = { sprite = "sprites/thumper_nade/cluster.png" },
+    cluster_sprite = "sprites/thumper_nade/cluster.png",
     sprite_overrides = {
           wsvg = "sprites/thumper_nade/trail.png", -- 251
           wsvgu = "sprites/thumper_nade/cluster_trail.png", -- 252

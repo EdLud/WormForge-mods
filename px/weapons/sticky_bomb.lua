@@ -79,7 +79,7 @@ function weapon.definition()
     name = "Sticky Bomb",
     panel_icon = "sprites/sticky_bomb/sbico.png",
     hold_as = "stock.grenade",
-    cluster = { sprite = "sprites/sticky_bomb/bomb.png" },
+    cluster_sprite = "sprites/sticky_bomb/bomb.png",
         sprite_overrides = {
           wsvclnku = "sprites/sticky_bomb/bomb.png", -- 467
         },

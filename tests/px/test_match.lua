@@ -1275,7 +1275,7 @@ do
   check("no PX Priceless Ming Vase on the vase slot: the vase is WA's own", by_slot.ming_vase == nil)
   check("Windy Cluster brings PX's icon and bits",
     by_slot.cluster_bomb and by_slot.cluster_bomb.panel_icon == "sprites/windy_cluster/ico_windyc.png"
-      and by_slot.cluster_bomb.cluster.sprite == "sprites/windy_cluster/cluster.png")
+      and by_slot.cluster_bomb.cluster_sprite == "sprites/windy_cluster/cluster.png")
 end
 
 print("Ice Arrow: only its own arrow freezes after the bow hit")
@@ -3398,7 +3398,7 @@ do
     if r.weapon == "mortar" then spec = r end
   end
   check("homing bits draw the trail's red circles, not WA's green gas, on the generated record",
-    spec and spec.clusters.bit.homing.trail.sprite == 250 and spec.clusters.bit.homing.kind == "lock"
+    spec and spec.clusters.bit.homing.trail.sprite == 250 and spec.cluster_homing == "stock.magic_bullet"
       and spec.clusters.count == 7)
 end
 

@@ -31,6 +31,6 @@ return function()
         break
       end
     end
-    wa.hud.line(line, 14, 10)
+    wa.hud.line(line)
   end)
 end

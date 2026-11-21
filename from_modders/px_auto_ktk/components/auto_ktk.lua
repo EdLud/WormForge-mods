@@ -438,7 +438,7 @@ return function(ctx)
   wa.on.hud(function()
     if not initialized or not king then return end
     if showTimer then
-      wa.hud.line("Remaining attack time: " .. format_time(timerMs), 14, 40)
+      wa.hud.line("Remaining attack time: " .. format_time(timerMs))
     end
     if showKingHp then
       local line
@@ -449,10 +449,10 @@ return function(ctx)
       else
         line = string.format("%s HP: %d%%", KING_NAME, math.max(0, 100 - king.percent))
       end
-      wa.hud.line(line, 14, 80)
+      wa.hud.line(line)
     end
     if matchOver and winningTeam then
-      wa.hud.line(string.format("=== TEAM %d WINS (%s) ===", winningTeam, winReason), 14, 120)
+      wa.hud.line(string.format("=== TEAM %d WINS (%s) ===", winningTeam, winReason))
     end
   end)
 end

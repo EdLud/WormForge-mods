@@ -8,7 +8,7 @@ weapon.definition = {
   name="Drilling Crew",
   panel_icon="sprites/drilling_crew/ico_drillingc.png",
   sprite="sprites/drilling_crew/driller.png",
-  cluster={sprite="sprites/drilling_crew/drillerc.png",sprite_columns=1},
+  cluster_sprite = "sprites/drilling_crew/drillerc.png",
   worm_sprites=holds.PX_POSTURE,
   sprites={"sprites/drilling_crew/trail.png"},
   params={sprite_columns=1,gpu_prefix="sprites/drilling_crew/trail"},

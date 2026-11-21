@@ -289,7 +289,7 @@ same way; PX's scripts for them do nothing else.
 
 **Strikes** keep their bomb's art 0x14 further along than a projectile does
 (+0x74 bomb, +0x7C trail, +0x138 bits, +0x140 bits' trail). The importer and
-`sprite` / `cluster.sprite` follow them there. A strike's plane is at +0x38:
+`sprite` / `cluster_sprite` follow them there. A strike's plane is at +0x38:
 PX's record names the Banana Express's 704, an id PX adds past WA's last
 sprite (696), so the importer keeps the slot's own plane there and the pack
 gives it the banana plane with `plane`.

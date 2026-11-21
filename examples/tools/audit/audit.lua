@@ -532,5 +532,5 @@ return function(ctx)
     if started or startup_worm then return end
     startup_worm = ev.worm.id
   end)
-  wa.on.hud(function() wa.hud.line(status, 14, 10) end)
+  wa.on.hud(function() wa.hud.line(status) end)
 end

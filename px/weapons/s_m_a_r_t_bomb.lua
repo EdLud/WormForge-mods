@@ -34,14 +34,9 @@ weapon.record = {
         push_pct = 115,
       },
       flight_sound = 46,
+      -- The Magic Bullet's homing (cluster_homing), with PX's red trail.
       homing = {
-        animation = 1,
-        arm = 1100,
-        kind = "lock",
-        time = 1200,
         trail = {
-          power = 6,
-          speed = 500,
           sprite = 250,
         },
       },
@@ -68,10 +63,10 @@ function weapon.definition()
     name = "S.M.A.R.T Bomb",
     panel_icon = "sprites/smart_bomb/smart_ico.png",
     sprite = "sprites/smart_bomb/flight.png",
-    cluster = {
-          sprite = "sprites/smart_bomb/cluster.png",
-          homing_sprite = "sprites/smart_bomb/cluster_homing.png",
-        },
+    cluster_sprite = "sprites/smart_bomb/cluster.png",
+    cluster_homing_sprite = "sprites/smart_bomb/cluster_homing.png",
+    -- The bits home as WA's Magic Bullet does: around land.
+    cluster_homing = "stock.magic_bullet",
     sprite_overrides = { wsvbd = "sprites/smart_bomb/trail.png" },
         worm_sprites = {
           weaponlnk = "sprites/smart_bomb/aim.png",

@@ -8,7 +8,7 @@ return {
     wa.weapons.replace{
       copy_from = "stock.dynamite", name = "j-bomb", panel_icon = ART .. "icon.png",
       sprite = ART .. "body.png",
-      cluster = {sprite = ART .. "fragment.png", sprite_columns = 1},
+      cluster_sprite = ART .. "fragment.png",
       worm_sprites = {
         wthrow = holds.PX_POSTURE.wthrow, wthrowu = holds.PX_POSTURE.wthrowu,
         wthrowd = holds.PX_POSTURE.wthrowd,
