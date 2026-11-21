@@ -9,6 +9,8 @@ local PACKS = {
   { "collect_viewer", "features/collect_viewer" },
   { "kill_counter", "features/kill_counter" },
   { "panel_highlight", "features/panel_highlight", call = true },
+  { "rope_counter", "features/rope_counter" },
+  { "changing_wind", "features/changing_wind" },
 }
 
 return function(ctx)

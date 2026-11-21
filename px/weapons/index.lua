@@ -2,6 +2,7 @@
 
 return {
   ["px.3_girder_pack"] = "weapons/3_girder_pack",
+  ["px.anti_fall_damage"] = "weapons/anti_fall_damage",
   ["px.auto_ballista"] = "weapons/auto_ballista",
   ["px.banana_express"] = "weapons/banana_express",
   ["px.blaster_worm"] = "weapons/blaster_worm",

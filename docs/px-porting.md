@@ -823,6 +823,61 @@ Laser: 23.6). Beyond that circle, terrain hides a target from
 acquisition and tracking. Firing always requires a clear actual muzzle, and
 shots still collide with all terrain from that muzzle onward.
 
+## Random Race
+
+The profile is PX's `RACE - Random - 0rang3.pxs` (September 2026 build):
+its WSC for the scheme, its records for the panel. `random_race.rules`
+(`scheme/random_race.lua`) is the scheme's `give_weapons` script. At the
+first turn, and again once every living team has had a turn, it draws one
+race with `wa.random` and leaves only that race's weapons selectable for
+all six teams (`wa.weapons.set_selectable`, where PX set a delay of -1).
+The draw counts living teams when it draws; PX counted the teams at the
+first frame. A race is in the draw only when all its weapons are placed.
+
+The Parkour race gives the turn's worm the scheme's wall kick
+(`park_tweak`: WallJumpMultiplier 6, with the Parkour utility's fixed kick,
+`wf-lib/parkour` with `carry_speed = false`), the embedded `agility`
+script's air control (0.1 a frame up to 3, no Low Gravity step), and the
+Swim Suit through `shared.swim_suit_on`. PX fired the Swim Suit, which
+toggles; the race only puts it on, so a second Parkour race in a row
+doesn't take it off. PX gave Anti Fall Damage only in the Parkour and
+Portal races; the profile gives it on every turn, by Auto-Use. The banner fades in where PX scaled it in:
+`wa.hud.sprite` has no scale.
+
+The other libraries map onto settings: `script_no_worm_collision` is
+Phased Worms "worms" (Allied and Enemy); `script_antisink` is RubberWorm
+Anti-Sink; `script_remember_weapon` is RubberWorm Remember Weapons;
+`script_turnstart_fastwalk` is Fast Walk with Auto-Use; `script_exturnside`
+and the Shift aim in `agility` are Core utilities' ExTurnSide and Fast aim;
+`script_rope_counter` and `script_changing_wind` are Core utilities' Rope
+counter and Changing wind; `script_safe_surrender` is Skip Go/Surrender. The
+agility script's `FuelAmount = 0` is the Helicopter's fuel 0, unlimited.
+Not ported: `script_spawn_1_worm` (pick one worm per team in the lobby),
+`script_antiglitch`, `script_weapon_panel` and the Skip Go pick at the
+first turn of a race.
+
+## Anti Fall Damage
+
+`px.anti_fall_damage` is PyroMan's `utility_no_fall_damage`. PX's script
+declares `rem` inside its message handler, so it starts empty on every
+message and the restore branches never run: whenever the turn's worm with
+the utility on moves faster than 8 pixels a frame (either axis) in
+`WS_JUMP`, `WS_FLYING2`, `WS_SLIDING`, `WS_FLYING`, `WS_AFTERROPE` or
+`WS_POWERFLY`, PX sets it to `WS_IDLE`. The port does the same once a frame
+(`FRAME_FINISH`) with `worm:set_state("standing")` over jumping,
+jump_falling, falling, tumbling, hit, blasted and after_rope, since PX's
+state numbers aren't in pxdata.pxd.
+
+Why standing works, from WA 3.8.1's worm collision handler: its state table
+(0x50E4C0, index 0x50E4D4, state - 0x6C) sends tumbling, hit, blasted and
+skimming (0x7F, 0x80, 0x81, 0x89) to 0x50DF47, which takes fall damage by
+the landing-damage factor (+0x15C, check at 0x50DFD0) and, landing on the
+floor at 8 pixels a frame or more (0x80000, 0x50E1F8), sets getting up
+(0x76, 0x50E2B5): the loss of control. Jumping, parachuting and falling
+(0x79, 0x7D, 0x7E) land at 0x50DD14 without either, and the standing setup
+clears +0x15C. A worm held in standing while fast never lands through
+0x50DF47. Its record is PX's: a scripted utility (0x3C = 8), no retreat.
+
 ## Lockstep
 
 The pack uses lockstep `worm_message`, `turn_start`, and `death` events.

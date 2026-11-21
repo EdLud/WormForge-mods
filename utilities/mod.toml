@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.20.0"
+version = "0.21.0"
 author = "WormForge"
 api_version = 5
 format_version = 2
@@ -20,7 +20,7 @@ type = "feature"
 name = "Utilities"
 description = "A collection of features that could fit a diverse set of schemes"
 entry = "features/utilities.lua"
-credits = "ExTurnSide, Live HP and Damage numbers by reddaz, Agility by Zed and 0rang3 (port by reddaz)"
+credits = "ExTurnSide, Live HP and Damage numbers by reddaz, Agility by Zed and 0rang3 (port by reddaz), Changing wind by PyroMan"
 
 [[components.options]]
 key = "heal_per_turn"
@@ -134,6 +134,20 @@ type = "bool"
 default = false
 label = "Panel highlight"
 description = "A green square marks each weapon on the panel that doesn't end the turn. Leave it off when the scheme has Weapon Use Doesn't End Turn."
+
+[[components.options]]
+key = "rope_counter"
+type = "bool"
+default = false
+label = "Rope counter"
+description = "Counts each team's Ninja Rope shots above the turn timer. Useful for races."
+
+[[components.options]]
+key = "changing_wind"
+type = "bool"
+default = false
+label = "Changing wind"
+description = "During turns the wind moves to a new random strength every 10 to 20 seconds."
 
 # +N Seconds: extra turn time from utility crates.
 # instant utilities.

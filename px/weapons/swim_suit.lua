@@ -109,6 +109,11 @@ function weapon.setup()
     worm.collision_mask = worm.collision_mask | SWIM_WATER
   end
 
+  shared.swim_suit_on = function(worm)
+    local s = swimmer_of(worm)
+    if not s.suit then suit_on(worm, s) end
+  end
+
   shared.swim_suit_off = function(worm)
     local s = swimmers[worm.id]
     if s and s.suit then suit_off(worm, s, false) end

@@ -37,6 +37,7 @@ local ORDER = {
   "weapons/gravity_control",
   "weapons/sacrifice",
   "weapons/parkour",
+  "weapons/anti_fall_damage",
   "weapons/platform",
   "weapons/toxic_grenade",
   "weapons/bulldozer",

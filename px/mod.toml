@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.85"
+version = "0.20.86"
 author = "Project X authors"
 api_version = 5
 format_version = 2
@@ -879,6 +879,29 @@ type = "feature"
 name = "Specialists rules"
 description = "Five worm classes with their own weapons and cooldowns, the Medic aura and the Soldier who returns once as a zombie, for five worms per team and 100 HP."
 entry = "components/specialists.lua"
+
+[sprites."sprites/random_race/rope_race.png"]
+frames = 1
+
+[sprites."sprites/random_race/park_race.png"]
+frames = 1
+
+[sprites."sprites/random_race/wing_race.png"]
+frames = 1
+
+[sprites."sprites/random_race/port_race.png"]
+frames = 1
+
+[sprites."sprites/random_race/heli_race.png"]
+frames = 1
+
+[[components]]
+id = "random_race.rules"
+type = "feature"
+name = "Random Race"
+authors = ["0rang3"]
+description = "Each round of turns, every team races with the same movement weapon, chosen at random: Ninja Rope, Parkour, Wings, Portal Gun or Helicopter."
+entry = "components/random_race.lua"
 
 [[components]]
 id = "ktk.control"
@@ -2134,11 +2157,11 @@ pool = "movement"
 [[components.options]]
 key = "fuel"
 type = "int"
-min = 1
+min = 0
 max = 999
 default = 100
 label = "Fuel"
-description = "The helicopter's fuel."
+description = "The helicopter's fuel; 0 is unlimited."
 
 [[components]]
 id = "px.gravity_control"
@@ -2448,6 +2471,16 @@ frames = 12
 
 [sprites."sprites/drilling_crew/trail.png"]
 frames = 9
+
+[[components]]
+id = "px.anti_fall_damage"
+type = "weapon"
+name = "Anti Fall Damage"
+authors = ["PyroMan"]
+description = "For the turn, a worm flying faster than 8 pixels a frame lands on its feet, unhurt and in control."
+entry = "components/weapon.lua"
+icon = "sprites/anti_fall_damage/anti_fd_ico.png"
+default_position = { row = "utility", column = 6 }
 
 [[components]]
 id = "px.tazer"

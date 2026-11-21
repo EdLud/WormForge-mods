@@ -115,7 +115,8 @@ function weapon.setup()
       h.jump_phase = h.jump_phase + 0.047 * own_time.frames(worm)
     end
     if h and h.armed and state == "jetpacking" and not h.flying then
-      worm.fuel = shared.helicopter_fuel or 100
+      local fuel = shared.helicopter_fuel or 100
+      worm.fuel = fuel == 0 and 1 or fuel -- unlimited: held at 1
       worm.gravity = HELI_REALISTIC and 0.2 or 0
       worm:jetpack_steer(true)
       h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
@@ -168,7 +169,7 @@ function weapon.setup()
         end
         h.frame = (h.frame + 1) % 3
         local fuel = worm.fuel
-        local burn = wa.world.retreat() == 0
+        local burn = wa.world.retreat() == 0 and shared.helicopter_fuel ~= 0
         if burn then fuel = fuel - 0.020 end
         local shift = wa.world.keys().shift
         if up then

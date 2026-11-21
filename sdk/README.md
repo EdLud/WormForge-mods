@@ -27,6 +27,9 @@ The helper also exposes `cyclical_frame`, `track_angle`, `rotation_turn` and
 for `wa.on.worm_message` (frame finish, jump and jump-up). It implements the
 shared wall-jump/bunny-hop movement and cooldowns; the caller chooses when it
 is active. The Utilities global option and PX inventory utility both use it.
+`new{ wall_jump = 6, carry_speed = false }` sets the wall kick's strength
+(2 when left out) and kicks at a fixed speed instead of adding the worm's own
+speed, as the Random Race add-on does.
 `air_input(worm, msg)` identifies its airborne jump inputs. Controllers share
 Parkour cooldowns and deduplicate inputs/frames within the match, so enabling
 both forms cannot apply a movement input twice.

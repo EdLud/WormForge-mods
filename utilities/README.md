@@ -30,6 +30,8 @@ live_hp = true
 | FPS counter | switch | Each player's frame rate at the top right of their screen. |
 | Disable zoom | switch | Every player sees the match at 1x, whatever their zoom setting. |
 | Panel highlight | switch | A green square marks each weapon on the panel that doesn't end the turn, and a key above the panel reads "= sdet". Both fade in as the panel opens. Leave it off when the scheme has Weapon Use Doesn't End Turn, where every weapon keeps the turn going. |
+| Rope counter | switch | Each team's Ninja Rope shots, shown above the turn timer by the name of its first living worm. From Project X; useful for races. |
+| Changing wind | switch | During turns the wind moves, over three seconds, to a new random strength every 10 to 20 seconds. By PyroMan, from Project X. |
 
 ## Crate pop
 

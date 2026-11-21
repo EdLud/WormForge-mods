@@ -11,7 +11,11 @@ local BHOP_STATES = { jumping = true, falling = true, tumbling = true, hit = tru
 
 local parkour = {}
 
-function parkour.new()
+-- opts: wall_jump (WallJumpMultiplier); carry_speed = false kicks at a fixed speed, without the worm's.
+function parkour.new(opts)
+  opts = opts or {}
+  local kick = opts.wall_jump or WALL_JUMP
+  local carry_speed = opts.carry_speed ~= false
   wa._wf_parkour = wa._wf_parkour or {wall={},hop={},frames={},inputs={}}
   local common=wa._wf_parkour
   local wall_delay,bhop_delay=common.wall,common.hop
@@ -40,9 +44,9 @@ function parkour.new()
     else
       side = right and -1 or 1
     end
-    local speed = math.abs(worm.vx)
-    local vy = math.min(worm.vy, 0) - WALL_JUMP - speed
-    local vx = (WALL_JUMP + 1 + speed) * side
+    local speed = carry_speed and math.abs(worm.vx) or 0
+    local vy = math.min(worm.vy, 0) - kick - speed
+    local vx = (carry_speed and kick + 1 + speed or kick - 1) * side
     worm.facing = side
     jumping(worm, vx, vy)
   end
