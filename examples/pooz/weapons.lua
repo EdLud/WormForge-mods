@@ -142,7 +142,7 @@ return {
         worm.y = a.y
       end
       worm.visible = true
-      worm:drop()
+      worm:release(0, 0)
     end
 
     local function brain(worm)

@@ -146,7 +146,6 @@ worm=body("worm",17,100,100,4,-6)
 worm.team,worm.alliance,worm.weapon,worm.turn,worm.aim=0,0,"px.portal_gun",true,.5
 worm.stock=3
 function worm:ammo(_,delta) if delta then self.stock=self.stock+delta end; return self.stock end
-function worm:air_fire(on) self.air_enabled=on~=false; return true end
 worms={worm}
 for _, entry in ipairs({{{up=true,left=true},.75},{{down=true,right=true},.175},{{up=true},1},{{down=true},0},{{left=true},.5},{{},.5}}) do
   keys=entry[1]
