@@ -1080,6 +1080,14 @@ default_position = { row = "F1", column = 3 }
 [components.suggests."hl.rules"]
 pool = "offensive"
 
+[[components.options]]
+key = "homes_like"
+type = "choice"
+choices = ["homing", "pigeon", "magic_bullet"]
+default = "homing"
+label = "Bits home like"
+description = "homing: Project X's, straight at the worm. pigeon or magic_bullet: WA's Homing Pigeon or Magic Bullet, around land."
+
 [[components]]
 id = "px.blaster_worm"
 type = "weapon"
