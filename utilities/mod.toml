@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.19.0"
+version = "0.20.0"
 author = "WormForge"
 api_version = 5
 format_version = 2
@@ -478,6 +478,41 @@ min = 0
 max = 255
 label = "Blue"
 description = "The glow's colour, blue part: 0 to 255."
+
+# Crate pop: the turn drop and Crate Shower pop their crates in.
+[[components]]
+id = "core.crate_pop"
+type = "feature"
+name = "Crate pop"
+description = "Crates from the turn drop and Crate Shower pop in just above the land, with no parachute or teleport."
+entry = "features/crate_pop.lua"
+
+[[components.options]]
+key = "pitch"
+type = "int"
+default = 3
+min = 0
+max = 12
+label = "Pitch range (semitones)"
+description = "Each pop sounds up to this many semitones higher or lower."
+
+[[components.options]]
+key = "height_min"
+type = "int"
+default = 30
+min = 0
+max = 100
+label = "Lowest height (pixels)"
+description = "Each crate pops in at a random height between the lowest and the highest, then falls."
+
+[[components.options]]
+key = "height_max"
+type = "int"
+default = 50
+min = 0
+max = 100
+label = "Highest height (pixels)"
+description = "Each crate pops in at a random height between the lowest and the highest, then falls."
 
 # The Cursor: one weapon with seven modes.
 [[components]]

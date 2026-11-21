@@ -2,7 +2,7 @@
 
 WormForge's add-ons and tools, the mod **Core utilities** (`core.utilities`):
 **Utilities**, with match settings the lobby scheme doesn't have and some
-favourite mods as switches; **Fog of war**; **Worm glow**; the **+N Seconds**
+favourite mods as switches; **Fog of war**; **Worm glow**; **Crate pop**; the **+N Seconds**
 and **Bullet Time** utilities; and the **Cursor** weapon.
 
 ```toml
@@ -30,6 +30,17 @@ live_hp = true
 | FPS counter | switch | Each player's frame rate at the top right of their screen. |
 | Disable zoom | switch | Every player sees the match at 1x, whatever their zoom setting. |
 | Panel highlight | switch | A green square marks each weapon on the panel that doesn't end the turn, and a key above the panel reads "= sdet". Both fade in as the panel opens. Leave it off when the scheme has Weapon Use Doesn't End Turn, where every weapon keeps the turn going. |
+
+## Crate pop
+
+Crates from the turn drop and Crate Shower pop in just above the land and
+fall the rest, with no parachute or teleport, and without the shotgun reload
+sound of a weapon or utility crate.
+
+| Setting | Type | What it does |
+|---|---|---|
+| Pitch range | number, 0–12 semitones | Each pop sounds a random pitch up to this far higher or lower. 3 by default. |
+| Lowest height, Highest height | numbers, 0–100 pixels | Each crate pops in at a random height between the two, then falls. 30 and 50 by default. Land above the crate stops it lower. |
 
 ## Cursor
 
