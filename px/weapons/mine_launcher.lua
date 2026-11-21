@@ -35,7 +35,7 @@ local function launch(fire)
     owner = fire.worm, x = fire.worm.x, y = fire.worm.y, vx = fire.vx, vy = fire.vy,
     arm = m.arm, fuse = m.fuse, damage = 50, radius = 48,
     terrain_keep_speed_pct = m.keep,
-    on_bump = m.sticky and bump or nil,
+    on_contact = m.sticky and bump or nil,
   })
   if not mine then return end
   if m.hidden then mine.visible = false end

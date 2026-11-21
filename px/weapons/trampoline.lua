@@ -97,7 +97,7 @@ local function place(fire)
     sprite = false, owner = worm, x = worm.x + 3 * side, y = worm.y - 12 + HALF,
     vx = 2 * side, vy = -3, origin = "center", persist = true, gravity = 1, drown = true,
     body = { shape = ART .. "body.png", hits = { land = true }, hit_by = "all" },
-    on = { frame = frame, contact = contact, hit = hit },
+    on = { frame = frame, touched = contact, hit = hit },
   })
   trampolines[#trampolines + 1] = s
 end

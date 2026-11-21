@@ -849,7 +849,7 @@ function M.spawn_actor(opts)
     persist = opts.persist ~= false,
     body    = { shape = M.BODY_MASK, hits = { land = true, worms = true },
                 hit_by = { fire = true, blasts = true } },
-    on      = { frame = opts.brain or brain, hit = hurt, contact = onContact, bump = bump },
+    on      = { frame = opts.brain or brain, hit = hurt, touched = onContact, contact = bump },
   })
 
   if body then

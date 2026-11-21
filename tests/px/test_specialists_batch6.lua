@@ -145,7 +145,7 @@ local t=log.spawned[#log.spawned]
 check(t.x==103 and t.y==94 and t.vx==2 and t.vy==-3 and t.spec.persist and t.spec.body.hits.land
   and t.spec.gravity==1,
   "Trampoline: thrown from the worm's x+3, y-12, 2 across and 3 up; it lands")
-local function hit_by(o)t.spec.on.contact(t,{other=o})end
+local function hit_by(o)t.spec.on.touched(t,{other=o})end
 local jumper={kind="worm",state="jumping",x=90,vx=0,vy=4}
 hit_by(jumper)
 check(jumper.vy==-8 and jumper.vx==3,"Trampoline: a falling worm is thrown up 8 and across 3, to its far side")
@@ -204,7 +204,7 @@ local function key(d)gunner.digit=d;frame=frame+1;each(hooks.message,gunner,2)en
 launcher.definition.on_fire({worm=gunner,vx=4,vy=-5})
 local m=log.mines[#log.mines]
 check(m.x==40 and m.y==60 and m.vx==4 and m.vy==-5 and m.arm==400 and m.fuse==0 and m.damage==50
-  and m.radius==48 and m.terrain_keep_speed_pct==96 and m.visible and not m.on_bump,
+  and m.radius==48 and m.terrain_keep_speed_pct==96 and m.visible and not m.on_contact,
   "Mine Launcher: the instant mine by default, from the worm at the shell's launch")
 key(3);key(3)
 check(#log.messages==1 and log.messages[1]:find("Mine Launcher: Invisible Mine, 3 SEC",1,true) and log.sounds[#log.sounds]==92,
@@ -218,10 +218,10 @@ check(log.mines[#log.mines].fuse==0,"Mine Launcher: selecting the weapon again p
 key(nil);key(2)
 launcher.definition.on_fire({worm=gunner,vx=6,vy=1})
 m=log.mines[#log.mines]
-check(m.arm==2000 and m.fuse==1500 and type(m.on_bump)=="function" and m.terrain_keep_speed_pct==nil,
+check(m.arm==2000 and m.fuse==1500 and type(m.on_contact)=="function" and m.terrain_keep_speed_pct==nil,
   "Mine Launcher: the sticky mine hears its bumps")
 mines={m}
-m.on_bump(m,{x=70,y=55,other="land"})
+m.on_contact(m,{x=70,y=55,other="land"})
 check(m.x==70 and m.y==55 and m.vx==0 and m.vy==0 and m.gravity==0
   and log.sounds[#log.sounds-1]==107 and log.sounds[#log.sounds]==56,
   "Mine Launcher: the first touch sticks it where it hit, weightless")
@@ -230,7 +230,7 @@ check(m.gravity==0,"Mine Launcher: it stays stuck while nothing moves it")
 m.vx=2;key(nil)
 check(m.gravity==1,"Mine Launcher: moved, it falls again")
 local m2=launcher.definition.on_fire({worm=gunner,vx=0,vy=0}) or log.mines[#log.mines]
-m2.on_bump(m2,{x=1,y=1});m2.on_bump(m2,{x=2,y=2})
+m2.on_contact(m2,{x=1,y=1});m2.on_contact(m2,{x=2,y=2})
 check(m2.gravity==1,"Mine Launcher: a second touch lets it fall")
 each(hooks.turn_end);launcher.definition.on_fire({worm=gunner,vx=0,vy=0})
 check(log.mines[#log.mines].fuse==0,"Mine Launcher: a turn's end picks the instant mine again")

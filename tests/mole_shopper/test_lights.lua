@@ -60,7 +60,7 @@ for _, kind in ipairs({"worms", "missiles", "arrows", "mines", "actors", "bullet
 end
 assert(body.spec.persist and body.spec.drown and body.spec.owner == owner)
 -- Half of WA's rebound off a floor or wall; sliding and a landing stop are WA's.
-local bump = body.spec.on.bump
+local bump = body.spec.on.contact
 local lamp = {vx = 2, vy = -3}
 bump(lamp, {other = "land", nx = 0, ny = -1})
 assert(lamp.vx == 2 and lamp.vy == -1.5, "a floor halves the upward rebound, not the slide")

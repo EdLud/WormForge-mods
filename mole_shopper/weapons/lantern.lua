@@ -41,7 +41,7 @@ return {
             hit_by = {blasts = true, worms = false, missiles = false, arrows = false, mines = false,
               actors = false, bullets = false, melee = false, fire = false, dragon_ball = false},
           },
-          on = {bump = function(a, hit)
+          on = {contact = function(a, hit)
             if hit.ny ~= 0 and a.vy * hit.ny > 0 then a.vy = a.vy * REBOUND end
             if hit.nx ~= 0 and a.vx * hit.nx > 0 then a.vx = a.vx * REBOUND end
           end},

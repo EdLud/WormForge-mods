@@ -687,7 +687,7 @@ local function new_match(opts)
         M.next_actor_id = (M.next_actor_id or 0) + 1
         -- `on` is a frame function or a table of handlers (frame, land, hit).
         local on, hit, contact = spec.on, nil, nil
-        if type(on) == "table" then on, hit, contact = spec.on.frame, spec.on.hit, spec.on.contact end
+        if type(on) == "table" then on, hit, contact = spec.on.frame, spec.on.hit, spec.on.touched end
         local a = { id = M.next_actor_id, kind = "actor", sprite = spec.sprite, x = spec.x, y = spec.y,
                     vx = spec.vx or 0, vy = spec.vy or 0, dead = false,
                     explode = spec.explode, on = on, hit = hit, contact = contact, owner = spec.owner, as_object = false,

@@ -619,7 +619,7 @@ function turret.new(cfg)
       origin = "bottom", owner = worm, persist = true,
       gravity = 1, body = { shape = t.art.mask, hits = { land = true, objects = true },
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
-      on = { frame = brain, hit = hit, contact = touched },
+      on = { frame = brain, hit = hit, touched = touched },
     })
     local s = {
       alliance = alliance, planted = false, active = true, disabled = false, ammo = t.ammo,
