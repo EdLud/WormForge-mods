@@ -342,6 +342,7 @@ function weapon.setup()
           worm.x, worm.y = ox, oy
           worm:release(vx + px, vy + py)
           wa.sound.play(worm, SWIM_PLOP)
+          if shared.left_water then shared.left_water(worm) end
           out = true
           break
         end

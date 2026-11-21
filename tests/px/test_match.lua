@@ -5386,6 +5386,17 @@ do
   check("falling off a cliff: no second jump", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
   in_air("falling", "px.jump")
   check("launched by the Jump: a second jump", M.message(w, wa.msg.JUMP) == "eat" and w.jumped == "last")
+  -- Into the water with it spent, out on the Swim Suit: a second jump again.
+  in_air("falling")
+  local shared = require("lib/shared")
+  shared.left_water(w)
+  check("out of the water on the Swim Suit: a second jump", M.message(w, wa.msg.JUMP) == "eat"
+    and w.jumped == "last")
+  in_air("falling")
+  check("once out of the water", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
+  land()
+  in_air("falling")
+  check("standing again, a fall is a fall", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
   -- Held by a vehicle: nothing.
   land()
   in_air()
