@@ -21,8 +21,7 @@ wa = {
   end },
   actors = { spawn = function(spec)
     local a = { id = #actors+1, x = spec.x, y = spec.y, on = spec.on }
-    function a:scale(v) self.scale_value=v end
-    function a:gfx(v) self.gfx_value=v end
+    function a:gfx(v) self.gfx_value=v; if v.scale then self.scale_value=v.scale end end
     function a:frame(v) self.frame_value=v end
     function a:remove() self.dead=true end
     actors[#actors+1]=a; return a

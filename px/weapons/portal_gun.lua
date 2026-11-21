@@ -11,13 +11,16 @@ weapon.record = {
   },
 }
 
+weapon.defaults = {
+  airborne = true,
+}
+
 function weapon.definition()
   local shared = require("lib/shared")
   local fires = shared.fires
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/scales_of_justice.wep",
     panel_icon = "sprites/portal_gun/icon.png",
-        airborne = true,
     worm_sprites = {
           weaponlnk = "sprites/portal_gun/portal_gun_normal.png",
           weaponlnku = "sprites/portal_gun/portal_gun_up.png",
@@ -84,7 +87,7 @@ function weapon.setup()
     if ticker then return end
     ticker = wa.actors.spawn({ sprite = ART .. "portal_glow.png", x = 0, y = -1000,
       owner = worm, on = { frame = tick } })
-    ticker:scale(0)
+    ticker:gfx{ scale = 0 }
   end
 
   local function supported(x, y)

@@ -57,7 +57,7 @@ function M.install(ctx)
   local function blast(m, x, y)
     local b = wa.actors.spawn({ sprite = ART .. "idle.png", x = x, y = y,
       owner = m.owner, on = function() end })
-    b:scale(0)
+    b:gfx{ scale = 0 }
     b:explode({ damage = DAMAGE, id = BLAST, below = false })
     if not b.dead then b:remove() end
     if super_buster and m.owner then
@@ -81,8 +81,8 @@ function M.install(ctx)
   local function boom(m)
     if m.boom then return end
     m.boom, m.dig, m.vy, m.num, m.timer = true, false, 0, 0, 0
-    m.body:scale(0)
-    if m.glow then m.glow:scale(0) end
+    m.body:gfx{ scale = 0 }
+    if m.glow then m.glow:gfx{ scale = 0 } end
   end
 
   local function land_ahead(m, edge)

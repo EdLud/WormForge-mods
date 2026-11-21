@@ -721,8 +721,8 @@ Added engine surface:
 - `object:fits(x, y)` uses its own native shape against terrain.
   `worm:fits(x, y, "terrain")` ignores other objects; omitting the mode
   retains the worm's normal collision mask. Portals use terrain-only checks.
-- The claim's `airborne = true` (the weapon's own "Fires jumping, falling"
-  setting, which a profile may change) enables `on_fire` for synchronized
+- The weapon data `airborne = true` in `weapon.defaults` (its "Fires
+  jumping, falling" setting, which a profile may change) enables `on_fire` for synchronized
   Space press edges in flight. The event has `airborne = true`; native
   ammo/turn processing is not invoked. A worm the Swim Suit holds fires
   nothing of it (`worm:take{ fire = ... }`). No aiming or steering physics

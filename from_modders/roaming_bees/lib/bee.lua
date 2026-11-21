@@ -384,7 +384,7 @@ local function startSting(a, s, worm)
   s.targetId = nil
   s.homingDuration = 0
   s.rot, s.gfxAngle = angle, angle
-  a:angle(angle)
+  a:gfx{ angle = angle }
   a.vx, a.vy = s.sting.vx, -STING_LIFT_PX
   worm:carry(a.x, a.y - STING_GAP_PX)
   return true
@@ -413,7 +413,7 @@ local function stingTick(a, s)
   end
  
   a.vx, a.vy = st.vx, -STING_LIFT_PX
-  a:angle(st.angle)
+  a:gfx{ angle = st.angle }
   s.gfxAngle = st.angle
  
   local cx, cy = stingSpot(a, w)
@@ -552,7 +552,7 @@ local function hatDropTick(h)
   if not d then return end
   d.age = d.age + 1
   d.rot = d.rot + d.spin
-  h:angle(d.rot)
+  h:gfx{ angle = d.rot }
   if d.age >= HAT_DROP_FRAMES or h:in_water() then
     hatDrops[h.id] = nil
     h:remove()
@@ -579,11 +579,11 @@ local function dropHat(a, s)
     on = { frame = hatDropTick },
   })
   if not h then return end
-  h:angle(s.gfxAngle or 0)
+  h:gfx{ angle = s.gfxAngle or 0 }
   h.facing = a.facing
   h:gfx{ depth = HAT_DEPTH }
   local colour = TEAM_COLOUR[s.colour]
-  if colour then h:tint(colour & 0x00FFFFFF) end
+  if colour then h:gfx{ tint = colour & 0x00FFFFFF } end
   hatDrops[h.id] = {
     rot = s.gfxAngle or 0,
     spin = rand(5, 9) * (a.facing < 0 and -1 or 1),
@@ -652,7 +652,7 @@ local function brain(a, ev)
   if s.spin or s.softSpin then
     if s.spinN == 0 then playBuzz(a) end
     s.rot = (s.rot + (s.dead and 9 or 7)) % 360
-    a:angle(s.rot)
+    a:gfx{ angle = s.rot }
     s.gfxAngle = s.rot
     s.spinN = s.spinN + 1
     if s.spinN >= SPIN_FRAMES then
@@ -788,7 +788,7 @@ local function brain(a, ev)
   else
     s.gfxAngle = s.rot
   end
-  a:angle(s.gfxAngle)
+  a:gfx{ angle = s.gfxAngle }
 end
 
 local function hurt(a, ev)

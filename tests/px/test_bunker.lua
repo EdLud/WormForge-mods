@@ -30,11 +30,15 @@ local function reset(super, force_x, force_y, active)
     actors = { spawn = function(s)
       local a = { x=s.x,y=s.y,vx=s.vx or 0,vy=s.vy or 0,id=#actors+1,on=s.on,sprite=s.sprite }
       function a:remove() self.dead = true end
-      function a:scale(v) self.scale_value = v end
       function a:explode(s) blasts[#blasts+1] = {x=self.x,y=self.y,spec=s} end
       function a:look(s) self.sprite = s end
       function a:frame() end
-      function a:gfx(s) self.gfx_spec = s end
+      function a:gfx(s)
+        -- As the engine: each call changes only the fields it names.
+        self.gfx_spec = self.gfx_spec or {}
+        for k, v in pairs(s) do self.gfx_spec[k] = v end
+        self.scale_value = self.gfx_spec.scale
+      end
       actors[#actors+1] = a
       return a
     end },
