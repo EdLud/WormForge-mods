@@ -900,7 +900,7 @@ id = "random_race.rules"
 type = "feature"
 name = "Random Race"
 authors = ["0rang3"]
-description = "Each round of turns, every team races with the same movement weapon, chosen at random: Ninja Rope, Parkour, Wings, Portal Gun or Helicopter."
+description = "Each time the first team's turn comes round, a race is chosen at random and every team gets only its weapons: Parkour with Jump and Low Gravity, or Portal Gun, both with Anti Fall Damage; Wings; Helicopter; or Ninja Rope with Parachute."
 entry = "components/random_race.lua"
 
 [[components]]
@@ -2462,6 +2462,22 @@ description = "Switch on parkour for the turn: Enter kicks the worm off a wall, 
 entry = "components/weapon.lua"
 icon = "sprites/parkour/parkour_ico.png"
 default_position = { row = "F12", column = 5 }
+
+[[components.options]]
+key = "wall_jump"
+type = "int"
+min = 1
+max = 10
+default = 2
+label = "Wall kick"
+description = "How hard Enter kicks the worm off a wall."
+
+[[components.options]]
+key = "carry_speed"
+type = "bool"
+default = true
+label = "Wall kick adds speed"
+description = "On: the kick adds the worm's own speed. Off: it kicks at the same speed every time."
 
 [sprites."sprites/drilling_crew/driller.png"]
 frames = 8

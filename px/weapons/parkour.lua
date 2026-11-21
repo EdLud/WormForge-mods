@@ -1,5 +1,7 @@
 -- Parkour: parkour for the turn: Enter kicks the worm off a wall, Backspace bunny-hops it.
 
+local kick = {}
+
 local weapon = {
   definition = {
     copy_from = "stock.double_turn_time",
@@ -15,11 +17,17 @@ local weapon = {
 function weapon.setup()
   local enabled = {}
   local parkour = require("wf-lib/parkour")
-  local movement = parkour.new()
+  local movement
+  local function on(worm)
+    enabled[worm.id] = true
+    wa.sound.play(worm, "sounds/parkour/parkour_snd.wav")
+  end
+  require("lib/shared").parkour_on = function(worm)
+    if not enabled[worm.id] then on(worm) end
+  end
   require("lib/turn_controls").register("px.parkour", {
     fire = function(worm)
-      enabled[worm.id] = not enabled[worm.id]
-      if enabled[worm.id] then wa.sound.play(worm, "sounds/parkour/parkour_snd.wav") end
+      if enabled[worm.id] then enabled[worm.id] = nil else on(worm) end
     end,
     finish = function() enabled = {} end,
     hint = function(worm)
@@ -28,9 +36,16 @@ function weapon.setup()
   })
   wa.on.worm_message(function(worm, msg)
     if not worm.turn or not enabled[worm.id] or worm.hp <= 0 then return end
+    movement = movement or parkour.new(kick)
     local airborne = parkour.air_input(worm, msg)
     movement(worm, msg)
     if airborne then return "eat" end
   end, {msgs={wa.msg.FRAME_FINISH,wa.msg.JUMP,wa.msg.JUMP_UP}})
 end
+
+function weapon.configure(ctx)
+  kick.wall_jump = ctx.option("wall_jump")
+  kick.carry_speed = ctx.option("carry_speed")
+end
+
 return weapon

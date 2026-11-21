@@ -1,32 +1,37 @@
--- Random Race: each round of turns races with one movement weapon, chosen at random.
+-- Random Race: each round of turns races with one set of movement weapons, chosen at random.
 
 local own_time = require("wf-lib/own_time")
-local parkour = require("wf-lib/parkour")
 local shared = require("lib/shared")
 
 local race = {}
 
 local ART = "sprites/random_race/"
+-- What each race puts in the inventory; parkour and anti_fall switch those on at turn start.
 local RACES = {
-  { name = "rope", weapons = { "stock.ninja_rope" }, banner = ART .. "rope_race.png" },
-  { name = "parkour", weapons = { "px.jump", "stock.low_gravity" }, banner = ART .. "park_race.png", parkour = true },
+  { name = "parkour", weapons = { "px.parkour", "px.jump", "stock.low_gravity", "px.anti_fall_damage" },
+    banner = ART .. "park_race.png", parkour = true, anti_fall = true },
+  { name = "portal", weapons = { "px.portal_gun", "px.anti_fall_damage" }, banner = ART .. "port_race.png",
+    anti_fall = true },
   { name = "wings", weapons = { "px.wings" }, banner = ART .. "wing_race.png" },
-  { name = "portal", weapons = { "px.portal_gun" }, banner = ART .. "port_race.png" },
   { name = "helicopter", weapons = { "px.helicopter" }, banner = ART .. "heli_race.png" },
+  { name = "rope", weapons = { "stock.ninja_rope", "stock.parachute" }, banner = ART .. "rope_race.png" },
 }
-local TEAMS = 6
-local WALL_JUMP = 6 -- WallJumpMultiplier
 local AIR_STEP, AIR_LIMIT = 0.1, 3 -- pixels/frame
 local AIR_STATES = { jumping = true, falling = true, tumbling = true, hit = true, blasted = true, drilling = true }
 local BANNER_W, BANNER_H = 400, 200
 local GROW, HOLD, FADE = 25, 190, 20 -- frames
 
 function race.install(ctx)
-  local draw = {}
+  local draw, managed, seen = {}, {}, {}
   for _, r in ipairs(RACES) do
     local placed = true
     for _, id in ipairs(r.weapons) do placed = placed and ctx.weapons[id] ~= nil end
-    if placed then draw[#draw + 1] = r end
+    if placed then
+      draw[#draw + 1] = r
+      for _, id in ipairs(r.weapons) do
+        if not seen[id] then managed[#managed + 1], seen[id] = id, true end
+      end
+    end
   end
   if #draw == 0 then
     wa.log("Random Race: no race has all its weapons on the panel; off")
@@ -36,46 +41,53 @@ function race.install(ctx)
   for _, r in ipairs(draw) do banners[#banners + 1] = r.banner end
   wa.assets.load({ sprites = banners, gpu_prefix = ART })
 
-  local current, left, shown_at = nil, 0, nil
-  local turn_open, active = false, {}
-  local movement = parkour.new({ wall_jump = WALL_JUMP, carry_speed = false })
+  local placing = wa.world.placing or function() return false end
+  local current, lead, shown_at = nil, nil, nil
+  local pending, begun, active = nil, false, {}
 
   local function choose()
     current = draw[wa.random(1, #draw)]
-    for team = 1, TEAMS do
-      for _, r in ipairs(draw) do
-        for _, id in ipairs(r.weapons) do
-          wa.weapons.set_selectable({ weapon = id, team = team, selectable = r == current })
-        end
-      end
-    end
-    local teams = {}
-    left = 0
+    local give = {}
+    for _, id in ipairs(current.weapons) do give[id] = true end
+    local groups = {}
     for _, w in ipairs(wa.worms.all()) do
-      if w.hp > 0 and not teams[w.team] then
-        teams[w.team] = true
-        left = left + 1
+      if not groups[w.ammo_group] then
+        groups[w.ammo_group] = true
+        for _, id in ipairs(managed) do w:ammo(id, { set = give[id] and -1 or 0 }) end
       end
     end
     shown_at = wa.world.frame()
-    wa.log(("Random Race: %s race for %d turns"):format(current.name, left))
+    wa.log("Random Race: " .. current.name .. " race")
+  end
+
+  local function team_alive(team)
+    for _, w in ipairs(wa.worms.all()) do
+      if w.team == team and w.hp > 0 then return true end
+    end
+    return false
+  end
+
+  -- The turn's first frame after placement: a new race whenever the leading team's turn comes round.
+  local function begin(worm)
+    if not begun then
+      begun = true
+      if not lead or not team_alive(lead) then lead = worm.team end
+      if worm.team == lead then choose() end
+    end
+    if current.parkour or current.anti_fall then active[worm.id] = true end
+    if current.parkour then
+      if shared.parkour_on then shared.parkour_on(worm) end
+      if shared.swim_suit_on then shared.swim_suit_on(worm) end
+    end
+    if current.anti_fall and shared.anti_fall_damage_on then shared.anti_fall_damage_on(worm) end
   end
 
   wa.on.turn_start(function(ev)
-    if not turn_open then
-      turn_open = true
-      if left <= 0 then choose() end
-    end
-    local worm = ev.worm
-    if worm and current.parkour and not active[worm.id] then
-      active[worm.id] = true
-      if shared.swim_suit_on then shared.swim_suit_on(worm) end
-    end
+    if ev.worm then pending = ev.worm.id end
   end)
 
   wa.on.turn_end(function()
-    if turn_open then left = left - 1 end
-    turn_open, active = false, {}
+    pending, begun, active = nil, false, {}
   end)
 
   local function steer(worm)
@@ -89,13 +101,14 @@ function race.install(ctx)
     end
   end
 
-  wa.on.worm_message(function(worm, msg)
-    if not worm.turn or not active[worm.id] or worm.hp <= 0 then return end
-    if msg == wa.msg.FRAME_FINISH then steer(worm) end
-    local airborne = parkour.air_input(worm, msg)
-    movement(worm, msg)
-    if airborne then return "eat" end
-  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP } })
+  wa.on.worm_message(function(worm)
+    if not worm.turn then return end
+    if pending == worm.id and not placing() then
+      pending = nil
+      begin(worm)
+    end
+    if active[worm.id] and current.parkour and worm.hp > 0 then steer(worm) end
+  end, { msgs = { wa.msg.FRAME_FINISH } })
 
   wa.on.hud(function()
     if not shown_at then return end

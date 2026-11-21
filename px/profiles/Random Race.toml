@@ -1,5 +1,5 @@
 # Random Race by 0rang3, September 2026 PX build: PX records for the panel, its WSC for the rest.
-description = "Random Race by 0rang3: each round of turns, every team races with the same movement weapon, chosen at random. God worms, indestructible land, no crates. Play it with one worm per team."
+description = "Random Race by 0rang3: each round of turns, every team races with the same movement weapons, chosen at random. God worms, indestructible land, no crates, worms placed by hand. Play it with one worm per team."
 features = ["core.utilities", "random_race.rules"]
 
 [crates]
@@ -15,6 +15,10 @@ rope_counter = true
 
 [options."px.helicopter"]
 fuel = 0
+
+[options."px.parkour"]
+carry_speed = false
+wall_jump = 6
 
 [scheme]
 angle_cheat_glitch = true
@@ -56,7 +60,7 @@ jet_pack_bungee_glitch = true
 keep_control_after_bumping_head = false
 keep_control_after_skimming = "lose_control"
 loss_of_control_doesn_t_end_turn = false
-manual_worm_placement = false
+manual_worm_placement = true
 maximum_crate_count_on_map_at_once = 5
 maximum_flamelet_count = 200
 maximum_jet_pack_speed = 5.0
@@ -122,23 +126,26 @@ worm_selection_is_never_cancelled = false
 x_impact_loss_of_control = "lose_control"
 
 [weapon_settings."px.anti_fall_damage"]
-ammo = -1
-auto_use = true
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."px.helicopter"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."px.jump"]
 after_use = "continue"
-ammo = -1
+ammo = 0
+crate_pct = 0.0
+
+[weapon_settings."px.parkour"]
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."px.portal_gun"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."px.skip_go_surrender"]
@@ -150,7 +157,7 @@ crate_pct = 0.0
 
 [weapon_settings."px.wings"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."stock.fast_walk"]
@@ -160,12 +167,12 @@ crate_pct = 0.0
 
 [weapon_settings."stock.low_gravity"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 crate_pct = 0.0
 
 [weapon_settings."stock.ninja_rope"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 rope_angle = 90
 rope_length = 462
 shots = -1
@@ -173,7 +180,7 @@ crate_pct = 0.0
 
 [weapon_settings."stock.parachute"]
 after_use = "continue"
-ammo = -1
+ammo = 0
 crate_pct = 0.0
 
 [weapons."px.anti_fall_damage"]
@@ -187,6 +194,10 @@ row = "utility"
 [weapons."px.jump"]
 column = 1
 row = "F2"
+
+[weapons."px.parkour"]
+column = 1
+row = "F1"
 
 [weapons."px.portal_gun"]
 column = 1

@@ -827,22 +827,28 @@ shots still collide with all terrain from that muzzle onward.
 
 The profile is PX's `RACE - Random - 0rang3.pxs` (September 2026 build):
 its WSC for the scheme, its records for the panel. `random_race.rules`
-(`scheme/random_race.lua`) is the scheme's `give_weapons` script. At the
-first turn, and again once every living team has had a turn, it draws one
-race with `wa.random` and leaves only that race's weapons selectable for
-all six teams (`wa.weapons.set_selectable`, where PX set a delay of -1).
-The draw counts living teams when it draws; PX counted the teams at the
-first frame. A race is in the draw only when all its weapons are placed.
+(`scheme/random_race.lua`) is the scheme's `give_weapons` script, with
+a list of races for WormForge: Parkour with Jump and Low Gravity, or
+Portal Gun, both with Anti Fall Damage; Wings; Helicopter; or Ninja Rope
+with Parachute. Each time the
+first team to play has its turn (the team whose turn it is, once that
+team is out), it chooses one with `wa.random` and gives every ammo group
+that race's weapons, infinite, and none of the others (`worm:ammo` with
+`set`), so the inventory holds only the race. The profile starts them all
+at 0. PX locked the others with a delay of -1 every n turns instead. A
+race is in the draw only when all its weapons are placed. Nothing happens
+during manual placement: the race and its banner wait for the first turn
+after it (`wa.world.placing`).
 
-The Parkour race gives the turn's worm the scheme's wall kick
-(`park_tweak`: WallJumpMultiplier 6, with the Parkour utility's fixed kick,
-`wf-lib/parkour` with `carry_speed = false`), the embedded `agility`
-script's air control (0.1 a frame up to 3, no Low Gravity step), and the
-Swim Suit through `shared.swim_suit_on`. PX fired the Swim Suit, which
-toggles; the race only puts it on, so a second Parkour race in a row
-doesn't take it off. PX gave Anti Fall Damage only in the Parkour and
-Portal races; the profile gives it on every turn, by Auto-Use. The banner fades in where PX scaled it in:
-`wa.hud.sprite` has no scale.
+At the start of each turn the race switches its utilities on for the
+turn's worm: Parkour (through `shared.parkour_on`; the profile sets its
+wall kick to the scheme's `park_tweak`, WallJumpMultiplier 6, with the
+Parkour utility's fixed kick) and the Swim Suit in the Parkour race, Anti
+Fall Damage in the Parkour and Portal races. The Parkour race also has the
+embedded `agility` script's air control (0.1 a frame up to 3, no Low
+Gravity step). PX fired the Swim Suit, which toggles; the race only puts
+it on, so a second Parkour race in a row doesn't take it off. The banner fades
+in where PX scaled it in: `wa.hud.sprite` has no scale.
 
 The other libraries map onto settings: `script_no_worm_collision` is
 Phased Worms "worms" (Allied and Enemy); `script_antisink` is RubberWorm

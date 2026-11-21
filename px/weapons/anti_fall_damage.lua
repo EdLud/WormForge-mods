@@ -30,6 +30,9 @@ function weapon.setup()
     on[worm.id] = not on[worm.id]
     if on[worm.id] then wa.sound.play(worm, SOUND) end
   end
+  require("lib/shared").anti_fall_damage_on = function(worm)
+    if not on[worm.id] then switch(worm) end
+  end
   require("lib/turn_controls").register(ID, {
     fire = switch,
     finish = function() on = {} end,
