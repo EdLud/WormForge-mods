@@ -57,10 +57,15 @@ return {
     wa.on.turn_end(stop_cursor)
     wa.on.draw(function()
       local tick = wa.world.frame()
+      local water = wa.world.water()
       for i = #markers, 1, -1 do
         local marker = markers[i]
         local actor = marker.actor
         if actor.id ~= marker.id then
+          table.remove(markers, i)
+        elseif actor.y >= water - 1 then
+          -- Rising water puts it out a pixel before it reaches it.
+          actor.light = false
           table.remove(markers, i)
         else
           local age = tick - marker.born

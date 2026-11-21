@@ -4,6 +4,7 @@ local holds = require("wf-lib/holds")
 local lights = require("lib/lights")
 local ART = "sprites/lantern/"
 local REBOUND = 0.5
+local SIZZLE = 55 -- WA's SIZZLE.WAV
 local P = holds.PX_POSTURE
 local WORM_SPRITES = {wdynlnk = P.wthrow, wdynlnku = P.wthrowu, wdynlnkd = P.wthrowd}
 for sheet, path in pairs(P) do WORM_SPRITES[sheet] = path end
@@ -41,10 +42,19 @@ return {
             hit_by = {blasts = true, worms = false, missiles = false, arrows = false, mines = false,
               actors = false, bullets = false, melee = false, fire = false, dragon_ball = false},
           },
-          on = {contact = function(a, hit)
-            if hit.ny ~= 0 and a.vy * hit.ny > 0 then a.vy = a.vy * REBOUND end
-            if hit.nx ~= 0 and a.vx * hit.nx > 0 then a.vx = a.vx * REBOUND end
-          end},
+          on = {
+            -- Put out with a hiss a pixel above the water, before it sinks.
+            frame = function(a)
+              if a.y >= wa.world.water() - 1 then
+                wa.sound.play(a, SIZZLE)
+                a:remove()
+              end
+            end,
+            contact = function(a, hit)
+              if hit.ny ~= 0 and a.vy * hit.ny > 0 then a.vy = a.vy * REBOUND end
+              if hit.nx ~= 0 and a.vx * hit.nx > 0 then a.vx = a.vx * REBOUND end
+            end,
+          },
         }
         actor:gfx{scale = 0.48, tint = lights.colour(worm), depth = wa.depth.OBJECTS}
         lights.attach(actor, 110)

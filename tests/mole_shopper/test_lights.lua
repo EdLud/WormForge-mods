@@ -9,7 +9,7 @@ end
 local lantern = require("weapons/lantern")
 local sight = require("weapons/far_sight")
 local claims, actors, draws, sounds, hooks, frame = {}, {}, {}, {}, {}, 0
-local solid, solid_reads, denied = false, 0, 0
+local solid, solid_reads, denied, water = false, 0, 0, 2000
 wa = {
   depth = {OBJECTS = 5},
   land = {solid = function(x, y)
@@ -32,7 +32,7 @@ wa = {
   end},
   draw = {quad = function(spec) draws[#draws + 1] = spec end},
   sound = {play = function(target, path) sounds[#sounds + 1] = {target, path} end},
-  world = {frame = function() return frame end, keys = function() return {shift = false} end},
+  world = {frame = function() return frame end, water = function() return water end, keys = function() return {shift = false} end},
   on = {turn_start = function() end, turn_end = function() end, draw = function(fn) hooks[#hooks + 1] = fn end,
     missile_frame = function(fn) hooks.missile = fn end},
 }
@@ -81,6 +81,19 @@ body.id = 99 -- Engine reused the actor's address for an unrelated actor.
 body.gfx_values = {}
 hooks[1]()
 assert(next(body.gfx_values) == nil, "stale drawing records must not touch a recycled actor")
+-- A lantern is put out with a hiss a pixel above the water, before it sinks.
+local brain = body.spec.on.frame
+local wet = {y = 298, removed = false}
+function wet:remove() self.removed = true end
+water = 300
+brain(wet)
+assert(not wet.removed and #sounds == 0, "still lit two pixels above the water")
+wet.y = 299
+brain(wet)
+assert(wet.removed, "gone a pixel above the water")
+assert(#sounds == 1 and sounds[1][1] == wet and sounds[1][2] == 55, "with WA's sizzle")
+sounds = {}
+water = 2000
 
 owner.hp = 100
 local ammo, spent = 2, 0
@@ -120,6 +133,17 @@ owner.hp = 0
 draws = {}
 hooks[2]()
 assert(#draws == 2, "the planter's death must not erase the remote light")
+water = 302
+draws = {}
+hooks[2]()
+assert(#draws == 2 and marker.light.circle == 155, "lit while the water is two pixels below")
+water = 301.25
+hooks[2]()
+assert(#draws == 2 and marker.light == false, "rising water puts it out a pixel before it")
+draws = {}
+hooks[2]()
+assert(#draws == 0, "a marker put out by the water stops drawing")
+water = 2000
 marker.id = 0
 draws = {}
 hooks[2]()
