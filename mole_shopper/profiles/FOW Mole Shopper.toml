@@ -1076,7 +1076,7 @@ delay = 0
 shots = 1
 
 [weapon_settings."stock.sheep_strike".record.handling]
-available_in_caves = true
+available_in_caves = false
 ends_turn = true
 remember_selection = false
 retreat = 0
