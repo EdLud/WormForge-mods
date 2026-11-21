@@ -406,7 +406,7 @@ return {
         end
         live[worm.id] = true
         worm.visible = false
-        worm:carry(worm.x, worm.y)
+        worm:take{ turn = "freeze" }
         wa.actors.spawn({
           sprite = "sprites/Idle",
           origin = "bottom",
