@@ -34,7 +34,7 @@ weapon.record = {
     },
     fire = {
       burn_time_ms = 1000,
-      decay_mode = "on_hit",
+      decay_mode = "at_turn_start",
       spread_delay_ms = 150,
       spread_generations = 75,
     },

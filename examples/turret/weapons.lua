@@ -320,7 +320,8 @@ return {
           return
         end
 
-        a:advance()
+        s.frame = (s.frame or 0) + 1
+        a:frame(s.frame)
 
         if a:in_water() then
           state[a.id] = nil

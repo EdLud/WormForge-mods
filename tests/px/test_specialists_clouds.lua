@@ -52,11 +52,11 @@ assert(a.id==0 and a.booms==1 and #draws==0,"one death blast, no persistent body
 -- Nominal blast damage, not already-attenuated damage, drives PX's formula.
 platform.definition.on_fire{worm=owner}
 local b=bodies[#bodies]
-b.spec.on.hit(b,{kind="blast",blast_damage=20,damage=1,x=120,y=100})
+b.spec.on.hit(b,{kind="blast",power=20,damage=1,x=120,y=100})
 render();assert(#draws==1 and draws[1].sprite:find("platform_sprite",1,true)) --25 HP
-b.spec.on.hit(b,{kind="blast",blast_damage=20,damage=1,x=120,y=100})
+b.spec.on.hit(b,{kind="blast",power=20,damage=1,x=120,y=100})
 render();assert(draws[1].sprite:find("platform_broken",1,true)) --10 HP
-b.spec.on.hit(b,{kind="blast",blast_damage=20,damage=50,x=141,y=100})
+b.spec.on.hit(b,{kind="blast",power=20,damage=50,x=141,y=100})
 assert(b.id~=0 and b.booms==0,"outside PX's radius does no damage")
 b.spec.on.hit(b,{damage=10});assert(b.id==0 and b.booms==1)
 -- A native grenade detonation creates one cloud driver, never a body per puff.

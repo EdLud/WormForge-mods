@@ -116,11 +116,8 @@ return {
         st.anim = name
         st.clock = 0
         a:look("sprites/" .. name)
-        if name == "FrontFlip" then
-          for _ = 1, 13 do
-            a:advance()
-          end
-        end
+        st.frame = name == "FrontFlip" and 13 or 0
+        a:frame(st.frame)
         return
       end
       st.clock = st.clock + 1
@@ -132,7 +129,8 @@ return {
       if slow and st.clock % 2 ~= 0 then
         return
       end
-      a:advance()
+      st.frame = st.frame + 1
+      a:frame(st.frame)
     end
 
     local function restore(worm, a)

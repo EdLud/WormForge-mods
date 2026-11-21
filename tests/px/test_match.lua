@@ -777,7 +777,6 @@ local function new_match(opts)
           self.x, self.y = self.x + (self.vx or 0), self.y + (self.vy or 0)
           return { land = M.solid ~= nil and M.solid(self.x, self.y) or false }
         end
-        function a:advance() end
         function a:in_water() return self.y >= (M.water or 32767.99998474121) end
         function a:remove() self.dead = true; self.ignored_worms = {} end
         -- a.explode is the spawn's explode spec and a:explode(opts) the
@@ -4121,7 +4120,7 @@ do
       for _, child in ipairs(l) do
         local fire = child.missile.fire
         if fire.spread_delay_ms ~= 30 or fire.burn_time_ms ~= 1500
-          or fire.spread_generations ~= 10 or fire.decay_mode ~= "resting" then return false end
+          or fire.spread_generations ~= 10 or fire.decay_mode ~= "instant" then return false end
         if child.clusters ~= nil then return false end
       end
       return #l == 5

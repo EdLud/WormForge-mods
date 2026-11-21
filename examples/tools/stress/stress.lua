@@ -200,7 +200,8 @@ return function()
         scale = 1.0 + 0.6 * wa.math.sin(now / 6)
       end
       a:gfx({ angle = spin, tint = o.tint, blend = o.style.blend, scale = scale, depth = o.style.depth })
-      a:advance()
+      o.frame = (o.frame or 0) + 1
+      a:frame(o.frame)
       if a:in_water() then
         orbs[o.id] = nil
         a:remove()

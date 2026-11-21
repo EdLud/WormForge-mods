@@ -12,7 +12,7 @@ local function place(shot)
     if not s.alive then return end
     local damage=math.max(0,event.damage or 0)
     if event.kind=="blast" then
-      local power=event.blast_damage
+      local power=event.power
       local dx,dy=event.x-s.x,event.y-s.y
       damage=power>0 and math.max(0,math.floor((1-(dx*dx+dy*dy)/(power*power*4))*power)) or 0
     end

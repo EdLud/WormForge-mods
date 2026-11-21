@@ -154,13 +154,13 @@ for _, stacking in ipairs({ false, true }) do
   assert(t.clock() == (stacking and 44000 or 37000) and t.worm.held == (stacking and 0 or 1))
 end
 
-t = setup("use", 2, { retreat_collect = "nothing" })
+t = setup("use", 2, { retreat_collect = "discard" })
 t.retreat(3000); t.collect(3)
 assert(t.worm.held == 2 and t.retreat() == 3000 and t.clock() == 30000, "discard affects only the new pickup")
-t = setup("use", -1, { retreat_collect = "nothing" })
+t = setup("use", -1, { retreat_collect = "discard" })
 t.retreat(3000); t.collect(3)
 assert(t.worm.held == -1 and t.retreat() == 3000, "discard cannot destroy infinite inventory")
-for _, mode in ipairs({ "activate", "keep", "nothing" }) do
+for _, mode in ipairs({ "activate", "keep", "discard" }) do
   t = setup("keep", 1, { retreat_collect = mode })
   t.retreat(3000); t.collect(2)
   assert(t.worm.held == 3 and t.retreat() == 3000 and t.clock() == 30000,
@@ -199,7 +199,7 @@ t.start(); t.collect(3); t.next_turn(); t.collect(2)
 assert(t.clock() == 40000 and t.worm.held == -1, "discard mode leaves infinite inventory intact")
 
 for _, bonus_mode in ipairs({ "stack", "once_keep", "once_discard" }) do
-  for _, retreat_mode in ipairs({ "activate", "keep", "nothing" }) do
+  for _, retreat_mode in ipairs({ "activate", "keep", "discard" }) do
     t = setup("keep", 2, { bonus_mode = bonus_mode, retreat_collect = retreat_mode })
     t.start(); t.collect(3)
     assert(t.clock() == 30000 and t.worm.held == 5, "Auto-Use off stocks all ordinary pickups")
@@ -225,9 +225,9 @@ t.collect(1); t.retreat(3000); t.collect(3)
 assert(t.retreat() == 3000 and t.worm.held == 3, "retreat keep overrides surplus discarding")
 t.next_turn()
 assert(t.clock() == 40000 and t.worm.held == 2, "saved retreat stock is retained after the next bonus")
-t = setup("use", 2, { bonus_mode = "once_discard", retreat_collect = "nothing" })
+t = setup("use", 2, { bonus_mode = "once_discard", retreat_collect = "discard" })
 t.retreat(3000); t.collect(3)
-assert(t.retreat() == 3000 and t.worm.held == 2, "retreat nothing discards only the new pickup")
+assert(t.retreat() == 3000 and t.worm.held == 2, "retreat discard drops only the new pickup")
 -- While worms are being placed a pickup waits for the first turn, as WA's
 -- Double Time does, and a placement turn's start uses nothing.
 t = setup("use", 1)

@@ -20,7 +20,6 @@ return {
     local limit = data.uses_per_turn == "unlimited" and math.huge or (data.uses_per_turn or 1)
     local discard = (data.extra_pickups or "discard") == "discard"
     local retreat_collect = data.retreat_collect or "activate"
-    if retreat_collect == "nothing" then retreat_collect = "discard" end
     local automatic = data.auto_use ~= false
     local placing = wa.world.placing or function() return false end
     local used, pending, started = {}, nil, false

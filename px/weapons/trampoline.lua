@@ -83,7 +83,7 @@ local function place(fire)
 
   local function hit(a, ev)
     if ev.kind == "blast" then
-      local power = ev.blast_damage
+      local power = ev.power
       local dx, dy = ev.x - a.x, ev.y - (a.y - HALF)
       if power > 0 then
         damage(s, a, math.floor((1 - (dx * dx + dy * dy) / (power * power * 4)) * power))

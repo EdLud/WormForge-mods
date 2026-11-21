@@ -55,7 +55,7 @@ local CLUSTLET = {
     spread_generations = 10,
     spread_delay_ms = 30,
     burn_time_ms = 1500,
-    decay_mode = "resting",
+    decay_mode = "instant",
   },
 }
 
