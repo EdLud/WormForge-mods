@@ -34,6 +34,7 @@ view_ownership = "alliance"
 collect_viewer = true
 fast_aim = true
 live_hp = true
+panel_highlight = true
 
 [options."px.health_zone"]
 healing_per_minute = 60

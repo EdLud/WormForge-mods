@@ -29,6 +29,7 @@ live_hp = true
 | Damage numbers | switch, and a side | Damage and healing float over the worm, Worms Reloaded style. By reddaz. |
 | FPS counter | switch | Each player's frame rate at the top right of their screen. |
 | Disable zoom | switch | Every player sees the match at 1x, whatever their zoom setting. |
+| Panel highlight | switch | A green square marks each weapon on the panel that doesn't end the turn, and a key above the panel reads "= sdet". Both fade in as the panel opens. Leave it off when the scheme has Weapon Use Doesn't End Turn, where every weapon keeps the turn going. |
 
 ## Cursor
 
@@ -46,5 +47,6 @@ live_hp = true
 ## Tests
 
 From the repository root: `lua mods/utilities/test_live_hp.lua`,
-`test_instant_death.lua`, `test_auto_use.lua`, `test_fast_aim.lua` and
+`test_instant_death.lua`, `test_auto_use.lua`, `test_fast_aim.lua`,
+`test_panel_highlight.lua` and
 `lua mods/tests/utilities/test_bullet_time.lua`, `test_cursor.lua`.

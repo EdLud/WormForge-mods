@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.17.6"
+version = "0.18.0"
 author = "WormForge"
 api_version = 5
 format_version = 2
@@ -127,6 +127,13 @@ type = "bool"
 default = false
 label = "Disable zoom"
 description = "Every player sees the match at 1x, whatever their zoom setting."
+
+[[components.options]]
+key = "panel_highlight"
+type = "bool"
+default = false
+label = "Panel highlight"
+description = "A green square marks each weapon on the panel that doesn't end the turn. Leave it off when the scheme has Weapon Use Doesn't End Turn."
 
 # +N Seconds: extra turn time from utility crates.
 # instant utilities.
