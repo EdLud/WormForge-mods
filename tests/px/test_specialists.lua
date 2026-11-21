@@ -132,23 +132,23 @@ assert(medic:delay("stock.parachute") == 0)
 local ally = add_worm(2,1,0)
 local enemy = add_worm(3,1,1)
 for _, w in ipairs({ally,enemy}) do emit("worm_message",w,wa.msg.FRAME_FINISH) end
-soldier.hp, soldier.x, soldier.y = 150, 60, 80 -- Exactly 100 pixels.
+soldier.hp, soldier.x, soldier.y = 130, 84, 112 -- Exactly 140 pixels.
 gunner.hp, gunner.x = 176, 0 -- Above class threshold, even though below Medic.
-engineer.hp, engineer.x = 140, 101 -- Outside aura.
+engineer.hp, engineer.x = 140, 141 -- Outside aura.
 ninja.hp, ninja.x = 0, 0
 ally.hp, enemy.hp, medic.hp = 120, 120, 200
 select(medic); select(soldier); select(medic)
-assert(soldier.hp == 150 and ally.hp == 120, "Tab must not heal")
+assert(soldier.hp == 130 and ally.hp == 120, "Tab must not heal")
 emit("hurt",{worm=medic,phase="pre",kind="poison",lost=0})
 emit("hurt",{worm=soldier,phase="post",kind="poison",lost=0})
 emit("hurt",{worm=medic,phase="post",kind="hit",lost=10})
-assert(soldier.hp == 150 and ally.hp == 120)
+assert(soldier.hp == 130 and ally.hp == 120)
 emit("hurt",{worm=medic,phase="post",kind="poison",lost=0})
-assert(soldier.hp == 175 and ally.hp == 145, "includes allied teams and source overshoot")
+assert(soldier.hp == 150 and ally.hp == 145, "includes allied teams, clipped at class health")
 assert(gunner.hp == 176 and engineer.hp == 140 and ninja.hp == 0 and enemy.hp == 120)
 assert(medic.hp == 200, "no self healing")
 emit("hurt",{worm=medic,phase="post",kind="poison",lost=0})
-assert(soldier.hp == 175, "no further healing above class threshold")
+assert(soldier.hp == 150 and ally.hp == 150, "no healing past class health")
 emit("draw")
 assert(#draws == 1 and draws[1].visibility == medic and draws[1].sprite)
 -- Survivor bonuses use own team, not all allied teams; select refreshes them.

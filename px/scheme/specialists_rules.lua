@@ -5,6 +5,8 @@ local zombie = require("scheme/specialists_zombie")
 local rules = {}
 local GLOW = "sprites/specialists/glow.png"
 local COLOURS = { 0x50780000, 0x50000078, 0x50007800, 0x505A5A00, 0x505A005A, 0x50005A5A }
+local AURA = 140 -- PX's 100 pixels plus 40.
+local GLOW_HALF = 128 * AURA / 100 -- The glow ring's inner edge follows the aura.
 
 function rules.install(ctx)
   if ctx.selected("hl.rules") then error("Select either Specialists rules or Highlander rules.") end
@@ -107,16 +109,16 @@ function rules.install(ctx)
       local target_class = initialize(other)
       local dx, dy = other.x - medic.x, other.y - medic.y
       if target_class and other.id ~= medic.id and other.hp > 0
-        and other.alliance == medic.alliance and dx * dx + dy * dy <= 10000
-        and other.hp <= target_class.hp then other:heal(25) end
+        and other.alliance == medic.alliance and dx * dx + dy * dy <= AURA * AURA
+        and other.hp < target_class.hp then other:heal(math.min(25, target_class.hp - other.hp)) end
     end
   end)
   wa.on.draw(function()
     for _, worm in ipairs(wa.worms.all()) do
       local class = class_of(worm)
       if class and class.name == "Medic" and worm.hp > 0 then
-        local x, y = worm.x, worm.y
-        wa.draw.quad({ points = { {x-128,y-128}, {x+128,y-128}, {x+128,y+128}, {x-128,y+128} },
+        local x, y, r = worm.x, worm.y, GLOW_HALF
+        wa.draw.quad({ points = { {x-r,y-r}, {x+r,y-r}, {x+r,y+r}, {x-r,y+r} },
           sprite = GLOW, visibility = worm, frame = 0,
           color = COLOURS[worm.alliance + 1], additive = true, depth = wa.depth.EFFECTS })
       end
