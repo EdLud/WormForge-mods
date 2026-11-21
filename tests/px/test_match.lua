@@ -200,7 +200,7 @@ end
 function Worm:release(vx, vy, opts)
   self.taken, self.carried = nil, false
   if self.visible == false then self.visible = true end
-  self.state = opts and opts.tumble and "tumbling" or "sliding"
+  self.state = opts and opts.tumble and "tumbling" or "falling"
   self.vx, self.vy = vx or 0, vy or 0
   self.release_options = opts
 end
@@ -2272,11 +2272,12 @@ end
 print("Sentry masks: grace ends at first plant regardless of firing pose; planter passage remains")
 do
   for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
-    for _, state in ipairs({ 0x65, 0x67, 0x6A, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0x80, 0x81 }) do
+    for _, state in ipairs({ "standing", "ready", "firing", "jump_prepare", "jetpacking", "jumping", "jump_falling",
+        "roping", "bungee", "parachuting", "falling", "tumbling", "hit", "blasted" }) do
       new_match()
       local t, owner = require("lib/shared")[kind], worm(16)
       for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
-      owner.x, owner.y, owner.state_id = 100, 100, state
+      owner.x, owner.y, owner.state = 100, 100, state
       M.gravity, M.solid = 0.25, function(_, y) return y >= 110 end
       local body, s = t.place({ worm = owner })
       check(kind .. ": every firing pose waits for first plant (" .. state .. ")",
@@ -2311,7 +2312,7 @@ do
     local shared, owner = require("lib/shared"), worm(16)
     for _, w in ipairs(worms) do w.x, w.y = 5000, 5000 end
     -- The native fire callback need not expose an airborne worm state.
-    owner.x, owner.y, owner.state_id = 100, 100, 0x6A
+    owner.x, owner.y, owner.state = 100, 100, "firing"
     M.gravity, M.solid = 0.25, function(_, y) return y >= 500 end
     local falling = {}
     for i = 1, 12 do
@@ -3168,14 +3169,14 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.facing, w.vx, w.vy = "fire_punch", -1, 0, 0
-  w.turn, w.state, w.state_id = true, "prefiring", 0x69
+  w.turn, w.state = true, "prefiring"
   ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   -- WA's wind-up: the worm stands still, and nothing may move it.
   for _ = 1, 12 do M.message(w, wa.msg.FRAME_FINISH) end
   check("nothing during the wind-up", w.vx == 0 and w.vy == 0, w.vx .. " " .. w.vy)
   -- FireFinal: WA's setup_Punching starts the worm up at 6.
-  w.vy, w.state, w.state_id = -6, "punching", 0x6C
+  w.vy, w.state = -6, "punching"
   local at = {}
   for t = 1, 215 do
     if t == 100 then w.vy = 8 end -- falling fast mid-glide
@@ -3205,7 +3206,7 @@ do
   frame()
   local w = worm(16)
   w.weapon, w.vy = "fire_punch", 0
-  w.turn, w.state, w.state_id = true, "prefiring", 0x69
+  w.turn, w.state = true, "prefiring"
   ammo[w.ammo_group].fire_punch = 1
   M.message(w, wa.msg.FIRE_WEAPON)
   for _ = 1, 100 do M.message(w, wa.msg.FRAME_FINISH) end
@@ -3217,11 +3218,11 @@ end
 print("fire jump: loss of control cancels the wind-up and speed overrides")
 do
   local losses = {
-    { name = "blast", state = "blasted", state_id = 0x81 },
-    { name = "hit", state = "hit", state_id = 0x80 },
-    { name = "tumble", state = "tumbling", state_id = 0x7F },
-    { name = "landing", state = "standing", state_id = 0x65 },
-    { name = "freeze", state = "frozen", state_id = 0x86 },
+    { name = "blast", state = "blasted" },
+    { name = "hit", state = "hit" },
+    { name = "tumble", state = "tumbling" },
+    { name = "landing", state = "standing" },
+    { name = "freeze", state = "frozen" },
     { name = "turn end", turn = false },
     { name = "death", hp = 0 },
     { name = "taken by another weapon", taken = true },
@@ -3232,11 +3233,11 @@ do
       frame()
       local w = worm(16)
       w.weapon, w.turn, w.hp = "fire_punch", true, 100
-      w.state, w.state_id, w.vx, w.vy = "prefiring", 0x69, 0, 0
+      w.state, w.vx, w.vy = "prefiring", 0, 0
       ammo[w.ammo_group].fire_punch = 1
       M.message(w, wa.msg.FIRE_WEAPON)
       if not during_windup then
-        w.state, w.state_id, w.vy = "punching", 0x6C, -6
+        w.state, w.vy = "punching", -6
         for _ = 1, 29 do M.message(w, wa.msg.FRAME_FINISH) end
       end
       -- An explosion's momentum must survive the imminent horizontal
@@ -3246,7 +3247,7 @@ do
       M.message(w, wa.msg.FRAME_FINISH)
       check(loss.name .. " preserves knockback " .. (during_windup and "during wind-up" or "during jump"),
         w.vx == 15 and w.vy == -12)
-      w.state, w.state_id, w.turn, w.hp, w.taken = "punching", 0x6C, true, 100, nil
+      w.state, w.turn, w.hp, w.taken = "punching", true, 100, nil
       w.vy = 8
       for _ = 1, 215 do M.message(w, wa.msg.FRAME_FINISH) end
       check(loss.name .. " cannot resume the canceled timeline", w.vx == 15 and w.vy == 8)
@@ -4371,7 +4372,7 @@ do
   frame()
   M.gravity, M.wind, M.water, M.solid = 0.25, 0, nil, nil
   local w = worm(16)
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "sliding", 100, 50, 0, 1, 1, true
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "bungee", "falling", 100, 50, 0, 1, 1, true
   w.gravity, w.body_visible, w.alliance, w.keys = 1, true, 1, {}
   for i, o in ipairs(worms) do
     if o ~= w then o.x, o.y = -1000 * i, 0 end
@@ -4428,9 +4429,9 @@ do
   check("weapons fire from the basket", M.message(w, wa.msg.FIRE_WEAPON) ~= "eat" and w.taken)
   -- The jump key pops it: the worm back to WA, falling with its speed.
   check("the jump key pops it", M.message(w, wa.msg.JUMP) == "eat" and M.sounds[#M.sounds]:find("pop")
-    and balloon.dead and w.body_visible == true and not w.taken and w.state == "sliding" and w.vy < 0)
+    and balloon.dead and w.body_visible == true and not w.taken and w.state == "falling" and w.vy < 0)
   local function up_again()
-    w.state, w.weapon = "sliding", "bungee"
+    w.state, w.weapon = "falling", "bungee"
     M.message(w, wa.msg.FRAME_FINISH)
     w.state, w.weapon = "parachuting", "none"
     M.message(w, wa.msg.FRAME_FINISH)
@@ -4475,12 +4476,12 @@ do
   end
   w.gravity = 1
   check("land beneath: popped, the worm back to WA, not pushed into it", not w.taken
-    and w.state == "sliding" and M.sounds[#M.sounds]:find("pop") and w:fits(w.x, w.y))
+    and w.state == "falling" and M.sounds[#M.sounds]:find("pop") and w:fits(w.x, w.y))
   M.solid = nil
   -- WA stands it up where it landed: released again, falling.
   w.state, w.vy = "standing", 0
   M.message(w, wa.msg.FRAME_FINISH)
-  check("stood up where it landed: released again", w.state == "sliding")
+  check("stood up where it landed: released again", w.state == "falling")
   w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   check("only once", w.state == "standing")
@@ -4490,7 +4491,7 @@ do
   w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   check("WA's parachute closed: popped, the worm let go falling", not w.taken
-    and w.state == "sliding" and w.body_visible == true and M.sounds[#M.sounds]:find("pop"))
+    and w.state == "falling" and w.body_visible == true and M.sounds[#M.sounds]:find("pop"))
   -- Up again; the engine lets go at the turn's end: it pops.
   check("up again", up_again())
   w.taken = nil
@@ -4502,7 +4503,7 @@ do
   check("a turn change pops it", not w.taken and w.body_visible == true)
   -- The Hang-Glider's parachute is not a balloon.
   local n = #M.spawned
-  w.state, w.weapon, w.keys = "sliding", "parachute", {}
+  w.state, w.weapon, w.keys = "falling", "parachute", {}
   M.message(w, wa.msg.FRAME_FINISH)
   w.state = "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4521,7 +4522,7 @@ do
   M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0.014373779296875, 0, nil, nil, nil
   local w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "bungee", "sliding", 100, 50, 0, 1, true
+    "bungee", "falling", 100, 50, 0, 1, true
   M.spawned, M.sounds = {}, {}
   M.message(w, wa.msg.FRAME_FINISH)
   -- WA has replaced the selected slot with stock Parachute while opening.
@@ -4540,7 +4541,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "parachute", "sliding", 100, 50, 0, 1, true
+    "parachute", "falling", 100, 50, 0, 1, true
   w.keys = {}
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4556,7 +4557,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "parachute", "sliding", 100, 50, 0, 1, true
+    "parachute", "falling", 100, 50, 0, 1, true
   w.keys = {}
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4571,10 +4572,10 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "shotgun", "sliding", 100, 50, 0, 1, true
+    "shotgun", "falling", 100, 50, 0, 1, true
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
-  check("another equipped weapon keeps falling", w.state == "sliding" and #M.spawned == 0)
+  check("another equipped weapon keeps falling", w.state == "falling" and #M.spawned == 0)
   -- Even an unexpected stock parachute state must not turn into either mod.
   w.weapon, w.state = "none", "parachuting"
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4584,7 +4585,7 @@ do
   frame()
   w = worm(16)
   w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.turn =
-    "parachute", "sliding", 100, 50, 0, 1, true
+    "parachute", "falling", 100, 50, 0, 1, true
   M.spawned = {}
   M.message(w, wa.msg.FRAME_FINISH)
   w.weapon = "shotgun"
@@ -4620,7 +4621,7 @@ do
   end
   check("the balloon inflates and pops at once", inflated and popped)
   check("WA's parachute landing cut short: the worm let go at rest", not w.taken
-    and w.state == "sliding" and w.vx == 0 and w.vy == 0 and w.body_visible == true)
+    and w.state == "falling" and w.vx == 0 and w.vy == 0 and w.body_visible == true)
   check("no balloon art left behind", #M.spawned == 0)
 
   -- A plain landing, with no fire from WA, is left to WA.
@@ -4662,7 +4663,7 @@ do
   local pack = M.spawned[#M.spawned]
   check("the glider packs away in place of WA's parachute", pack and pack.sprite == "sprites/hang_glider/pack.png"
     and #M.spawned == 1 and w.body_visible == false and M.sounds[#M.sounds]:find("hangclose"))
-  check("the worm let go at rest", not w.taken and w.state == "sliding" and w.vx == 0 and w.vy == 0)
+  check("the worm let go at rest", not w.taken and w.state == "falling" and w.vx == 0 and w.vy == 0)
   w.state = "standing"
   for _ = 1, 20 do
     M.message(w, wa.msg.FRAME_FINISH)
@@ -4677,7 +4678,7 @@ do
   M.gravity, M.wind, M.water, M.solid, M.trace_hit = 0.014373779296875, 0, nil, nil, nil -- a small pull, as WA's is
   for i, o in ipairs(worms) do o.x, o.y = -1000 * i, 0 end
   local w = worm(16)
-  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "sliding", 100, 50, 3, 1, 1, true
+  w.weapon, w.state, w.x, w.y, w.vx, w.vy, w.facing, w.turn = "parachute", "falling", 100, 50, 3, 1, 1, true
   w.body_visible, w.keys = true, {}
   function w:set_state() error("the glider takes and releases the worm; it sets no state") end
   M.spawned, M.sounds = {}, {}
@@ -4706,7 +4707,7 @@ do
   w.keys = {}
   check("up turns the nose up", art.angle and art.angle > 180, tostring(art.angle))
   local function glide_again(vy)
-    w.state, w.weapon, w.vx, w.vy = "sliding", "parachute", 3, vy or 1
+    w.state, w.weapon, w.vx, w.vy = "falling", "parachute", 3, vy or 1
     M.message(w, wa.msg.FRAME_FINISH)
     w.state, w.weapon = "parachuting", "none"
     M.message(w, wa.msg.FRAME_FINISH)
@@ -4719,13 +4720,13 @@ do
   M.solid = function(x) return x >= wall end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
-  check("a crash: let go, falling on", not w.taken and w.state == "sliding" and w.vx > 0)
+  check("a crash: let go, falling on", not w.taken and w.state == "falling" and w.vx > 0)
   check("closed: the sound, the art gone, the body back",
     M.sounds[#M.sounds]:find("hangclose") and art.dead and w.body_visible == true)
   w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   check("and no pack-away; stood up where it hit, released again", #M.spawned == n
-    and w.state == "sliding")
+    and w.state == "falling")
   -- Coming down onto land: let go, then begin the pack-away at WA's terrain
   -- contact instead of waiting for its delayed standing state.
   check("gliding again", glide_again())
@@ -4733,7 +4734,7 @@ do
   M.solid = function(_, y) return y >= floor end
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
-  check("about to land: let go", not w.taken and w.state == "sliding")
+  check("about to land: let go", not w.taken and w.state == "falling")
   local landing_art = M.spawned[#M.spawned]
   check("gentle landing keeps the wing over the worm until contact",
     landing_art.sprite == "sprites/hang_glider/glider.png" and not landing_art.dead
@@ -4798,7 +4799,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid = nil
   check("hard landing: set down under fall damage", not w.taken
-    and w.state == "sliding" and w.vy <= 7
+    and w.state == "falling" and w.vy <= 7
     and not (w.release_options and w.release_options.suppress_auto_parachute),
     string.format("taken=%s state=%s vy=%s", tostring(w.taken), tostring(w.state), tostring(w.vy)))
   M.contact(w, { kind = "land" }, { vx = w.vx, vy = w.vy, flags = 0 })
@@ -4816,7 +4817,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("the turn over: closed", M.sounds[#M.sounds]:find("hangclose") and w.body_visible == true)
   -- The balloon's parachute is not a glider.
-  w.state, w.weapon = "sliding", "bungee"
+  w.state, w.weapon = "falling", "bungee"
   M.message(w, wa.msg.FRAME_FINISH)
   n = #M.spawned
   w.state = "parachuting"
@@ -4866,11 +4867,11 @@ do
   end
   -- Into the water, falling fast: a splash, taken by the pack for the swim
   -- with the turn running, the speed capped.
-  w.state, w.y, w.vx, w.vy = "sliding", 510, 9, 12
+  w.state, w.y, w.vx, w.vy = "falling", 510, 9, 12
   local x0, y0 = w.x, w.y
   M.message(w, wa.msg.FRAME_FINISH)
   check("splash, taken for the swim, the turn running", M.sounds[#M.sounds] == 57 and w.taken
-    and w.taken.turn == "run" and w.state == "sliding")
+    and w.taken.turn == "run" and w.state == "falling")
   local dx, dy = w.x - x0, w.y - y0
   check("the speed capped at 5 (2.5 times the swim speed 2), then eased", dx < 5 and dy < 5
     and dx > 4 and dy > 4, dx .. " " .. dy)
@@ -4898,7 +4899,7 @@ do
   -- Up out of the water: released as from a jump, the suit still on.
   w.keys = { up = true }
   frames(200, function() return not w.taken end)
-  check("out: released above the surface, moving up, the suit still on", w.state == "sliding"
+  check("out: released above the surface, moving up, the suit still on", w.state == "falling"
     and w.vy < 0 and w.y < M.water and w.collision_mask == 134342 and w.body_visible == true)
   M.message(w, wa.msg.FRAME_FINISH)
   check("no second splash on the way out", not w.taken)
@@ -4910,7 +4911,7 @@ do
   -- Fast Walk: swim speed 6 for the turn.
   w.weapon, w.keys = "fast_walk", {}
   M.message(w, wa.msg.FIRE_WEAPON)
-  w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "sliding", 400, 0, 0
+  w.weapon, w.state, w.y, w.vx, w.vy = "laser_sight", "falling", 400, 0, 0
   M.message(w, wa.msg.FIRE_WEAPON)
   x0 = w.x
   w.y, w.vx, w.vy = 510, 20, 0
@@ -4960,7 +4961,7 @@ for _, tool in ipairs({ "roping", "bungee" }) do
   M.message(w, wa.msg.FRAME_FINISH)
   check(tool .. ": let go into WA's fall at the splash (its rope or cord taken down), then swimming",
     released and released.state == tool and released.vx == 2 and released.vy == 1
-    and w.state == "sliding" and w.taken and M.sounds[#M.sounds] == 57)
+    and w.state == "falling" and w.taken and M.sounds[#M.sounds] == 57)
 end
 
 print("swim suit: click weapons fire from the water, judged as from the bungee")
@@ -4986,7 +4987,7 @@ do
   function w:ammo() end
   M.spawned, M.sounds, M.quads = {}, {}, {}
   M.message(w, wa.msg.FIRE_WEAPON)
-  w.state, w.y, w.vx, w.vy = "sliding", 510, 0, 0
+  w.state, w.y, w.vx, w.vy = "falling", 510, 0, 0
   M.message(w, wa.msg.FRAME_FINISH)
   local fire = {}
   for _, id in ipairs(w.taken and w.taken.fire or {}) do fire[id] = true end
@@ -5005,7 +5006,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("no splash while WA teleports it", not w.taken)
   -- Where it lands in the water, it swims again.
-  w.state, w.x, w.y = "sliding", 300, 520
+  w.state, w.x, w.y = "falling", 300, 520
   M.message(w, wa.msg.FRAME_FINISH)
   check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
 end
@@ -5041,7 +5042,7 @@ do
     end
   end
   local function swim_up(x)
-    w.taken, w.carried, w.state, w.state_id = nil, false, "sliding", 0x7E
+    w.taken, w.carried, w.state = nil, false, "falling"
     w.x, w.y, w.vx, w.vy, w.keys = x, 520, 0, 0, {}
     M.message(w, wa.msg.FRAME_FINISH)
     w.keys = { up = true }
@@ -5095,7 +5096,7 @@ do
   M.message(w, wa.msg.FIRE_WEAPON)
   check("the suit on: without the water's bit", w.collision_mask & 0x400000 == 0)
   -- Hit, it flies into the water in WA's hit state (0x80).
-  w.state, w.state_id, w.y, w.vx, w.vy = nil, 0x80, 510, 3, 4
+  w.state, w.y, w.vx, w.vy = "hit", 510, 3, 4
   M.message(w, wa.msg.FRAME_FINISH)
   check("not taken to swim: the suit gives out, the water's bit back for WA to drown it",
     not w.taken and w.collision_mask & 0x400000 ~= 0 and w.body_visible == true)
@@ -5123,24 +5124,23 @@ do
   function w:release(...)
     released = released + 1
     release(self, ...)
-    self.state_id = 0x7E
   end
   M.spawned, M.sounds, M.quads = {}, {}, {}
   M.message(w, wa.msg.FIRE_WEAPON)
-  w.state, w.state_id, w.y = "sliding", 0x7E, 510
+  w.state, w.y = "falling", 510
   M.message(w, wa.msg.FRAME_FINISH)
   check("swimming", w.taken and M.sounds[#M.sounds] == 57)
   for _ = 1, 120 do M.message(w, wa.msg.FRAME_FINISH) end
   -- A blast: the engine lets go, WA's blast state and its knock kept.
   local x0 = w.x
-  w.taken, w.state_id, w.vx, w.vy = nil, 0x81, 8, 0
+  w.taken, w.state, w.vx, w.vy = nil, "blasted", 8, 0
   M.message(w, wa.msg.FRAME_FINISH)
   check("taken back to swim on, left in WA's blast state a frame for WA's turn to see",
-    w.taken and w.state_id == 0x81 and released == 0 and w.collision_mask & 0x400000 == 0)
+    w.taken and w.state == "blasted" and released == 0 and w.collision_mask & 0x400000 == 0)
   check("pushed by half the knock", near(w.x - x0, 4), tostring(w.x - x0))
   x0 = w.x
   M.message(w, wa.msg.FRAME_FINISH)
-  check("then back in WA's fall, still the pack's", w.taken and w.state_id == 0x7E and released == 1)
+  check("then back in WA's fall, still the pack's", w.taken and w.state == "falling" and released == 1)
   check("the push slowed by the water", near(w.x - x0, 4 / 1.05), tostring(w.x - x0))
   -- Its strokes fight the push.
   x0, w.keys = w.x, { left = true }
@@ -5154,7 +5154,7 @@ do
   -- Loss of control ends the turn (the scheme's): the engine lets go at the
   -- turn's end, and in the water it drowns; knocked after it, it isn't taken.
   M.turn_end({ worm = w, active = w })
-  w.taken, w.state_id, w.vx, w.vy = nil, 0x80, 3, 0
+  w.taken, w.state, w.vx, w.vy = nil, "hit", 3, 0
   M.message(w, wa.msg.FRAME_FINISH)
   check("the turn over: out of control, the water's bit back", not w.taken and w.state == "tumbling"
     and w.collision_mask & 0x400000 ~= 0 and w.body_visible == true)
@@ -5177,7 +5177,7 @@ do
   M.message(w, wa.msg.FIRE_WEAPON)
   function w:set_state() error("the dive takes and carries the worm; it sets no state") end
   local function fall(y, vx, vy)
-    w.taken, w.carried, w.state, w.state_id = nil, false, "sliding", 0x7E
+    w.taken, w.carried, w.state = nil, false, "falling"
     w.x, w.y, w.vx, w.vy = 100, y, vx, vy
   end
   -- Falling slower than WA's 8 pixels a frame, a frame away: WA's still.
@@ -5195,7 +5195,7 @@ do
     frames = frames + 1
   end
   check("carried down its path to the water, then the splash", w.y >= M.water and w.taken
-    and M.sounds[#M.sounds] == 57 and w.state == "sliding" and w.body_visible == false, frames)
+    and M.sounds[#M.sounds] == 57 and w.state == "falling" and w.body_visible == false, frames)
   local y0 = w.y
   M.message(w, wa.msg.FRAME_FINISH)
   check("swimming, its speed capped at 5", w.taken and w.y > y0 and w.y - y0 < 5, w.y - y0)
@@ -5207,7 +5207,7 @@ do
     frames = frames + 1
   end
   w.keys = {}
-  check("out of the water, released", not w.taken and w.y < M.water and w.state_id == 0x7E, frames)
+  check("out of the water, released", not w.taken and w.y < M.water and w.state == "falling", frames)
   fall(M.water - 40, 0, 7.5)
   M.message(w, wa.msg.FRAME_FINISH)
   check("jumped out, falling back fast: taken, kept in control", w.taken and w.taken.turn == "run")
@@ -5222,7 +5222,7 @@ do
   w.taken = nil
   M.message(w, wa.msg.FRAME_FINISH)
   w.taken, w.collision_mask = nil, 134342
-  w.state, w.state_id, w.y = "standing", 0x65, 100
+  w.state, w.y = "standing", 100
   M.message(w, wa.msg.FIRE_WEAPON)
   M.message(w, wa.msg.FRAME_FINISH)
   -- Land below: WA's fall, looked at once.
@@ -5240,7 +5240,7 @@ do
   check("land below: left to WA, its path traced once", not w.taken and looked > 0 and traces == looked,
     tostring(w.taken) .. " " .. looked .. " " .. traces)
   -- Landed, the next fall is looked at again.
-  w.state, w.state_id = "standing", 0x65
+  w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   M.solid, M.trace_hit = nil, nil
   fall(100, 0, 7.5)
@@ -5249,10 +5249,10 @@ do
   -- Land where there was none: WA's again, moving as it was.
   M.solid = function(_, y) return y >= w.y + 3 end
   M.message(w, wa.msg.FRAME_FINISH)
-  check("land in the way mid-dive: released, falling on", not w.taken and w.state == "sliding" and w.vy > 7.5)
+  check("land in the way mid-dive: released, falling on", not w.taken and w.state == "falling" and w.vy > 7.5)
   M.solid = nil
   -- The engine lets go mid-dive (the turn's end): no carry after.
-  w.state, w.state_id = "standing", 0x65
+  w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   fall(100, 0, 7.5)
   M.message(w, wa.msg.FRAME_FINISH)
@@ -5261,7 +5261,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("let go by the engine: the dive is over", not w.taken and not w.carried and w.y == y)
   -- Not its turn: no dive.
-  w.state, w.state_id = "standing", 0x65
+  w.state = "standing"
   M.message(w, wa.msg.FRAME_FINISH)
   w.turn = false
   fall(100, 0, 7.5)
@@ -5349,23 +5349,23 @@ do
     and spec.panel_icon == "sprites/double_jump/icon.png" and not inherited_ends_turn)
   local w = worm(16)
   for _, o in ipairs(worms) do o.turn = false end
-  w.turn, w.weapon, w.state_id, w.facing, w.team = true, "px.double_jump", 0x67, 1, 1
+  w.turn, w.weapon, w.state, w.facing, w.team = true, "px.double_jump", "ready", 1, 1
   local spent = 0
   function w:ammo(id, n) if id == "px.double_jump" then spent = spent + n end end
   function w:set_state() error("the double jump uses WA's take-off; it sets no state") end
   function w:take() error("the double jump never holds the worm") end
   local function in_air(state, weapon)
-    w.state_id, w.state, w.weapon, w.jumped = state or 0x79, "jumping", weapon or "stock.bazooka", nil
+    w.state, w.weapon, w.jumped = state or "jumping", weapon or "stock.bazooka", nil
   end
   local function land()
-    w.state_id = 0x65
+    w.state = "standing"
     M.message(w, wa.msg.FRAME_FINISH)
   end
   -- Off: WA's jump keys in the air are WA's.
   in_air()
   check("off, Enter in the air is WA's", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
   -- On: the utility is spent once, and the HUD says it.
-  w.weapon, w.state_id = "px.double_jump", 0x67
+  w.weapon, w.state = "px.double_jump", "ready"
   M.hud_lines = {}
   check("using it switches it on, eating WA's fire", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == -1)
   M.hud()
@@ -5375,17 +5375,17 @@ do
   in_air()
   check("Enter in a jump: WA's take-off at once, the worm's own jump", M.message(w, wa.msg.JUMP) == "eat"
     and w.jumped == "last")
-  in_air(0x7A)
+  in_air("jump_falling")
   check("once a jump", M.message(w, wa.msg.JUMP_UP) == nil and not w.jumped)
   land()
-  in_air(0x7A)
+  in_air("jump_falling")
   check("standing again: Backspace coming down, a jump too", M.message(w, wa.msg.JUMP_UP) == "eat"
     and w.jumped == "last")
   -- The Jump's launch counts as a jump; plain falling does not.
   land()
-  in_air(0x7E)
+  in_air("falling")
   check("falling off a cliff: no second jump", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
-  in_air(0x7E, "px.jump")
+  in_air("falling", "px.jump")
   check("launched by the Jump: a second jump", M.message(w, wa.msg.JUMP) == "eat" and w.jumped == "last")
   -- Held by a vehicle: nothing.
   land()
@@ -5394,7 +5394,7 @@ do
   check("held by a vehicle: nothing", M.message(w, wa.msg.JUMP) == nil and not w.jumped)
   w.taken = nil
   -- Used again: off, and nothing spent.
-  w.weapon, w.state_id = "px.double_jump", 0x67
+  w.weapon, w.state = "px.double_jump", "ready"
   M.message(w, wa.msg.FIRE_WEAPON)
   M.hud_lines = {}
   M.hud()
@@ -5403,7 +5403,7 @@ do
     and M.top_messages[#M.top_messages].text == "Double Jump: OFF"
     and M.message(w, wa.msg.JUMP) == nil)
   -- The next turn starts it off.
-  w.weapon, w.state_id = "px.double_jump", 0x67
+  w.weapon, w.state = "px.double_jump", "ready"
   M.message(w, wa.msg.FIRE_WEAPON)
   M.turn_start({ worm = w, active = w })
   in_air()
@@ -5558,7 +5558,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   check("charging: the worm keeps its aim posture", #M.spawned == 0 and w.body_visible)
   spec.on_fire({ worm = w, x = w.x, y = w.y, vx = 3, vy = -5 })
-  check("fired: the shot's speed, airborne", w.vx == 3 and w.vy == -5 and w.state == "sliding")
+  check("fired: the shot's speed, airborne", w.vx == 3 and w.vy == -5 and w.state == "falling")
   check("the team's Jump line: team 2's bank", M.sounds[#M.sounds] == 150 + 54, tostring(M.sounds[#M.sounds]))
 end
 
@@ -6141,7 +6141,7 @@ do
   check("zap waits 24 frames", target.hp == 100)
   tick(1)
   check("zap deals 24 and releases movement", target.hp == 76 and target.taken == nil
-    and target.state == "sliding" and target.body_visible == true)
+    and target.state == "falling" and target.body_visible == true)
   check("released, it may fire again", M.message(target, wa.msg.FIRE_WEAPON) ~= "eat")
   spec, owner = setup()
   local first, second = worm(17), worm(32)

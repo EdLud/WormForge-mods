@@ -51,11 +51,11 @@ local function backspace(w) tick=tick+1;handler(w, wa.msg.JUMP_UP) end
 -- Wall jump: kicks off the nearer wall, up by 2 + |vx|, away by 3 + |vx|.
 setup()
 walls.right = 110
-local w = worm("sliding", 1.5, 2)
+local w = worm("falling", 1.5, 2)
 enter(w)
 check("off a wall to the right: up and away to the left", w.vy == -3.5 and w.vx == -4.5 and w.facing == -1,
   w.vx .. "," .. w.vy)
-check("from sliding: into WA's jumping state, PX's speed kept", w.state == "jumping" and jumps == 1)
+check("from falling: into WA's jumping state, PX's speed kept", w.state == "jumping" and jumps == 1)
 w.vx, w.vy = 0, -1
 enter(w)
 check("not again for 15 frames", w.vx == 0 and w.vy == -1)

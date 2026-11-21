@@ -7,13 +7,13 @@ local STEP_LOWG = 0.03 -- up-nudge while the world's gravity is changed
 local LIMIT     = 3 -- matches C's SpX/SpY <= 3 cap
 
 local ALLOWED = {
-  [0x6E] = true, -- WS_DRILLING
-  [0x73] = true, -- WS_AFTERROPE
-  [0x79] = true, -- WS_JUMP
-  [0x7E] = true, -- WS_JUMP
-  [0x7F] = true, -- WS_SLIDING
-  [0x80] = true, -- WS_FLYING
-  [0x81] = true, -- WS_POWERFLY
+  drilling = true, -- WS_DRILLING
+  after_rope = true, -- WS_AFTERROPE
+  jumping = true, -- WS_JUMP
+  falling = true, -- WS_JUMP
+  tumbling = true, -- WS_SLIDING
+  hit = true, -- WS_FLYING
+  blasted = true, -- WS_POWERFLY
 }
 
 local match_gravity -- the world's gravity at the match's first frame
@@ -22,7 +22,7 @@ wa.on.worm_message(function(worm)
   match_gravity = match_gravity or wa.world.gravity()
   if not worm.turn then return end
 
-  local state = worm.state_id
+  local state = worm.state
   if not state or not ALLOWED[state] then return end
 
   local k = worm.keys

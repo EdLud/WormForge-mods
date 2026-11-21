@@ -59,31 +59,14 @@ M.shot_at = {} -- worm id -> frame of its last shot, for px_hold_art's `shots`
 
 local DRAIN = 10
 
+-- A worm in any of these isn't firing (WA's names, `worm.state`).
 local NOT_FIRING = {
-  [0x65] = true, -- standing
-  [0x66] = true, -- walking
-  [0x6C] = true, -- punching
-  [0x6E] = true, -- drilling
-  [0x6F] = true, -- teleporting
-  [0x70] = true, -- rope_firing?
-  [0x71] = true, -- torching?
-  [0x73] = true, -- rope_rolling?
-  [0x76] = true, -- getting_up
-  [0x77] = true, -- jump_prepare
-  [0x78] = true, -- jetpacking
-  [0x79] = true, -- jumping
-  [0x7A] = true, -- jump_falling
-  [0x7B] = true, -- roping?
-  [0x7C] = true, -- bungee
-  [0x7D] = true, -- parachuting
-  [0x7E] = true, -- falling / sliding
-  [0x7F] = true, -- tumbling
-  [0x80] = true, -- hit
-  [0x81] = true, -- blasted
-  [0x82] = true, -- dying?
-  [0x85] = true, -- drowning?
-  [0x86] = true, -- frozen
-  [0x87] = true, -- dead?
+  standing = true, walking = true, punching = true, drilling = true,
+  teleporting = true, rope_firing = true, torching = true, after_rope = true,
+  getting_up = true, jump_prepare = true, jetpacking = true, jumping = true,
+  jump_falling = true, roping = true, bungee = true, parachuting = true,
+  falling = true, tumbling = true, hit = true, blasted = true, dying = true,
+  drowning = true, frozen = true, dead = true,
 }
 
 local function run(owner, count, delay, fire, weapon, on_done)
@@ -130,7 +113,7 @@ local function run(owner, count, delay, fire, weapon, on_done)
       or not alive() or not owner.turn
       or weapon == nil
       or (weapon ~= nil and owner.weapon ~= weapon)
-      or NOT_FIRING[owner.state_id] == true
+      or NOT_FIRING[owner.state] == true
   end
 
   if id ~= nil then running[id] = true end

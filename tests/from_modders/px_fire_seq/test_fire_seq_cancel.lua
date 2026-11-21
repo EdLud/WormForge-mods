@@ -20,7 +20,7 @@ local seq = assert(loadfile(PACK_ROOT .. "lib/fire_seq.lua", "t", env))()
 
 local function worm(id)
   return { id = id, x = 100, y = 200, hp = 100, turn = true,
-    weapon = "px.famas", state_id = 0x67, shots_fired = 0, shots_to_fire = 1 }
+    weapon = "px.famas", state = "ready", shots_fired = 0, shots_to_fire = 1 }
 end
 
 local function burst(owner, count, delay, on_shot)

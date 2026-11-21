@@ -16,7 +16,7 @@ wa = {
 dofile(root .. "../tests/tooltip_mock.lua")(root)
 require("weapons/sacrifice").setup()
 local sacrifice=actions["px.sacrifice"]
-local w={id=17,hp=151,turn=true,alliance=0,x=100,y=100,vx=1.5,vy=2,facing=1,state="sliding"}
+local w={id=17,hp=151,turn=true,alliance=0,x=100,y=100,vx=1.5,vy=2,facing=1,state="falling"}
 function w:reduce_health(n)
   assert(n>=0 and self.hp>n)
   self.hp=self.hp-n

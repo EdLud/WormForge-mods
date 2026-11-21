@@ -9,7 +9,7 @@ local BOUNCES = 2
 local MAX_BOUNCES = 10 -- the option's ceiling
 local DRAIN_FRAMES = 10 -- frames the guard swallows WA's queued re-fire for
 local DRAIN_CAP = 60
-local FIRING = { [0x6A] = true, [0x6B] = true } -- WA's two firing states
+local FIRING = { firing = true, fired = true } -- WA's two firing states
 local MASK_RADIUS = 5 -- PX's 11x11 laser mask
 local NORMAL_LIFT = 4 -- PX starts the next run 4 px off the wall
 local PUSH = 5 -- PX's fparams = direction * 5
@@ -167,7 +167,7 @@ function M.install(ctx)
         end
         if r.phase == 3 then
           r.drain = r.drain + 1
-          local firing = FIRING[worm.state_id] == true
+          local firing = FIRING[worm.state] == true
           if r.cancelled or r.drain >= DRAIN_CAP
               or (r.drain >= DRAIN_FRAMES and not firing) then
             release(r, a)

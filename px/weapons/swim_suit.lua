@@ -48,7 +48,7 @@ function weapon.setup()
 
   local DIVE_SPEED = 8
   local DIVE_FRAMES = 2000 -- the longest fall traced
-  local FALLING = { [0x79] = true, [0x7A] = true, [0x7E] = true }
+  local FALLING = { jumping = true, jump_falling = true, falling = true }
 
   local swim_speed = 2 -- fastswim: Fast Walk switches 2 and 6
   local swim_in_game = false -- SwimInGame: someone has worn the suit
@@ -160,7 +160,7 @@ function weapon.setup()
     return -cap
   end
 
-  local KNOCKED = { [0x7F] = true, [0x80] = true, [0x81] = true }
+  local KNOCKED = { tumbling = true, hit = true, blasted = true }
 
   local function dive_step(worm, x, y, vx, vy)
     vx = vx + wa.world.wind() * (worm.wind or 0)
@@ -192,10 +192,10 @@ function weapon.setup()
     if s.dive and not worm.taken then
       s.dive = nil
     end
-    if not FALLING[worm.state_id] and not s.dive then
+    if not FALLING[worm.state] and not s.dive then
       s.dived = false
     end
-    if s.plopready and not s.dive and not s.dived and worm.turn and FALLING[worm.state_id]
+    if s.plopready and not s.dive and not s.dived and worm.turn and FALLING[worm.state]
       and worm.y < water
       and worm.vy + 2 * wa.world.gravity() * (worm.gravity or 1) >= DIVE_SPEED then
       s.dived = true
@@ -224,7 +224,7 @@ function weapon.setup()
       end
       s.dive, dive_into = nil, d
     end
-    if worm.y >= water and s.plopready and KNOCKED[worm.state_id] then
+    if worm.y >= water and s.plopready and KNOCKED[worm.state] then
       suit_off(worm, s, false)
       return
     end
@@ -241,14 +241,14 @@ function weapon.setup()
       swim_take(worm)
       s.plophase = 0
     end
-    if s.plopped and not worm.taken and KNOCKED[worm.state_id] and not turn_over then
+    if s.plopped and not worm.taken and KNOCKED[worm.state] and not turn_over then
       swim_take(worm)
       s.px = s.px + worm.vx * SWIM_KNOCK
       s.py = s.py + worm.vy * SWIM_KNOCK
       s.knocked = true
     elseif s.knocked and worm.taken then
       s.knocked = false
-      if KNOCKED[worm.state_id] then
+      if KNOCKED[worm.state] then
         worm:release(0, 0)
         swim_take(worm)
       end

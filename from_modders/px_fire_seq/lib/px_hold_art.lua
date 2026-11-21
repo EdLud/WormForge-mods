@@ -1,11 +1,8 @@
--- Draw a held weapon during WA's repeated-fire frames (0x6A/0x6B).
+-- Draw a held weapon during WA's repeated-fire frames (firing, fired).
 
 local M = {}
 
-local FIRING = {
-  [0x6A] = true, -- firing
-  [0x6B] = true, -- fired
-}
+local FIRING = { firing = true, fired = true }
 
 -- the engine's front band for held art
 local DEPTH = 0x10000
@@ -103,7 +100,7 @@ local function hook()
     local worms = wa.worms.all()
     for j = 1, #worms do
       local w = worms[j]
-      local st = w.state_id
+      local st = w.state
       if st and FIRING[st] and w.hp and w.hp > 0 and w.visible and w.body_visible then
         local weapon = w.weapon
         if weapon ~= nil then

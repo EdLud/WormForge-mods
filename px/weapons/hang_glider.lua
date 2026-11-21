@@ -278,7 +278,7 @@ function weapon.setup()
           local moving = keys.left or keys.right or state == "walking"
             or state == "jump_prepare" or state == "jumping"
             or math.abs(worm.x - g.pack_x) > 1
-          local landing_state = state == "standing" or state == "sliding"
+          local landing_state = state == "standing" or state == "falling"
             or state == "jump_falling" or state == "falling"
           if frame >= GLIDER_PACK_FRAMES or moving or not landing_state
               or worm.y >= wa.world.water() then

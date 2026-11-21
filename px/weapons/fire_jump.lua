@@ -23,8 +23,8 @@ function weapon.setup()
   local winding = {} -- worm id -> frames since fire was pressed
   local WIND_UP_MAX = 100
   local WIND_UP_STATES = {
-    [0x67] = true, [0x68] = true, [0x69] = true,
-    [0x6A] = true, [0x6B] = true, [0x6C] = true,
+    ready = true, charging = true, prefiring = true,
+    firing = true, fired = true, punching = true,
   }
 
   local function fire_jump(worm, t)
@@ -51,7 +51,7 @@ function weapon.setup()
     local id = worm.id
     if not (winding[id] or jumps[id]) then return end
     if not worm.turn or worm.hp <= 0 or worm.taken
-        or (winding[id] and not WIND_UP_STATES[worm.state_id])
+        or (winding[id] and not WIND_UP_STATES[worm.state])
         or (jumps[id] and worm.state ~= "punching") then
       winding[id], jumps[id] = nil, nil
       return

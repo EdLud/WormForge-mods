@@ -30,7 +30,7 @@ wa.land = { trace = function() return land_hit or { hit = false } end }
 wa.log = function() end
 local owner = {
   id = 7, x = 100, y = 200, aim = 0.5, facing = 1, hp = 100, turn = true,
-  weapon = "px.famas", state_id = 0x67,
+  weapon = "px.famas", state = "ready",
 }
 local target = { id = 8, x = 20, y = 10, hp = 100 }
 wa.worm_list = { owner, target }

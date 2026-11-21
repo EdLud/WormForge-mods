@@ -6,8 +6,8 @@ local WALL_JUMP = 2 -- PX's WallJumpMultiplier
 local BHOP = 3 -- PX's BhopMultiplier
 local WALL_REACH, FLOOR_REACH = 20, 30
 
-local WALL_STATES = { jumping = true, sliding = true, tumbling = true }
-local BHOP_STATES = { jumping = true, sliding = true, tumbling = true, hit = true, blasted = true }
+local WALL_STATES = { jumping = true, falling = true, tumbling = true }
+local BHOP_STATES = { jumping = true, falling = true, tumbling = true, hit = true, blasted = true }
 
 local parkour = {}
 

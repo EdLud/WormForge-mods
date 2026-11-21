@@ -42,7 +42,7 @@ function weapon.setup()
     local LASER_LIFE = 250
     local LASER_REACH = 2048
     local LASER_LOOP_FRAMES = 51 -- laser_loop.wav is 1.02 s
-    local LASER_STOPS = { standing = true, sliding = true, jetpacking = true, parachuting = true,
+    local LASER_STOPS = { standing = true, falling = true, jetpacking = true, parachuting = true,
       bungee = true, tumbling = true, teleporting = true, drilling = true, punching = true }
     local lasers = {} -- worm id -> the beam
 

@@ -9,7 +9,7 @@ local ATTACK_COOLDOWN = 60
 local LEAP_RANGE = 400
 local PUNCH = "stock.fire_punch"
 
-local CAN_PUNCH = { standing = true, walking = true, sliding = true, jumping = true, jump_prepare = true }
+local CAN_PUNCH = { standing = true, walking = true, falling = true, jumping = true, jump_prepare = true }
 
 function zombie.install(is_soldier, soldier_name)
   local shared = require("lib/shared")

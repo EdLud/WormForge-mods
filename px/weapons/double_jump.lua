@@ -1,8 +1,7 @@
 -- Double Jump: switched on for the turn, a worm in mid-jump jumps once more on Enter or Backspace.
 
-local JUMPING = { [0x79] = true, [0x7A] = true }
-local FALLING = 0x7E
-local GROUNDED = { [0x65] = true, [0x66] = true, [0x67] = true }
+local JUMPING = { jumping = true, jump_falling = true }
+local GROUNDED = { standing = true, walking = true, ready = true }
 
 local function install(ctx)
   local id = ctx.id
@@ -14,13 +13,13 @@ local function install(ctx)
   local on, armed = false, false
 
   local function in_jump(worm)
-    local s = worm.state_id
-    return JUMPING[s] or (s == FALLING and worm.weapon == "px.jump")
+    local s = worm.state
+    return JUMPING[s] or (s == "falling" and worm.weapon == "px.jump")
   end
 
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
-      if on and not armed and worm.turn and GROUNDED[worm.state_id] then
+      if on and not armed and worm.turn and GROUNDED[worm.state] then
         armed = true
       end
     elseif msg == wa.msg.FIRE_WEAPON then

@@ -1039,14 +1039,10 @@ M.PX_HANDS = shared.PX_HANDS
 -- ---------------------------------------------------------------------------
 local HOLD_DEPTH = 0x10000          -- `worm_hold.rs`: our.depth.FRONT
 local HOLD_HAND_CELL = 60.0         -- PX's three hand sheets are 60x60
-local HOLD_AIM_STATES = {
-  [0x67] = true, [0x68] = true, [0x69] = true,
-}
+local HOLD_AIM_STATES = { ready = true, charging = true, prefiring = true }
 -- WA's firing frames. They are the two frames of a shot, which is why a firing
 -- animation needs a window of its own (`fire.ticks`).
-local HOLD_FIRE_STATES = {
-  [0x6A] = true, [0x6B] = true,
-}
+local HOLD_FIRE_STATES = { firing = true, fired = true }
 -- The keys the engine reads off `hold` (`HoldSpec`). Everything else in the
 -- table is ours: cells, offset, silent sheet, `weapon`, `size`, `hand_size`.
 local HOLD_KEYS = {
@@ -1484,7 +1480,7 @@ local function hold_fire_step(entry, w, ws, now)
   local fire = entry.fire
   local keep = entry.keep_firing
   if not fire and not keep then return false end
-  local firing = w.state_id ~= nil and HOLD_FIRE_STATES[w.state_id] or false
+  local firing = w.state ~= nil and HOLD_FIRE_STATES[w.state] or false
   local ticks = fire and (fire.ticks or 0) or 0
   -- A held weapon that stays on the firing frames (`keep_firing`) needs no
   -- window of its own: WA's two firing frames are the shot.
@@ -1802,7 +1798,7 @@ end
 -- visible, this weapon selected, and an aiming state.
 local function hold_aiming(entry, w)
   return w.hp and w.hp > 0 and w.visible and w.body_visible
-    and w.weapon == entry.weapon and HOLD_AIM_STATES[w.state_id] and true or false
+    and w.weapon == entry.weapon and HOLD_AIM_STATES[w.state] and true or false
 end
 
 local function hold_ensure_hook()

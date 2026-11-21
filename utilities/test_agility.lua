@@ -22,7 +22,7 @@ local function setup()
 end
 
 local function worm(keys)
-  return { turn = true, state_id = 0x79, vx = 0, vy = 0, gravity = 1, keys = keys }
+  return { turn = true, state = "jumping", vx = 0, vy = 0, gravity = 1, keys = keys }
 end
 
 local function close(a, b) return math.abs(a - b) < 1e-9 end
@@ -63,7 +63,7 @@ w.turn = false
 handler(w)
 check("only the turn's worm", w.vy == 0)
 w = worm({ up = true })
-w.state_id = 0x65
+w.state = "standing"
 handler(w)
 check("not standing", w.vy == 0)
 
