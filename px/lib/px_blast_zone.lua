@@ -1,4 +1,4 @@
--- Blast Zone: Project X's zone launcher, ported to WormForge API 4.
+-- Blast Zone: Project X's zone launcher, ported to WormForge.
 
 local function placed(ctx)
   local informed = false

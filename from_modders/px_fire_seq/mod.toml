@@ -1,10 +1,10 @@
 # Project X's sequential-firing weapons -- the Ripper Star, the Megashark, the
 # hold-to-fire Megashark and the FAMAS -- and the shared base that fires their
-# bursts, ported to WormForge API 4.
+# bursts, ported to WormForge.
 #
 # PX sequences these weapons by overriding `CWorm::FireFinal` and returning
 # before the stock fire so WA loops the shot (`ripper_fire.txt:11-32`,
-# `megashark_firing.txt:49-76`). API 4 has no global shot hook, so the base
+# `megashark_firing.txt:49-76`). The API has no global shot hook, so the base
 # (`lib/fire_seq.lua`) fires the first shot itself and lets a hidden timer
 # actor fire the rest, while its brain holds `worm.shots_fired`/`shots_to_fire`
 # at 0 and 1 so WA keeps the worm in its firing animation, as PX held
@@ -16,7 +16,7 @@
 # One bundle, not one per weapon, because they share the base and PX's
 # weapon-less worm posture (`sprites/px_hold/aim*`, `draw*`, the three hands),
 # and a weapon's `worm_sprites` sheets resolve only inside the bundle that
-# claims them (API 4 `require` is bundle-local). The trail is the exception:
+# claims them (`require` is bundle-local). The trail is the exception:
 # it is the shared `effects.sdk` module (`wf-lib/effects/trail`).
 #
 # A component bundle (format_version 2): nothing runs until a profile selects
@@ -25,7 +25,7 @@ id = "px.fire_seq"
 name = "[Guns] Sequential Fire"
 version = "1.3.7"
 author = "reddaz"
-api_version = 4
+api_version = 5
 format_version = 2
 dependencies = ["effects.sdk"]
 mod_icon = "profiles/mod_icon.png"

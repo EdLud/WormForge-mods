@@ -3,7 +3,7 @@ id = "skim_voices"
 name = "Skim Voices"
 version = "0.1.0"
 author = "WormForge"
-api_version = 4
+api_version = 5
 format_version = 2
 
 [[components]]

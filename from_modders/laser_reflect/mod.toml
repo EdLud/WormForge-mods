@@ -1,5 +1,5 @@
 # Reflective Laser Gun -- Project X's weapon_gun_laserreflect, ported to
-# WormForge API 4.
+# WormForge.
 #
 # The record is PX's own `weapon_lasergun.wep` from that pack, so the slot fires
 # exactly as PX's does; the gun itself is Lua (one reflected path, buffered,
@@ -9,7 +9,7 @@ id = "px.laser_reflect"
 name = "Bouncy Laser"
 version = "0.8.2"
 author = "reddaz"
-api_version = 4
+api_version = 5
 format_version = 2
 
 # Animated gun poses: PX's laser gun sheets (32 frames at 15 fps).

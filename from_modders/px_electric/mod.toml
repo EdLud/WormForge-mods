@@ -1,4 +1,4 @@
-# Electric Mine -- Project X's weapon_electric_mine, ported to WormForge API 4.
+# Electric Mine -- Project X's weapon_electric_mine, ported to WormForge.
 #
 # The mine keeps its own custom explosion (`lib/custom_explosion.lua`) and taze
 # hold (`lib/electric_damage.lua`) here rather than in the `px` pack, whose
@@ -9,7 +9,7 @@ id = "px.electric"
 name = "[Electrical]"
 version = "0.5.8"
 author = "reddaz"
-api_version = 4
+api_version = 5
 format_version = 2
 dependencies = ["effects.sdk"]
 

@@ -2,7 +2,7 @@ id = "wf.sdk"
 name = "WormForge shared helpers"
 version = "0.3.1"
 author = "WormForge / Project X authors"
-api_version = 4
+api_version = 5
 format_version = 2
 asset_namespace = "wf-lib/px"
 

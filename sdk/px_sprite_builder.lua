@@ -1,4 +1,4 @@
--- px_sprite_builder.lua: PX's sprite builder, re-implemented for WormForge API 4.
+-- px_sprite_builder.lua: PX's sprite builder, re-implemented for WormForge.
 
 local shared = require("holds")
 

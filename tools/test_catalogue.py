@@ -38,7 +38,7 @@ class Catalogue(unittest.TestCase):
         self.write("catalogue.toml", 'schema = 1\npacks = ["pack"]\nprofiles = ["pack/profiles/Published.toml"]\n')
         self.write("pack/mod.toml", '''id = "example.test"
 version = "1.0.0"
-api_version = 4
+api_version = 5
 format_version = 2
 debug_input = true
 [[components]]

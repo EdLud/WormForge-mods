@@ -35,16 +35,16 @@ for _, instant in ipairs({ "off", "settled", "in_flight", true }) do
     local function worm(hp, active)
       local w = { hp = hp, turn = active, state = "tumbling", vx = 6, vy = -8, deaths = 0, commits = 0, died = 0 }
       -- WA's death started now: true once, then the worm is in its death.
-      function w:die()
+      function w:die(opts)
+        if opts and opts.settled then
+          -- WA refuses a worm already in its death, as the engine does.
+          if self.permission or self.dying then return false end
+          self.permission, self.deaths = true, self.deaths + 1
+          return true
+        end
         assert(flies, "only in_flight starts a death in flight")
         if self.dying or self.hp > 0 then return false end
         self.dying, self.died = true, self.died + 1
-        return true
-      end
-      function w:allow_death()
-        -- WA refuses a worm already in its death, as the engine does.
-        if self.permission or self.dying then return false end
-        self.permission, self.deaths = true, self.deaths + 1
         return true
       end
       function w:commit_health() self.commits = self.commits + 1; return true end
@@ -76,7 +76,8 @@ for _, instant in ipairs({ "off", "settled", "in_flight", true }) do
     if flies then
       -- One WA won't start in flight (the Kamikaze's) still dies when settled.
       local kamikaze = worm(0, false)
-      function kamikaze:die() return false end
+      local settle = kamikaze.die
+      function kamikaze:die(opts) if opts and opts.settled then return settle(self, opts) end return false end
       step(kamikaze)
       assert(kamikaze.deaths == 1, "falls back to WA's own death")
     end

@@ -1,4 +1,4 @@
--- Security Grenade: Project X's grenade that bursts in a ring, on WormForge API 4.
+-- Security Grenade: Project X's grenade that bursts in a ring, on WormForge.
 
 local function placed(ctx)
   local informed = false

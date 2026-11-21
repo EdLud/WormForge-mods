@@ -194,12 +194,11 @@ end
 -- The engine's handoff verbs: what the worm looks like to the pack after.
 function Worm:take(opts)
   opts = opts or {}
-  self.taken = { hide = opts.hide or false, turn = opts.turn or "run", fire = opts.fire, fire_as = opts.fire_as }
-  if opts.hide then self.visible = false end
+  assert(opts.hide == nil, "take{ hide } is gone: hide with worm.visible")
+  self.taken = { turn = opts.turn or "run", fire = opts.fire, fire_as = opts.fire_as }
 end
 function Worm:release(vx, vy, opts)
   self.taken, self.carried = nil, false
-  if self.visible == false then self.visible = true end
   self.state = opts and opts.tumble and "tumbling" or "falling"
   self.vx, self.vy = vx or 0, vy or 0
   self.release_options = opts
@@ -407,7 +406,7 @@ local function new_match(opts)
       end,
       set_gravity = function(v) M.gravity = v end,
       set_wind = function(v) M.wind = v end,
-      sky = -208,
+      sky = function() return -208 end,
       -- As the engine's wa.world.collides: terrain from M.solid at the
       -- circle's centre and rim; worms, mines, oil drums and crates as circles
       -- of the engine's sizes (6, 5, 9, 9), the first in the list touched.
@@ -3952,12 +3951,12 @@ do
     and spec.wep == "weps/donkey.wep" and spec.panel_icon == "sprites/crate_strike/icon.png"
     and type(spec.on_click) == "function" and spec.on_select and spec.on_select.cursor)
   M.crate_spawns = {}
-  spec.on_click({ worm = worm(16), x = 300 + 0.5, y = 400, sky = wa.world.sky })
+  spec.on_click({ worm = worm(16), x = 300 + 0.5, y = 400, sky = wa.world.sky() })
   local c = M.crate_spawns
   local kinds = { weapon = true, utility = true, health = true }
   check("three crates on parachutes, at stock sky and the precise click plus 50 either side",
     #c == 3 and c[1].x == 300.5 and c[2].x == 250.5 and c[3].x == 350.5
-    and c[1].y == wa.world.sky and c[2].y == wa.world.sky and c[3].y == wa.world.sky
+    and c[1].y == wa.world.sky() and c[2].y == wa.world.sky() and c[3].y == wa.world.sky()
     and c[1].drop == "chute" and c[2].drop == "chute" and c[3].drop == "chute",
     #c == 3 and (c[1].x .. "," .. c[2].x .. "," .. c[3].x) or tostring(#c))
   check("each a weapon, utility or health crate, health 20-40, 40-60, 60-80 by place",
@@ -3967,7 +3966,7 @@ do
   local seen = {}
   for _ = 1, 20 do
     M.crate_spawns = {}
-    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky })
+    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky() })
     for _, s in ipairs(M.crate_spawns) do seen[s.kind] = true end
   end
   check("all three kinds come up", seen.weapon and seen.utility and seen.health)
@@ -3980,7 +3979,7 @@ do
   local healths = 0
   for _ = 1, 20 do
     M.crate_spawns = {}
-    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky })
+    spec.on_click({ worm = worm(16), x = 300, y = 400, sky = wa.world.sky() })
     if #M.crate_spawns ~= 3 then healths = -1000 end
     for _, s in ipairs(M.crate_spawns) do
       if s.kind == "weapon" then healths = -1000 elseif s.kind == "health" then healths = healths + 1 end
@@ -4005,7 +4004,7 @@ do
     M.water, M.launched, M.sounds, M.quads = 600, {}, {}, {}
     M.gravity = 15728 / 65536 -- the scheme's default
     local before = #(M.spawned or {})
-    spec.on_click({ worm = worm(16), x = 1000, y = y or 400, vx = vx, sky = wa.world.sky })
+    spec.on_click({ worm = worm(16), x = 1000, y = y or 400, vx = vx, sky = wa.world.sky() })
     local a = M.spawned[#M.spawned]
     local r = { actor = #M.spawned == before + 1 and a, at = {}, sounds = M.sounds }
     M.draw()

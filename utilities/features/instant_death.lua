@@ -5,7 +5,7 @@ return function(mode)
   wa.on.worm_message(function(worm)
     if not worm.turn and worm.hp == 0 then
       if not (in_flight and worm:die()) then
-        worm:allow_death()
+        worm:die{ settled = true }
       end
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })

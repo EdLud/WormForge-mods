@@ -1,4 +1,4 @@
--- Ninja Star: Project X's thrown star, on WormForge API 4.
+-- Ninja Star: Project X's thrown star, on WormForge.
 
 local function placed(ctx)
   local informed = false

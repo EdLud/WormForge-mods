@@ -130,8 +130,8 @@ def stage_public(tmp):
         if not manifest.is_file():
             raise ValueError(f"{rel}: no mod.toml")
         data = tomllib.loads(manifest.read_text(encoding="utf-8"))
-        if data.get("format_version") != 2 or data.get("api_version") != 4:
-            raise ValueError(f"{rel}: expected bundle format 2 / API 4")
+        if data.get("format_version") != 2 or data.get("api_version") != 5:
+            raise ValueError(f"{rel}: expected bundle format 2 / API 5")
         for key in ("id", "version"):
             value = data.get(key, "")
             if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*", value):
