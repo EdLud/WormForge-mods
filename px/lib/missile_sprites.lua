@@ -1,6 +1,7 @@
 -- Highlander: PX's missile sprites.
 
 local shared = require("lib/shared")
+local on_missile = require("lib/on_missile")
 local HOLD_DEPTH = shared.HOLD_DEPTH
 local frame_of = shared.frame_of
 local next_phase = shared.next_phase
@@ -70,7 +71,10 @@ local function spec_for(m)
   end
 end
 
-wa.on.missile_frame(function(m)
+-- Only the weapons with a missile sprite: the engine then skips every other
+-- missile's frame, where this would only have returned (a stock cluster's
+-- bits are hundreds a frame).
+on_missile(function(m)
   local p = spec_for(m)
   if p and p.hide and m.phase == "pre" and (flying[m.id] or sprite_owner()) then
     m.sprite = 0
@@ -116,7 +120,7 @@ wa.on.missile_frame(function(m)
     a:gfx({ tint = sunk and p.sink_tint or 0xFFFFFF })
   end
   a:gfx({ angle = math.deg(rot) % 360, depth = HOLD_DEPTH, scale = p.scale })
-end)
+end, { weapons = wa.sorted(PX_WEAP_SPRITES) })
 end
 
 shared.current_worm = current_worm
