@@ -75,16 +75,28 @@ local function new_match(options, extra)
     draw = {
       random = function() return next_int() / 0x80000000 end,
       fraction = function() return 0 end,
-      quads = function(b)
-        M.quads[#M.quads + 1] = { sprite = b.sprite, frame = b.frame, depth = b.depth, count = b.count, colour = b.quads[9] }
-        for i = 0, b.count - 1 do
-          local l = b.quads
-          M.quad_boxes[#M.quad_boxes + 1] = { sprite = b.sprite, depth = b.depth, top = l[i * 9 + 2], bottom = l[i * 9 + 6], left = l[i * 9 + 1] }
+      -- A brush's boxes: each `boxes` call one batch, each box its edges.
+      brush = function(spec)
+        local brush = {}
+        function brush:boxes(l, count)
+          count = count or #l // 7
+          M.quads[#M.quads + 1] = { sprite = spec.sprite, frame = l[6], depth = spec.depth, count = count, colour = l[7] }
+          for i = 0, count - 1 do
+            local x, y, w, h = l[i * 7 + 1], l[i * 7 + 2], l[i * 7 + 3], l[i * 7 + 4]
+            M.quad_boxes[#M.quad_boxes + 1] = { sprite = spec.sprite, depth = spec.depth, top = y - h / 2, bottom = y + h / 2, left = x - w / 2 }
+          end
         end
+        return brush
       end,
       quad = function(q)
-        M.quad[#M.quad + 1] = { sprite = q.sprite, depth = q.depth, blend = q.blend, uv = q.uv and { table.unpack(q.uv) } }
         M.quad_boxes[#M.quad_boxes + 1] = { sprite = q.sprite, depth = q.depth, top = q.points[1][2], bottom = q.points[3][2] }
+        -- Rain's Lua cells, a quad each (the engine draws them with
+        -- wa.draw.tiles): counted as the batch of one each is.
+        if q.sprite == "sprites/rain.png" and not q.colors then
+          M.quads[#M.quads + 1] = { sprite = q.sprite, frame = q.frame, depth = q.depth, count = 1, colour = q.color }
+          return
+        end
+        M.quad[#M.quad + 1] = { sprite = q.sprite, depth = q.depth, blend = q.blend, uv = q.uv and { table.unpack(q.uv) } }
         if q.colors and q.colors[3] >> 24 == 0 then M.fades = (M.fades or 0) + 1 end
         if q.colors and q.colors[1] >> 24 == 0 then M.fades_in = (M.fades_in or 0) + 1 end
       end,

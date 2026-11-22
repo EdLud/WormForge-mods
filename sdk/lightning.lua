@@ -293,30 +293,30 @@ function lightning.gfx()
   end
 
   -- Puffs drawn dark, then lit corner by corner near the light, which falls off faster upwards.
-  local DARK = { sprite = cloud_sprite, frame = 0, blend = "alpha", depth = CLOUD_DEPTH, quads = {}, count = 0 }
-  local GLOWS = { sprite = cloud_sprite, frame = 0, blend = "add", depth = CLOUD_DEPTH - 0x200, quads = {}, count = 0 }
+  -- The dark and glow passes as boxes, a brush a depth (a cloud's style may
+  -- set one), each pass one list refilled every frame.
+  local DARK, GLOWS = {}, {}
+  local dark_list, glow_list = {}, {}
+  local function brush(by, depth, blend)
+    local b = by[depth]
+    if not b then
+      b = wa.draw.brush{ sprite = cloud_sprite, blend = blend, depth = depth }
+      by[depth] = b
+    end
+    return b
+  end
   local LIT = { sprite = cloud_sprite, frame = 0, blend = "alpha", depth = CLOUD_DEPTH - 0x100,
     points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} }, colors = { 0, 0, 0, 0 } }
-  local function batch(b, n, pts, color)
-    if not wa.draw.quads then
-      QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = b.sprite, 0, b.blend, color, b.depth
-      local q = QUAD.points
-      for i = 1, 4 do q[i][1], q[i][2] = pts[i][1], pts[i][2] end
-      wa.draw.quad(QUAD)
-      return n
-    end
-    local l = b.quads
-    l[n + 1], l[n + 2], l[n + 3], l[n + 4] = pts[1][1], pts[1][2], pts[2][1], pts[2][2]
-    l[n + 5], l[n + 6], l[n + 7], l[n + 8] = pts[3][1], pts[3][2], pts[4][1], pts[4][2]
-    l[n + 9] = color
-    return n + 9
+  local function batch(l, n, x, y, w, h, color)
+    l[n + 1], l[n + 2], l[n + 3], l[n + 4], l[n + 5], l[n + 6], l[n + 7] = x, y, w, h, 0, 0, color
+    return n + 7
   end
   local DEFAULT_DARK = { 45, 40, 60 }
   local function draw_cloud(puffs, lx, ly, power, reach, spread, style)
     local depth = style and style.depth or CLOUD_DEPTH
     local dark_rgb = style and style.dark or DEFAULT_DARK
     local fade = style and style.alpha or 1
-    DARK.depth, LIT.depth, GLOWS.depth = depth, depth - 0x100, depth - 0x200
+    LIT.depth = depth - 0x100
     local pts, cols = LIT.points, LIT.colors
     local function light(x, y)
       local dx, dy = x - lx, y - ly
@@ -338,7 +338,7 @@ function lightning.gfx()
       pts[2][1], pts[2][2] = x + hw, y - hh
       pts[3][1], pts[3][2] = x + hw, y + hh
       pts[4][1], pts[4][2] = x - hw, y + hh
-      dark = batch(DARK, dark, pts, colour(255 * t, dark_rgb[1], dark_rgb[2], dark_rgb[3]))
+      dark = batch(dark_list, dark, x, y, 2 * hw, 2 * hh, colour(255 * t, dark_rgb[1], dark_rgb[2], dark_rgb[3]))
       if power > 0 then
         local lit = 0
         for i = 1, 4 do
@@ -350,12 +350,12 @@ function lightning.gfx()
         if lit >> 24 > 0 then
           wa.draw.quad(LIT)
           local l = light(x, y)
-          if 70 * t * l * l >= 1 then glows = batch(GLOWS, glows, pts, colour(70 * t * l * l, LR, LG, LB)) end
+          if 70 * t * l * l >= 1 then glows = batch(glow_list, glows, x, y, 2 * hw, 2 * hh, colour(70 * t * l * l, LR, LG, LB)) end
         end
       end
     end
-    if dark > 0 then DARK.count = dark // 9; wa.draw.quads(DARK) end
-    if glows > 0 then GLOWS.count = glows // 9; wa.draw.quads(GLOWS) end
+    if dark > 0 then brush(DARK, depth, "alpha"):boxes(dark_list, dark // 7) end
+    if glows > 0 then brush(GLOWS, depth - 0x200, "add"):boxes(glow_list, glows // 7) end
   end
   gfx = { colour = colour, square = square, glow = glow, point = point, ribbon = ribbon,
     noise_span = noise_span, draw_cloud = draw_cloud, glow_sprite = glow_sprite,

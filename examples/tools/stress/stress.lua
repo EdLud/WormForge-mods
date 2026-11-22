@@ -314,20 +314,17 @@ return function()
     return (alpha << 24) | rgb
   end
 
-  -- Every glow of a frame in one list: nine numbers a quad, drawn in one call.
+  -- Every glow of a frame in one list of boxes (x, y, w, h, angle, frame,
+  -- color), drawn in one call.
   local MAX = 4096
-  local batch = { sprite = GLOW, blend = "add", quads = {}, count = 0 }
-  local q, n = batch.quads, 0
+  local GLOWS = wa.draw.brush{ sprite = GLOW, blend = "add" }
+  local q, n = {}, 0
   local function glow(x, y, half, color)
-    q[n + 1], q[n + 2] = x - half, y - half
-    q[n + 3], q[n + 4] = x + half, y - half
-    q[n + 5], q[n + 6] = x + half, y + half
-    q[n + 7], q[n + 8] = x - half, y + half
-    q[n + 9] = color
-    n = n + 9
-    if n == MAX * 9 then
-      batch.count = MAX
-      wa.draw.quads(batch)
+    q[n + 1], q[n + 2], q[n + 3], q[n + 4] = x, y, 2 * half, 2 * half
+    q[n + 5], q[n + 6], q[n + 7] = 0, 0, color
+    n = n + 7
+    if n == MAX * 7 then
+      GLOWS:boxes(q, MAX)
       n = 0
     end
   end
@@ -349,8 +346,7 @@ return function()
       glow(f.x, f.y, (16 + age), argb(alpha, 0xFFFFFF))
     end
     if n > 0 then
-      batch.count = n // 9
-      wa.draw.quads(batch)
+      GLOWS:boxes(q, n // 7)
     end
   end)
 end

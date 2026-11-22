@@ -51,8 +51,8 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     (when placed) and Toxic Grenades, one batch every 8 seconds. Each batch
     writes a `stress: batch` line to `wkLua.log`, and
     `tools/stress-report.py` gives each one its frame rate. Its sprites load
-    as assets (`wa.assets.load`), and its glows are drawn with
-    `wa.draw.quads`.
+    as assets (`wa.assets.load`), and its glows are drawn as one list of
+    boxes with a brush (`wa.draw.brush`, `brush:boxes`).
   - `profiles/Diagnostics.toml` selects the profiler and the state logger over
     the lobby's weapons;
     `profiles/Stress.toml` places the six Project X weapons the stress test

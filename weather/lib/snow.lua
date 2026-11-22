@@ -32,10 +32,9 @@ function snow.install(W)
   local fill = 0.25 + 0.75 * cfg.amount
   for k, layer in ipairs(layers) do
     layer.index, layer.drift = k, 0
-    layer.batches = {}
-    for b = 1, 2 do
-      layer.batches[b] = { sprite = sheet, frame = layer.frames[b], blend = "alpha", depth = layer.depth, quads = {}, count = 0 }
-    end
+    -- A brush a layer, and a list of boxes for each of its two frames.
+    layer.brush = wa.draw.brush{ sprite = sheet, blend = "alpha", depth = layer.depth }
+    layer.lists = { {}, {} }
   end
   -- wa.draw.flakes builds the flakes in the engine; the loop below draws the same in Lua.
   local flakes = wa.draw.flakes
@@ -80,8 +79,8 @@ function snow.install(W)
         v.left, v.top, v.right, v.bottom = st.left, top, st.right, bottom
         flakes(FLAKES)
       else
-        local b1, b2 = layer.batches[1], layer.batches[2]
-        local l1, l2, n1, n2 = b1.quads, b2.quads, 0, 0
+        local l1, l2, n1, n2 = layer.lists[1], layer.lists[2], 0, 0
+        local f1, f2 = layer.frames[1], layer.frames[2]
         local reach = sway + half
         for c, factor in ipairs(CLASSES) do
           local ox = st.cx * (1 - layer.parallax) + layer.drift * factor
@@ -110,15 +109,13 @@ function snow.install(W)
                     local s = half * (0.75 + ((g >> 4) & 63) / 126)
                     local colour = ((a // 1) << 24) | 0xFFFFFF
                     if (g >> 27) & 1 == 0 then
-                      l1[n1 + 1], l1[n1 + 2], l1[n1 + 3], l1[n1 + 4] = x - s, y - s, x + s, y - s
-                      l1[n1 + 5], l1[n1 + 6], l1[n1 + 7], l1[n1 + 8] = x + s, y + s, x - s, y + s
-                      l1[n1 + 9] = colour
-                      n1 = n1 + 9
+                      l1[n1 + 1], l1[n1 + 2], l1[n1 + 3], l1[n1 + 4] = x, y, 2 * s, 2 * s
+                      l1[n1 + 5], l1[n1 + 6], l1[n1 + 7] = 0, f1, colour
+                      n1 = n1 + 7
                     else
-                      l2[n2 + 1], l2[n2 + 2], l2[n2 + 3], l2[n2 + 4] = x - s, y - s, x + s, y - s
-                      l2[n2 + 5], l2[n2 + 6], l2[n2 + 7], l2[n2 + 8] = x + s, y + s, x - s, y + s
-                      l2[n2 + 9] = colour
-                      n2 = n2 + 9
+                      l2[n2 + 1], l2[n2 + 2], l2[n2 + 3], l2[n2 + 4] = x, y, 2 * s, 2 * s
+                      l2[n2 + 5], l2[n2 + 6], l2[n2 + 7] = 0, f2, colour
+                      n2 = n2 + 7
                     end
                   end
                 end
@@ -126,8 +123,8 @@ function snow.install(W)
             end
           end
         end
-        if n1 > 0 then b1.count = n1 // 9; wa.draw.quads(b1) end
-        if n2 > 0 then b2.count = n2 // 9; wa.draw.quads(b2) end
+        if n1 > 0 then layer.brush:boxes(l1, n1 // 7) end
+        if n2 > 0 then layer.brush:boxes(l2, n2 // 7) end
       end
     end
   end

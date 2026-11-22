@@ -30,6 +30,7 @@ wa={sound={play=function(_,n)assert(n==112)end},msg={TURN_STARTED=56},depth={OBJ
   on={draw=function(fn)hooks[#hooks+1]=fn end,
     worm_message=function(fn,opts)hooks.message=fn;hooks.msgs=opts.msgs end},
   draw={random=function()return 0.5 end,quad=function(q)draws[#draws+1]=q end}}
+dofile(root.."../tests/brush_mock.lua")(wa)
 local function render()
   draws={};for _,fn in ipairs(hooks) do fn() end
 end
@@ -94,31 +95,19 @@ toxic.definition.on_explode{x=100,y=100,worm={id=999}};cloud=bodies[4];blocked=t
 assert(cloud.spec.owner==target,"a grenade outliving its owner uses a valid current body")
 for _=1,10 do step()end
 assert(cloud.id~=0 and #bodies==4)
--- wa.draw.quads draws the very quads one wa.draw.quad a puff draws.
+-- Each puff is a square box of the cloud's sheet, turned with the puff.
 blocked=false
 toxic.definition.on_explode{x=300,y=100};cloud=bodies[#bodies]
 for _=1,20 do step()end
--- The verb copies what it reads, as the hook relies on: so does this mock.
-local keep=wa.draw.quad
-wa.draw.quad=function(q)
-  local p=q.points
-  draws[#draws+1]={sprite=q.sprite,color=q.color,points={{p[1][1],p[1][2]},{p[2][1],p[2][2]},{p[3][1],p[3][2]},{p[4][1],p[4][2]}}}
-end
-render();local single=draws
-wa.draw.quad=keep
-assert(#single>6)
-wa.draw.quads=function(b)
-  assert(b.sprite==single[1].sprite and b.depth==wa.depth.OBJECTS and b.count<=4096)
-  for i=0,b.count-1 do
-    local n=b.quads;local k=i*9
-    draws[#draws+1]={color=n[k+9],points={{n[k+1],n[k+2]},{n[k+3],n[k+4]},{n[k+5],n[k+6]},{n[k+7],n[k+8]}}}
-  end
-end
-render();wa.draw.quads=nil
-assert(#draws==#single)
-for i,d in ipairs(draws) do
-  assert(d.color==single[i].color)
-  for c=1,4 do for a=1,2 do assert(d.points[c][a]==single[i].points[c][a]) end end
+render()
+assert(#draws>6)
+for _,d in ipairs(draws) do
+  local p=d.points
+  local function side(a,b)return math.sqrt((p[b][1]-p[a][1])^2+(p[b][2]-p[a][2])^2)end
+  local s1,s2,s3,s4=side(1,2),side(2,3),side(3,4),side(4,1)
+  assert(d.sprite==draws[1].sprite and d.depth==wa.depth.OBJECTS)
+  assert(math.abs(s1-s2)<1e-6 and math.abs(s2-s3)<1e-6 and math.abs(s3-s4)<1e-6 and s1>0)
+  assert(d.color>>24>0 and d.color&0xFFFFFF==0x80DC80)
 end
 -- The profile's Poison option is the dose each puff gives.
 dose=7;poison_calls=0

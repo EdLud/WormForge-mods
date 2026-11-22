@@ -53,6 +53,19 @@ function rain.install(W)
     PIECE.frame, PIECE.depth = f, layer.depth
     wa.draw.quad(PIECE)
   end
+  -- A batch of slanted cells, nine numbers a cell (four corners, a colour),
+  -- drawn in order through one quad table.
+  local CELL = { sprite = sheet, frame = 0, blend = "alpha", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
+  local function draw_batch(b)
+    local l, p = b.quads, CELL.points
+    CELL.frame, CELL.depth = b.frame, b.depth
+    for n = 0, (b.count - 1) * 9, 9 do
+      p[1][1], p[1][2], p[2][1], p[2][2] = l[n + 1], l[n + 2], l[n + 3], l[n + 4]
+      p[3][1], p[3][2], p[4][1], p[4][2] = l[n + 5], l[n + 6], l[n + 7], l[n + 8]
+      CELL.color = l[n + 9]
+      wa.draw.quad(CELL)
+    end
+  end
   -- The engine builds the tiles from these where it can (wa.draw.tiles); the loop below is the same, in Lua.
   local tiles = wa.draw.tiles
   local TILES = { sprite = sheet, frame = 0, thin = 3, blend = "alpha", fade = FADE_IN, view = {} }
@@ -127,7 +140,7 @@ function rain.install(W)
           if counts[f] > 0 then
             local b = layer.batches[f]
             b.count = counts[f] // 9
-            wa.draw.quads(b)
+            draw_batch(b)
           end
         end
       end

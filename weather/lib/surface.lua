@@ -44,16 +44,17 @@ function surface.install(W)
   local heights = {}
   local splashes, rings = {}, {}
   local due, last = 0, nil
-  local batches = {}
-  for f = 0, 5 do
-    batches[f] = { sprite = splash_sheet, frame = f, blend = "alpha", depth = on_ground, quads = {}, count = 0 }
-  end
+  -- The splashes as boxes, each at its own frame, in one list refilled
+  -- every frame.
+  local SPLASH = wa.draw.brush{ sprite = splash_sheet, blend = "alpha", depth = on_ground }
+  local splash_list = {}
   local RIBBON = { sprite = ring_sheet, blend = "add", depth = over_water, points = {} }
   for i = 1, ARC_POINTS do RIBBON.points[i] = { x = 0, y = 0, width = 3, u = 0, color = 0 } end
   -- Whole rings go in one batch a depth; only a ring the shore cuts is drawn as arcs.
-  local OVALS = {}
+  local OVALS, OVAL_LISTS = {}, {}
   for _, depth in ipairs({ over_water, on_ground }) do
-    OVALS[depth] = { sprite = oval_sheet, frame = 0, blend = "add", depth = depth, quads = {}, count = 0 }
+    OVALS[depth] = wa.draw.brush{ sprite = oval_sheet, blend = "add", depth = depth }
+    OVAL_LISTS[depth] = {}
   end
   local OVAL_FILL = 0.84 -- the ellipse's extent within its sheet
 
@@ -118,14 +119,12 @@ function surface.install(W)
 
   local ovals = {}
   local function oval(g, r, color)
-    local b = OVALS[g.depth]
     local n = ovals[g.depth]
-    local rx, ry = r / OVAL_FILL, r / OVAL_FILL * ASPECT
-    local l = b.quads
-    l[n + 1], l[n + 2], l[n + 3], l[n + 4] = g.x - rx, g.y - ry, g.x + rx, g.y - ry
-    l[n + 5], l[n + 6], l[n + 7], l[n + 8] = g.x + rx, g.y + ry, g.x - rx, g.y + ry
-    l[n + 9] = color
-    ovals[g.depth] = n + 9
+    local w = 2 * r / OVAL_FILL
+    local l = OVAL_LISTS[g.depth]
+    l[n + 1], l[n + 2], l[n + 3], l[n + 4] = g.x, g.y, w, w * ASPECT
+    l[n + 5], l[n + 6], l[n + 7] = 0, 0, color
+    ovals[g.depth] = n + 7
   end
 
   -- A ring and, where a bound stopped it, its faint reflection.
@@ -162,25 +161,20 @@ function surface.install(W)
       due = due - 1
       spawn(st)
     end
-    local counts = { [0] = 0, 0, 0, 0, 0, 0 }
+    local n = 0
     for i = #splashes, 1, -1 do
       local s = splashes[i]
       local age = st.now - s.born
       if age >= SPLASH_LIFE or age < 0 then
         table.remove(splashes, i)
       else
-        local f = math.min(5, math.floor(age * 6 / SPLASH_LIFE))
-        local b, n = batches[f], counts[f]
-        local l, h = b.quads, SPLASH_SIZE
-        l[n + 1], l[n + 2], l[n + 3], l[n + 4] = s.x - h, s.y - 2 * h + 2, s.x + h, s.y - 2 * h + 2
-        l[n + 5], l[n + 6], l[n + 7], l[n + 8] = s.x + h, s.y + 2, s.x - h, s.y + 2
-        l[n + 9] = 0xB4FFFFFF
-        counts[f] = n + 9
+        local l, h = splash_list, SPLASH_SIZE
+        l[n + 1], l[n + 2], l[n + 3], l[n + 4] = s.x, s.y - h + 2, 2 * h, 2 * h
+        l[n + 5], l[n + 6], l[n + 7] = 0, math.min(5, math.floor(age * 6 / SPLASH_LIFE)), 0xB4FFFFFF
+        n = n + 7
       end
     end
-    for f = 0, 5 do
-      if counts[f] > 0 then batches[f].count = counts[f] // 9; wa.draw.quads(batches[f]) end
-    end
+    if n > 0 then SPLASH:boxes(splash_list, n // 7) end
     ovals[over_water], ovals[on_ground] = 0, 0
     for i = #rings, 1, -1 do
       local g = rings[i]
@@ -193,7 +187,7 @@ function surface.install(W)
       end
     end
     for depth, n in pairs(ovals) do
-      if n > 0 then OVALS[depth].count = n // 9; wa.draw.quads(OVALS[depth]) end
+      if n > 0 then OVALS[depth]:boxes(OVAL_LISTS[depth], n // 7) end
     end
   end
 end

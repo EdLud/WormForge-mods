@@ -155,7 +155,7 @@ local function setup()
   for _, path in ipairs(SPRITES) do W.keys[path] = wa.sprites.key(path) end
   wa.on.turn_start(turn_start)
   if wa.on.turn_end then wa.on.turn_end(turn_end) end
-  if wa.on.draw and wa.draw.quads and wa.draw.ribbon then
+  if wa.on.draw and wa.draw.brush and wa.draw.ribbon then
     L.setup()
     wa.on.draw(draw)
   end

@@ -1,8 +1,8 @@
 -- For pack tests: `wa.draw.brush` over the test's own `wa.draw.quad`, so a
--- brush's boxes reach the test as the quads the engine draws for them:
--- the brush's fields, and `points` at the box's corners, from its top-left
--- clockwise, turned `angle` radians about its centre. Call after `wa` is
--- set up:
+-- brush's boxes, one by one or a list of them, reach the test as the quads
+-- the engine draws for them: the brush's fields, and `points` at the box's
+-- corners, from its top-left clockwise, turned `angle` radians about its
+-- centre. Call after `wa` is set up:
 --   dofile(root .. "../tests/brush_mock.lua")(wa)
 return function(wa)
   wa.draw = wa.draw or {}
@@ -20,6 +20,12 @@ return function(wa)
         color = color or spec.color, colors = not color and spec.colors or nil, uv = spec.uv,
         points = points, visibility = visibility,
       })
+    end
+    function brush:boxes(list, count, visibility)
+      for i = 0, (count or #list // 7) - 1 do
+        local k = i * 7
+        self:box(list[k + 1], list[k + 2], list[k + 3], list[k + 4], list[k + 5], list[k + 6], list[k + 7], visibility)
+      end
     end
     return brush
   end
