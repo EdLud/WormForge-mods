@@ -31,11 +31,11 @@ function rain.install(W)
   local dense = math.min(3, math.floor(cfg.amount * 4))
   local light = 0.5 + 0.5 * cfg.amount
   for _, layer in ipairs(layers) do
-    layer.drift, layer.batches, layer.counts = 0, {}, {}
+    layer.drift, layer.lists, layer.counts = 0, {}, {}
     layer.full = 255 * layer.alpha * light
-    for f = 0, 3 do
-      layer.batches[f] = { sprite = sheet, frame = f, blend = "alpha", depth = layer.depth, quads = {}, count = 0 }
-    end
+    -- A brush a layer, and a list of cells for each of the sheet's frames.
+    layer.brush = wa.draw.brush{ sprite = sheet, blend = "alpha", depth = layer.depth }
+    for f = 0, 3 do layer.lists[f] = {} end
   end
   local PIECE = { sprite = sheet, frame = 0, blend = "alpha", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} },
     colors = { 0, 0, 0, 0 }, uv = { 0, 0, 1, 1 } }
@@ -52,19 +52,6 @@ function rain.install(W)
     uv[2], uv[4] = va, vb
     PIECE.frame, PIECE.depth = f, layer.depth
     wa.draw.quad(PIECE)
-  end
-  -- A batch of slanted cells, nine numbers a cell (four corners, a colour),
-  -- drawn in order through one quad table.
-  local CELL = { sprite = sheet, frame = 0, blend = "alpha", points = { {0, 0}, {0, 0}, {0, 0}, {0, 0} } }
-  local function draw_batch(b)
-    local l, p = b.quads, CELL.points
-    CELL.frame, CELL.depth = b.frame, b.depth
-    for n = 0, (b.count - 1) * 9, 9 do
-      p[1][1], p[1][2], p[2][1], p[2][2] = l[n + 1], l[n + 2], l[n + 3], l[n + 4]
-      p[3][1], p[3][2], p[4][1], p[4][2] = l[n + 5], l[n + 6], l[n + 7], l[n + 8]
-      CELL.color = l[n + 9]
-      wa.draw.quad(CELL)
-    end
   end
   -- The engine builds the tiles from these where it can (wa.draw.tiles); the loop below is the same, in Lua.
   local tiles = wa.draw.tiles
@@ -123,25 +110,20 @@ function rain.install(W)
                 end
                 piece(layer, f, x, y, T, sx, math.max(y, full), bottom, 1, 1)
               else
-                local b = layer.batches[f]
                 local n = counts[f]
-                local l = b.quads
+                local l = layer.lists[f]
                 l[n + 1], l[n + 2] = x, y
                 l[n + 3], l[n + 4] = x + T, y
                 l[n + 5], l[n + 6] = x + T + sx, y + T
                 l[n + 7], l[n + 8] = x + sx, y + T
-                l[n + 9] = layer.colour
-                counts[f] = n + 9
+                l[n + 9], l[n + 10] = f, layer.colour
+                counts[f] = n + 10
               end
             end
           end
         end
         for f = 0, 3 do
-          if counts[f] > 0 then
-            local b = layer.batches[f]
-            b.count = counts[f] // 9
-            draw_batch(b)
-          end
+          if counts[f] > 0 then layer.brush:quads(layer.lists[f], counts[f] // 10) end
         end
       end
     end
