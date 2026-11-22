@@ -5028,13 +5028,20 @@ do
   w.weapon, M.hud_sprites, M.hud_rects = "donkey", {}, {}
   M.hud()
   local icon, fill = M.hud_sprites[1], M.hud_rects[1]
-  -- A 28x28 cell centred 52 above the worm: (386, 234).
-  check("its weapon's icon over it, above its name, in a cell of the panel", #M.hud_sprites == 1
+  -- A 28x28 cell centred 21 right of the worm and 36 above it: (407, 250).
+  check("its weapon's icon up and to the right of it, in a cell of the panel", #M.hud_sprites == 1
     and icon.sprite == "icon:crate_strike" and #M.hud_rects == 5
-    and fill.x == 387 and fill.y == 235 and fill.w == 26 and fill.color == 0xFF000000
+    and fill.x == 408 and fill.y == 251 and fill.w == 26 and fill.color == 0xFF000000
     and M.hud_rects[2].color == 0xFF9C9D9C)
-  check("the middle 24x24 of the icon, 2 in from the cell's edge", icon.x == 388 and icon.y == 236
+  check("the middle 24x24 of the icon, 2 in from the cell's edge", icon.x == 409 and icon.y == 252
     and icon.part.x == 4 and icon.part.y == 4 and icon.part.w == 24 and icon.part.h == 24)
+  -- It follows the worm where it is drawn, between simulation frames too.
+  local sim_x = w.x
+  w.x = sim_x + 3
+  for _, draw in ipairs(M.draws) do draw() end
+  w.x, M.hud_sprites, M.hud_rects = sim_x, {}, {}
+  M.hud()
+  check("the icon goes where the worm is drawn", M.hud_sprites[1].x == 412)
   w.weapon, M.hud_sprites, M.hud_rects = "stock.none", {}, {}
   M.hud()
   check("no weapon, no icon", #M.hud_sprites == 0 and #M.hud_rects == 0)

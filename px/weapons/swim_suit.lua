@@ -396,6 +396,9 @@ function weapon.setup()
     end
   end
 
+  -- Where each swimmer is drawn this frame (wa.on.draw reads the displayed
+  -- place), for its weapon icon on the HUD.
+  local shown_x, shown_y = {}, {}
   if wa.on.draw then
     -- Made once: a box drawn with it every frame makes no tables.
     local RING = wa.draw.brush{ sprite = "sprites/swim_suit/ring.png", depth = SWIM_RING_DEPTH }
@@ -404,7 +407,9 @@ function weapon.setup()
       for _, worm in ipairs(wa.worms.all()) do
         local s = swimmers[worm.id]
         if s and s.suit then
-          RING:box(worm.x, worm.y, size, size, 0, nil, nil, worm)
+          local x, y = worm.x, worm.y
+          RING:box(x, y, size, size, 0, nil, nil, worm)
+          shown_x[worm.id], shown_y[worm.id] = x, y
         end
       end
     end)
@@ -412,8 +417,8 @@ function weapon.setup()
 
   -- The swimmer's weapon, as on the rope: its panel icon in a cell of the
   -- weapon panel (the HUD tray's: a black box in a grey border, the middle
-  -- 24x24 of the icon), over the worm's name and health, at 1x as they are.
-  local ICON_ABOVE = 52 -- world pixels above the worm's centre
+  -- 24x24 of the icon), up and to the right of the worm as WA's, at 1x.
+  local ICON_RIGHT, ICON_ABOVE = 21, 36 -- the cell's centre from the worm's, in pixels
   local CELL, ICON = 28, 24
   local BLACK, GREY, WHITE = 0xFF000000, 0xFF9C9D9C, 0xFFFFFFFF -- WA's colours.img
   local NO_ICON = { ["stock.none"] = true, ["px.swim_suit"] = true }
@@ -435,8 +440,9 @@ function weapon.setup()
       local v = wa.world.view()
       if not icon or v.w <= 0 then return end
       local zoom = v.zoom > 0 and v.zoom or 1
-      local x = math.floor((worm.x - v.cx) * zoom + v.w / 2 - CELL / 2)
-      local y = math.floor((worm.y - v.cy) * zoom + v.h / 2 - ICON_ABOVE - CELL / 2)
+      local wx, wy = shown_x[worm.id] or worm.x, shown_y[worm.id] or worm.y
+      local x = math.floor((wx - v.cx) * zoom + v.w / 2 + ICON_RIGHT - CELL / 2)
+      local y = math.floor((wy - v.cy) * zoom + v.h / 2 - ICON_ABOVE - CELL / 2)
       -- WA's box: the corner pixels left out.
       wa.hud.rect({ x = x + 1, y = y + 1, w = CELL - 2, h = CELL - 2, color = BLACK })
       wa.hud.rect({ x = x + 1, y = y, w = CELL - 2, h = 1, color = GREY })
