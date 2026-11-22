@@ -1,5 +1,6 @@
 -- Crate pop: crates from the turn drop and Crate Shower pop in, each at a
--- random height within the range, with the pop at a random pitch.
+-- random height within the range, with the pop up to 3 semitones higher or
+-- lower.
 
 return function(ctx)
   if not wa.crates.set_drop then
@@ -8,7 +9,7 @@ return function(ctx)
   end
   local low, high = ctx.option("height_min"), ctx.option("height_max")
   wa.crates.set_drop("pop", {
-    pitch = ctx.option("pitch"),
+    pitch = 3,
     height = { min = math.min(low, high), max = math.max(low, high) },
   })
 end

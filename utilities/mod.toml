@@ -502,15 +502,6 @@ description = "Crates from the turn drop and Crate Shower pop in just above the 
 entry = "features/crate_pop.lua"
 
 [[components.options]]
-key = "pitch"
-type = "int"
-default = 3
-min = 0
-max = 12
-label = "Pitch range (semitones)"
-description = "Each pop sounds up to this many semitones higher or lower."
-
-[[components.options]]
 key = "height_min"
 type = "int"
 default = 30
