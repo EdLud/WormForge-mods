@@ -5010,9 +5010,10 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   local fire = {}
   for _, id in ipairs(w.taken and w.taken.fire or {}) do fire[id] = true end
-  check("swimming, it may fire Fast Walk and the click weapons, as from the bungee",
-    w.taken and w.taken.fire_as == "bungee" and fire["stock.fast_walk"] and fire["px.lightning_strike"]
-    and fire["px.crate_strike"] and fire["px.3_girder_pack"] and not fire["px.swim_suit"])
+  check("swimming, it may fire the instant-use utilities and the click weapons, as from the bungee",
+    w.taken and w.taken.fire_as == "bungee" and fire["stock.fast_walk"] and fire["stock.double_turn_time"]
+    and fire["px.gravity_control"] and fire["px.lightning_strike"] and fire["px.crate_strike"]
+    and fire["px.3_girder_pack"] and not fire["px.swim_suit"] and not fire["stock.invisibility"])
   w.weapon = "bazooka"
   check("an aimed weapon is eaten", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
   w.weapon = "donkey" -- px.crate_strike's slot here
@@ -5028,16 +5029,13 @@ do
   w.state, w.x, w.y = "falling", 300, 520
   M.message(w, wa.msg.FRAME_FINISH)
   check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
-  -- Swimming, Enter fires and Space doesn't, as on the rope; a click does.
-  w.weapon, M.space = "donkey", true
-  check("swimming, Space fires nothing", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
-  M.space = false
-  check("swimming, a strike's click fires", M.message(w, wa.msg.FIRE_WEAPON) == nil)
-  w.inputs, w.input_fire = {}, "unset"
-  check("swimming, Enter fires the strike through WA's fire, jumping nowhere", M.message(w, wa.msg.JUMP) == "eat"
-    and #w.inputs == 1 and w.inputs[1].fire == "press" and w.input_fire == nil)
-  w.weapon, w.inputs = "bazooka", {}
-  check("swimming, Enter with an aimed weapon does nothing", M.message(w, wa.msg.JUMP) == "eat" and #w.inputs == 0)
+  -- Swimming, WA swaps the keys as on the bungee: Enter's fire goes on for
+  -- what may fire, and Space's jump goes nowhere.
+  w.weapon = "donkey"
+  check("swimming, a strike fires", M.message(w, wa.msg.FIRE_WEAPON) == nil)
+  check("swimming, Space (a jump) does nothing", M.message(w, wa.msg.JUMP) == "eat")
+  w.weapon = "bazooka"
+  check("swimming, an aimed weapon is eaten", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
   -- Its weapon's icon over it, as on the rope, on this machine's screen.
   M.visuals = { ["px.crate_strike"] = { sprite = "icon:crate_strike", frame = 0, width = 32, height = 32 } }
   M.view = { cx = 300, cy = 520, w = 800, h = 600, zoom = 1 }
@@ -5404,7 +5402,10 @@ do
   for _, o in ipairs(worms) do o.turn = false end
   w.turn, w.weapon, w.state, w.facing, w.team = true, "px.double_jump", "ready", 1, 1
   local spent = 0
-  function w:ammo(id, n) if id == "px.double_jump" then spent = spent + n end end
+  function w:ammo(id, n)
+    if n == nil then return 1 end
+    if id == "px.double_jump" then spent = spent + n end
+  end
   function w:set_state() error("the double jump uses WA's take-off; it sets no state") end
   function w:take() error("the double jump never holds the worm") end
   local function in_air(state, weapon)
@@ -5466,25 +5467,30 @@ do
   check("using it again switches it off, spending nothing", spent == -1 and #M.hud_lines == 0
     and M.top_messages[#M.top_messages].text == "Double Jump: OFF"
     and M.message(w, wa.msg.JUMP) == nil)
-  -- The next turn starts it off.
+  -- The turn's end switches it off.
   w.weapon, w.state = "px.double_jump", "ready"
   M.message(w, wa.msg.FIRE_WEAPON)
+  M.turn_end({ worm = w })
   M.turn_start({ worm = w, active = w })
   in_air()
-  check("off at the next turn", M.message(w, wa.msg.JUMP) == nil)
-  -- In the water: Enter's fire switches it on; Space's, which the Swim Suit
-  -- eats, switches nothing.
-  local shared = require("lib/shared")
-  check("it fires in the water too", shared.fires_while_swimming["px.double_jump"] == true)
-  local eats = shared.swim_eats_fire
-  shared.swim_eats_fire = function() return true end
-  w.weapon, w.state = "px.double_jump", "ready"
+  check("off after the turn", M.message(w, wa.msg.JUMP) == nil)
+  -- An instant-use utility: held on the Swim Suit, its fire (Enter there)
+  -- switches it too; Auto-Use switches it on at the turn's start.
+  local controls = require("lib/turn_controls")
+  controls.configure("px.double_jump", { instant_use = "auto_use" })
+  w.weapon, w.state, w.taken = "px.double_jump", "ready", { turn = "run" }
   local before = spent
-  M.message(w, wa.msg.FIRE_WEAPON)
-  check("a fire the Swim Suit eats switches nothing", spent == before)
-  shared.swim_eats_fire = function() return false end
-  check("Enter's fire in the water switches it on", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == before - 1)
-  shared.swim_eats_fire = eats
+  check("held, an instant-use utility's fire switches it on", M.message(w, wa.msg.FIRE_WEAPON) == "eat"
+    and spent == before - 1)
+  w.taken = nil
+  M.turn_end({ worm = w })
+  controls.configure("px.double_jump", { instant_use = "auto_use", auto_use = true })
+  before = spent
+  M.turn_start({ worm = w, active = w })
+  in_air()
+  check("Auto-Use: on at the turn's start, a unit spent", spent == before - 1
+    and M.message(w, wa.msg.JUMP) == "eat")
+  controls.configure("px.double_jump", { instant_use = "auto_use" })
 end
 
 print("wind changer and gravity control: 0-9 and 1-5, then fire")

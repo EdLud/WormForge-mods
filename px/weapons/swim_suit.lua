@@ -9,6 +9,13 @@ weapon.defaults = { auto_use = false, crate = { type = "utility" }, donor_card =
 
 local automatic = false
 local fast_walk_auto_use = false
+-- WA's instant-use utilities (weapons::instant_utilities::STOCK_INSTANT_USE).
+local STOCK_INSTANT_USE = {
+  ["stock.low_gravity"] = true, ["stock.fast_walk"] = true, ["stock.laser_sight"] = true,
+  ["stock.damage_x2"] = true, ["stock.crate_spy"] = true, ["stock.double_turn_time"] = true,
+  ["stock.crate_shower"] = true,
+}
+local instant_use = {} -- the placed weapons whose data says instant_use
 local placed = {} -- every placed weapon's id, in slot order
 
 function weapon.definition()
@@ -60,14 +67,18 @@ function weapon.setup()
     local f = ok and type(data) == "table" and data.fires or nil
     return f ~= nil and (f.as == "strike" or f.as == "special" and (f.subtype == 10 or f.subtype == 17))
   end
-  -- What a swimmer may fire: Fast Walk, the click weapons, and the weapons
-  -- that say they work in the water (shared.fires_while_swimming).
+  -- What a swimmer may fire: the click weapons and the instant-use
+  -- utilities, WA's and those whose data says instant_use (Enter fires them,
+  -- as on the bungee).
   local function fireable()
     if not swim_fire then
-      swim_fire = { list = { "stock.fast_walk" }, set = { ["stock.fast_walk"] = true } }
-      local own = shared.fires_while_swimming or {}
+      swim_fire = { list = {}, set = {} }
+      for _, id in ipairs(wa.sorted(STOCK_INSTANT_USE)) do
+        swim_fire.list[#swim_fire.list + 1] = id
+        swim_fire.set[id] = true
+      end
       for _, id in ipairs(placed) do
-        if not swim_fire.set[id] and (own[id] or clickable(id)) then
+        if not swim_fire.set[id] and (instant_use[id] or clickable(id)) then
           swim_fire.list[#swim_fire.list + 1] = id
           swim_fire.set[id] = true
         end
@@ -80,16 +91,6 @@ function weapon.setup()
   end
 
   local swimmers = {}
-  local enter_fire = false -- the fire worm:input sends for Enter, swimming
-
-  -- Swimming, Space fires nothing, nor does a weapon that can't fire in the
-  -- water; a strike's click still does. A weapon that acts on the fire
-  -- itself (Double Jump) asks this, as every handler sees an eaten fire.
-  shared.swim_eats_fire = function(worm)
-    local s = swimmers[worm.id]
-    return s and s.plopped and not enter_fire
-      and (wa.world.keys().space or not fireable().set[worm.weapon]) or false
-  end
 
   local function swimmer_of(worm)
     local s = swimmers[worm.id]
@@ -481,21 +482,16 @@ function weapon.setup()
       end
       swim_frame(worm)
     elseif msg == wa.msg.JUMP then
+      -- Swimming, WA swaps Space and Enter as on the bungee (take's
+      -- fire_as): Space jumps, and the jump goes nowhere.
       local s = swimmers[worm.id]
       if s and s.plopped then
-        -- Swimming, Enter fires, as on the rope, where WA swaps Space and
-        -- Enter. worm:input's fire comes back here as WA's.
-        if worm.turn and fireable().set[worm.weapon] then
-          enter_fire = true
-          local ok, err = pcall(worm.input, worm, { fire = "press" })
-          enter_fire = false
-          if not ok then wa.log("swim suit: Enter's fire: " .. tostring(err)) end
-        end
         return "eat"
       end
     elseif msg == wa.msg.FIRE_WEAPON then
-      if shared.swim_eats_fire(worm) then
-        return "eat"
+      local s = swimmers[worm.id]
+      if s and s.plopped and not fireable().set[worm.weapon] then
+        return "eat" -- nothing else while it swims
       end
       if worm.weapon == "stock.fast_walk" then
         swim_speed = swim_speed ~= 6 and 6 or 2
@@ -544,8 +540,12 @@ end
 
 function weapon.configure(ctx)
   automatic = ctx.data.auto_use == true
-  placed = {}
-  for _, p in ipairs(ctx.placed or {}) do placed[#placed + 1] = p.id end
+  placed, instant_use = {}, {}
+  for _, p in ipairs(ctx.placed or {}) do
+    placed[#placed + 1] = p.id
+    local w = ctx.weapons[p.id]
+    if w and w.data and w.data.instant_use then instant_use[p.id] = true end
+  end
   local fast_walk = ctx.weapons["stock.fast_walk"]
   fast_walk_auto_use = fast_walk ~= nil and fast_walk.data.auto_use == true
 end

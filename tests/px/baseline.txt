@@ -65,7 +65,7 @@ hurt 1
 missile_frame 5
 body_move 1
 turn_end 8
-turn_start 11
+turn_start 12
 worm_message 24
 
 # globals the pack defines

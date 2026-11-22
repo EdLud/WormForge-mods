@@ -13,18 +13,25 @@ weapon.definition = {
   utility = { effect = "scripted" },
   sounds = { DING },
 }
+weapon.defaults = { instant_use = "auto_use" }
 weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
   local left = {}
   local last_turn
+  local function fire(worm)
+    worm.invisibility = not worm.invisibility
+    if worm.invisibility then
+      require("lib/weapon_hint").notice(worm, "Invisible for " .. (TURNS - 1) .. " turns")
+    end
+    wa.sound.play(worm, DING)
+  end
   require("lib/turn_controls").register(ID, {
-    fire = function(worm)
-      worm.invisibility = not worm.invisibility
-      if worm.invisibility then
-        require("lib/weapon_hint").notice(worm, "Invisible for " .. (TURNS - 1) .. " turns")
-      end
-      wa.sound.play(worm, DING)
+    fire = fire,
+    on = function(worm)
+      if worm.invisibility then return false end
+      fire(worm)
+      return true
     end,
   })
   wa.on.worm_message(function()
@@ -42,6 +49,10 @@ function weapon.setup()
       end
     end
   end, { msgs = { wa.msg.TURN_STARTED } })
+end
+
+function weapon.configure(ctx)
+  require("lib/turn_controls").configure(ID, ctx.data)
 end
 
 return weapon

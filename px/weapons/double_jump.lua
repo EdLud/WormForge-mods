@@ -6,6 +6,7 @@ local GROUNDED = { standing = true, walking = true, ready = true }
 local function install(ctx)
   local id = ctx.id
   local shared = require("lib/shared")
+  local controls = require("lib/turn_controls")
   wa.weapons.replace({
     wep = "weps/double_jump.wep",
     panel_icon = "sprites/double_jump/icon.png",
@@ -19,10 +20,6 @@ local function install(ctx)
     return JUMPING[s] or (s == "falling" and (from_water or worm.weapon == "px.jump"))
   end
 
-  -- It switches on in the water too (Enter, on the Swim Suit).
-  shared.fires_while_swimming = shared.fires_while_swimming or {}
-  shared.fires_while_swimming[id] = true
-
   -- A swimmer that jumps out gets its second jump again, as Project X's,
   -- idle in the water, did.
   shared.left_water = function(worm)
@@ -31,23 +28,36 @@ local function install(ctx)
     end
   end
 
+  local function switch_on(worm)
+    on, armed = true, true
+    require("lib/weapon_hint").notice(worm, "Double Jump: ON")
+  end
+  controls.register(id, {
+    fire = function(worm)
+      if on then
+        on, armed, from_water = false, false, false
+        require("lib/weapon_hint").notice(worm, "Double Jump: OFF")
+      else
+        switch_on(worm)
+        worm:ammo(id, -1)
+      end
+      return "eat"
+    end,
+    on = function(worm)
+      if on then return false end
+      switch_on(worm)
+      return true
+    end,
+    finish = function() on, armed, from_water = false, false, false end,
+  })
+  controls.configure(id, ctx.data)
+  controls.setup()
+
   wa.on.worm_message(function(worm, msg)
     if msg == wa.msg.FRAME_FINISH then
       if on and worm.turn and GROUNDED[worm.state] then
         armed, from_water = true, false
       end
-    elseif msg == wa.msg.FIRE_WEAPON then
-      if worm.weapon ~= id or (shared.swim_eats_fire and shared.swim_eats_fire(worm)) then
-        return
-      end
-      if on then
-        on, armed, from_water = false, false, false
-      else
-        on, armed = true, true
-        worm:ammo(id, -1)
-      end
-      require("lib/weapon_hint").notice(worm, on and "Double Jump: ON" or "Double Jump: OFF")
-      return "eat"
     elseif msg == wa.msg.JUMP or msg == wa.msg.JUMP_UP then
       if not (armed and worm.turn and not worm.taken and in_jump(worm)) then
         return
@@ -56,12 +66,7 @@ local function install(ctx)
       worm:jump()
       return "eat"
     end
-  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.FIRE_WEAPON, wa.msg.JUMP, wa.msg.JUMP_UP } })
-
-  wa.on.turn_start(function()
-    on, armed, from_water = false, false, false
-  end)
-
+  end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.JUMP, wa.msg.JUMP_UP } })
 end
 
-return { install = install }
+return { defaults = { instant_use = "auto_use" }, install = install }

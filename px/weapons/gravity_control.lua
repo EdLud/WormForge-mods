@@ -11,7 +11,8 @@ weapon.record = {
   },
 }
 
-weapon.defaults = { crate = { type = "utility" }, donor_card = true }
+-- An instant-use utility used by hand only: a gravity is chosen first.
+weapon.defaults = { crate = { type = "utility" }, donor_card = true, instant_use = "manual" }
 
 function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
@@ -104,6 +105,10 @@ function weapon.setup()
         or "choose one") .. "\n1-5: gravity, then Space"
     end,
   })
+end
+
+function weapon.configure(ctx)
+  require("lib/turn_controls").configure("px.gravity_control", ctx.data)
 end
 
 return weapon

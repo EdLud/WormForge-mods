@@ -3,6 +3,7 @@
 local kick = {}
 
 local weapon = {
+  defaults = {instant_use="auto_use"},
   definition = {
     copy_from = "stock.double_turn_time",
     name = "Parkour",
@@ -29,6 +30,11 @@ function weapon.setup()
     fire = function(worm)
       if enabled[worm.id] then enabled[worm.id] = nil else on(worm) end
     end,
+    on = function(worm)
+      if enabled[worm.id] then return false end
+      on(worm)
+      return true
+    end,
     finish = function() enabled = {} end,
     hint = function(worm)
       return "Parkour: " .. (enabled[worm.id] and "ON" or "OFF") .. "\nSpace: on/off\nEnter: wall-jump\nBackspace: hop"
@@ -44,6 +50,7 @@ function weapon.setup()
 end
 
 function weapon.configure(ctx)
+  require("lib/turn_controls").configure("px.parkour", ctx.data)
   kick.wall_jump = ctx.option("wall_jump")
   kick.carry_speed = ctx.option("carry_speed")
 end

@@ -10,13 +10,18 @@ local function check(name, ok, detail)
 end
 
 local actions, sounds = {}, 0
-local on = { turn_start = {}, worm_message = {} }
-package.loaded["lib/turn_controls"] = { register = function(id, callbacks) actions[id] = callbacks end }
+local on = { turn_start = {}, turn_end = {}, worm_message = {} }
+-- The real turn controls (its Auto-Use), keeping each weapon's callbacks.
+package.loaded["lib/weapon_hint"] = { register = function() end }
 wa = {
-  msg = { FRAME_FINISH = 1 },
+  msg = { FRAME_FINISH = 1, FIRE_WEAPON = 2 },
   sound = { play = function() sounds = sounds + 1 end },
+  world = { keys = function() return {} end },
   on = {},
 }
+local turn_controls = require("lib/turn_controls")
+local register = turn_controls.register
+turn_controls.register = function(id, callbacks) actions[id] = callbacks; register(id, callbacks) end
 for name, list in pairs(on) do wa.on[name] = function(f) list[#list + 1] = f end end
 local function fire(name, ...) for _, f in ipairs(on[name]) do f(...) end end
 
@@ -32,6 +37,7 @@ end
 
 local afd = require("weapons/anti_fall_damage")
 afd.setup()
+turn_controls.setup()
 local controls = actions["px.anti_fall_damage"]
 
 -- Off: a fast fall stays WA's.
@@ -67,7 +73,7 @@ fire("worm_message", w, wa.msg.FRAME_FINISH)
 check("the turn's end switches it off", w.state == "falling")
 
 -- Auto-Use: on at turn start while there is ammo, a unit spent.
-afd.configure({ data = { auto_use = true } })
+afd.configure({ data = { instant_use = "auto_use", auto_use = true } })
 w = worm()
 w.units = 1
 fire("turn_start", { worm = w })

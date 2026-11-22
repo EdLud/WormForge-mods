@@ -12,6 +12,7 @@ weapon.definition = {
   handling = { remember_selection = false, ends_turn = false, retreat = -1 },
   utility = { effect = "scripted" },
 }
+weapon.defaults = { instant_use = "auto_use" }
 weapon.requires = { "lib/turn_controls" }
 
 function weapon.setup()
@@ -49,6 +50,11 @@ function weapon.setup()
       if worm.vx ~= 0 or worm.vy ~= 0 then return "eat" end
       if small[worm.id] then deactivate(worm) else activate(worm) end
     end,
+    on = function(worm)
+      if small[worm.id] or worm.vx ~= 0 or worm.vy ~= 0 then return false end
+      activate(worm)
+      return true
+    end,
   })
   wa.on.turn_end(function()
     for _, s in pairs(small) do s.ending = true end
@@ -57,6 +63,10 @@ function weapon.setup()
     local s = small[worm.id]
     if s and s.ending and worm.state == "standing" then deactivate(worm) end
   end, { msgs = { wa.msg.FRAME_FINISH } })
+end
+
+function weapon.configure(ctx)
+  require("lib/turn_controls").configure(ID, ctx.data)
 end
 
 return weapon

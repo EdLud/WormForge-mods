@@ -8,6 +8,7 @@ return {
     delay = 0,
     crate = { chance_pct = 40, type = "utility" },
     auto_use = true,
+    instant_use = "auto_use",
     after_use = "continue",
     uses_per_turn = 1,
     extra_pickups = "discard",

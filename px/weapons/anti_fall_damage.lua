@@ -9,10 +9,8 @@ local GUARDED = {
   hit = true, blasted = true, after_rope = true,
 }
 
-local automatic = false
-
 local weapon = {
-  defaults = { crate = { type = "utility" } },
+  defaults = { crate = { type = "utility" }, instant_use = "auto_use" },
   definition = {
     copy_from = "stock.double_turn_time",
     name = "Anti Fall Damage",
@@ -35,18 +33,16 @@ function weapon.setup()
   end
   require("lib/turn_controls").register(ID, {
     fire = switch,
+    on = function(worm)
+      if on[worm.id] then return false end
+      switch(worm)
+      return true
+    end,
     finish = function() on = {} end,
     hint = function(worm)
       return "Anti Fall Damage: " .. (on[worm.id] and "ON" or "OFF") .. "\nSpace: on/off"
     end,
   })
-  wa.on.turn_start(function(ev)
-    local worm = ev.worm
-    if automatic and worm and not on[worm.id] and worm:ammo(ID) ~= 0 then
-      switch(worm)
-      worm:ammo(ID, -1)
-    end
-  end)
   wa.on.worm_message(function(worm)
     if not worm.turn or not on[worm.id] or not GUARDED[worm.state] then return end
     if math.abs(worm.vx) > FAST or math.abs(worm.vy) > FAST then worm:set_state("standing") end
@@ -54,7 +50,7 @@ function weapon.setup()
 end
 
 function weapon.configure(ctx)
-  automatic = ctx.data.auto_use == true
+  require("lib/turn_controls").configure(ID, ctx.data)
 end
 
 return weapon
