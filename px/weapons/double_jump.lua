@@ -19,6 +19,10 @@ local function install(ctx)
     return JUMPING[s] or (s == "falling" and (from_water or worm.weapon == "px.jump"))
   end
 
+  -- It switches on in the water too (Enter, on the Swim Suit).
+  shared.fires_while_swimming = shared.fires_while_swimming or {}
+  shared.fires_while_swimming[id] = true
+
   -- A swimmer that jumps out gets its second jump again, as Project X's,
   -- idle in the water, did.
   shared.left_water = function(worm)
@@ -33,7 +37,7 @@ local function install(ctx)
         armed, from_water = true, false
       end
     elseif msg == wa.msg.FIRE_WEAPON then
-      if worm.weapon ~= id then
+      if worm.weapon ~= id or (shared.swim_eats_fire and shared.swim_eats_fire(worm)) then
         return
       end
       if on then

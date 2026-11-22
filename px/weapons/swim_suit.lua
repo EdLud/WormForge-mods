@@ -60,11 +60,14 @@ function weapon.setup()
     local f = ok and type(data) == "table" and data.fires or nil
     return f ~= nil and (f.as == "strike" or f.as == "special" and (f.subtype == 10 or f.subtype == 17))
   end
+  -- What a swimmer may fire: Fast Walk, the click weapons, and the weapons
+  -- that say they work in the water (shared.fires_while_swimming).
   local function fireable()
     if not swim_fire then
       swim_fire = { list = { "stock.fast_walk" }, set = { ["stock.fast_walk"] = true } }
+      local own = shared.fires_while_swimming or {}
       for _, id in ipairs(placed) do
-        if not swim_fire.set[id] and clickable(id) then
+        if not swim_fire.set[id] and (own[id] or clickable(id)) then
           swim_fire.list[#swim_fire.list + 1] = id
           swim_fire.set[id] = true
         end
@@ -78,6 +81,15 @@ function weapon.setup()
 
   local swimmers = {}
   local enter_fire = false -- the fire worm:input sends for Enter, swimming
+
+  -- Swimming, Space fires nothing, nor does a weapon that can't fire in the
+  -- water; a strike's click still does. A weapon that acts on the fire
+  -- itself (Double Jump) asks this, as every handler sees an eaten fire.
+  shared.swim_eats_fire = function(worm)
+    local s = swimmers[worm.id]
+    return s and s.plopped and not enter_fire
+      and (wa.world.keys().space or not fireable().set[worm.weapon]) or false
+  end
 
   local function swimmer_of(worm)
     local s = swimmers[worm.id]
@@ -482,12 +494,8 @@ function weapon.setup()
         return "eat"
       end
     elseif msg == wa.msg.FIRE_WEAPON then
-      local s = swimmers[worm.id]
-      if s and s.plopped and not enter_fire then
-        -- Swimming, Space fires nothing; a strike's click still does.
-        if wa.world.keys().space or not fireable().set[worm.weapon] then
-          return "eat"
-        end
+      if shared.swim_eats_fire(worm) then
+        return "eat"
       end
       if worm.weapon == "stock.fast_walk" then
         swim_speed = swim_speed ~= 6 and 6 or 2

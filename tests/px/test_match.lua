@@ -5472,6 +5472,19 @@ do
   M.turn_start({ worm = w, active = w })
   in_air()
   check("off at the next turn", M.message(w, wa.msg.JUMP) == nil)
+  -- In the water: Enter's fire switches it on; Space's, which the Swim Suit
+  -- eats, switches nothing.
+  local shared = require("lib/shared")
+  check("it fires in the water too", shared.fires_while_swimming["px.double_jump"] == true)
+  local eats = shared.swim_eats_fire
+  shared.swim_eats_fire = function() return true end
+  w.weapon, w.state = "px.double_jump", "ready"
+  local before = spent
+  M.message(w, wa.msg.FIRE_WEAPON)
+  check("a fire the Swim Suit eats switches nothing", spent == before)
+  shared.swim_eats_fire = function() return false end
+  check("Enter's fire in the water switches it on", M.message(w, wa.msg.FIRE_WEAPON) == "eat" and spent == before - 1)
+  shared.swim_eats_fire = eats
 end
 
 print("wind changer and gravity control: 0-9 and 1-5, then fire")
