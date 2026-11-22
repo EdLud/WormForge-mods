@@ -96,10 +96,10 @@ end
 function Effects:draw(quad)
   for _, p in ipairs(self.particles) do
     local t = p.age/p.life
-    local rgb = {}
-    for i=1,3 do rgb[i]=trunc(p.start[i]+t*(p.finish[i]-p.start[i])) end
+    local s, f = p.start, p.finish
+    local r, g, b = trunc(s[1]+t*(f[1]-s[1])), trunc(s[2]+t*(f[2]-s[2])), trunc(s[3]+t*(f[3]-s[3]))
     local size = p.pixels*(p.size+t*(p.end_size-p.size))
-    local colour = (p.alpha << 24) | (rgb[1] << 16) | (rgb[2] << 8) | rgb[3]
+    local colour = (p.alpha << 24) | (r << 16) | (g << 8) | b
     quad(p.sprite, p.x, p.y, size, size, p.angle, colour, "add", wa.depth.EFFECTS - 1)
   end
 end

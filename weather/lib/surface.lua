@@ -129,12 +129,13 @@ function surface.install(W)
   end
 
   -- A ring and, where a bound stopped it, its faint reflection.
+  local HALVES = { true, false }
   local function draw_ring(g, r, alpha)
     local color = (math.floor(255 * alpha) << 24) | 0xC8DCFF
     local box = r / OVAL_FILL
     if g.left <= g.x - box and g.x + box <= g.right then return oval(g, r, color) end
     local faint = (math.floor(255 * alpha * 0.35) << 24) | 0xC8DCFF
-    for _, top in ipairs({ true, false }) do
+    for _, top in ipairs(HALVES) do
       local a, b = surface.clip(g.x, r, g.left, g.right)
       if a then arc(r, top, a, b, g.x, g.y, color, g.depth) end
       if g.x + r > g.right then

@@ -45,6 +45,7 @@ wa={
     oil_explode=function(f)hooks.explode[#hooks.explode+1]=f end},
   draw={quad=function(q)log.quads[#log.quads+1]=q end},
 }
+dofile(root .. "../tests/brush_mock.lua")(wa)
 local function each(list,...)for _,f in ipairs(list) do f(...) end end
 local function check(ok,what)assert(ok,what);print("  ok   "..what)end
 local function tramp_quad()

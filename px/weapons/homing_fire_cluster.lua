@@ -143,14 +143,14 @@ function weapon.setup()
         if id then clustlets[id] = true end
       end
     end
-    bursts = {}
+    if bursts[1] then bursts = {} end
     for _, p in ipairs(blasts) do
       local a = wa.actors.spawn({ sprite = false, x = p.x, y = p.y,
         owner = owner, on = function() end })
       a:explode({ id = PUSH, damage = DAMAGE, below = false })
       a:remove()
     end
-    blasts = {}
+    if blasts[1] then blasts = {} end
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })
 end
 

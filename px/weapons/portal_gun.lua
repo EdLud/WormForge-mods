@@ -177,7 +177,9 @@ function weapon.setup()
   wa.on.worm_message(function(worm)
     if not worm.turn then return end
     local keys, id, team = wa.world.keys(), worm.id, worm.team
-    local old = held[id] or {}
+    -- Last frame's keys, kept in one table a worm.
+    local old = held[id]
+    if not old then old = {}; held[id] = old end
     if keys.pause_key and not old.pause_key then
       local pair = network.pairs[team]
       if pair then
@@ -189,7 +191,7 @@ function weapon.setup()
       if keys.minus_key and not old.minus_key then chosen[team] = 1 end
       if keys.plus_key and not old.plus_key then chosen[team] = 2 end
     end
-    held[id] = { portal = worm.weapon == ID, plus_key = keys.plus_key, minus_key = keys.minus_key, pause_key = keys.pause_key }
+    old.portal, old.plus_key, old.minus_key, old.pause_key = worm.weapon == ID, keys.plus_key, keys.minus_key, keys.pause_key
   end, { msgs = { wa.msg.FRAME_FINISH } })
   wa.on.turn_start(function() network:turn_start(); held = {} end)
   wa.on.turn_end(function() network:turn_end() end)
@@ -201,18 +203,25 @@ function weapon.setup()
 
   if wa.on.draw then
     local tip, tip_frame = Effects.new(), nil
+    -- A brush per sheet, blend and depth, made at its first box: the
+    -- portals and their sparks draw every frame and make no tables.
+    local brushes = {}
     local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame)
-      local c, s = wa.math.cos(angle or 0), wa.math.sin(angle or 0)
-      local points = {}
-      for _, v in ipairs({ {-w/2,-h/2}, {w/2,-h/2}, {w/2,h/2}, {-w/2,h/2} }) do
-        points[#points + 1] = { x + (v[1]*c-v[2]*s), y + (v[1]*s+v[2]*c) }
+      blend, depth = blend or "alpha", depth or wa.depth.OBJECTS
+      local by_sheet = brushes[sprite]
+      if not by_sheet then by_sheet = {}; brushes[sprite] = by_sheet end
+      local key = depth * 2 + (blend == "add" and 1 or 0)
+      local brush = by_sheet[key]
+      if not brush then
+        brush = wa.draw.brush{ sprite = ART .. sprite, blend = blend, depth = depth }
+        by_sheet[key] = brush
       end
-      wa.draw.quad({sprite = ART .. sprite, points = points, color = colour, blend = blend,
-        depth = depth or wa.depth.OBJECTS, frame = frame or 0})
+      brush:box(x, y, w, h, angle or 0, frame or 0, colour)
     end
     wa.on.draw(function()
-      for _, group in ipairs(wa.sorted(network.pairs)) do
-        local pair = network.pairs[group]
+      -- Drawing only, so any order: it decides which of two portals that
+      -- overlap is on top, on this screen.
+      for _, pair in pairs(network.pairs) do
         for colour = 1, 2 do
           local p = pair[colour]
           if p then

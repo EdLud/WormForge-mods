@@ -397,19 +397,14 @@ function weapon.setup()
   end
 
   if wa.on.draw then
+    -- Made once: a box drawn with it every frame makes no tables.
+    local RING = wa.draw.brush{ sprite = "sprites/swim_suit/ring.png", depth = SWIM_RING_DEPTH }
+    local size = 2 * SWIM_RING_HALF
     wa.on.draw(function()
       for _, worm in ipairs(wa.worms.all()) do
         local s = swimmers[worm.id]
         if s and s.suit then
-          local x, y, h = worm.x, worm.y, SWIM_RING_HALF
-          wa.draw.quad({
-            points = {
-              { x - h, y - h }, { x + h, y - h }, { x + h, y + h }, { x - h, y + h },
-            },
-            sprite = "sprites/swim_suit/ring.png",
-            visibility = worm,
-            depth = SWIM_RING_DEPTH,
-          })
+          RING:box(worm.x, worm.y, size, size, 0, nil, nil, worm)
         end
       end
     end)

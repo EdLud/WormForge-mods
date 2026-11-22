@@ -89,20 +89,22 @@ function M.install(ctx)
       if suits[id].ends then suits[id] = nil end
     end
   end)
+  -- Made once, and one table of the living worms emptied each frame: the
+  -- draw makes no tables of its own.
+  local SHIELD = wa.draw.brush{ sprite = ART .. "shield.png", depth = wa.depth.WORMS - 1, blend = "add" }
+  local SMOKE = wa.draw.brush{ sprite = ART .. "smoke.png", depth = wa.depth.WORMS - 2 }
+  local SHIELD_SIZE = 2 * 25 * 0.85
+  local living = {}
   wa.on.draw(function()
     local now = wa.world.frame()
-    local living = {}
+    for id in pairs(living) do living[id] = nil end
     for _, w in ipairs(wa.worms.all()) do
       living[w.id] = w
       local s = suits[w.id]
       if s and alive(w) then
         local a = math.floor(alpha(s, now))
         if a > 0 then
-          local r = 25 * 0.85
-          wa.draw.quad{sprite = ART .. "shield.png", frame = 0,
-            depth = wa.depth.WORMS - 1, visibility = w, blend = "add",
-            color = (a << 24) | 0xFF0000,
-            points = {{w.x-r,w.y-r},{w.x+r,w.y-r},{w.x+r,w.y+r},{w.x-r,w.y+r}}}
+          SHIELD:box(w.x, w.y, SHIELD_SIZE, SHIELD_SIZE, 0, nil, (a << 24) | 0xFF0000, w)
         end
       end
     end
@@ -113,10 +115,7 @@ function M.install(ctx)
       else
         local x, y = p.x + p.vx * age, p.y - 0.375 * age - 0.03 * age * age
         local opacity = math.floor(200 * (1 - age / 60))
-        wa.draw.quad{sprite = ART .. "smoke.png", frame = math.min(27, math.floor(age * 28 / 60)),
-          depth = wa.depth.WORMS - 2, visibility = w,
-          color = (opacity << 24) | 0xFFFFFF,
-          points = {{x-22,y-22},{x+22,y-22},{x+22,y+22},{x-22,y+22}}}
+        SMOKE:box(x, y, 44, 44, 0, math.min(27, math.floor(age * 28 / 60)), (opacity << 24) | 0xFFFFFF, w)
       end
     end
   end)

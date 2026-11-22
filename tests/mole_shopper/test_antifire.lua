@@ -22,6 +22,7 @@ wa = {
   fire={repel=function(t)pushes[#pushes+1]=t;return hits end},
   sorted=function(t)local out={};for k in pairs(t)do out[#out+1]=k end;table.sort(out);return out end,
 }
+dofile(root .. "../tests/brush_mock.lua")(wa)
 dofile(root .. "../tests/tooltip_mock.lua")(root)
 require("weapons/antifire_suit").install()
 assert(claim.utility.effect=="scripted" and not claim.handling.ends_turn)

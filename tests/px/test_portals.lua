@@ -37,6 +37,7 @@ wa = {
     draws[#draws+1]=q
   end },
 }
+dofile(root .. "../tests/brush_mock.lua")(wa)
 for _, name in ipairs({ "missiles", "mines", "crates", "oil", "graves", "arrows" }) do wa[name]={all=function() return {} end} end
 for _, name in ipairs({"body_move", "worm_message", "turn_start", "turn_end", "draw"}) do
   local listeners = {}

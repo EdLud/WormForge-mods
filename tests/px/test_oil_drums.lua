@@ -82,6 +82,7 @@ local function mock(opts)
       draw = function(f) M.draw = f end,
     },
   }
+  dofile(root .. "../tests/brush_mock.lua")(wa)
   require("lib/oil_drums").install({ deal = true })
 end
 

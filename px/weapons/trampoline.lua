@@ -129,14 +129,14 @@ function weapon.setup()
       else table.remove(trampolines, i) end
     end
   end)
+  local TRAMP = wa.draw.brush{ sprite = ART .. "tramp.png", depth = wa.depth.OBJECTS }
+  local JUMPED = wa.draw.brush{ sprite = ART .. "jumptramp.png", depth = wa.depth.OBJECTS }
   wa.on.draw(function()
     local now = wa.world.frame()
     for _, s in ipairs(trampolines) do
       if s.alive and s.actor.id ~= 0 then
-        local sheet = now <= s.jumped and "jumptramp.png" or "tramp.png"
-        local x, y = s.actor.x, s.actor.y - HALF + 4
-        wa.draw.quad({ sprite = ART .. sheet, frame = 0, depth = wa.depth.OBJECTS,
-          points = { { x - 35, y - 16 }, { x + 35, y - 16 }, { x + 35, y + 16 }, { x - 35, y + 16 } } })
+        local brush = now <= s.jumped and JUMPED or TRAMP
+        brush:box(s.actor.x, s.actor.y - HALF + 4, 70, 32)
       end
     end
   end)

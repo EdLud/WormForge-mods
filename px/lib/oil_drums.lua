@@ -304,41 +304,26 @@ function M.install(opts)
     burst(ev, owner_for(ev.team) or shared.no_team_owner(ev.x, ev.y))
   end)
 
-  -- One quad table, filled afresh for every quad: no garbage per frame.
-  local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
-  local POINTS = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }
-  local QUAD = { sprite = "", points = POINTS, frame = 0, color = 0, depth = 0, blend = "alpha" }
-  local function quad(sheet, size, frames, x, y, p, angle, scale, alpha, depth, blend)
-    local h = size * scale / 2
-    if angle == 0 then
-      POINTS[1][1], POINTS[1][2] = x - h, y - h
-      POINTS[2][1], POINTS[2][2] = x + h, y - h
-      POINTS[3][1], POINTS[3][2] = x + h, y + h
-      POINTS[4][1], POINTS[4][2] = x - h, y + h
-    else
-      local c, s = math.cos(angle), math.sin(angle)
-      for i, k in ipairs(CORNERS) do
-        POINTS[i][1] = x + h * (k[1] * c - k[2] * s)
-        POINTS[i][2] = y + h * (k[1] * s + k[2] * c)
-      end
-    end
-    QUAD.sprite, QUAD.frame = sheet, math.floor((p % 1) * frames)
-    QUAD.color, QUAD.depth, QUAD.blend = (alpha << 24) | 0xFFFFFF, depth, blend or "alpha"
-    wa.draw.quad(QUAD)
+  -- A square `size * scale` wide, at phase `p` of its `frames`.
+  local function quad(brush, size, frames, x, y, p, angle, scale, alpha)
+    local d = size * scale
+    brush:box(x, y, d, d, angle, math.floor((p % 1) * frames), (alpha << 24) | 0xFFFFFF)
   end
 
-  if wa.on.draw and wa.draw.quad then
-    -- Each kind's sheet names and depths, made once.
+  if wa.on.draw then
+    -- Each kind's brushes, made once: the drums draw every frame and make
+    -- no tables.
+    local BODY_DEPTH = z(16)
     local LOOKS = {}
     for kind, k in pairs(KINDS) do
       local look = { body = {}, extras = {} }
-      for i = 1, 4 do look.body[i] = SHEETS .. kind .. i .. ".png" end
+      for i = 1, 4 do look.body[i] = wa.draw.brush{ sprite = SHEETS .. kind .. i .. ".png", depth = BODY_DEPTH } end
       for i, e in ipairs(k.extras) do
-        look.extras[i] = { sheet = SHEETS .. kind .. "_" .. e[1] .. ".png", depth = z(e[4]) }
+        look.extras[i] = wa.draw.brush{ sprite = SHEETS .. kind .. "_" .. e[1] .. ".png", depth = z(e[4]) }
       end
       LOOKS[kind] = look
     end
-    local BODY_DEPTH, SMOKE, SMOKE_DEPTH = z(16), SHEETS .. "icy_smklt75.png", z(14)
+    local SMOKE = wa.draw.brush{ sprite = SHEETS .. "icy_smklt75.png", depth = z(14), blend = "add" }
     local REACH = 80 -- pixels
     wa.on.draw(function()
       -- Only what the screen shows.
@@ -363,15 +348,14 @@ function M.install(opts)
               ex = ex + math.cos(a * 3) * 2
               ey = ey + math.sin(e[9] * a * 3) * 2
             end
-            local extra = look.extras[i]
-            quad(extra.sheet, size[1], size[2], ex, ey,
-              e[7](a, sparks), e[8] and e[8](a) or 0, e[5], e[6], extra.depth)
+            quad(look.extras[i], size[1], size[2], ex, ey,
+              e[7](a, sparks), e[8] and e[8](a) or 0, e[5], e[6])
           end
           local dent = 0
           if drum.max_damage and drum.max_damage > 0 then
             dent = math.min(3, (drum.damage * 4) // drum.max_damage)
           end
-          quad(look.body[dent + 1], 90, 20, x, y, a, 0, k.scale, 255, BODY_DEPTH)
+          quad(look.body[dent + 1], 90, 20, x, y, a, 0, k.scale, 255)
         end
       end
       for _, p in ipairs(particles) do
@@ -379,7 +363,7 @@ function M.install(opts)
         if px > left and px < right and py > top and py < bottom then
           local t = p.age / p.life
           local s = p.size - 0.4 * t
-          quad(SMOKE, 90, 28, px, py, t, 0, s, math.floor(255 - 80 * t), SMOKE_DEPTH, "add")
+          quad(SMOKE, 90, 28, px, py, t, 0, s, math.floor(255 - 80 * t))
         end
       end
     end)

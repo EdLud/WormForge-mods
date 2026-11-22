@@ -28,6 +28,7 @@ wa={msg={FRAME_FINISH=2},depth={EFFECTS=0xC0000,WORMS=0xD0000},
     draw=function(f)hooks.draw[#hooks.draw+1]=f end},
   draw={quad=function(q)quads[#quads+1]=q end,random=function()return 0.5 end},
   hud={message_top=function(t)tips[#tips+1]=t end}}
+dofile(root .. "../tests/brush_mock.lua")(wa)
 local function check(ok,what)assert(ok,what);print("  ok   "..what)end
 local function each(list,...)for _,f in ipairs(list) do f(...) end end
 local function step(k)keys=k or {};frame=frame+1;each(hooks.message,worm,2)end

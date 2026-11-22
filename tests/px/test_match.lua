@@ -963,6 +963,7 @@ local function new_match(opts)
       end,
     },
   }
+  dofile(PACK_ROOT .. "../tests/brush_mock.lua")(wa)
   M.quads, M.ribbons, M.sounds, M.sound_flags, M.sound_positions, M.trace_hit, M.draws =
     {}, {}, {}, {}, {}, nil, nil
   M.mines, M.missiles, M.crates, M.oil, M.graves = {}, {}, {}, {}, {}
