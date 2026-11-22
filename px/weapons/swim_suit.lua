@@ -410,9 +410,12 @@ function weapon.setup()
     end)
   end
 
-  -- The swimmer's weapon, as on the rope: its panel icon over the worm's
-  -- name and health, at 1x as they are.
+  -- The swimmer's weapon, as on the rope: its panel icon in a cell of the
+  -- weapon panel (the HUD tray's: a black box in a grey border, the middle
+  -- 24x24 of the icon), over the worm's name and health, at 1x as they are.
   local ICON_ABOVE = 52 -- world pixels above the worm's centre
+  local CELL, ICON = 28, 24
+  local BLACK, GREY, WHITE = 0xFF000000, 0xFF9C9D9C, 0xFFFFFFFF -- WA's colours.img
   local NO_ICON = { ["stock.none"] = true, ["px.swim_suit"] = true }
   local icons = {}
   local function icon_of(id)
@@ -422,7 +425,7 @@ function weapon.setup()
     end
     return icons[id]
   end
-  if wa.on.hud and wa.hud.sprite then
+  if wa.on.hud and wa.hud.sprite and wa.hud.rect then
     wa.on.hud(function()
       local worm = current_worm()
       local s = worm and swimmers[worm.id]
@@ -432,10 +435,18 @@ function weapon.setup()
       local v = wa.world.view()
       if not icon or v.w <= 0 then return end
       local zoom = v.zoom > 0 and v.zoom or 1
-      local x = (worm.x - v.cx) * zoom + v.w / 2
-      local y = (worm.y - v.cy) * zoom + v.h / 2 - ICON_ABOVE
-      wa.hud.sprite({ sprite = icon.sprite, frame = icon.frame,
-        x = math.floor(x - icon.width / 2), y = math.floor(y - icon.height / 2) })
+      local x = math.floor((worm.x - v.cx) * zoom + v.w / 2 - CELL / 2)
+      local y = math.floor((worm.y - v.cy) * zoom + v.h / 2 - ICON_ABOVE - CELL / 2)
+      -- WA's box: the corner pixels left out.
+      wa.hud.rect({ x = x + 1, y = y + 1, w = CELL - 2, h = CELL - 2, color = BLACK })
+      wa.hud.rect({ x = x + 1, y = y, w = CELL - 2, h = 1, color = GREY })
+      wa.hud.rect({ x = x + 1, y = y + CELL - 1, w = CELL - 2, h = 1, color = GREY })
+      wa.hud.rect({ x = x, y = y + 1, w = 1, h = CELL - 2, color = GREY })
+      wa.hud.rect({ x = x + CELL - 1, y = y + 1, w = 1, h = CELL - 2, color = GREY })
+      local w, h = math.min(icon.width, ICON), math.min(icon.height, ICON)
+      wa.hud.sprite({ sprite = icon.sprite, frame = icon.frame, color = WHITE,
+        x = x + 2 + (ICON - w) // 2, y = y + 2 + (ICON - h) // 2,
+        part = { x = (icon.width - w) // 2, y = (icon.height - h) // 2, w = w, h = h } })
     end)
   end
 

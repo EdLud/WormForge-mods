@@ -371,6 +371,11 @@ local function new_match(opts)
         M.hud_sprites = M.hud_sprites or {}
         M.hud_sprites[#M.hud_sprites + 1] = spec
       end,
+      rect = function(spec)
+        assert(M.in_hud, "hud.rect draws inside wa.on.hud only")
+        M.hud_rects = M.hud_rects or {}
+        M.hud_rects[#M.hud_rects + 1] = spec
+      end,
       message_top = function(text, options)
         assert(not M.in_hud, "native messages must run in simulation callbacks")
         assert(#text > 0 and #text <= 127)
@@ -5020,14 +5025,19 @@ do
   -- Its weapon's icon over it, as on the rope, on this machine's screen.
   M.visuals = { ["px.crate_strike"] = { sprite = "icon:crate_strike", frame = 0, width = 32, height = 32 } }
   M.view = { cx = 300, cy = 520, w = 800, h = 600, zoom = 1 }
-  w.weapon, M.hud_sprites = "donkey", {}
+  w.weapon, M.hud_sprites, M.hud_rects = "donkey", {}, {}
   M.hud()
-  local icon = M.hud_sprites[1]
-  check("its weapon's icon over it, above its name", #M.hud_sprites == 1 and icon.sprite == "icon:crate_strike"
-    and icon.x == 400 - 16 and icon.y == 300 - 52 - 16)
-  w.weapon, M.hud_sprites = "stock.none", {}
+  local icon, fill = M.hud_sprites[1], M.hud_rects[1]
+  -- A 28x28 cell centred 52 above the worm: (386, 234).
+  check("its weapon's icon over it, above its name, in a cell of the panel", #M.hud_sprites == 1
+    and icon.sprite == "icon:crate_strike" and #M.hud_rects == 5
+    and fill.x == 387 and fill.y == 235 and fill.w == 26 and fill.color == 0xFF000000
+    and M.hud_rects[2].color == 0xFF9C9D9C)
+  check("the middle 24x24 of the icon, 2 in from the cell's edge", icon.x == 388 and icon.y == 236
+    and icon.part.x == 4 and icon.part.y == 4 and icon.part.w == 24 and icon.part.h == 24)
+  w.weapon, M.hud_sprites, M.hud_rects = "stock.none", {}, {}
   M.hud()
-  check("no weapon, no icon", #M.hud_sprites == 0)
+  check("no weapon, no icon", #M.hud_sprites == 0 and #M.hud_rects == 0)
   M.view = nil
 end
 
