@@ -56,7 +56,8 @@ weapon.definition = {
 function weapon.setup()
   wa.on.turn_start(function() mode = 1 end)
   wa.on.turn_end(function() mode = 1 end)
-  local held, last = {}, nil
+  -- The mines alive this frame, one table emptied each frame.
+  local held, last, live = {}, nil, {}
   wa.on.worm_message(function(worm, msg)
     if msg == SELECT_WEAPON then
       if worm.turn then mode = 1 end
@@ -65,7 +66,7 @@ function weapon.setup()
     local frame = wa.world.frame()
     if frame ~= last then
       last = frame
-      local live = {}
+      for id in pairs(live) do live[id] = nil end
       for _, mine in ipairs(wa.mines.all()) do
         live[mine.id] = true
         local s = sticky[mine.id]
