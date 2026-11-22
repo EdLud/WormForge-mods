@@ -3407,8 +3407,8 @@ do
     if r.weapon == "mortar" then spec = r end
   end
   check("homing bits draw the trail's red circles, not WA's green gas, on the generated record",
-    spec and spec.clusters.bit.homing.trail.sprite == 250 and spec.clusters.bit.homing.kind == "lock"
-      and spec.cluster_homing == nil and spec.clusters.count == 7)
+    spec and spec.clusters.bit.homing.trail.sprite == 250 and spec.cluster_homing == "stock.magic_bullet"
+      and spec.clusters.count == 7)
 end
 
 print("fire jump: named native punch knockback")
@@ -5909,16 +5909,16 @@ do
   for name in pairs(have) do if ammo[0][name] ~= 1 then restored = false end end
   check("the original Highlander hand is restored", restored)
 
-  -- The S.M.A.R.T Bomb's "homes_like": Project X's lock homing by default,
-  -- else WA's own Homing Pigeon or Magic Bullet.
+  -- The S.M.A.R.T Bomb's "homes_like": the stock Magic Bullet's homing by
+  -- default, else the Homing Pigeon's, or Project X's lock homing.
   local smart = require("weapons/s_m_a_r_t_bomb")
-  for _, case in ipairs({ { "homing", nil, "lock" }, { "pigeon", "stock.homing_pigeon" }, { "magic_bullet", "stock.magic_bullet" } }) do
+  for _, case in ipairs({ { "magic_bullet", "stock.magic_bullet" }, { "pigeon", "stock.homing_pigeon" }, { "homing", nil, "lock" } }) do
     local spec = smart.definition()
     smart.configure({ option = function(key) assert(key == "homes_like"); return case[1] end }, spec)
-    check("S.M.A.R.T bits home like " .. case[1],
+    check("S.M.A.R.T clusters home like " .. case[1],
       spec.cluster_homing == case[2] and spec.clusters.bit.homing.kind == case[3] and spec.clusters.bit.homing.trail.sprite == 250)
   end
-  check("the S.M.A.R.T record keeps Project X's homing", smart.record.clusters.bit.homing.kind == "lock")
+  check("the S.M.A.R.T record keeps the Magic Bullet's homing", smart.record.clusters.bit.homing.kind == nil)
 
   -- The "revive_health" option: Specialists sets Project X's 25.
   new_match()

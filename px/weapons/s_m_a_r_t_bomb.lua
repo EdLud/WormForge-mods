@@ -34,15 +34,9 @@ weapon.record = {
         push_pct = 115,
       },
       flight_sound = 46,
-      -- Project X's homing: the bits lock on and fly straight at it.
+      -- The Magic Bullet's homing (cluster_homing), with PX's red trail.
       homing = {
-        animation = 1,
-        arm = 1100,
-        kind = "lock",
-        time = 1200,
         trail = {
-          power = 6,
-          speed = 500,
           sprite = 250,
         },
       },
@@ -71,6 +65,8 @@ function weapon.definition()
     sprite = "sprites/smart_bomb/flight.png",
     cluster_sprite = "sprites/smart_bomb/cluster.png",
     cluster_homing_sprite = "sprites/smart_bomb/cluster_homing.png",
+    -- The clusters home as the stock Magic Bullet does: around land.
+    cluster_homing = "stock.magic_bullet",
     sprite_overrides = { wsvbd = "sprites/smart_bomb/trail.png" },
         worm_sprites = {
           weaponlnk = "sprites/smart_bomb/aim.png",
@@ -83,15 +79,18 @@ function weapon.definition()
   })
 end
 
--- Pigeon and Magic Bullet take WA's homing, steering around land, and
--- keep only PX's red trail.
-local STOCK_HOMING = { pigeon = "stock.homing_pigeon", magic_bullet = "stock.magic_bullet" }
-
+-- Homes like pigeon: the stock Homing Pigeon's homing. Homes like homing:
+-- PX's, locked on and straight at the worm, with its own trail.
 function weapon.configure(ctx, spec)
-  local stock = STOCK_HOMING[ctx.option("homes_like")]
-  if stock then
-    spec.cluster_homing = stock
-    spec.clusters.bit.homing = { trail = { sprite = 250 } }
+  local homes_like = ctx.option("homes_like")
+  if homes_like == "pigeon" then
+    spec.cluster_homing = "stock.homing_pigeon"
+  elseif homes_like == "homing" then
+    spec.cluster_homing = nil
+    spec.clusters.bit.homing = {
+      animation = 1, arm = 1100, kind = "lock", time = 1200,
+      trail = { power = 6, speed = 500, sprite = 250 },
+    }
   end
 end
 

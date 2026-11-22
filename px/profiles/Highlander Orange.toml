@@ -15,6 +15,9 @@ parkour = true
 [options."px.3_girder_pack"]
 placement_range = 300
 
+[options."px.s_m_a_r_t_bomb"]
+homes_like = "homing"
+
 [scheme]
 angle_cheat_glitch = true
 anti_lock_aim = false

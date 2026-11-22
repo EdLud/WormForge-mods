@@ -1072,7 +1072,7 @@ id = "px.s_m_a_r_t_bomb"
 type = "weapon"
 name = "S.M.A.R.T Bomb"
 authors = ["Curtis"]
-description = "A mortar with homing cluster bits."
+description = "A mortar whose clusters home in on worms."
 entry = "components/weapon.lua"
 icon = "sprites/smart_bomb/smart_ico.png"
 default_position = { row = "F1", column = 3 }
@@ -1083,10 +1083,10 @@ pool = "offensive"
 [[components.options]]
 key = "homes_like"
 type = "choice"
-choices = ["homing", "pigeon", "magic_bullet"]
-default = "homing"
-label = "Bits home like"
-description = "homing: Project X's, straight at the worm. pigeon or magic_bullet: WA's Homing Pigeon or Magic Bullet, around land."
+choices = ["magic_bullet", "pigeon", "homing"]
+default = "magic_bullet"
+label = "Homes like"
+description = "How the clusters home. magic_bullet or pigeon: as the stock Magic Bullet or Homing Pigeon, around land. homing: as in Project X, straight at the worm."
 
 [[components]]
 id = "px.blaster_worm"
