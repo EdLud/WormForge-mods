@@ -77,6 +77,7 @@ function weapon.setup()
   end
 
   local swimmers = {}
+  local enter_fire = false -- the fire worm:input sends for Enter, swimming
 
   local function swimmer_of(worm)
     local s = swimmers[worm.id]
@@ -470,12 +471,23 @@ function weapon.setup()
     elseif msg == wa.msg.JUMP then
       local s = swimmers[worm.id]
       if s and s.plopped then
+        -- Swimming, Enter fires, as on the rope, where WA swaps Space and
+        -- Enter. worm:input's fire comes back here as WA's.
+        if worm.turn and fireable().set[worm.weapon] then
+          enter_fire = true
+          local ok, err = pcall(worm.input, worm, { fire = "press" })
+          enter_fire = false
+          if not ok then wa.log("swim suit: Enter's fire: " .. tostring(err)) end
+        end
         return "eat"
       end
     elseif msg == wa.msg.FIRE_WEAPON then
       local s = swimmers[worm.id]
-      if s and s.plopped and not fireable().set[worm.weapon] then
-        return "eat" -- nothing else while it swims
+      if s and s.plopped and not enter_fire then
+        -- Swimming, Space fires nothing; a strike's click still does.
+        if wa.world.keys().space or not fireable().set[worm.weapon] then
+          return "eat"
+        end
       end
       if worm.weapon == "stock.fast_walk" then
         swim_speed = swim_speed ~= 6 and 6 or 2

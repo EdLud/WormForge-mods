@@ -184,6 +184,12 @@ function Worm:hit(amount)
 end
 function Worm:carry(x, y) self.x, self.y, self.carried = x, y, true end
 function Worm:clear_keys() self.keys = {} end
+-- As the engine's: WA's fire message, delivered now, through the hooks.
+function Worm:input(spec)
+  self.inputs = self.inputs or {}
+  self.inputs[#self.inputs + 1] = spec
+  if spec.fire == "press" then self.input_fire = M.message(self, wa.msg.FIRE_WEAPON) end
+end
 function Worm:set_state(state) self.state = state end
 function Worm:teleport_pose() self.state = "teleporting"; return true end
 function Worm:freeze()
@@ -414,7 +420,7 @@ local function new_match(opts)
       wind = function() return M.wind or 0 end,
       keys = function()
         return { shift = M.shift or false, digit = M.digit, plus_key = M.plus_key or false,
-          ctrl = M.ctrl or false, left = M.left or false, right = M.right or false }
+          ctrl = M.ctrl or false, left = M.left or false, right = M.right or false, space = M.space or false }
       end,
       set_gravity = function(v) M.gravity = v end,
       set_wind = function(v) M.wind = v end,
@@ -5022,6 +5028,16 @@ do
   w.state, w.x, w.y = "falling", 300, 520
   M.message(w, wa.msg.FRAME_FINISH)
   check("into the water again: swimming", w.taken and w.taken.fire_as == "bungee" and M.sounds[#M.sounds] == 57)
+  -- Swimming, Enter fires and Space doesn't, as on the rope; a click does.
+  w.weapon, M.space = "donkey", true
+  check("swimming, Space fires nothing", M.message(w, wa.msg.FIRE_WEAPON) == "eat")
+  M.space = false
+  check("swimming, a strike's click fires", M.message(w, wa.msg.FIRE_WEAPON) == nil)
+  w.inputs, w.input_fire = {}, "unset"
+  check("swimming, Enter fires the strike through WA's fire, jumping nowhere", M.message(w, wa.msg.JUMP) == "eat"
+    and #w.inputs == 1 and w.inputs[1].fire == "press" and w.input_fire == nil)
+  w.weapon, w.inputs = "bazooka", {}
+  check("swimming, Enter with an aimed weapon does nothing", M.message(w, wa.msg.JUMP) == "eat" and #w.inputs == 0)
   -- Its weapon's icon over it, as on the rope, on this machine's screen.
   M.visuals = { ["px.crate_strike"] = { sprite = "icon:crate_strike", frame = 0, width = 32, height = 32 } }
   M.view = { cx = 300, cy = 520, w = 800, h = 600, zoom = 1 }
