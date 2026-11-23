@@ -8,7 +8,6 @@ collect_viewer = true
 damage_numbers = true
 ex_turn_side = true
 fast_aim = true
-fps_counter = true
 instant_death = "in_flight"
 live_hp = true
 parkour = true
