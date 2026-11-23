@@ -105,7 +105,6 @@ function weapon.definition()
     cluster_sprite = ART .. "multibc.png",
     worm_sprites = sdk.PX_POSTURE,
     sprites = { ART .. "spb_multib.png", ART .. "multib.png" },
-    params = { gpu_prefix = "sprites/" },
     hold = {
       keep_while_firing = true,
       sheet = ART .. "spb_multib.png", draw_hand = false, hand_radius = 0.0,

@@ -18,7 +18,7 @@ weapon.definition = {
     weaponlnk = LAUNCH .. "aim.png", weaponlnku = LAUNCH .. "aimu.png", weaponlnkd = LAUNCH .. "aimd.png",
     wthrow = LAUNCH .. "draw.png", wthrowu = LAUNCH .. "drawu.png", wthrowd = LAUNCH .. "drawd.png",
   },
-  sprites = { ART .. "magmissile.png", ART .. "magmissile2.png", BEAM },
+  sprites = { ART .. "magmissile.png", ART .. "magmissile2.png", BEAM, table.unpack(magnet.sprites) },
   params = { gpu_prefix = "sprites/" },
   on_fire = function(fire) require("lib/shared").fires.magnetic_missile(fire) end,
 }
@@ -112,6 +112,7 @@ function weapon.setup()
       magnet.remove(m)
       m.anchor:remove()
       a:explode(BOOM)
+      a:remove()
       return
     end
     if m.phase == FLYING then
@@ -132,7 +133,8 @@ function weapon.setup()
       magnet.trigger_mines(m)
       m.spark = (m.spark + 0.02) % 1.4
     end
-    a:gfx({ angle = math.deg(m.angle) % 360, depth = wa.depth.OBJECTS })
+    -- The art points up: a quarter turn on from the way it flies.
+    a:gfx({ angle = (math.deg(m.angle) + 90) % 360, depth = wa.depth.OBJECTS })
   end
 
   shared.fires.magnetic_missile = function(fire)

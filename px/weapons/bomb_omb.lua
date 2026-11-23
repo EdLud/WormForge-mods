@@ -114,8 +114,6 @@ function weapon.definition()
       weaponlnkd = sdk.PX_LEVEL.weaponlnkd,
       wthrow = sdk.PX_POSTURE.wthrow, wthrowu = sdk.PX_POSTURE.wthrowu, wthrowd = sdk.PX_POSTURE.wthrowd,
     },
-    sprites = { ART .. "bombb.png" },
-    params = { gpu_prefix = ART },
     hold = {
       thrown = true,
       sheet = ART .. "bombb.png", frames = 15, hand_type = 1, hand_scale = 1.2, hand_radius = -11.0,

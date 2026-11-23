@@ -55,13 +55,14 @@ function weapon.definition()
     copy_from = "stock.grenade",
     name = "Frag Grenade",
     panel_icon = ART .. "ico_frag.png",
-    hold_as = "stock.grenade",
     worm_sprites = holds.PX_POSTURE,
     sprites = { ART .. "frag.png" },
     hold = {
       thrown = true,
-      sheet = ART .. "frag.png", hand_type = 1, hand_scale = 1.2, hand_radius = -9.5,
-      weap_rotation = 0.5, weap_radius = -11.2,
+      -- The Fire Cluster Bomb's hold, at the chest: PX's own (hand_radius
+      -- -9.5, weap_radius -11.2, hand_scale 1.2) holds it up at the face.
+      sheet = ART .. "frag.png", hand_type = 1, hand_radius = 16,
+      weap_rotation = 0.5, weap_radius = 9,
       hand = holds.PX_HANDS[1],
     },
   })

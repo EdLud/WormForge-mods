@@ -115,12 +115,13 @@ function weapon.definition()
     sprite = ART .. "sremoter.png",
     cluster_sprite = ART .. "remoter.png",
     worm_sprites = sdk.PX_POSTURE,
-    sprites = { ART .. "sremoter.png" },
-    params = { gpu_prefix = ART },
     hold = {
       thrown = true,
-      sheet = ART .. "sremoter.png", frames = 12, hand_type = 1, hand_scale = 1.15, hand_radius = -16.0,
-      weap_rotation = 0.5, weap_radius = -11.5,
+      -- At the chest, as the Fire Cluster Bomb's hold, a little further out for
+      -- the bigger roller: PX's own (hand_radius -16, weap_radius -11.5,
+      -- hand_scale 1.15) holds it up at the face.
+      sheet = ART .. "sremoter.png", frames = 12, hand_type = 1, hand_radius = 18,
+      weap_rotation = 0.5, weap_radius = 11,
       animate = true, anim_speed = 1.2,
       hand = sdk.PX_HANDS[1],
     },

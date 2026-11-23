@@ -20,13 +20,13 @@ local function swimming(worm)
   return worm.y >= wa.world.water() + DEPTH
 end
 
-local function moor(fire)
-  local worm = fire.worm
+-- Enter, as a swimmer's instant-use utility: "eat" leaves the unit where
+-- the worm isn't deep enough.
+local function moor(worm)
   if not swimming(worm) then
-    worm:ammo(ID, 1)
     pcall(worm.equip, worm, "stock.bungee")
     require("lib/weapon_hint").notice(worm, "This weapon must be used while swimming!")
-    return
+    return "eat"
   end
   local b = {
     x0 = worm.x + worm.facing * AHEAD, y0 = worm.y,
@@ -34,7 +34,9 @@ local function moor(fire)
     dir_x = wa.random(0, 1) == 0 and -1 or 1, dir_y = wa.random(0, 1) == 0 and -1 or 1,
     mirror = wa.random(0, 20) % 2 == 0,
   }
+  local gone = false
   local function step(a)
+    if gone then return end
     local frame = wa.world.frame()
     a:warp({ x = b.x0 + wa.math.cos(frame / b.period_x) * b.dir_x * BOB,
       y = b.y0 + wa.math.sin(frame / b.period_y) * b.dir_y * BOB, vx = 0, vy = 0 })
@@ -48,8 +50,10 @@ local function moor(fire)
       end
     end
     if hit then
+      gone = true
       bombs[a.id] = nil
       a:explode(BLAST)
+      a:remove()
     end
   end
   local a = wa.actors.spawn({ sprite = false, owner = worm, x = b.x0, y = b.y0, persist = true, light = false, on = step })
@@ -58,16 +62,21 @@ local function moor(fire)
 end
 
 weapon.defaults = { instant_use = "manual" }
+weapon.requires = { "lib/turn_controls" }
 
-function weapon.definition()
-  return {
-    wep = "weps/freeze.wep",
-    name = "Underwater Bomb",
-    panel_icon = ART .. "wbomb_ico.png",
-    sprites = { BOMB, CHAIN },
-    params = { gpu_prefix = ART },
-    on_fire = moor,
-  }
+-- A utility, so the worm holds nothing.
+weapon.definition = {
+  copy_from = "stock.double_turn_time",
+  name = "Underwater Bomb",
+  panel_icon = ART .. "wbomb_ico.png",
+  handling = { remember_selection = false, ends_turn = false, retreat = 3000 },
+  utility = { effect = "scripted" },
+  sprites = { BOMB, CHAIN },
+  params = { gpu_prefix = ART },
+}
+
+function weapon.configure(ctx)
+  require("lib/turn_controls").configure(ID, ctx.data)
 end
 
 local W, H = 48 * DRAW_SCALE / 2, 160 * DRAW_SCALE / 2
@@ -87,6 +96,7 @@ end
 
 function weapon.setup()
   bombs = {}
+  require("lib/turn_controls").register(ID, { fire = moor })
   wa.on.draw(function()
     local turn
     for _, w in ipairs(wa.worms.all()) do if w.turn then turn = w; break end end

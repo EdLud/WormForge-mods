@@ -44,9 +44,11 @@ local CLUSTLET = {
   burst = "nothing",
 }
 
+-- The clustlets first: the grenade's art takes any other of its missiles.
 weapon.missile_sprite = {
-  { sheet = ART .. "poisong.png", frames = 1, spin = true, hide = true, first_sprite = 0 },
-  { sheet = ART .. "poisonc.png", frames = 8, animate = true, hide = true, first_sprite = CLUSTLET_SPRITE },
+  { sheet = ART .. "poisonc.png", frames = 8, animate = true, anim_speed = 1.0, hide = true,
+    first_sprite = CLUSTLET_SPRITE },
+  { sheet = ART .. "poisong.png", frames = 1, spin = true, hide = true },
 }
 
 local clustlets = {}
@@ -68,15 +70,17 @@ weapon.definition = require("lib/weapon").merge(weapon.record, {
   copy_from = "stock.grenade",
   name = "Poison Grenade",
   panel_icon = ART .. "ico_pois_gren.png",
-  hold_as = "stock.grenade",
   on_explode = on_explode,
   worm_sprites = holds.PX_POSTURE,
-  sprites = { ART .. "poisong.png", ART .. "poisonc.png" },
+  sprites = { ART .. "poisong.png", ART .. "poisonc.png", table.unpack(poison_cloud.sprites) },
+  params = { gpu_prefix = "sprites/toxic_grenade/" }, -- the cloud's puffs
   sounds = { PRIMING },
   hold = {
     thrown = true,
-    sheet = ART .. "poisong.png", hand_type = 1, hand_scale = 1.2, hand_radius = -9.8,
-    hand_rotation = -0.05, hand_radial_rotation = 0.09, weap_rotation = 0.5, weap_radius = -10.0,
+    -- The Fire Cluster Bomb's hold, at the chest: PX's own (hand_radius
+    -- -9.8, weap_radius -10, hand_scale 1.2) holds it up at the face.
+    sheet = ART .. "poisong.png", hand_type = 1, hand_radius = 16,
+    weap_rotation = 0.5, weap_radius = 9,
     hand = holds.PX_HANDS[1],
   },
 })
