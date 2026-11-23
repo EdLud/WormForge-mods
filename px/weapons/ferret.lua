@@ -39,6 +39,7 @@ end
 
 function weapon.setup()
   local shared = require("lib/shared")
+  local placed = require("lib/placed")
   local fires = shared.fires
 
   local STEP = 3 -- frt_maxdist
@@ -228,6 +229,12 @@ function weapon.setup()
       a:remove()
       return
     end
+    local moved, x, y, vx, vy = placed.moved(a, f)
+    if moved then -- picked up or thrown: it flies, and walks again where it lands
+      f.x, f.y, f.vx, f.vy = x, y, vx, vy
+      f.planted, f.tracing, f.walking = false, false, false
+      f.outline, f.next, f.ux, f.uy, f.angle = {}, 1, 0, -1, 0
+    end
     if not f.planted then
       fly(f)
       try_plant(f, a)
@@ -243,7 +250,7 @@ function weapon.setup()
     f.grace = f.grace - 1
     local bx, by = f.x, f.y
     if f.planted then bx, by = body(f, f.x, f.y) end
-    a.x, a.y, a.vx, a.vy = bx, by, 0, 0
+    placed.place(a, f, bx, by)
     a:frame((f.steps // 2) % FRAMES)
     a:gfx({ angle = math.deg(f.angle) % 360, depth = DEPTH, scale = SCALE })
   end
@@ -264,7 +271,7 @@ function weapon.setup()
     alive[#alive + 1] = f
     local a = wa.actors.spawn({
       sprite = WALK, x = f.x, y = f.y, owner = worm,
-      body = { shape = "missile", layer = "missile" }, grab = false, on = function(actor) frame(f, actor) end,
+      body = { shape = "missile", layer = "missile" }, grab = "projectile", on = function(actor) frame(f, actor) end,
     })
     f.a = a
     rise_clear(f)

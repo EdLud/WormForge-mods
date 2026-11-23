@@ -1,6 +1,7 @@
 -- Attack Helicopter: click a target; a helicopter strafes in from off the map and guns it down.
 
 local trail = require("lib/px_trail")
+local placed = require("lib/placed")
 
 return {
   defaults = {
@@ -26,6 +27,7 @@ return {
     local DEAD_DAMAGE    = 25 -- TakeExplosionDamage -> Collide above this
     local DRIFT          = 0.984 -- SpX damping while shooting
     local LEAVE          = 1.082 -- SpX growth after the magazine
+    local LEAVE_MIN      = 0.15 -- its speed when the magazine runs out
     local TURN           = 0.75 -- gunAngle interpolation
     local ROTOR_TICKS    = 47 -- heli2Wav loop period
     local HALF_PI        = math.pi / 2
@@ -89,7 +91,8 @@ return {
       local face = right and -1 or 1
       local aface = FLIP_AIM and -face or face -- the worm's own mirror
       local gface = FLIP_GUN and -face or face -- the gun's own mirror
-      a.x, a.y, a.vx, a.vy, a.facing = h.x, h.y, 0, 0, face
+      placed.place(a, h, h.x, h.y)
+      a.facing = face
       a:frame(h.frame)
       a:gfx({ angle = math.deg(h.rot) % 360, depth = wa.depth.OBJECTS + 2 })
 
@@ -270,7 +273,12 @@ return {
         drop(h)
         return
       end
-      if h.done and h.y >= wa.world.water() and h.x < w + 300 and h.x > -300 then
+      local moved, mx, my, mvx, mvy = placed.moved(a, h)
+      if moved then -- picked up or thrown: it flies on from there, and keeps its approach
+        h.x, h.y, h.vy = mx, my, mvy
+        if h.shooting or h.done then h.vx = mvx end
+      end
+      if h.y >= wa.world.water() and h.x < w + 300 and h.x > -300 then
         boom(h)
         return
       end
@@ -287,7 +295,7 @@ return {
       end
       if h.shots >= BULLETS and h.shooting then
         h.shooting = false
-        h.vx = h.dir * 0.15
+        h.vx = h.dir * LEAVE_MIN
       end
       if h.shooting then h.vx = h.vx * DRIFT end
 
@@ -302,10 +310,15 @@ return {
       end
       if h.shots >= BULLETS and not h.shooting then
         h.done = true
+        if math.abs(h.vx) < LEAVE_MIN then h.vx = h.vx < 0 and -LEAVE_MIN or h.dir * LEAVE_MIN end
         if math.abs(h.vx) < HOVER then h.vx = h.vx * LEAVE end
       end
 
       h.x = h.x + h.vx
+      if h.vy ~= 0 then -- only after a throw: it settles at its new height
+        h.y = h.y + h.vy
+        h.vy = math.abs(h.vy) < 0.05 and 0 or h.vy * 0.9
+      end
       h.frame = (h.frame + 1) % 2
       h.ticks = h.ticks + 1
       if h.ticks % ROTOR_TICKS == 0 then wa.sound.play(h.owner, SND .. "loop.wav") end
@@ -332,13 +345,13 @@ return {
         dir = from_left and 1 or -1, -- the direction it drifts
         x = from_left and -SIDE or (w + SIDE),
         y = ENTER_Y,
-        vx = (from_left and 1 or -1) * HOVER,
+        vx = (from_left and 1 or -1) * HOVER, vy = 0,
         shots = 0, cooldown = 0, shooting = false, done = false, firing = false,
         gun = -math.pi, worm_frame = 0, rot = 0, frame = 0, ticks = 0,
       }
       h.body = wa.actors.spawn({
         sprite = ART .. "empty.png", x = h.x, y = h.y, vx = 0, vy = 0,
-        owner = worm, body = { hits = { land = true, worms = true } }, grab = false,
+        owner = worm, body = { hits = { land = true, worms = true } }, grab = "projectile",
         on = { frame = frame, hit = hit },
       })
       h.aim = wa.actors.spawn({ sprite = ART .. "aim.png", x = h.x, y = h.y,

@@ -23,6 +23,7 @@ function M.install(ctx)
     return
   end
 
+  local placement = require("lib/placed")
   local super_buster = ctx.id == "px.super_bunker_buster"
   local ART = "sprites/" .. (super_buster and "super_bunker_buster/" or "bunker_buster/")
   local SND = "sounds/bunker_buster/" -- both weapons' sounds, PX's two wavs
@@ -81,6 +82,7 @@ function M.install(ctx)
   local function boom(m)
     if m.boom then return end
     m.boom, m.dig, m.vy, m.num, m.timer = true, false, 0, 0, 0
+    m.body.grab = false
     m.body:gfx{ scale = 0 }
     if m.glow then m.glow:gfx{ scale = 0 } end
   end
@@ -112,12 +114,18 @@ function M.install(ctx)
       end
 
       if m.y >= wa.world.water() then
+        if not m.sunk then a.grab = false end
         m.sunk = true
         m.y = m.y + SINK
         a.x, a.y = m.x, m.y
         a:gfx({ tint = 0x5A5AF0 })
         if m.y >= wa.world.water() + SUNK then remove(m) end
         return
+      end
+
+      local moved, mx, my, mvx, mvy = placement.moved(a, m)
+      if moved then -- picked up or thrown: it falls, and digs again where it lands
+        m.x, m.y, m.vx, m.vy, m.dig = mx, my, mvx, mvy, false
       end
 
       local px, py = m.x, m.y
@@ -185,7 +193,7 @@ function M.install(ctx)
 
       if (px ~= m.x or py ~= m.y) and touched(px, py, m.x, m.y) then boom(m) return end
 
-      a.x, a.y = m.x, m.y
+      placement.place(a, m, m.x, m.y)
       local sheet = m.dig and (ART .. "digging.png") or (ART .. "idle.png")
       if sheet ~= m.sheet then
         a:look(sheet)
@@ -210,7 +218,7 @@ function M.install(ctx)
       mask_timer = 0, snd_timer = 0, piece = 1 } -- both timers fire on the first frame they can
     m.body = wa.actors.spawn({
       sprite = ART .. "idle.png", x = x, y = SKY, vx = 0, vy = 0,
-      owner = worm, body = {}, grab = false,
+      owner = worm, body = {}, grab = "projectile",
       on = frame_of(m),
     })
     if super_buster then

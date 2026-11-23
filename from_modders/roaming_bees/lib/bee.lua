@@ -613,7 +613,7 @@ local function installHat()
   wa.on.draw(drawHats)
 end
 
-local function brain(a, ev)
+local function think(a, ev)
   local s = state[a.id]
   if not s then return end
   ev = ev or {}
@@ -791,6 +791,27 @@ local function brain(a, ev)
   a:gfx{ angle = s.gfxAngle }
 end
 
+-- A tool that picks things up (the Gravity Gun) moves the bee, and its own
+-- steering takes it back. A throw is a rise in speed the steering never
+-- makes in a frame: the bee tumbles away, as from a knock.
+local THROWN_PX = 4
+
+local function speedOf(a)
+  local vx, vy = a.vx, a.vy
+  return math.sqrt(vx * vx + vy * vy)
+end
+
+local function brain(a, ev)
+  local s = state[a.id]
+  if s and s.lastSpeed and not s.dead and not s.sting
+      and speedOf(a) > s.lastSpeed + THROWN_PX then
+    s.softSpin, s.spinN = true, 0
+  end
+  think(a, ev)
+  s = state[a.id]
+  if s then s.lastSpeed = speedOf(a) end
+end
+
 local function hurt(a, ev)
   local s = state[a.id]
   if not s then return end
@@ -849,7 +870,7 @@ function M.spawn_actor(opts)
     persist = opts.persist ~= false,
     body    = { shape = M.BODY_MASK, hits = { land = true, worms = true },
                 hit_by = { fire = true, blasts = true } },
-    grab    = false,
+    grab    = "projectile",
     on      = { frame = opts.brain or brain, hit = hurt, touched = onContact, contact = bump },
   })
 

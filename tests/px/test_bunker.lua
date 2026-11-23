@@ -1,6 +1,7 @@
 -- Movement regressions for both Bunker Busters. The engine field calculation
 -- and opt-in contract are tested through real bindings in lua-host.
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
+package.path = root .. "?.lua;" .. package.path
 local bunker = assert(loadfile(root .. "lib/px_bunker.lua"))()
 local actors, claim, fx, fy, inside, terrain, blasts, cuts, flames, probes
 local function reset(super, force_x, force_y, active)
@@ -103,5 +104,19 @@ for _,super in ipairs({false,true}) do
   local old_x=a.x
   frames(a,1)
   assert(a.x>old_x,"a steered drill carries momentum out of the terrain")
+
+  -- A tool picks the drill out of the land and throws it: it stops digging,
+  -- flies from where it was put with the speed it was given, and digs again.
+  a=reset(super)
+  terrain=true; frames(a,3)
+  terrain=false
+  a.x,a.y,a.vx,a.vy=300,-50,4,0
+  frames(a,1)
+  near(a.x,304); near(a.y,-50+0.25)
+  near(a.vx,0); near(a.vy,0)
+  frames(a,1)
+  near(a.x,308)
+  terrain=true; frames(a,1)
+  assert(a.sprite:find("digging"),"it digs again where it lands")
 end
 print("Bunker Busters: magnetic fall, capped steering, rotated probes/art/flare, original lifetime: ALL PASS")

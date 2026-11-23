@@ -7,6 +7,7 @@ balls.INERTIA_X, balls.INERTIA_Y = 0.8, 0.4
 
 function balls.setup()
   local shared = require("lib/shared")
+  local placed = require("lib/placed")
 
   local RADIUS = balls.RADIUS
   local BOUNCE, FRICTION = 0.03, 0.02
@@ -365,6 +366,7 @@ function balls.setup()
     if not b.sinking then
       b.sinking, b.asleep, b.low = true, false, false
       shared.bowling_balls[a.id] = nil
+      a.grab = false
       wa.sound.play(a, SOUND_SPLASH)
     end
     b.vx, b.vy = b.vx * SEA_DRAG, b.vy * SEA_DRAG + SEA_SINK
@@ -387,7 +389,7 @@ function balls.setup()
       asleep = false, alliance = owner and owner.alliance,
     }
     local a = wa.actors.spawn({
-      sprite = SHEET, x = x, y = y + SPRITE_DROP, owner = owner, body = {}, grab = false,
+      sprite = SHEET, x = x, y = y + SPRITE_DROP, owner = owner, body = {}, grab = "projectile",
       on = {
         hit = function(_, hit) take_hit(b, hit) end,
         frame = function(a)
@@ -398,6 +400,12 @@ function balls.setup()
           if b.sinking or b.y >= wa.world.water() then
             sink(a, b)
             return
+          end
+          local moved, mx, my, mvx, mvy = placed.moved(a, b)
+          if moved then -- picked up or thrown: it rolls on from there
+            b.x, b.y, b.vx, b.vy = mx, my - SPRITE_DROP, mvx, mvy
+            wake(b)
+            b.lvx, b.lvy, b.rvx, b.rvy = b.vx, b.vy, b.vx, b.vy
           end
           local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y, a)
           if waking then wake(b) end
@@ -432,7 +440,7 @@ function balls.setup()
           end
           if speed > PUSH_SPEED then push_balls(a.id, b, speed) end
           if speed > FAST then hit_others(a, b, speed) end
-          a.x, a.y, a.vx, a.vy = b.x, b.y + SPRITE_DROP, 0, 0
+          placed.place(a, b, b.x, b.y + SPRITE_DROP)
           a:gfx({ angle = math.deg(b.rot) % 360, depth = BALL_DEPTH, tint = b.zapped and ZAPPED_TINT or 0xFFFFFF })
         end,
       },

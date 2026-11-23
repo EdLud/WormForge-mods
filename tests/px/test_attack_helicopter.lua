@@ -247,4 +247,36 @@ do
   check("a round whose frames stopped is not drawn", (draw().bullet or 0) == 0)
 end
 
+print("attack helicopter: picked up and let go")
+do
+  -- A tool (the Gravity Gun) holds it still mid-approach, then lets go: it
+  -- keeps its approach and still empties its magazine. Thrown down, it
+  -- settles at a lower height; thrown into the sea, it blows up.
+  reset()
+  local body = strike()
+  run(body, 3)
+  for _ = 1, 30 do
+    body.x, body.y, body.vx, body.vy = 1600, 300, 0, 0
+    run(body, 1)
+  end
+  check("held, it keeps its approach speed", math.abs(body.x - 1600) > 10)
+  run(body, 400, 17)
+  check("the magazine still flies: 17 rounds", launched == 17)
+  run(body, 30)
+  local y = body.y
+  body.vx, body.vy = 0, 6
+  run(body, 60)
+  check("thrown down, it settles lower", body.y > y + 30 and body.y < y + 70 and not body.dead)
+  local x = body.x
+  run(body, 1)
+  check("a finished helicopter still leaves", math.abs(body.x - x) >= 0.15)
+  local exploded
+  wa.fire = { spawn = function() end }
+  function body:explode() exploded = true end
+  body.y, body.vy = 905, 4
+  run(body, 1)
+  wa.fire = nil
+  check("thrown into the sea, it blows up", exploded and body.dead)
+end
+
 print("ALL PASS")
