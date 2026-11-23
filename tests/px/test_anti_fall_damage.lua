@@ -42,35 +42,38 @@ local controls = actions["px.anti_fall_damage"]
 
 -- Off: a fast fall stays WA's.
 local w = worm()
-w.state, w.vy = "falling", 12
+w.state, w.vy = "tumbling", 12
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("off: the fall is left alone", w.state == "falling")
+check("off: the tumble is left alone", w.state == "tumbling")
 
 -- Fired by hand: on for the turn, with its sound.
 controls.fire(w)
 check("firing plays the sound", sounds == 1)
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("on: a fall faster than 8 stands the worm", w.state == "standing")
+check("on: a tumble faster than 8 becomes a fall", w.state == "falling")
 w.state, w.vx, w.vy = "blasted", -9, 0
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("on: a blast sideways faster than 8 too", w.state == "standing")
-w.state, w.vx, w.vy = "jumping", 3, 8
+check("on: a blast sideways faster than 8 too", w.state == "falling")
+w.state, w.vy = "jumping", 20
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("8 itself is not faster than 8", w.state == "jumping")
+check("a fast jump already lands softly: left alone", w.state == "jumping")
+w.state, w.vx, w.vy = "after_rope", 3, 8
+fire("worm_message", w, wa.msg.FRAME_FINISH)
+check("8 itself is not faster than 8", w.state == "after_rope")
 w.state, w.vy = "roping", 20
 fire("worm_message", w, wa.msg.FRAME_FINISH)
 check("the rope is left alone", w.state == "roping")
-w.state, w.vy, w.turn = "falling", 20, false
+w.state, w.vy, w.turn = "hit", 20, false
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("a worm without the turn is left alone", w.state == "falling")
+check("a worm without the turn is left alone", w.state == "hit")
 w.turn = true
 controls.fire(w)
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("fired again: off", w.state == "falling")
+check("fired again: off", w.state == "hit")
 controls.fire(w)
 controls.finish()
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("the turn's end switches it off", w.state == "falling")
+check("the turn's end switches it off", w.state == "hit")
 
 -- Auto-Use: on at turn start while there is ammo, a unit spent.
 afd.configure({ data = { instant_use = "auto_use", auto_use = true } })
@@ -79,7 +82,7 @@ w.units = 1
 fire("turn_start", { worm = w })
 w.state, w.vy = "tumbling", 10
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("auto-use: on at turn start", w.state == "standing")
+check("auto-use: on at turn start", w.state == "falling")
 check("auto-use: a unit spent", w.units == 0, w.units)
 fire("turn_start", { worm = w })
 check("a worm switch keeps it on", w.units == 0)

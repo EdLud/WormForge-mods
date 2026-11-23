@@ -3,10 +3,12 @@
 local ID = "px.anti_fall_damage"
 local SOUND = "sounds/anti_fall_damage/fall_protection.wav"
 local FAST = 8 -- pixels/frame
--- WS_JUMP, WS_FLYING2, WS_SLIDING, WS_FLYING, WS_AFTERROPE and WS_POWERFLY.
+-- The flights that don't land softly. Falling and jumping already land
+-- unhurt at any speed (WA 3.8.1's collision table 0x50E4C0 sends both to
+-- 0x50DD14), so a fast worm is moved into falling: it stays in the air,
+-- where it can still fire, and takes no walking.
 local GUARDED = {
-  jumping = true, jump_falling = true, falling = true, tumbling = true,
-  hit = true, blasted = true, after_rope = true,
+  jump_falling = true, tumbling = true, hit = true, blasted = true, after_rope = true,
 }
 
 local weapon = {
@@ -45,7 +47,7 @@ function weapon.setup()
   })
   wa.on.worm_message(function(worm)
     if not worm.turn or not on[worm.id] or not GUARDED[worm.state] then return end
-    if math.abs(worm.vx) > FAST or math.abs(worm.vy) > FAST then worm:set_state("standing") end
+    if math.abs(worm.vx) > FAST or math.abs(worm.vy) > FAST then worm:set_state("falling") end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 end
 

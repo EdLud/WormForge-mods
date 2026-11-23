@@ -7,9 +7,10 @@ local race = {}
 
 local ART = "sprites/random_race/"
 -- What each race puts in the inventory; parkour and anti_fall switch those on at turn start.
+-- `equip` (else the first weapon) replaces a weapon the race took away.
 local RACES = {
   { name = "parkour", weapons = { "px.parkour", "px.jump", "stock.low_gravity", "px.anti_fall_damage" },
-    banner = ART .. "park_race.png", parkour = true, anti_fall = true },
+    banner = ART .. "park_race.png", parkour = true, anti_fall = true, equip = "px.jump" },
   { name = "portal", weapons = { "px.portal_gun", "px.anti_fall_damage" }, banner = ART .. "port_race.png",
     anti_fall = true },
   { name = "wings", weapons = { "px.wings" }, banner = ART .. "wing_race.png" },
@@ -74,6 +75,10 @@ function race.install(ctx)
       if not lead or not team_alive(lead) then lead = worm.team end
       if worm.team == lead then choose() end
     end
+    -- WA hands the worm its team's last weapon, which would still fire if
+    -- this race took it away.
+    local held = worm.weapon
+    if held and seen[held] and worm:ammo(held) == 0 then worm:equip(current.equip or current.weapons[1]) end
     if current.parkour or current.anti_fall then active[worm.id] = true end
     if current.parkour then
       if shared.parkour_on then shared.parkour_on(worm) end

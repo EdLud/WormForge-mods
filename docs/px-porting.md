@@ -673,8 +673,10 @@ an explosion's `ev.worm` is the missile's owner, not necessarily a worm.
 
 ## Portal Gun
 
-Scales of Justice's slot is PX's Portal Gun. `-` selects orange, `+` blue;
-Ctrl or Alt selects the other colour for a shot. New endpoints automatically
+Scales of Justice's slot is PX's Portal Gun. `-` selects orange, `+` switches
+to the other colour; Ctrl or Alt selects the other colour for a shot. Both
+crosshairs, WA's on the ground and the one in flight, glow in the colour the
+next shot takes. New endpoints automatically
 select the other colour. Pause/Break toggles the current team's portals.
 Ground shots keep the charge bar and take the aim target (`worm.aim_target`,
 PX's `FireAngle`). Airborne shots fire at full power. With the option Mid-air
@@ -975,20 +977,28 @@ declares `rem` inside its message handler, so it starts empty on every
 message and the restore branches never run: whenever the turn's worm with
 the utility on moves faster than 8 pixels a frame (either axis) in
 `WS_JUMP`, `WS_FLYING2`, `WS_SLIDING`, `WS_FLYING`, `WS_AFTERROPE` or
-`WS_POWERFLY`, PX sets it to `WS_IDLE`. The port does the same once a frame
-(`FRAME_FINISH`) with `worm:set_state("standing")` over jumping,
-jump_falling, falling, tumbling, hit, blasted and after_rope, since PX's
-state numbers aren't in pxdata.pxd.
+`WS_POWERFLY`, PX sets it to `WS_IDLE`. The port moves the worm into falling
+instead, once a frame (`FRAME_FINISH`, `worm:set_state("falling")`), and
+only from jump_falling, tumbling, hit, blasted and after_rope: falling and
+jumping already land softly. Holding the worm in standing (the first port)
+let it walk in mid-air and kept the Portal Gun from firing there: WA put it
+back into falling before moving it each frame, but at the frame's end, where
+the engine checks for a mid-air shot, it was standing (Random Race replay,
+2026-11-23: 54 Space presses with the gun lost while falling faster than 8
+pixels a frame).
 
-Why standing works, from WA 3.8.1's worm collision handler: its state table
+Why falling works, from WA 3.8.1's worm collision handler: its state table
 (0x50E4C0, index 0x50E4D4, state - 0x6C) sends tumbling, hit, blasted and
 skimming (0x7F, 0x80, 0x81, 0x89) to 0x50DF47, which takes fall damage by
 the landing-damage factor (+0x15C, check at 0x50DFD0) and, landing on the
 floor at 8 pixels a frame or more (0x80000, 0x50E1F8), sets getting up
 (0x76, 0x50E2B5): the loss of control. Jumping, parachuting and falling
-(0x79, 0x7D, 0x7E) land at 0x50DD14 without either, and the standing setup
-clears +0x15C. A worm held in standing while fast never lands through
-0x50DF47. Its record is PX's: a scripted utility (0x3C = 8), no retreat.
+(0x79, 0x7D, 0x7E) land at 0x50DD14 without either: on the floor it zeroes
+the speed and plays the landing sound, at any speed. Jump_falling and
+after_rope (0x7A, 0x73) take WA's default branch 0x50E3BA. None of WA's three
+SetState(0x7F) calls (0x50D591, 0x50D743, 0x5124C5) depends on the speed of a
+fall, so a falling worm stays falling until it lands.
+Its record is PX's: a scripted utility (0x3C = 8), no retreat.
 
 ## Lockstep
 

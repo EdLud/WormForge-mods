@@ -183,12 +183,17 @@ function weapon.setup()
     return f
   end
   local function land(id) flights[id] = nil end
+  -- The colour the next shot takes: the team's, Ctrl or Alt for the other.
+  local function shot_colour(worm, keys)
+    local colour = chosen[worm.team] or 1
+    if keys.ctrl or keys.alt then colour = 3 - colour end
+    return colour
+  end
 
   shared.fires.portal_gun = function(fire)
     local worm, keys = fire.worm, wa.world.keys()
     ensure_ticker(worm)
-    local colour = chosen[worm.team] or 1
-    if keys.ctrl or keys.alt then colour = 3 - colour end
+    local colour = shot_colour(worm, keys)
     local aim = ground_aim(worm)
     if fire.airborne then
       aim = shared.portal_mid_air_aim ~= false and fly(worm, keys).aim or air_aim(worm, keys)
@@ -232,7 +237,7 @@ function weapon.setup()
     end
     if worm.weapon == ID then
       if keys.minus_key and not old.minus_key then chosen[team] = 1 end
-      if keys.plus_key and not old.plus_key then chosen[team] = 2 end
+      if keys.plus_key and not old.plus_key then chosen[team] = 3 - (chosen[team] or 1) end
     end
     old.portal, old.plus_key, old.minus_key, old.pause_key = worm.weapon == ID, keys.plus_key, keys.minus_key, keys.pause_key
   end, { msgs = { wa.msg.FRAME_FINISH } })
@@ -241,7 +246,7 @@ function weapon.setup()
 
   require("lib/weapon_hint").register(ID, function(worm)
     return "Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
-      .. "\n- orange, + blue\nCtrl/Alt: the other colour\nPause: toggle"
+      .. "\n+: the other colour, -: orange\nCtrl/Alt: this shot in the other colour\nPause: toggle"
   end)
 
   if wa.on.draw then
@@ -266,6 +271,11 @@ function weapon.setup()
       end
       brush:box(x, y, w, h, angle or 0, frame or 0, colour)
     end
+    -- A crosshair's glow: a wide halo and a bright core.
+    local function crosshair_glow(x, y, colour)
+      quad("lightning_glow.png", x, y, 128, 128, 0, colour, "add", wa.depth.EFFECTS)
+      quad("lightning_glow.png", x, y, 56, 56, 0, colour, "add", wa.depth.EFFECTS)
+    end
     wa.on.draw(function()
       -- Drawing only, so any order: it decides which of two portals that
       -- overlap is on top, on this screen.
@@ -289,21 +299,24 @@ function weapon.setup()
       tip_frame = now
       if step then tip:tick(wa.world.gravity()) end
       local flight = worm and flights[worm.id]
+      local holding = worm and worm.weapon == ID
+      local glow = holding and 0xFF000000 | (colours[shot_colour(worm, wa.world.keys())] & 0xFFFFFF)
       if flight then
         local angle = (1 - flight.aim) * math.pi
-        crosshair:box(worm.x + math.sin(angle) * worm.facing * CROSSHAIR,
-          worm.y - math.cos(angle) * CROSSHAIR, 32, 32, (flight.aim * 2 % 1) * math.pi * worm.facing,
+        local x, y = worm.x + math.sin(angle) * worm.facing * CROSSHAIR, worm.y - math.cos(angle) * CROSSHAIR
+        if glow then crosshair_glow(x, y, glow) end
+        crosshair:box(x, y, 32, 32, (flight.aim * 2 % 1) * math.pi * worm.facing,
           worm.alliance % 6, 0xFFFFFFFF, worm)
       end
-      if worm and worm.weapon == ID and worm.aiming then
-        local keys = wa.world.keys()
-        local colour = chosen[worm.team] or 1
-        if keys.ctrl or keys.alt then colour = 3 - colour end
+      if holding and worm.aiming then
+        local colour = shot_colour(worm, wa.world.keys())
         local angle = (1 - worm.aim) * math.pi
         local dx, dy = math.sin(angle) * worm.facing, -math.cos(angle)
         quad("portal_gun_glow.png", worm.x + dx * 18, worm.y + dy * 18, 80, 80,
           math.atan(dy, dx), (100 << 24) | (colours[colour] & 0xFFFFFF), "add", 0x000CFFFF)
         if step then tip:muzzle(worm.x + dx * 20, worm.y + dy * 20, colour, dx, dy) end
+        -- WA's crosshair, glowing in the shot's colour.
+        crosshair_glow(worm.x + dx * CROSSHAIR, worm.y + dy * CROSSHAIR, glow)
       end
       tip:draw(quad)
     end)
