@@ -34,8 +34,10 @@ function weapon.definition()
           "sprites/portal_gun/portal_blue.png", "sprites/portal_gun/portal_glow.png",
           "sprites/portal_gun/portal_gun_glow.png",
           "sprites/portal_gun/lightning_glow.png", "sprites/portal_gun/portal_black_mask.png",
-          "sprites/portal_gun/air_crosshair.png",
+          "sprites/portal_gun/crosshair_orange.png", "sprites/portal_gun/crosshair_blue.png",
         },
+    -- Its own crosshair in the next shot's colour, in place of WA's.
+    crosshair = false,
     sounds = { "sounds/portal_gun_shoot.wav", "sounds/portal_gun_hit.wav", "sounds/portal_gun_failhit.wav",
           "sounds/portal_active.wav", "sounds/portal_inactive.wav", "sounds/portal_teleport.wav" },
     params = { gpu_prefix = "sprites/portal_gun/" },
@@ -251,15 +253,16 @@ function weapon.setup()
 
   if wa.on.draw then
     local tip, tip_frame = Effects.new(), nil
-    -- In flight: the crosshair 80 pixels out along the aim, where the stock
-    -- one sits, a frame for each team colour, turning half a circle as the
-    -- aim sweeps from down to up and back (DrawAimCursor 0x51D680).
-    local CROSSHAIR = 80
-    local crosshair = wa.draw.brush{ sprite = ART .. "air_crosshair.png", depth = wa.depth.EFFECTS }
+    -- The crosshair, on the ground and in flight, where WA's sits: 94 pixels
+    -- out along the aim (WA's aim starts 14 out, 0x51CA90, and the cursor is
+    -- 80 past that), turning half a circle as the aim sweeps from down to up
+    -- and back (DrawAimCursor 0x51D680).
+    local CROSSHAIR = 94
+    local CROSSHAIRS = { "crosshair_orange.png", "crosshair_blue.png" }
     -- A brush per sheet, blend and depth, made at its first box: the
     -- portals and their sparks draw every frame and make no tables.
     local brushes = {}
-    local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame)
+    local function quad(sprite, x, y, w, h, angle, colour, blend, depth, frame, visibility)
       blend, depth = blend or "alpha", depth or wa.depth.OBJECTS
       local by_sheet = brushes[sprite]
       if not by_sheet then by_sheet = {}; brushes[sprite] = by_sheet end
@@ -269,12 +272,22 @@ function weapon.setup()
         brush = wa.draw.brush{ sprite = ART .. sprite, blend = blend, depth = depth }
         by_sheet[key] = brush
       end
-      brush:box(x, y, w, h, angle or 0, frame or 0, colour)
+      brush:box(x, y, w, h, angle or 0, frame or 0, colour, visibility)
     end
-    -- A crosshair's glow: a wide halo and a bright core.
-    local function crosshair_glow(x, y, colour)
-      quad("lightning_glow.png", x, y, 128, 128, 0, colour, "add", wa.depth.EFFECTS)
-      quad("lightning_glow.png", x, y, 56, 56, 0, colour, "add", wa.depth.EFFECTS)
+    -- The crosshair as a portal burns: the shot colour's fire in WA's
+    -- crosshair form, a second copy turning against it, a breathing halo,
+    -- and the portals' rising sparks (one a frame, `step`).
+    local function draw_crosshair(worm, x, y, aim, colour, step)
+      local now = wa.world.frame() + wa.draw.fraction()
+      local turn = (aim * 2 % 1) * math.pi * worm.facing
+      local breath = 0.9 + 0.1 * math.sin(now * 0.21)
+      local halo = (0x70 << 24) | (colours[colour] & 0xFFFFFF)
+      quad("lightning_glow.png", x, y, 90 * breath, 90 * breath, 0, halo, "add", wa.depth.EFFECTS, 0, worm)
+      local sheet = CROSSHAIRS[colour]
+      local size = 40 * (1.08 + 0.05 * math.sin(now * 0.33))
+      quad(sheet, x, y, size, size, turn - now * 0.06, 0x80FFFFFF, "add", wa.depth.EFFECTS, 0, worm)
+      quad(sheet, x, y, 40, 40, turn, 0xFFFFFFFF, "add", wa.depth.EFFECTS, 0, worm)
+      if step then tip:ambient({ x = x, y = y, colour = colour }) end
     end
     wa.on.draw(function()
       -- Drawing only, so any order: it decides which of two portals that
@@ -300,13 +313,10 @@ function weapon.setup()
       if step then tip:tick(wa.world.gravity()) end
       local flight = worm and flights[worm.id]
       local holding = worm and worm.weapon == ID
-      local glow = holding and 0xFF000000 | (colours[shot_colour(worm, wa.world.keys())] & 0xFFFFFF)
       if flight then
         local angle = (1 - flight.aim) * math.pi
         local x, y = worm.x + math.sin(angle) * worm.facing * CROSSHAIR, worm.y - math.cos(angle) * CROSSHAIR
-        if glow then crosshair_glow(x, y, glow) end
-        crosshair:box(x, y, 32, 32, (flight.aim * 2 % 1) * math.pi * worm.facing,
-          worm.alliance % 6, 0xFFFFFFFF, worm)
+        draw_crosshair(worm, x, y, flight.aim, shot_colour(worm, wa.world.keys()), step)
       end
       if holding and worm.aiming then
         local colour = shot_colour(worm, wa.world.keys())
@@ -315,8 +325,7 @@ function weapon.setup()
         quad("portal_gun_glow.png", worm.x + dx * 18, worm.y + dy * 18, 80, 80,
           math.atan(dy, dx), (100 << 24) | (colours[colour] & 0xFFFFFF), "add", 0x000CFFFF)
         if step then tip:muzzle(worm.x + dx * 20, worm.y + dy * 20, colour, dx, dy) end
-        -- WA's crosshair, glowing in the shot's colour.
-        crosshair_glow(worm.x + dx * CROSSHAIR, worm.y + dy * CROSSHAIR, glow)
+        draw_crosshair(worm, worm.x + dx * CROSSHAIR, worm.y + dy * CROSSHAIR, worm.aim, colour, step)
       end
       tip:draw(quad)
     end)

@@ -36,6 +36,7 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     copy_from = "stock.handgun",
     name = "Sniper Rifle",
+    crosshair = false, -- the laser sight aims it
     panel_icon = "sprites/sniper_rifle/srico.png",
     worm_sprites = {
           weaponlnk = PX_POSTURE.weaponlnk, weaponlnku = PX_POSTURE.weaponlnku,

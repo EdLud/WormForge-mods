@@ -35,7 +35,7 @@ wa = {
     assert(#q.points==4)
     for _, p in ipairs(q.points) do assert(math.abs(p[1])<32000 and math.abs(p[2])<32000) end
     draws[#draws+1]=q
-  end },
+  end, fraction = function() return 0 end },
 }
 dofile(root .. "../tests/brush_mock.lua")(wa)
 for _, name in ipairs({ "missiles", "mines", "crates", "oil", "graves", "arrows" }) do wa[name]={all=function() return {} end} end
@@ -160,20 +160,27 @@ local function drawn(sprite)
   for _, q in ipairs(draws) do if q.sprite=="sprites/portal_gun/"..sprite then return q end end
 end
 local function centre(q) return (q.points[1][1]+q.points[3][1])/2, (q.points[1][2]+q.points[3][2])/2 end
+-- The gun's own crosshair, in the next shot's colour (WA's is hidden: `crosshair = false`).
+local function crosshair() return drawn("crosshair_orange.png") or drawn("crosshair_blue.png") end
 local function crosshair_at(aim)
-  local q=assert(drawn("air_crosshair.png"), "a crosshair in flight")
+  local q=assert(crosshair(), "the gun's crosshair")
   local cx, cy = centre(q)
   local angle=(1-aim)*math.pi
-  return math.abs(cx-worm.x-80*math.sin(angle)*worm.facing)<1e-6 and math.abs(cy-worm.y+80*math.cos(angle))<1e-6
+  -- Where WA's sits: 14 pixels out along the aim, and 80 past that.
+  return math.abs(cx-worm.x-94*math.sin(angle)*worm.facing)<1e-6 and math.abs(cy-worm.y+94*math.cos(angle))<1e-6
 end
 keys={}; worm.state="standing"; hooks.worm_message(worm)
-draws={}; hooks.draw(); assert(not drawn("air_crosshair.png"), "on the ground, WA's crosshair")
+draws={}; hooks.draw(); assert(not crosshair(), "on the ground, not aiming: no crosshair")
+worm.aiming, worm.aim = true, .5
+draws={}; hooks.draw(); assert(crosshair_at(.5) and drawn("crosshair_orange.png"), "on the ground, aiming: orange, where WA's sits")
+keys={ctrl=true}; draws={}; hooks.draw(); assert(drawn("crosshair_blue.png") and not drawn("crosshair_orange.png"), "Ctrl: this shot's blue")
+keys={}; worm.aiming=nil
 worm.state, worm.facing, keys = "jumping", 1, {right=true}
 hooks.worm_message(worm)
 assert(worm.body_visible==nil, "the body stays WA's")
 worm.alliance=2; draws={}; hooks.draw(); worm.alliance=0
-assert(crosshair_at(.5) and drawn("air_crosshair.png").frame==2 and drawn("air_crosshair.png").visibility==worm,
-  "ground aim, green for the third alliance; Right held from the walk is no press")
+assert(crosshair_at(.5) and drawn("crosshair_orange.png").visibility==worm,
+  "ground aim, in the shot's colour; Right held from the walk is no press")
 assert(not drawn("portal_gun_glow.png") and not drawn("portal_gun_normal.png"), "no gun art in flight")
 keys={right=true,up=true}; hooks.worm_message(worm)
 keys={up=true}; hooks.worm_message(worm)
@@ -191,7 +198,7 @@ bolt:remove()
 worm.state="falling"; hooks.worm_message(worm)
 draws={}; hooks.draw(); assert(crosshair_at(.175), "falling keeps the aim")
 worm.weapon="px.other"; hooks.worm_message(worm)
-draws={}; hooks.draw(); assert(not drawn("air_crosshair.png"), "another weapon: no crosshair")
+draws={}; hooks.draw(); assert(not crosshair(), "another weapon: no crosshair")
 -- Mid-air aim off (or the gun not firing in flight): no crosshair, and the
 -- shot takes the arrows held at Space, as in PX.
 local gun=require("weapons/portal_gun")
@@ -202,17 +209,17 @@ end
 assert(configure(nil, nil)==true and configure(true, true)==true, "on by default")
 assert(configure(false, true)==false, "a gun that never fires in flight shows no crosshair")
 worm.weapon="px.portal_gun"; assert(configure(true, false)==false); hooks.worm_message(worm)
-draws={}; hooks.draw(); assert(not drawn("air_crosshair.png"), "Mid-air aim off: no crosshair")
+draws={}; hooks.draw(); assert(not crosshair(), "Mid-air aim off: no crosshair")
 keys={up=true}; shots=#actors
 shared.fires.portal_gun({worm=worm,airborne=true})
 bolt=actors[shots+1]
 assert(math.abs(bolt.x-worm.x)<1e-6 and bolt.y<worm.y, "off: Up held at Space fires straight up")
 bolt:remove(); keys={}
-draws={}; hooks.draw(); assert(not drawn("air_crosshair.png"), "off: the shot starts no flight")
+draws={}; hooks.draw(); assert(not crosshair(), "off: the shot starts no flight")
 configure(true, true); hooks.worm_message(worm)
 draws={}; hooks.draw(); assert(crosshair_at(.5), "a new flight starts at the ground aim")
 worm.turn=false; hooks.worm_message(worm)
-draws={}; hooks.draw(); assert(not drawn("air_crosshair.png"), "its turn over")
+draws={}; hooks.draw(); assert(not crosshair(), "its turn over")
 worm.turn, worm.state, worm.facing, keys = true, nil, 1, {}
 keys={plus_key=true}; hooks.worm_message(worm); assert(not worm.air_enabled, "airborne fire is the claim's, not a per-frame call")
 shared.fires.portal_gun({worm=worm,airborne=true})
