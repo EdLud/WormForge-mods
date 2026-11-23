@@ -24,5 +24,6 @@ profiles = [
   "px/profiles/Highlander Orange.toml",
   "px/profiles/Random Race.toml",
   "px/profiles/Specialists 2.3.toml",
+  "px/profiles/Team17 3.3.toml",
   "mole_shopper/profiles/FOW Mole Shopper.toml",
 ]
