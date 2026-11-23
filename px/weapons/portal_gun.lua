@@ -276,18 +276,30 @@ function weapon.setup()
     end
     -- The crosshair as a portal burns: the shot colour's fire in WA's
     -- crosshair form, a second copy turning against it, a breathing halo,
-    -- and the portals' rising sparks (one a frame, `step`).
+    -- and the portals' rising sparks (`step`). Drawn added, so each colour
+    -- has its own strength and sparks a frame: orange burns hotter.
+    local GLOW = { 0.6, 0.85 } -- orange, blue
+    local SPARKS = { 0.3, 0.45 }
+    local sparks = 0
     local function draw_crosshair(worm, x, y, aim, colour, step)
       local now = wa.world.frame() + wa.draw.fraction()
-      local turn = (aim * 2 % 1) * math.pi * worm.facing
+      local turn = -(aim * 2 % 1) * math.pi * worm.facing
       local breath = 0.9 + 0.1 * math.sin(now * 0.21)
-      local halo = (0x70 << 24) | (colours[colour] & 0xFFFFFF)
+      local glow = GLOW[colour]
+      local halo = (math.floor(0x70 * glow) << 24) | (colours[colour] & 0xFFFFFF)
       quad("lightning_glow.png", x, y, 90 * breath, 90 * breath, 0, halo, "add", wa.depth.EFFECTS, 0, worm)
       local sheet = CROSSHAIRS[colour]
       local size = 40 * (1.08 + 0.05 * math.sin(now * 0.33))
-      quad(sheet, x, y, size, size, turn - now * 0.06, 0x80FFFFFF, "add", wa.depth.EFFECTS, 0, worm)
-      quad(sheet, x, y, 40, 40, turn, 0xFFFFFFFF, "add", wa.depth.EFFECTS, 0, worm)
-      if step then tip:ambient({ x = x, y = y, colour = colour }) end
+      quad(sheet, x, y, size, size, turn - now * 0.06, (math.floor(0x80 * glow) << 24) | 0xFFFFFF, "add",
+        wa.depth.EFFECTS, 0, worm)
+      quad(sheet, x, y, 40, 40, turn, (math.floor(0xFF * glow) << 24) | 0xFFFFFF, "add", wa.depth.EFFECTS, 0, worm)
+      if step then
+        sparks = sparks + SPARKS[colour]
+        if sparks >= 1 then
+          sparks = sparks - 1
+          tip:ambient({ x = x, y = y, colour = colour })
+        end
+      end
     end
     wa.on.draw(function()
       -- Drawing only, so any order: it decides which of two portals that
