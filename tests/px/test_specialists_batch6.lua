@@ -28,9 +28,10 @@ wa={
     log.drums[#log.drums+1]=d;oil[#oil+1]=d;return d end},
   fire={spawn=function(s)log.fires[#log.fires+1]=s end},
   actors={spawn=function(spec)
-    local a={id=#log.spawned+1,x=spec.x,y=spec.y,vx=spec.vx or 0,vy=spec.vy or 0,spec=spec,booms={}}
-    function a:remove()self.id=0 end
+    local a={id=#log.spawned+1,x=spec.x,y=spec.y,vx=spec.vx or 0,vy=spec.vy or 0,spec=spec,booms={},alive=true}
+    function a:remove()self.id,self.alive=0,false end
     function a:explode(e)self.booms[#self.booms+1]=e end
+    function a:in_water()return false end
     log.spawned[#log.spawned+1]=a;return a end},
   sound={play=function(t,s)log.sounds[#log.sounds+1]=s end},
   hud={message_top=function(t)log.messages[#log.messages+1]=t end},
@@ -171,6 +172,14 @@ log.quads={};frame=frame+1;hit_by(mine);each(hooks.draw)
 check(tramp_quad().sprite:find("jumptramp",1,true),"Trampoline: the springing art the frame it throws")
 log.quads={};frame=frame+1;each(hooks.draw)
 check(tramp_quad().sprite:find("/tramp.png",1,true),"Trampoline: then its resting art")
+local function label()
+  local text={}
+  for _,q in ipairs(log.quads) do
+    if q.sprite:find("sentry_ui/digits",1,true) and q.color~=0x60000000 then text[#text+1]=q.frame end
+  end
+  return table.concat(text)
+end
+check(label()=="40","Trampoline: its health over it, as a sentry's")
 -- After a turn ends it tires: 250 frames later, without a worm on turn.
 each(hooks.turn_end);turn_worm=nil
 for _=1,251 do t.spec.on.frame(t) end
@@ -184,10 +193,15 @@ jumper.vy=4;hit_by(jumper)
 check(jumper.vy==0,"Trampoline: past twenty throws in a row it gives up")
 hit_by(idle);t.spec.on.frame(t);jumper.vy=4;hit_by(jumper)
 check(jumper.vy<0,"Trampoline: a worm standing on it resets that")
+for _=1,21 do hit_by(jumper);t.spec.on.frame(t) end
+each(hooks.turn_start);t.spec.on.frame(t);jumper.vy=4;hit_by(jumper)
+check(jumper.vy<0,"Trampoline: so does the next turn, as a standing worm sends no touch")
 t.spec.on.hit(t,{kind="blast",power=20,x=t.x+20,y=t.y-6})
 check(t.id~=0 and #t.booms==0,"Trampoline: PX's quadratic falloff: 20 pixels off a 20 blast does 15")
 t.spec.on.hit(t,{damage=20})
 check(t.id~=0,"Trampoline: 35 of 40 taken")
+log.quads={};each(hooks.draw)
+check(label()=="5","Trampoline: the label counts down")
 t.spec.on.hit(t,{damage=5})
 check(t.id==0 and #t.booms==1 and t.booms[1].damage==10,"Trampoline: broken at 40, with a blast of 10")
 

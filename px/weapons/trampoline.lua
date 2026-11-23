@@ -125,18 +125,28 @@ function weapon.setup()
   wa.on.turn_start(function()
     for i = #trampolines, 1, -1 do
       local s = trampolines[i]
-      if s.alive then s.tiring, s.tire_timer, s.active = false, 0, true
+      if s.alive then
+        s.tiring, s.tire_timer, s.active = false, 0, true
+        -- A give-up ends here too: in PX a worm standing on it ends it, but a
+        -- standing worm sends no touch here, so the trampoline stayed dead.
+        s.tired, s.looping, s.loop_jumps, s.loop_timer = true, false, 0, 0
       else table.remove(trampolines, i) end
     end
   end)
   local TRAMP = wa.draw.brush{ sprite = ART .. "tramp.png", depth = wa.depth.OBJECTS }
   local JUMPED = wa.draw.brush{ sprite = ART .. "jumptramp.png", depth = wa.depth.OBJECTS }
+  local health_label = require("lib/sentry_health")
+  health_label.install()
   wa.on.draw(function()
     local now = wa.world.frame()
     for _, s in ipairs(trampolines) do
-      if s.alive and s.actor.id ~= 0 then
+      local a = s.actor
+      if s.alive and a.alive then
         local brush = now <= s.jumped and JUMPED or TRAMP
-        brush:box(s.actor.x, s.actor.y - HALF + 4, 70, 32)
+        brush:box(a.x, a.y - HALF + 4, 70, 32)
+        if not a:in_water() then
+          health_label.draw(s.health, HEALTH, a.x, a.y - HALF, wa.depth.OBJECTS - 2)
+        end
       end
     end
   end)
