@@ -210,7 +210,7 @@ function M.install(ctx)
       mask_timer = 0, snd_timer = 0, piece = 1 } -- both timers fire on the first frame they can
     m.body = wa.actors.spawn({
       sprite = ART .. "idle.png", x = x, y = SKY, vx = 0, vy = 0,
-      owner = worm, body = {},
+      owner = worm, body = {}, grab = false,
       on = frame_of(m),
     })
     if super_buster then

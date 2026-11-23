@@ -338,7 +338,7 @@ return {
       }
       h.body = wa.actors.spawn({
         sprite = ART .. "empty.png", x = h.x, y = h.y, vx = 0, vy = 0,
-        owner = worm, body = { hits = { land = true, worms = true } },
+        owner = worm, body = { hits = { land = true, worms = true } }, grab = false,
         on = { frame = frame, hit = hit },
       })
       h.aim = wa.actors.spawn({ sprite = ART .. "aim.png", x = h.x, y = h.y,

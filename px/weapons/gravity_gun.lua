@@ -13,10 +13,15 @@ local UNHOLD = 75 -- gg_unhold_timer: frames stuck before it lets go
 local REACH = 250 -- gg_throw_distance
 local COOLDOWN = 15 -- gg_canfire_timer: frames after a throw or drop
 local WALL_PUSH = 5.0 -- gg_wall_push_miltiplier
-local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, grave = 8 }
+local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, grave = 8, missile = 5, actor = 6 }
 local TARGETS = { "terrain", "worms", "mines", "crates", "oil", "graves" }
-local grabs = TARGETS
-local grab_worms = "all"
+local ROUND = { "worms", "mines", "crates", "oil", "graves" }
+local grabs = { "terrain", "mines", "crates", "oil", "graves", "missiles", "actors" }
+local grab_kinds = { "object", "projectile" }
+local grab_worms = "off"
+local RIDING = { roping = true, bungee = true, jetpacking = true, parachuting = true }
+local grabs_per_use = 0 -- 0 unlimited
+local shots_per_use = 1 -- throws a use allows
 
 local states = {} -- worm id -> its gun
 local claws = 0 -- the held art shown: 0 closed, 1 open
@@ -32,6 +37,14 @@ local function aim_dir(worm)
   return wa.math.sin(ang), -wa.math.cos(ang)
 end
 
+-- The worm a vehicle stands for, if the gun may take it; nil looks past the vehicle.
+local function rider(worm, vehicle)
+  local w = vehicle.owner
+  if w.id == worm.id or w.hp <= 0 then return nil end
+  if grab_worms == "own" and w.alliance ~= worm.alliance then return nil end
+  return w
+end
+
 local function trace(worm, distance)
   local dx, dy = aim_dir(worm)
   local ignore = { worm }
@@ -40,32 +53,49 @@ local function trace(worm, distance)
       if w.alliance ~= worm.alliance then ignore[#ignore + 1] = w end
     end
   end
-  return wa.world.trace({ x0 = worm.x, y0 = worm.y, x1 = worm.x + dx * distance,
-    y1 = worm.y + dy * distance, radius = 0, with = grabs, ignore = ignore })
+  local query = { x0 = worm.x, y0 = worm.y, x1 = worm.x + dx * distance,
+    y1 = worm.y + dy * distance, radius = 0, with = grabs, ignore = ignore, grab = grab_kinds }
+  for _ = 1, 4 do
+    local hit = wa.world.trace(query)
+    local obj = hit and hit.obj
+    if not obj or obj.kind ~= "actor" or obj.grab ~= "worm" then return hit end
+    hit.obj = rider(worm, obj)
+    if hit.obj then return hit end
+    ignore[#ignore + 1] = obj
+  end
 end
 
 local function radius(obj) return RADIUS[obj.kind] or 6 end
 
 local function exists(obj)
-  if obj.kind == "worm" then
-    for _, w in ipairs(wa.worms.all()) do if w.id == obj.id then return w.hp > 0 end end
-    return false
-  end
-  local list = obj.kind == "mine" and wa.mines.all() or obj.kind == "crate" and wa.crates.all()
-    or obj.kind == "oil" and wa.oil.all() or obj.kind == "grave" and wa.graves.all() or {}
-  for _, o in ipairs(list) do if o.id == obj.id then return true end end
-  return false
+  if obj.kind == "worm" then return obj.hp > 0 end
+  return obj.alive
 end
 
 local function free_at(obj, x, y, terrain_only)
+  local kind = obj.kind
+  if kind == "actor" or kind == "missile" then
+    if not obj:fits(x, y) then return false end
+    if terrain_only then return true end
+    return not wa.world.collides({ x = x, y = y, radius = radius(obj), with = ROUND, ignore = { obj } })
+  end
   return not wa.world.collides({ x = x, y = y, radius = radius(obj),
     with = terrain_only and { "terrain" } or TARGETS, ignore = { obj } })
+end
+
+-- A worm on a rope, bungee, jet pack, parachute or vehicle lets go of it first.
+local function set_speed(obj, vx, vy)
+  if obj.kind == "worm" and (RIDING[obj.state] or obj.taken) then
+    obj:release(vx, vy)
+  else
+    obj.vx, obj.vy = vx, vy
+  end
 end
 
 local function state(worm)
   local s = states[worm.id]
   if not s then
-    s = { cooldown = COOLDOWN, timer = UNHOLD, stop = STOP_RADIUS, ungg = 2,
+    s = { cooldown = COOLDOWN, timer = UNHOLD, stop = STOP_RADIUS, ungg = 2, grabs = 0,
       probe_sound = true, pickup_sound = true, loop = 4 }
     states[worm.id] = s
   end
@@ -94,6 +124,7 @@ local function suck(worm, s)
   local ox, oy = worm.x - hit.x, worm.y - hit.y
   local dist = math.sqrt(ox * ox + oy * oy)
   if dist <= STOP_RADIUS + 0.5 then
+    set_speed(obj, 0, 0)
     s.pickup_sound, s.holder, s.hold, s.used = true, true, true, false
     s.held, s.just_opened = obj, true
   else
@@ -102,7 +133,7 @@ local function suck(worm, s)
       obj.x, obj.y = hit.x + dx * r, hit.y + dy * r
     end
     local speed = near and SUCK * 2.5 or SUCK
-    obj.vx, obj.vy = -dx * speed, -dy * speed
+    set_speed(obj, -dx * speed, -dy * speed)
     if near and s.pickup_sound then
       sound(worm, "gg_pickup")
       s.pickup_sound = false
@@ -191,8 +222,7 @@ local function throw(worm, s)
   local dist = math.sqrt(ox * ox + oy * oy)
   sound(worm, "gg_dryfire")
   if hit.obj then
-    worm:ammo(ID, -1)
-    hit.obj.vx, hit.obj.vy = dx * PUSH, dy * PUSH
+    set_speed(hit.obj, dx * PUSH, dy * PUSH)
     effect("trail", worm.x, worm.y, dx, dy, dist)
     sound(worm, "gg_throw")
   else
@@ -220,15 +250,80 @@ local function engaged(worm)
   return worm.state == "roping" or worm.state == "jetpacking"
 end
 
+local function grab(worm, s)
+  s.grabs = s.grabs + 1
+  s.used, s.used_gg = true, true
+  sound(worm, "gg_claws")
+end
+
+-- A use opens with its first grab or throw, a shot WA counts: the unit goes,
+-- the panel locks until the last throw or Ctrl+Space, when WA puts the gun
+-- away. The grab that opens it gets a shot of its own, so the throws stay
+-- shots_per_use; later grabs and drops never reach WA.
+local function press(worm)
+  local s = state(worm)
+  s.pending = nil
+  if engaged(worm) or s.cooldown < COOLDOWN then return "eat" end
+  local keys = wa.world.keys()
+  local open = worm.shots_used > 0
+  -- With the last grab spent, letting go of it ends the use.
+  local spent = open and grabs_per_use > 0 and s.grabs >= grabs_per_use
+  if keys.ctrl then
+    if not open then return "eat" end
+    if s.hold then sound(worm, "gg_drop") end
+    disable(s)
+    reset_cooldown(s)
+    worm.shots = worm.shots_used + 1
+    s.pending = "cancel"
+    return
+  end
+  if keys.shift then
+    local hit = trace(worm, REACH)
+    if not (hit and hit.hit) then
+      sound(worm, "gg_dryfire")
+      return "eat"
+    end
+    if not open then worm.shots, s.grabs = shots_per_use, 0 end
+    if spent then worm.shots = worm.shots_used + 1 end
+    s.pending = "throw"
+    return
+  end
+  if s.hold then
+    disable(s)
+    reset_cooldown(s)
+    if not spent then return "eat" end
+    worm.shots = worm.shots_used + 1
+    s.pending = "cancel"
+    return
+  end
+  local hit = trace(worm, REACH * 3)
+  if not (hit and hit.obj) or open and grabs_per_use > 0 and s.grabs >= grabs_per_use then
+    sound(worm, "gg_dryfire")
+    return "eat"
+  end
+  if open then
+    grab(worm, s)
+    return "eat"
+  end
+  worm.shots, s.grabs = shots_per_use + 1, 0
+  s.pending = "grab"
+end
+
 local function fire(ev)
   local worm = ev.worm
-  if engaged(worm) then return end
   local s = state(worm)
-  worm:ammo(ID, 1) -- the shot itself is free
-  s.used, s.used_gg = true, true
-  local keys = wa.world.keys()
-  if not keys.shift and not keys.ctrl then sound(worm, "gg_claws") end
+  local pending = s.pending
+  s.pending = nil
+  if pending == "grab" then
+    grab(worm, s)
+  elseif pending == "throw" then
+    throw(worm, s)
+    disable(s)
+    reset_cooldown(s)
+  end
 end
+
+weapon.defaults = { ends_invisibility = false }
 
 weapon.definition = {
   wep = "weps/gravity_gun.wep",
@@ -254,18 +349,9 @@ weapon.definition = {
 local function frame(worm)
   local s = state(worm)
   local keys = wa.world.keys()
-  local space_now = keys.space and not s.space
-  local shift_now = (keys.shift or keys.ctrl) and not s.shift
-  s.space, s.shift = keys.space, keys.shift or keys.ctrl
   if worm.weapon == ID then
     if s.cooldown < COOLDOWN then
       s.cooldown = s.cooldown + 1
-      return
-    end
-    if space_now and (keys.shift or keys.ctrl) and not engaged(worm) then
-      throw(worm, s)
-      disable(s)
-      reset_cooldown(s)
       return
     end
     s.ungg, s.ghost = 2, false
@@ -289,20 +375,9 @@ local function frame(worm)
       else
         disable(s)
       end
-      if space_now then
-        if keys.shift or keys.ctrl then sound(worm, "gg_drop") end
-        disable(s)
-        reset_cooldown(s)
-      end
     elseif s.used then
       if keys.space then
-        if shift_now then
-          throw(worm, s)
-          disable(s)
-          reset_cooldown(s)
-        elseif not keys.shift and not keys.ctrl then
-          suck(worm, s)
-        end
+        if not keys.shift and not keys.ctrl then suck(worm, s) end
       else
         s.used = false
       end
@@ -412,19 +487,34 @@ local function render_gun()
 end
 
 function weapon.configure(ctx)
+  grabs_per_use = tonumber(ctx.option("grabs")) or 0
+  shots_per_use = math.max(1, math.min(126, ctx.data and ctx.data.shots or 1))
   grab_worms = ctx.option("grab_worms")
-  grabs = { "terrain" }
-  if grab_worms ~= "off" then grabs[#grabs + 1] = "worms" end
-  for _, kind in ipairs({ { "mines", "grab_mines" }, { "crates", "grab_crates" },
-      { "oil", "grab_oil_drums" }, { "graves", "grab_graves" } }) do
-    if ctx.option(kind[2]) then grabs[#grabs + 1] = kind[1] end
+  grabs, grab_kinds = { "terrain" }, {}
+  if grab_worms ~= "off" then
+    grabs[#grabs + 1] = "worms"
+    grab_kinds[#grab_kinds + 1] = "worm"
   end
+  if ctx.option("grab_objects") then
+    grabs[#grabs + 1], grabs[#grabs + 2] = "mines", "oil"
+    grab_kinds[#grab_kinds + 1] = "object"
+  end
+  if ctx.option("grab_crates") then grabs[#grabs + 1] = "crates" end
+  if ctx.option("grab_graves") then grabs[#grabs + 1] = "graves" end
+  if ctx.option("grab_projectiles") then
+    grabs[#grabs + 1] = "missiles"
+    grab_kinds[#grab_kinds + 1] = "projectile"
+  end
+  if #grab_kinds > 0 then grabs[#grabs + 1] = "actors" else grab_kinds = nil end
 end
 
 function weapon.setup()
   wa.on.worm_message(function(worm)
     if worm.turn then frame(worm) end
   end, { msgs = { wa.msg.FRAME_FINISH } })
+  wa.on.worm_message(function(worm)
+    if worm.turn and worm.weapon == ID then return press(worm) end
+  end, { msgs = { wa.msg.FIRE_WEAPON } })
   wa.on.turn_end(function()
     for _, s in pairs(states) do
       s.used_gg = false
@@ -435,7 +525,12 @@ function weapon.setup()
   require("lib/weapon_hint").hint(ID, function(worm)
     local s = states[worm.id]
     local now = s and s.hold and s.held and "holding" or s and s.used and "armed" or "ready"
-    return "Gravity Gun: " .. now .. "\nSpace: grab\nShift/Ctrl + Space: push"
+    local left = ""
+    if grabs_per_use > 0 then
+      local n = grabs_per_use - (s and worm.shots_used > 0 and s.grabs or 0)
+      left = "\n" .. n .. (n == 1 and " grab left" or " grabs left")
+    end
+    return "Gravity Gun: " .. now .. left .. "\nSpace: grab\nShift + Space: throw\nCtrl + Space: cancel"
   end)
 end
 

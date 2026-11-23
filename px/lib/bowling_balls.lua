@@ -387,7 +387,7 @@ function balls.setup()
       asleep = false, alliance = owner and owner.alliance,
     }
     local a = wa.actors.spawn({
-      sprite = SHEET, x = x, y = y + SPRITE_DROP, owner = owner, body = {},
+      sprite = SHEET, x = x, y = y + SPRITE_DROP, owner = owner, body = {}, grab = false,
       on = {
         hit = function(_, hit) take_hit(b, hit) end,
         frame = function(a)

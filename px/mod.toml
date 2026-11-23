@@ -2600,19 +2600,41 @@ icon = "sprites/gravity_gun/gravity_gun_ico.png"
 default_position = { row = "F8", column = 8 }
 
 [[components.options]]
+key = "grabs"
+type = "choice"
+choices = [
+  "infinite",
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+  "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+  "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60",
+  "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+  "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "100",
+]
+default = "infinite"
+label = "Grabs per use"
+description = "How many times Space can catch something in one use."
+
+[[components.options]]
 key = "grab_worms"
 type = "choice"
 choices = ["all", "own", "off"]
-default = "all"
+default = "off"
 label = "Grabs worms"
 description = "All: any worm. Own: only your colour's worms. Off: no worm."
 
 [[components.options]]
-key = "grab_mines"
+key = "grab_objects"
 type = "bool"
 default = true
-label = "Grabs mines"
-description = "Off: the gun ignores mines."
+label = "Grabs objects"
+description = "Mines, oil drums, turrets, magnets, trampolines and other things lying about."
+
+[[components.options]]
+key = "grab_projectiles"
+type = "bool"
+default = true
+label = "Grabs projectiles"
+description = "Shells, grenades and anything else in flight."
 
 [[components.options]]
 key = "grab_crates"
@@ -2620,13 +2642,6 @@ type = "bool"
 default = true
 label = "Grabs crates"
 description = "Off: the gun ignores crates."
-
-[[components.options]]
-key = "grab_oil_drums"
-type = "bool"
-default = true
-label = "Grabs oil drums"
-description = "Off: the gun ignores oil drums."
 
 [[components.options]]
 key = "grab_graves"

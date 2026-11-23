@@ -264,7 +264,7 @@ function weapon.setup()
     alive[#alive + 1] = f
     local a = wa.actors.spawn({
       sprite = WALK, x = f.x, y = f.y, owner = worm,
-      body = { shape = "missile", layer = "missile" }, on = function(actor) frame(f, actor) end,
+      body = { shape = "missile", layer = "missile" }, grab = false, on = function(actor) frame(f, actor) end,
     })
     f.a = a
     rise_clear(f)

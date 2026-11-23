@@ -329,6 +329,7 @@ local function spawn_controller(s)
     owner = fetchWorm() or current_worm(),
     sprite = mask_for(s.radius), x = s.x, y = s.y,
     body = { mask = { worms = true, weapons = true, rope = true } },
+    grab = false,
     persist = true,
     on = function(actor) tick(actor, s) end,
   }
