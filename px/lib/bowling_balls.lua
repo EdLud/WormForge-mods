@@ -463,56 +463,58 @@ function balls.setup()
     return y
   end
 
-  if wa.on.draw and wa.draw.quad then
-    local glow_sheet = wa.sprites.key(GLOW_SHEET)
-    local spark_sheet = wa.sprites.key(SPARK_SHEET)
-    local sheen_sheet = wa.sprites.key(SHEEN_SHEET)
-    local QUAD = { points = { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } } }
-    local function quad(sheet, frame, color, depth, x, y, half, c, s)
-      QUAD.sprite, QUAD.frame, QUAD.blend, QUAD.color, QUAD.depth = sheet, frame, "add", color, depth
-      local p = QUAD.points
-      if not c then
-        p[1][1], p[1][2] = x - half, y - half
-        p[2][1], p[2][2] = x + half, y - half
-        p[3][1], p[3][2] = x + half, y + half
-        p[4][1], p[4][2] = x - half, y + half
-      else
-        p[1][1], p[1][2] = x + ((-c + s) * half), y + ((-s - c) * half)
-        p[2][1], p[2][2] = x + (( c + s) * half), y + (( s - c) * half)
-        p[3][1], p[3][2] = x + (( c - s) * half), y + (( s + c) * half)
-        p[4][1], p[4][2] = x + ((-c - s) * half), y + ((-s + c) * half)
-      end
-      wa.draw.quad(QUAD)
-    end
+  if wa.on.draw and wa.draw.brush then
+    local GLOW = wa.draw.brush{ sprite = GLOW_SHEET, blend = "add", depth = GLOW_DEPTH }
+    local SHEEN = wa.draw.brush{ sprite = SHEEN_SHEET, blend = "add", depth = SHEEN_DEPTH, color = SHEEN_COLOR }
+    local SPARK = wa.draw.brush{ sprite = SPARK_SHEET, blend = "add", depth = SPARK_DEPTH, color = 0xFFFFFFFF }
+    local MAX_BOXES = 4096 -- brush:boxes' limit a call
     local function zap_color(k)
       return 0xFF000000 | (math.floor(ZAP_R * k) << 16) | (math.floor(ZAP_G * k) << 8) | math.floor(ZAP_B * k)
     end
     local FULL = zap_color(1)
+    local TRAIL_COLORS, TRAIL_SIZES = {}, {} -- by a trail glow's age, 0 to TRAIL_LIFE - 1
+    for age = 0, TRAIL_LIFE - 1 do
+      local k = age / TRAIL_LIFE
+      TRAIL_COLORS[age], TRAIL_SIZES[age] = zap_color(1 - k), (0.3 + 0.2 * k) * GLOW_SIZE
+    end
     local DRAW_IDS = {}
+    local GLOWS, glows = {}, 0 -- seven numbers a glow box, drawn in one call
+    local function glow_box(x, y, size, color)
+      if glows == MAX_BOXES then
+        GLOW:boxes(GLOWS, glows)
+        glows = 0
+      end
+      local i = glows * 7
+      GLOWS[i + 1], GLOWS[i + 2], GLOWS[i + 3], GLOWS[i + 4] = x, y, size, size
+      GLOWS[i + 5], GLOWS[i + 6], GLOWS[i + 7] = 0, 0, color
+      glows = glows + 1
+    end
     wa.on.draw(function()
       local n = 0
       for id in pairs(shared.bowling_balls) do n = n + 1; DRAW_IDS[n] = id end
       for i = #DRAW_IDS, n + 1, -1 do DRAW_IDS[i] = nil end
       table.sort(DRAW_IDS)
-      for _, id in ipairs(DRAW_IDS) do
-        local b = shared.bowling_balls[id]
+      glows = 0
+      for i = 1, n do
+        local b = shared.bowling_balls[DRAW_IDS[i]]
         if b.zapped then
-          local drop = SPRITE_DROP
-          for _, t in ipairs(b.trail) do
-            local k = t.age / TRAIL_LIFE
-            quad(glow_sheet, 0, zap_color(1 - k), GLOW_DEPTH, t.x, t.y + drop, (0.3 + 0.2 * k) * GLOW_SIZE / 2)
+          local drop, trail = SPRITE_DROP, b.trail
+          for j = 1, #trail do
+            local t = trail[j]
+            local age = t.age
+            glow_box(t.x, t.y + drop, TRAIL_SIZES[age], TRAIL_COLORS[age])
           end
           local x, y = b.x, b.y + drop
-          local glow = (0.3 + 0.1 * wa.draw.random()) * GLOW_SIZE / 2
-          for _ = 1, 3 do quad(glow_sheet, 0, FULL, GLOW_DEPTH, x, y, glow) end
-          local c, s = wa.math.cos(b.rot), wa.math.sin(b.rot)
-          quad(sheen_sheet, 0, SHEEN_COLOR, SHEEN_DEPTH, x, y, SPARK_SIZE / 2, c, s)
+          local glow = (0.3 + 0.1 * wa.draw.random()) * GLOW_SIZE
+          for _ = 1, 3 do glow_box(x, y, glow, FULL) end
+          SHEEN:box(x, y, SPARK_SIZE, SPARK_SIZE, b.rot)
           if b.spark <= 1 then
             local frame = math.min(SPARK_FRAMES - 1, math.floor(b.spark * SPARK_FRAMES))
-            quad(spark_sheet, frame, 0xFFFFFFFF, SPARK_DEPTH, x, y, SPARK_SIZE / 2, c, s)
+            SPARK:box(x, y, SPARK_SIZE, SPARK_SIZE, b.rot, frame)
           end
         end
       end
+      if glows > 0 then GLOW:boxes(GLOWS, glows) end
     end)
   end
 

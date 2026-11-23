@@ -3923,12 +3923,12 @@ do
   M.draw()
   local glows, sparks, behind, sheen = 0, {}, true, nil
   for _, q in ipairs(M.quads) do
-    if q.sprite == wa.sprites.key("sprites/bowling_ball/glow.png") then
+    if q.sprite == "sprites/bowling_ball/glow.png" then
       glows = glows + 1
       if q.blend ~= "add" or q.depth <= wa.depth.OBJECTS then behind = false end
     end
-    if q.sprite == wa.sprites.key("sprites/bowling_ball/spark.png") then sparks[#sparks + 1] = q end
-    if q.sprite == wa.sprites.key("sprites/bowling_ball/sheen.png") then sheen = q end
+    if q.sprite == "sprites/bowling_ball/spark.png" then sparks[#sparks + 1] = q end
+    if q.sprite == "sprites/bowling_ball/sheen.png" then sheen = q end
   end
   check("an electrified ball glows behind itself: PX's glow three times, a trail glow for each frame since",
     glows == 3 + 5 and behind, tostring(glows))
