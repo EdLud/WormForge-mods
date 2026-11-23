@@ -112,6 +112,7 @@ return {
     wa.weapons.replace({
       copy_from = "stock.double_turn_time",
       name = "Bullet Time",
+      utility = { effect = "scripted" },
       panel_icon = "sprites/bullet_time.png",
       on_fire = function(fire)
         if t or not wa.world.set_speed then

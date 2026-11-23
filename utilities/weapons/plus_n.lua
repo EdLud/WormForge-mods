@@ -61,6 +61,7 @@ return {
     wa.weapons.replace({
       copy_from = "stock.double_turn_time",
       name = "+N Seconds",
+      utility = { effect = "scripted" },
       panel_icon = "sprites/plus_n.png",
       on_fire = function(fire)
         if add_time(fire.worm, 1, wa.world.retreat() > 0) == 0 then

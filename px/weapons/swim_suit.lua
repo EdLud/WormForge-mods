@@ -3,7 +3,9 @@
 local on_missile = require("lib/on_missile")
 local weapon = {}
 
-weapon.record = {}
+-- Built on Laser Sight's record, without its effect: using the suit, by hand
+-- or by Auto-Use, never switches on a Laser Sight.
+weapon.record = { utility = { effect = "scripted" } }
 
 weapon.defaults = { auto_use = false, crate = { type = "utility" }, donor_card = true }
 
