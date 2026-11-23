@@ -1,4 +1,4 @@
--- Small 5x7 digits on a transparent sheet.
+-- Small 5x7 digits on a transparent sheet, with "." and the letters of "Dud".
 
 local M = { SHEET = "sprites/sentry_ui/digits.png" }
 local installed = false
@@ -27,6 +27,22 @@ end
 local function digit(frame, x, y, tint, depth)
   wa.draw.quad({ sprite = M.SHEET, frame = frame, color = tint, depth = depth, blend = "alpha",
     points = { {x, y}, {x + WIDTH, y}, {x + WIDTH, y + HEIGHT}, {x, y + HEIGHT} } })
+end
+
+local GLYPH = { ["."] = 10, D = 11, u = 12, d = 13 }
+
+-- `text` (digits, ".", "Dud") centred on x, above `bottom`, in `tint`.
+function M.text(text, x, bottom, tint, depth)
+  local left = math.floor(x - (#text * ADVANCE - 1) / 2 + 0.5)
+  local top = math.floor(bottom - HEIGHT - 1)
+  for i = 1, #text do
+    local ch = text:sub(i, i)
+    local frame, dx = tonumber(ch) or GLYPH[ch], left + (i - 1) * ADVANCE
+    if frame then
+      digit(frame, dx + 1, top + 1, 0x60000000, depth)
+      digit(frame, dx, top, tint, depth)
+    end
+  end
 end
 
 function M.draw(health, maximum, x, bottom, depth)

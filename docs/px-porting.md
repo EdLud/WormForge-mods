@@ -879,6 +879,95 @@ Not ported: `script_spawn_1_worm` (pick one worm per team in the lobby),
 `script_antiglitch`, `script_weapon_panel` and the Skip Go pick at the
 first turn of a race.
 
+## Team17 3.3
+
+The profile is PX's `Team17 - 3.3.pxs` (September 2026 build): its WSC
+(`T17 test.wsc`) for the scheme, its records for the panel, made by a local
+script (`local/team17/make_profile.py`, from `tools/px_scheme_weps.py`'s
+export). Each record gives its weapon's place (the row at +0x08, F1 to F12
+or the utility row, in slot order), ammo, delay, crate chance and type,
+count in crate and whether it is remembered. Only the Super Tele ends the
+turn: every other weapon is `after_use = "continue"`, as the records and
+`weapon_manager.txt` have it. PX cut the F4 and F7 weapons' damage, and the
+profile carries it as record fields: Fire Punch and Dragon Ball 10, BlowTorch
+and Pneumatic Drill 5 (`dragon_ball.damage`, `blow_torch.damage` and
+`drill.damage`, new for this port; the evidence is in
+docs/px-reverse-engineering.md). The rope is the record's: 20 shots, 756
+pixels. The Girder and the 3 Girder Pack keep the cursor within 300 pixels
+(`script_girder_restrictor`).
+
+`team17.rules` (`scheme/team17.lua`) is the scheme's `scheme_team17`
+library:
+
+- A worm whose health reaches 0 while another team's worm had the turn last
+  gives that worm 30 HP, a utility crate and a weapon crate. The utility is
+  one of the 14 in `extra_crates.txt`; the weapon one of its 19 (six in ten)
+  or its 12 (the rest), three Underwater Bombs where that is the draw. A
+  weapon not on the panel gives what PX gives for a name it can't find:
+  Low Gravity, or a weapon crate drawn as usual.
+- A 75 HP health crate every 18000 to 25199 frames of turns, while at most
+  four crates are out (else it tries again 60 frames later).
+- Crates don't pull the camera while a turn runs (`object.camera = false`).
+- Firing the Fire Punch, Dragon Ball or Prod locks those three and the
+  Super Tele for the rest of the turn (a delay of -1, lifted at the turn's
+  end); the BlowTorch, Pneumatic Drill and Girder do the same for theirs.
+- The rules show for ten seconds at the first turn, in a window
+  (`wa.hud.window`), in place of PX's coloured chat lines.
+
+Crates go where PX's scan puts them (`lib/crate_spot.lua`, shared with the
+Random Trap Crate): a 5-pixel grid from a random cell, the first cell a
+crate fits with land at most 1000 pixels below. PX's scan divided the row
+by the grid's height where it meant its width; this one doesn't.
+
+The other libraries map onto settings: `fireangle` is Fast aim,
+`script_exturnside` ExTurnSide, `script_live_hp` Live HP,
+`script_fastdeath` Instant Death "settled" (as Highlander Orange),
+`script_turnstart_fastwalk` Fast Walk with Auto-Use, `script_safe_surrender`
+Skip Go/Surrender. The scheme's random mine fuses are its WSC's. Not
+ported: `script_antiglitch` and `script_weapon_panel`, as in Random Race.
+
+### Its new weapons
+
+- **Bible Launcher**, **Big Cluster Bomb**, **Hotchkiss** and **Mole Herd
+  Launcher** are records and art only. The Hotchkiss uses the Burst Rifle's
+  geometry (aim, take-out and fire sheets); the Mole Herd Launcher's moles
+  are stock (sprite 166 and the dig art of the Mole Bomb), and the
+  `pogosheep.png` names in its record go unused.
+- **Frag Grenade**, **Multi-Bolt**, **Bomb-omb** and **Super Remote
+  Roller** draw PX's hold and flight art; their trails are paths in their
+  own records (`missile.trail.sprite`), not overrides of the stock sprites
+  PX repaints (261, 451, 452, 461, 250, 251), so no other weapon changes.
+- **Poison Grenade**: no blast; it throws five clustlets that burst after
+  four seconds into 41 puffs of the poison cloud the Toxic Grenade leaves
+  (`lib/poison_cloud.lua`, moved out of the Toxic Grenade), orange. Poison
+  10 a touch (option). PX made one ring of skunk gas per worm in the match
+  (its loop runs `DoPoison` for each); this makes one.
+- **Normal Barrel**: an oil drum launched with the shot's speed; with no
+  room, the shot comes back, as the Barrel Launcher's.
+- **Crate Grabber**: a click within 12 pixels of a crate brings it to the
+  worm. PX also muted the "incoming" speech while it was selected; that
+  isn't done.
+- **Random Trap Crate**: a weapon crate somewhere on the map carrying an
+  invisible mine (damage 40, trigger 42 pixels, no fuse). Not as PX: WA's
+  mine blast (PX 70), no wider trigger while roping, its tick heard.
+- **Underwater Bomb** (rafa``2): fired only by a worm 40 pixels or more
+  below the water line (the Swim Suit's swimmer, through
+  `instant_use = "manual"`), else the shot comes back and the worm holds
+  the Bungee. It moors 65 pixels ahead, bobs 10 pixels on its own periods,
+  and goes off (100, PX's `DoExplosion(..., 100, 85)`) when anything comes
+  within 36 pixels. It reddens as the turn's worm nears.
+- **Magnetic Missile** (_Kilburn): a magnet fired like a bazooka, its field
+  14 pixels behind its nose: range 120, three turns, 20 health, a 40 blast.
+  It sticks where it hits the land nose first (8 pixels ahead of it are
+  land), bounces off it faster than 5, punches through worms, and comes
+  loose on a melee hit or once the land behind it is gone. The magnet core
+  it shares with the Electromagnet is `lib/magnet.lua`; the + key's
+  polarity is one per worm for both.
+- **Mine Reveal**: a click within 10 pixels of a mine gives it a fuse of 0
+  to 2999 ms (`mine.fuse`, new for this port), held there for 40 frames,
+  with a hop; the fuse shows over it ("Dud" at 0) until the turn ends. The
+  first use in a match costs nothing.
+
 ## Anti Fall Damage
 
 `px.anti_fall_damage` is PyroMan's `utility_no_fall_damage`. PX's script

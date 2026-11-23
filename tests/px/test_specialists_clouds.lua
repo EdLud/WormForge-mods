@@ -34,7 +34,7 @@ dofile(root.."../tests/brush_mock.lua")(wa)
 local function render()
   draws={};for _,fn in ipairs(hooks) do fn() end
 end
-platform.setup();toxic.setup()
+platform.setup();require("lib/poison_cloud").setup()
 local owner={x=100,y=83,alliance=1}
 platform.definition.on_fire{worm=owner,x=999,y=999}
 local a=bodies[1]

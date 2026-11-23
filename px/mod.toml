@@ -529,7 +529,7 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/sentry_ui/digits.png"]
-frames = 10
+frames = 14
 fps = 1
 play = "loop"
 
@@ -902,6 +902,15 @@ name = "Random Race"
 authors = ["0rang3"]
 description = "Each time the first team's turn comes round, a race is chosen at random and every team gets only its weapons: Parkour with Jump and Low Gravity, or Portal Gun, both with Anti Fall Damage; Wings; Helicopter; or Ninja Rope with Parachute."
 entry = "components/random_race.lua"
+
+[[components]]
+id = "team17.rules"
+type = "feature"
+name = "Team17 rules"
+authors = ["0rang3"]
+credits = "crate scripts by Ted feat. Buxnaman, edited by m4d-c4t"
+description = "A kill gives the turn's worm 30 HP and drops a weapon and a utility crate; a health crate drops every 6 to 8 minutes of turns. Firing the Fire Punch, Dragon Ball or Prod locks those and the Super Tele for the rest of the turn, as do the BlowTorch, Pneumatic Drill and Girder."
+entry = "components/team17.lua"
 
 [[components]]
 id = "ktk.control"
@@ -2788,3 +2797,258 @@ play = "loop"
 [sprites."sprites/wings/fold.png"]
 fps = 24
 play = "loop"
+
+[sprites."sprites/bible_launcher/bible.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/aim.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/aimu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/aimd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/draw.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/drawu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/drawd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/fire.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/fireu.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/hotchkiss/fired.png"]
+fps = 15
+play = "loop"
+
+[[components]]
+id = "px.bible_launcher"
+type = "weapon"
+name = "Bible Launcher"
+description = "Launch a bible that bounces up to four times, exploding at every bounce."
+entry = "components/weapon.lua"
+icon = "sprites/bible_launcher/bible_ico.png"
+default_position = { row = "F1", column = 3 }
+
+[[components]]
+id = "px.big_cluster_bomb"
+type = "weapon"
+name = "Big Cluster Bomb"
+description = "A cluster bomb with a stronger blast and stronger clusters."
+entry = "components/weapon.lua"
+icon = "cluster_bomb"
+default_position = { row = "F2", column = 2 }
+
+[[components]]
+id = "px.hotchkiss"
+type = "weapon"
+name = "Hotchkiss"
+description = "A machine gun that fires 35 light bullets in bursts of four."
+entry = "components/weapon.lua"
+icon = "sprites/hotchkiss/ico_hotchkiss.png"
+default_position = { row = "F3", column = 2 }
+
+[[components]]
+id = "px.mole_herd_launcher"
+type = "weapon"
+name = "Mole Herd Launcher"
+description = "Launch a mole that walks and splits into three digging moles."
+entry = "components/weapon.lua"
+icon = "sprites/launchers/mhl_ico.png"
+default_position = { row = "F5", column = 5 }
+
+[sprites."sprites/frag_grenade/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/poison_grenade/poisonc.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/multi_bolt/spb_multib.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/multi_bolt/multib.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/multi_bolt/multibc.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/multi_bolt/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/multi_bolt/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bomb_omb/bombb.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bomb_omb/bombbc.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bomb_omb/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/bomb_omb/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_remote_roller/sremoter.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_remote_roller/remoter.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_remote_roller/trail.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/super_remote_roller/cluster_trail.png"]
+fps = 15
+play = "loop"
+
+[[components]]
+id = "px.frag_grenade"
+type = "weapon"
+name = "Frag Grenade"
+authors = ["Curtis"]
+description = "A heavy grenade that explodes on impact."
+entry = "components/weapon.lua"
+icon = "sprites/frag_grenade/ico_frag.png"
+default_position = { row = "F2", column = 1 }
+
+[[components]]
+id = "px.poison_grenade"
+type = "weapon"
+name = "Poison Grenade"
+authors = ["0rang3"]
+description = "A grenade that bursts into five clusters, each releasing a poison cloud."
+entry = "components/weapon.lua"
+icon = "sprites/poison_grenade/ico_pois_gren.png"
+default_position = { row = "F2", column = 5 }
+
+[[components.options]]
+key = "poison"
+type = "int"
+min = 1
+max = 200
+default = 10
+label = "Poison"
+description = "Poison per turn that a worm takes from the clouds."
+
+[[components]]
+id = "px.multi_bolt"
+type = "weapon"
+name = "Multi-Bolt"
+authors = ["Curtis"]
+description = "A bolt that explodes on contact into six bouncing bolts."
+entry = "components/weapon.lua"
+icon = "sprites/multi_bolt/ico_multib.png"
+default_position = { row = "F3", column = 4 }
+
+[[components]]
+id = "px.bomb_omb"
+type = "weapon"
+name = "Bomb-omb"
+authors = ["Curtis"]
+description = "A walking bomb that explodes when it bumps into a worm, scattering sparks."
+entry = "components/weapon.lua"
+icon = "sprites/bomb_omb/ico_bombb.png"
+default_position = { row = "F5", column = 3 }
+
+[[components]]
+id = "px.super_remote_roller"
+type = "weapon"
+name = "Super Remote Roller"
+authors = ["Curtis"]
+description = "Throw a roller that walks and splits into four rollers; Space sets them off."
+entry = "components/weapon.lua"
+icon = "sprites/super_remote_roller/ico_sremoter.png"
+default_position = { row = "F10", column = 6 }
+
+[[components]]
+id = "px.normal_barrel"
+type = "weapon"
+name = "Normal Barrel"
+description = "Launch an oil drum."
+entry = "components/weapon.lua"
+icon = "sprites/normal_barrel/normal_barrel_ico.png"
+default_position = { row = "F10", column = 3 }
+
+[[components]]
+id = "px.crate_grabber"
+type = "weapon"
+name = "Crate Grabber"
+authors = ["0rang3"]
+credits = "in the crate weapons of StepS and rafa``2"
+description = "Click a crate to bring it to the worm."
+entry = "components/weapon.lua"
+icon = "sprites/crate_grabber/icon.png"
+default_position = { row = "utility", column = 4 }
+
+[[components]]
+id = "px.random_trap_crate"
+type = "weapon"
+name = "Random Trap Crate"
+authors = ["StepS", "rafa``2"]
+credits = "with 0rang3"
+description = "A weapon crate with a hidden mine appears somewhere on the map."
+entry = "components/weapon.lua"
+icon = "sprites/random_trap_crate/icon.png"
+default_position = { row = "F6", column = 2 }
+
+[[components]]
+id = "px.underwater_bomb"
+type = "weapon"
+name = "Underwater Bomb"
+authors = ["rafa``2"]
+description = "A swimming worm moors a bomb in the water in front of it; anything that comes near sets it off."
+entry = "components/weapon.lua"
+icon = "sprites/underwater_bomb/wbomb_ico.png"
+default_position = { row = "F6", column = 1 }
+
+[[components]]
+id = "px.magnetic_missile"
+type = "weapon"
+name = "Magnetic Missile"
+authors = ["_Kilburn"]
+description = "A magnet fired like a bazooka: it pulls or pushes mines and missiles for three turns, and sticks in the land it hits nose first. + switches it between attracting and repelling."
+entry = "components/weapon.lua"
+icon = "sprites/magnetic_missile/ico_magmissile.png"
+default_position = { row = "F6", column = 4 }
+
+[[components]]
+id = "px.mine_reveal"
+type = "weapon"
+name = "Mine Reveal"
+description = "Click a mine to give it a fuse of up to three seconds, shown over it until the turn ends. The first use in a match is free."
+entry = "components/weapon.lua"
+icon = "sprites/mine_reveal/mine_reveal_ico.png"
+default_position = { row = "utility", column = 5 }
