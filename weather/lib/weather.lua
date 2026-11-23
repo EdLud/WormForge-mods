@@ -116,7 +116,13 @@ local function draw()
   local hw, hh = v.w / z / 2, v.h / z / 2
   st.cx, st.cy, st.zoom = v.cx, v.cy, z
   st.left, st.right, st.top, st.bottom = v.cx - hw, v.cx + hw, v.cy - hh, v.cy + hh
-  st.w, st.h = 2 * hw, 2 * hh
+  if wa.world.cavern() then
+    -- A cavern smaller than the screen sits in black bars: nothing past it.
+    local size = wa.world.size()
+    st.left, st.right = math.max(st.left, 0), math.min(st.right, size.w)
+    st.top, st.bottom = math.max(st.top, 0), math.min(st.bottom, size.h)
+  end
+  st.w, st.h = st.right - st.left, st.bottom - st.top
   st.now = wa.world.frame() + wa.draw.fraction()
   st.wind = wa.world.wind()
   st.water = wa.world.water()

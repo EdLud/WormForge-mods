@@ -4,7 +4,11 @@
 
 local spot = {}
 
-local STEP, BELOW, RADIUS = 5, 1000, 9
+local STEP, BELOW = 5, 1000
+-- WA's crate is 24 by 29 pixels (its own drop's picker, 0x53F630, keeps that
+-- box clear): a circle of its half width swept this far up and down. A crate
+-- given less room sticks in the land it overlaps and hangs there.
+local RADIUS, REACH = 12, 2.5
 local BLOCKS = { "terrain", "worms", "crates", "oil", "mines" }
 
 -- x, y in pixels, or nil when no cell fits. Draws two numbers from
@@ -18,9 +22,10 @@ function spot.find()
   for n = 0, cols * rows - 1 do
     local x = ((col0 + n % cols) % cols) * STEP
     local y = ((row0 + n // cols) % rows) * STEP
-    if y < water and not wa.world.collides({ x = x, y = y, radius = RADIUS, with = BLOCKS }) then
-      local hit = wa.world.trace({ x0 = x, y0 = y, x1 = x, y1 = y + BELOW, radius = RADIUS, with = { "terrain" } })
-      if hit and hit.y < water then return x, y end
+    if y + REACH < water
+      and not wa.world.trace({ x0 = x, y0 = y - REACH, x1 = x, y1 = y + REACH, radius = RADIUS, with = BLOCKS }) then
+      local hit = wa.world.trace({ x0 = x, y0 = y + REACH, x1 = x, y1 = y + BELOW, radius = RADIUS, with = { "terrain" } })
+      if hit and hit.hit and hit.y < water then return x, y end
     end
   end
   return nil

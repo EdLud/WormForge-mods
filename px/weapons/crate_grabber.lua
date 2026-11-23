@@ -20,6 +20,7 @@ end
 
 weapon.definition = {
   wep = "weps/nuclear_test.wep",
+  available_in_caves = true, -- the Nuclear Test record it copies isn't
   name = "Crate Grabber",
   panel_icon = "sprites/crate_grabber/icon.png",
   on_select = { cursor = true },

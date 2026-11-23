@@ -80,22 +80,15 @@ function team17.install(ctx)
 
   -- crates_per_kill.txt: the worm whose turn began last, alive and of
   -- another team, is rewarded for each worm whose health reaches 0.
-  local current, counted = nil, {}
-  local function check_kills()
-    for _, w in ipairs(wa.worms.all()) do
-      if w.hp <= 0 and not counted[w.id] then
-        counted[w.id] = true
-        local killer = current
-        if killer and killer.id ~= w.id and killer.hp > 0 and killer.team ~= w.team then
-          killer:heal(KILL_HP)
-          utility_crate()
-          weapon_crate()
-        end
-      elseif w.hp > 0 then
-        counted[w.id] = nil
-      end
+  local current = nil
+  wa.on.death(function(ev)
+    local killer, victim = current, ev.victim
+    if killer and killer.id ~= victim.id and killer.hp > 0 and killer.team ~= victim.team then
+      killer:heal(KILL_HP)
+      utility_crate()
+      weapon_crate()
     end
-  end
+  end)
 
   -- extra_crates.txt: counted in the frames of the turns.
   local health_at, health_count = 0, 0
@@ -171,7 +164,6 @@ function team17.install(ctx)
     local frame = wa.world.frame()
     if frame == last_frame then return end
     last_frame = frame
-    check_kills()
     if turn_on then health_timer() end
     if rules_at and frame - rules_at >= RULES_FRAMES then
       rules_window:close()

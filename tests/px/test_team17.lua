@@ -19,13 +19,23 @@ wa = {
     local r = table.remove(rolls, 1)
     return r and math.min(b, math.max(a, r)) or a
   end,
-  worms = { all = function() return worms end },
+  -- As WA's: a worm at 0 HP is no longer listed.
+  worms = { all = function()
+    local alive = {}
+    for _, w in ipairs(worms) do if w.hp > 0 then alive[#alive + 1] = w end end
+    return alive
+  end },
   world = {
     frame = function() return frame end,
     size = function() return { w = 100, h = 100 } end,
     water = function() return 90 end,
-    collides = function(c) return c.y < 50 end,
-    trace = function(t) return { hit = true, x = t.x0, y = 60 } end,
+    -- Land above y 50 and at y 60 below: a crate's box (a short sweep) fits from 50 down.
+    trace = function(t)
+      if t.y1 - t.y0 < 10 then
+        return t.y0 + 2.5 < 50 and { hit = false, starts_solid = true } or nil
+      end
+      return { hit = true, x = t.x0, y = 60 }
+    end,
   },
   crates = {
     all = function() return crates end,
@@ -48,7 +58,7 @@ wa = {
   on = {},
 }
 local function reset_hooks()
-  on = { turn_start = {}, turn_end = {}, worm_message = {} }
+  on = { turn_start = {}, turn_end = {}, worm_message = {}, death = {} }
   for name, list in pairs(on) do wa.on[name] = function(f) list[#list + 1] = f end end
 end
 local function fire(name, ...) for _, f in ipairs(on[name]) do f(...) end end
@@ -80,6 +90,11 @@ local function step(w)
   frame = frame + 1
   fire("worm_message", w, wa.msg.FRAME_FINISH)
 end
+-- WA's death event: the worm's HP reaches 0.
+local function kill(w)
+  w.hp = 0
+  fire("death", { victim = w })
+end
 local function turn(w)
   for _, o in ipairs(worms) do o.turn = o == w end
   fire("turn_start", { worm = w })
@@ -102,7 +117,7 @@ rolls = {
   17, -- Underwater Bomb, three of them
   0, 0, -- its spot
 }
-b.hp = 0
+kill(b)
 step(a)
 check("the killer gets 30 HP", a.hp == 130, a.hp)
 check("two crates", #spawned == 2, #spawned)
@@ -120,7 +135,7 @@ spawned = {}
 for _, w in ipairs(worms) do w.hp = 100 end
 step(a)
 turn(b)
-b2.hp = 0
+kill(b2)
 step(b)
 check("no reward for a teammate", #spawned == 0 and b.hp == 100)
 
@@ -130,7 +145,7 @@ b2.hp = 100
 step(b)
 turn(a)
 rolls = { 1, 0, 0, 9, 1, 0, 0 } -- utility crate; super list; Burning Sheep Launcher (not placed)
-b.hp = 0
+kill(b)
 step(a)
 check("an unplaced weapon: a random weapon crate", spawned[2] and spawned[2].contents == nil and spawned[2].kind == "weapon")
 

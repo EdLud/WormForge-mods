@@ -121,6 +121,7 @@ local function new_match(options, extra)
       wind = function() return 0.1 end,
       water = function() return 560 end,
       size = function() return { w = 2000, h = 700 } end,
+      cavern = function() return M.cavern == true end,
     },
     land = {
       solid = solid,
@@ -361,6 +362,23 @@ do
     if q.sprite == "sprites/rain.png" and q.depth == wa.depth.FRONT then front = front + q.count end
   end
   check("light rain stays behind the land", front == 0)
+
+  -- A cavern smaller than the screen: the rain of a view of just the level, none in the black bars round it.
+  local function rain_span(cavern, w, h)
+    new_match()
+    M.cavern = cavern
+    wa.world.view = function() return { cx = 1000, cy = 350, w = w, h = h, zoom = 1 } end
+    frames(3)
+    local lo, hi, n = math.huge, -math.huge, 0
+    for _, q in ipairs(M.quad_boxes) do
+      if q.sprite == "sprites/rain.png" and q.left then lo, hi, n = math.min(lo, q.left), math.max(hi, q.left), n + 1 end
+    end
+    return lo .. ".." .. hi .. " (" .. n .. ")"
+  end
+  local level = rain_span(false, 2000, 700)
+  local cave = rain_span(true, 3000, 1200)
+  check("a cavern's black bars get no rain", cave == level, cave .. " vs " .. level)
+  check("past an island's edges the rain goes on", rain_span(false, 3000, 1200) ~= level)
 
   new_match({ rain = 0, lightning_chance = 0 })
   frames(3)

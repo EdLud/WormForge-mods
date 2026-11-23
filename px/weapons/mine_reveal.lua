@@ -32,6 +32,7 @@ end
 
 weapon.definition = {
   wep = "weps/nuclear_test.wep",
+  available_in_caves = true, -- the Nuclear Test record it copies isn't
   name = "Mine Reveal",
   panel_icon = "sprites/mine_reveal/mine_reveal_ico.png",
   sounds = { BEEP },
