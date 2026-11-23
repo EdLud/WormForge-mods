@@ -1816,6 +1816,13 @@ entry = "components/weapon.lua"
 icon = "sprites/portal_gun/icon.png"
 default_position = { row = "F8", column = 5 }
 
+[[components.options]]
+key = "mid_air_aim"
+type = "bool"
+default = true
+label = "Mid-air aim"
+description = "While jumping or falling, a crosshair shows the aim and each arrow press moves it. Off: the shot takes the arrows held as Space is pressed."
+
 [components.suggests."hl.rules"]
 pool = "second"
 

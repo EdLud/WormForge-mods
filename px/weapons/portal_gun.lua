@@ -34,12 +34,19 @@ function weapon.definition()
           "sprites/portal_gun/portal_blue.png", "sprites/portal_gun/portal_glow.png",
           "sprites/portal_gun/portal_gun_glow.png",
           "sprites/portal_gun/lightning_glow.png", "sprites/portal_gun/portal_black_mask.png",
+          "sprites/portal_gun/air_crosshair.png",
         },
     sounds = { "sounds/portal_gun_shoot.wav", "sounds/portal_gun_hit.wav", "sounds/portal_gun_failhit.wav",
           "sounds/portal_active.wav", "sounds/portal_inactive.wav", "sounds/portal_teleport.wav" },
     params = { gpu_prefix = "sprites/portal_gun/" },
     on_fire = function(fire) fires.portal_gun(fire) end,
   })
+end
+
+function weapon.configure(ctx)
+  local shared = require("lib/shared")
+  -- The crosshair in flight: only with Mid-air aim on, for a gun that fires there.
+  shared.portal_mid_air_aim = ctx.data.airborne ~= false and ctx.option("mid_air_aim") ~= false
 end
 
 function weapon.setup()
@@ -142,20 +149,50 @@ function weapon.setup()
     b.a:gfx({ scale = 0.12, tint = colours[b.colour] & 0xFFFFFF, depth = wa.depth.OBJECTS })
     effects:trail(b.x, b.y, b.colour)
   end
+  -- The aim the shot takes, 0 down to 1 up: the aim target, the same on
+  -- every machine. `worm.aim` eases toward it as the crosshair draws.
+  local function ground_aim(worm) return (worm.aim_target + 90) / 180 end
+  -- The arrows held, as an aim: Up+side 0.75, Down+side 0.175, Left and
+  -- Right as forward.
   local function air_aim(worm, keys)
     if (keys.left or keys.right) and keys.up then return 0.75 end
     if (keys.left or keys.right) and keys.down then return 0.175 end
     if keys.left or keys.right then return 0.5 end
     if keys.down then return 0 end
     if keys.up then return 1 end
-    return worm.aim
+    return ground_aim(worm)
   end
+
+  -- Mid-air aim: in flight the worm keeps a crosshair, and each new arrow
+  -- press re-aims it (Core utilities' ExTurnSide turns the worm). Letting go
+  -- of the keys keeps the aim. Off, a shot takes the arrows held at Space.
+  local IN_FLIGHT = { jump_prepare = true, jumping = true, jump_falling = true,
+    falling = true, tumbling = true, hit = true, blasted = true }
+  local flights = {} -- [worm id] = { worm, aim, last frame's arrows }
+  local function fly(worm, keys)
+    local f = flights[worm.id]
+    if not f then
+      -- Keys already down (walking into the jump) are no press.
+      f = { aim = ground_aim(worm) }
+      flights[worm.id] = f
+    elseif (keys.up and not f.up) or (keys.down and not f.down)
+        or (keys.left and not f.left) or (keys.right and not f.right) then
+      f.aim = air_aim(worm, keys)
+    end
+    f.up, f.down, f.left, f.right = keys.up, keys.down, keys.left, keys.right
+    return f
+  end
+  local function land(id) flights[id] = nil end
+
   shared.fires.portal_gun = function(fire)
     local worm, keys = fire.worm, wa.world.keys()
     ensure_ticker(worm)
     local colour = chosen[worm.team] or 1
     if keys.ctrl or keys.alt then colour = 3 - colour end
-    local aim = fire.airborne and air_aim(worm, keys) or worm.aim
+    local aim = ground_aim(worm)
+    if fire.airborne then
+      aim = shared.portal_mid_air_aim ~= false and fly(worm, keys).aim or air_aim(worm, keys)
+    end
     local angle = (1 - aim) * math.pi
     local dx, dy = wa.math.sin(angle) * worm.facing, -wa.math.cos(angle)
     local power = fire.power or 1
@@ -175,8 +212,14 @@ function weapon.setup()
   wa.on.body_move(function(body) if next(network.pairs) then network:move(body) end end,
     { kinds = { "worm", "missile", "mine", "crate", "oil", "grave", "arrow" } })
   wa.on.worm_message(function(worm)
-    if not worm.turn then return end
-    local keys, id, team = wa.world.keys(), worm.id, worm.team
+    local id = worm.id
+    if not worm.turn then land(id); return end
+    local keys, team = wa.world.keys(), worm.team
+    if shared.portal_mid_air_aim ~= false and worm.weapon == ID and IN_FLIGHT[worm.state] then
+      fly(worm, keys)
+    else
+      land(id)
+    end
     -- Last frame's keys, kept in one table a worm.
     local old = held[id]
     if not old then old = {}; held[id] = old end
@@ -193,8 +236,8 @@ function weapon.setup()
     end
     old.portal, old.plus_key, old.minus_key, old.pause_key = worm.weapon == ID, keys.plus_key, keys.minus_key, keys.pause_key
   end, { msgs = { wa.msg.FRAME_FINISH } })
-  wa.on.turn_start(function() network:turn_start(); held = {} end)
-  wa.on.turn_end(function() network:turn_end() end)
+  wa.on.turn_start(function() flights = {}; network:turn_start(); held = {} end)
+  wa.on.turn_end(function() flights = {}; network:turn_end() end)
 
   require("lib/weapon_hint").register(ID, function(worm)
     return "Portal Gun: " .. ((chosen[worm.team] or 1) == 1 and "ORANGE" or "BLUE")
@@ -203,6 +246,11 @@ function weapon.setup()
 
   if wa.on.draw then
     local tip, tip_frame = Effects.new(), nil
+    -- In flight: the crosshair 80 pixels out along the aim, where the stock
+    -- one sits, a frame for each team colour, turning half a circle as the
+    -- aim sweeps from down to up and back (DrawAimCursor 0x51D680).
+    local CROSSHAIR = 80
+    local crosshair = wa.draw.brush{ sprite = ART .. "air_crosshair.png", depth = wa.depth.EFFECTS }
     -- A brush per sheet, blend and depth, made at its first box: the
     -- portals and their sparks draw every frame and make no tables.
     local brushes = {}
@@ -240,6 +288,13 @@ function weapon.setup()
       local step = now ~= tip_frame
       tip_frame = now
       if step then tip:tick(wa.world.gravity()) end
+      local flight = worm and flights[worm.id]
+      if flight then
+        local angle = (1 - flight.aim) * math.pi
+        crosshair:box(worm.x + math.sin(angle) * worm.facing * CROSSHAIR,
+          worm.y - math.cos(angle) * CROSSHAIR, 32, 32, (flight.aim * 2 % 1) * math.pi * worm.facing,
+          worm.alliance % 6, 0xFFFFFFFF, worm)
+      end
       if worm and worm.weapon == ID and worm.aiming then
         local keys = wa.world.keys()
         local colour = chosen[worm.team] or 1

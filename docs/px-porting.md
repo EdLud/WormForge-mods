@@ -676,11 +676,28 @@ an explosion's `ev.worm` is the missile's owner, not necessarily a worm.
 Scales of Justice's slot is PX's Portal Gun. `-` selects orange, `+` blue;
 Ctrl or Alt selects the other colour for a shot. New endpoints automatically
 select the other colour. Pause/Break toggles the current team's portals.
-Ground shots keep WA's charge bar; airborne shots fire at full power, using
-Up/Down and Left/Right for PX's eight aim choices. Flight momentum and WA's
-collisions continue. The Portal Gun has no Shift aim of its own (PX's); Core
-utilities' Fast aim, which Highlander Orange and Specialists 2.3 switch on,
-speeds its aim as any other weapon's.
+Ground shots keep the charge bar and take the aim target (`worm.aim_target`,
+PX's `FireAngle`). Airborne shots fire at full power. With the option Mid-air
+aim (on by default), the worm keeps a crosshair in flight: while it jumps,
+falls or is knocked about with the Portal Gun selected, a crosshair in its
+team colour sits 80 pixels out along the aim, where the stock crosshair sits
+(DrawAimCursor 0x51D680), and turns half a circle as the aim sweeps, as the
+stock one does. The worm itself is drawn as usual, without the gun, as with a
+stock weapon. The flight starts at the ground aim. Each new arrow press
+re-aims it in PX's steps (Up 1, Up+side 0.75, side 0.5, Down+side 0.175, Down
+0), Left and Right both meaning forward, as in PX; Core utilities' ExTurnSide
+turns the worm in flight. PX read the keys only at the Space press. Letting go
+keeps the aim, so a diagonal survives releasing one key first. The flight's
+aim is simulation state kept per worm, dropped when the worm lands, changes
+weapon or its turn ends. With Mid-air aim off there is no crosshair in flight,
+and an airborne shot takes the arrows held as Space is pressed, as in PX. With
+the weapon's "Fires jumping or falling" setting off, the gun fires nothing in
+flight and shows no crosshair there. PX showed its gun in flight by forcing
+worm states every frame (`WS_AIMING` at the Space press, `WS_SLIDING` while
+flying); the port leaves the worm states alone. Flight momentum and collisions
+continue. The Portal Gun has no Shift aim of its own (PX's); Core utilities'
+Fast aim, which Highlander Orange and Specialists 2.3 switch on, speeds its
+aim as any other weapon's.
 
 A team owns one persistent pair. Both endpoints are required for transport.
 Placement follows PX's terrain normals and partner exclusion; each two
