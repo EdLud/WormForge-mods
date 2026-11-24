@@ -333,6 +333,8 @@ end
 local function new_match(opts)
   opts = opts or {}
   M, logs, active, death_seen, replaced = {}, {}, nil, {}, {}
+  -- The balloon's record: it reads its parachute wind (WA's 100) as it opens.
+  M.weapon_data = { ["px.hot_air_balloon"] = { fires = { as = "special", subtype = 12 }, parachute = { wind_pct = 100 } } }
   cavern = opts.cavern or false
   rng = 12345
   ammo = {}
@@ -4520,6 +4522,26 @@ do
   check("up again", up_again())
   M.turn_start({ worm = worm(32), active = worm(32) })
   check("a turn change pops it", not w.taken and w.body_visible == true)
+  -- The profile's Wind: the record's percentage, read as it opens.
+  M.weapon_data["px.hot_air_balloon"].parachute.wind_pct = 0
+  M.wind, w.vx = 0.5, 0
+  check("up again", up_again())
+  local x2 = w.x
+  for _ = 1, 10 do
+    M.message(w, wa.msg.FRAME_FINISH)
+  end
+  check("Wind 0%: the wind doesn't move it", w.x == x2, tostring(w.x - x2))
+  M.weapon_data["px.hot_air_balloon"].parachute.wind_pct = 200
+  w.taken = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  w.vx = 0
+  check("up again", up_again())
+  local vx = require("lib/shared").balloons[w.id].vx
+  check("Wind 200%: twice the wind on its first step", near(vx, 2 * 0.5 * 0.79998779296875), tostring(vx))
+  w.taken = nil
+  M.message(w, wa.msg.FRAME_FINISH)
+  M.wind = 0
+  M.weapon_data["px.hot_air_balloon"].parachute.wind_pct = 100
   -- The Hang-Glider's parachute is not a balloon.
   local n = #M.spawned
   w.state, w.weapon, w.keys = "falling", "parachute", {}

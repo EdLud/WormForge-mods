@@ -43,7 +43,6 @@ function weapon.setup()
   do
 
     local BALLOON_DAMP = 0.79998779296875 -- WA's parachute damping, 0.8
-    local BALLOON_WIND = 100 -- the patched bungee's fire_method, in percent
     local BALLOON_DEPTH = wa.depth.FRONT + 1 -- behind the basket, in front of worms
     local BASKET_DEPTH = wa.depth.FRONT
     local TEAM_RGB = { 0xFF8080, 0x0096FF, 0x00D000, 0xFFFF40, 0xE800E8, 0x50FFFF }
@@ -118,6 +117,8 @@ function weapon.setup()
           and equipped == "px.hot_air_balloon") then
         b.active, b.ticks = true, 0
         b.x, b.y, b.vx, b.vy = worm.x, worm.y, worm.vx, worm.vy
+        -- The record's parachute wind, in percent: the profile can set it.
+        b.wind = wa.weapons.data("px.hot_air_balloon").parachute.wind_pct
         worm:take{ turn = "run", fire = true }
         balloon_sound(worm, "inflate", 3)
       end
@@ -155,7 +156,7 @@ function weapon.setup()
         vy = vy - g * worm.gravity
         local side = wa.world.wind() >= 0 and 1 or -1
         if worm:fits(b.x + side, b.y) then
-          vx = vx + wa.world.wind() * (BALLOON_WIND / 100)
+          vx = vx + wa.world.wind() * (b.wind / 100)
         end
         vx, vy = vx * BALLOON_DAMP, vy * BALLOON_DAMP
         b.vx, b.vy = vx, vy
