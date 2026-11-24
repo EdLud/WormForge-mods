@@ -1,4 +1,4 @@
--- Helicopter: a jet pack flown as a helicopter: arrow keys steer, and a fast landing crashes it.
+-- Helicopter: a jet pack flown as a helicopter: arrow keys steer, Shift dashes, and a fast landing crashes it.
 
 local weapon = {}
 
@@ -18,7 +18,11 @@ function weapon.definition()
     copy_from = "stock.jet_pack",
     name = "Helicopter",
     panel_icon = "sprites/helicopter/heli_ico.png",
-    sprites = { "sprites/helicopter/flying.png", "sprites/helicopter/jumpin.png" },
+    sprites = {
+      "sprites/helicopter/flying.png", "sprites/helicopter/jumpin.png",
+      "sprites/helicopter/dash_bar.png", "sprites/helicopter/dash_frame.png",
+      "sprites/helicopter/dash_glow.png", "sprites/helicopter/dash_line.png",
+    },
     sounds = {
           "sounds/helicopter/helicopterloop.wav",
           "sounds/helicopter/1.wav", "sounds/helicopter/2.wav", "sounds/helicopter/3.wav",
@@ -43,6 +47,16 @@ function weapon.setup()
   local HELI_REALISTIC = true -- gravity and wind act on it, at 0.2
   local HELI_EXPLODE_ON_TURN_END = true
   local HELI_DEPTH = wa.depth.FRONT -- in front of worms and terrain
+  local HELI_TOP_SPEED = 10 -- pixels a frame, where push stops adding
+  local DASH_RAMP = 10 -- frames to reach dash speed from a standstill: 200 ms
+  local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
+  local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: 100 lasts 3 seconds
+  local DIAGONAL = 0.70710678118654752 -- 1 / sqrt(2)
+  local DASH_ANGLE = { -- degrees for facing right, by dy then dx (-1, 0, 1)
+    [-1] = { [-1] = 225, [0] = 270, [1] = 315 },
+    [0] = { [-1] = 180, [0] = 0, [1] = 0 },
+    [1] = { [-1] = 135, [0] = 90, [1] = 45 },
+  }
 
   local helis = {}
 
@@ -93,7 +107,7 @@ function weapon.setup()
     worm.wind = 0
     local oops = HELI_OOPS[wa.random(1, 10)]
     if oops then wa.sound.play(worm, oops) end
-    h.flying = false
+    h.flying, h.dash, h.coast = false, nil, false
     heli_drop_art(h, worm)
   end
 
@@ -104,6 +118,63 @@ function weapon.setup()
     if s > -8 then s = s - 0.15 end
     if s > -10 then s = s - 0.05 end
     return -dir * s
+  end
+
+  local function dash_options()
+    return shared.helicopter_dash or { fuel = 100, speed = 300, steer = 50, refill = 30 }
+  end
+
+  local function dash_full()
+    return dash_options().fuel * DASH_FRAMES
+  end
+
+  -- The arrows held pick one of eight directions; none held dashes forward.
+  -- The speed along it ramps up from what the heli has; its speed across eases off.
+  local function dash_start(worm, h, k, vx, vy)
+    local kx = (k.right and 1 or 0) - (k.left and 1 or 0)
+    local ky = (k.down and 1 or 0) - (k.up and 1 or 0)
+    if kx == 0 and ky == 0 then kx = worm.facing end
+    if kx ~= 0 then worm.facing = kx end
+    local scale = (kx ~= 0 and ky ~= 0) and DIAGONAL or 1
+    local dx, dy = kx * scale, ky * scale
+    h.dash = {
+      dx = dx, dy = dy, angle = DASH_ANGLE[ky][kx],
+      speed = math.max(0, vx * dx + vy * dy), side = vy * dx - vx * dy,
+    }
+    worm.gravity, worm.wind = 0, 0
+  end
+
+  local function dash_end(worm, h)
+    h.dash, h.coast = nil, true
+    worm.gravity = HELI_REALISTIC and 0.2 or 0
+    worm.wind = HELI_REALISTIC and 0.2 or 0
+  end
+
+  -- Arrows steer across the locked dash at `factor` of the heli's push and top speed.
+  local function dash_steer(d, k, factor)
+    if factor <= 0 then return 0 end
+    local across = ((k.right and 1 or 0) - (k.left and 1 or 0)) * -d.dy
+      + ((k.down and 1 or 0) - (k.up and 1 or 0)) * d.dx
+    local s = d.side / factor
+    if across > 0 then
+      s = push(s, 1)
+    elseif across < 0 then
+      s = push(s, -1)
+    else
+      s = s / 1.105
+    end
+    return s * factor
+  end
+
+  -- How fast the air lines stream back past the heli, in pixels a frame.
+  local function flow_speed(speed)
+    return math.min(4 + 0.7 * speed, 20)
+  end
+
+  local function turn_toward(from, to, step)
+    local d = (to - from + 180) % 360 - 180
+    if d > step then d = step elseif d < -step then d = -step end
+    return (from + d) % 360
   end
 
   local function heli_frame(worm)
@@ -120,6 +191,10 @@ function weapon.setup()
       worm.gravity = HELI_REALISTIC and 0.2 or 0
       worm:jetpack_steer(true)
       h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
+      h.dash, h.coast, h.dash_left, h.worm = nil, false, dash_full(), worm -- dash_left counts frames
+      h.speed, h.flow = 0, 0
+      h.shift_was = wa.world.keys().shift -- a dash needs a fresh press
+      h.angle = 0
     elseif h and h.armed and not worm.turn then
       h.armed = false -- the turn ended before it fired
     end
@@ -129,7 +204,7 @@ function weapon.setup()
     if h.flying and state ~= "jetpacking" then
       worm:jetpack_steer(false)
       worm.gravity, worm.wind = 1, 0
-      h.flying = false
+      h.flying, h.dash, h.coast = false, nil, false
       if state ~= "standing" then
         heli_drop_art(h, worm)
         return
@@ -158,37 +233,61 @@ function weapon.setup()
         end
         local k = worm.keys
         local up, down, left, right = k.up, k.down, k.left, k.right
-        if not up and not down then vy = vy / 1.105 end
-        if not left and not right then vx = vx / 1.105 end
-        if up and down then vy = vy / 1.095 end
-        if left and right then vx = vx / 1.095 end
-        for _, d in ipairs({ { up, right }, { up, left }, { down, right }, { down, left } }) do
-          if d[1] and d[2] then
-            vx, vy = vx * 0.99 * 0.99, vy * 0.99 * 0.99
-          end
+        local shift = wa.world.keys().shift
+        local dash = dash_options()
+        if h.dash and (not shift or h.dash_left <= 0) then
+          dash_end(worm, h)
+        elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 then
+          dash_start(worm, h, k, vx, vy)
         end
+        h.shift_was = shift
         h.frame = (h.frame + 1) % 3
         local fuel = worm.fuel
         local burn = wa.world.retreat() == 0 and shared.helicopter_fuel ~= 0
         if burn then fuel = fuel - 0.020 end
-        local shift = wa.world.keys().shift
-        if up then
-          if burn then fuel = fuel - 0.2 end
-          vy = push(vy, -1)
-        end
-        if down then
-          if burn then fuel = fuel - 0.020 end
-          vy = push(vy, 1)
-        end
-        if left then
-          if burn then fuel = fuel - 0.1 end
-          if not shift then worm.facing = -1 end
-          vx = push(vx, -1)
-        end
-        if right then
-          if burn then fuel = fuel - 0.1 end
-          if not shift then worm.facing = 1 end
-          vx = push(vx, 1)
+        local d = h.dash
+        if d then
+          h.dash_left = math.max(0, h.dash_left - 1)
+          d.side = dash_steer(d, k, dash.steer / 100)
+          local top = HELI_TOP_SPEED * dash.speed / 100
+          d.speed = math.min(top, d.speed + top / DASH_RAMP)
+          vx, vy = d.dx * d.speed - d.dy * d.side, d.dy * d.speed + d.dx * d.side
+        else
+          h.dash_left = math.min(dash.fuel * DASH_FRAMES, h.dash_left + dash.refill / 100)
+          h.coast = h.coast and vx * vx + vy * vy > HELI_TOP_SPEED * HELI_TOP_SPEED
+          if h.coast then
+            -- past the heli's own top speed, only air drag slows it, by the square of its speed
+            local f = 1 / (1 + COAST_DRAG * math.sqrt(vx * vx + vy * vy)) -- stays above 0 at any speed
+            vx, vy = vx * f, vy * f
+          else
+            if not up and not down then vy = vy / 1.105 end
+            if not left and not right then vx = vx / 1.105 end
+            if up and down then vy = vy / 1.095 end
+            if left and right then vx = vx / 1.095 end
+            for _, pair in ipairs({ { up, right }, { up, left }, { down, right }, { down, left } }) do
+              if pair[1] and pair[2] then
+                vx, vy = vx * 0.99 * 0.99, vy * 0.99 * 0.99
+              end
+            end
+          end
+          if up then
+            if burn then fuel = fuel - 0.2 end
+            vy = push(vy, -1)
+          end
+          if down then
+            if burn then fuel = fuel - 0.020 end
+            vy = push(vy, 1)
+          end
+          if left then
+            if burn then fuel = fuel - 0.1 end
+            if not shift then worm.facing = -1 end
+            vx = push(vx, -1)
+          end
+          if right then
+            if burn then fuel = fuel - 0.1 end
+            if not shift then worm.facing = 1 end
+            vx = push(vx, 1)
+          end
         end
         worm.vx, worm.vy, worm.fuel = vx, vy, fuel
         if worm.fuel <= 0.1 then
@@ -208,7 +307,15 @@ function weapon.setup()
       local a = h.body
       a.x, a.y, a.vx, a.vy, a.facing = worm.x, worm.y, 0, 0, f
       a:frame(h.frame)
-      a:gfx({ angle = math.deg(wa.math.sin(worm.vx / 24)) % 360, depth = HELI_DEPTH })
+      local tilt = math.deg(wa.math.sin(worm.vx / 24))
+      if h.dash then
+        tilt = h.dash.angle + (f < 0 and 180 or 0)
+      end
+      -- for the air lines: how fast it goes, and how far the air has streamed past it
+      h.speed = math.sqrt(worm.vx * worm.vx + worm.vy * worm.vy)
+      h.flow = (h.flow + flow_speed(h.speed)) % 100000
+      h.angle = turn_toward(h.angle or 0, tilt % 360, 30)
+      a:gfx({ angle = h.angle, depth = HELI_DEPTH })
       worm.body_visible = false
     elseif (h.jumpin and state == "prefiring")
         or (h.climb_out and state == "standing" and h.jump_phase > 0) then
@@ -242,6 +349,146 @@ function weapon.setup()
       end
     end)
   end
+
+  if wa.on.draw and wa.draw and wa.draw.brush and wa.draw.ribbon then
+    local ART = "sprites/helicopter/"
+    local bar = wa.draw.brush({ sprite = ART .. "dash_bar.png", blend = "alpha", depth = HELI_DEPTH })
+    local frame = wa.draw.brush({ sprite = ART .. "dash_frame.png", blend = "alpha", depth = HELI_DEPTH })
+    local glow = wa.draw.brush({ sprite = ART .. "dash_glow.png", blend = "add", depth = HELI_DEPTH })
+    local BAR_W, BAR_H, RING = 44, 10, 2 -- dash_frame.png: a grey and a black ring, as stock bars
+    local INNER_W, INNER_H = BAR_W - 2 * RING, BAR_H - 2 * RING
+    local BODY = { { -48, -21 }, { 36, -21 }, { 36, 22 }, { -48, 22 } } -- the flying frame's fuselage and rotor
+
+    -- Streamlines hugging the heli, in the flying sprite's frame facing right (x ahead,
+    -- y down): each bends round the nose like a U, follows the outline a few pixels out
+    -- and runs on past the tail. Streaks of air slide back along them.
+    local TOP = { { 34, -19 }, { 20, -21 }, { 0, -22 }, { -20, -22 }, { -38, -21 }, { -46, -16 }, { -54, -18 } }
+    local BOTTOM = { { 34, 6 }, { 24, 16 }, { 10, 22 }, { -4, 23 }, { -16, 15 }, { -28, 4 }, { -54, 1 } }
+    local NOSE_X, NOSE_Y = 37, 3
+    local LINES_A_SIDE, STREAKS, STREAK_POINTS = 5, 4, 5
+    local AIR_FROM, AIR_FULL = 7.5, 20 -- pixels a frame: no lines up to the heli's own top speed, all by 20
+
+    local function streamline(edge, side, k)
+      local gap = 3 + 4 * k
+      local pts = {}
+      -- the U round the nose: a quadratic curve from just ahead of it out to the outline
+      local x0, y0 = NOSE_X + 3 + gap, NOSE_Y + side * gap * 0.25
+      local x1, y1 = edge[1][1], edge[1][2] + side * gap
+      for i = 0, 5 do
+        local t = i / 5
+        local u = 1 - t
+        pts[#pts + 1] = { u * u * x0 + 2 * u * t * x0 + t * t * x1, u * u * y0 + 2 * u * t * y1 + t * t * y1 }
+      end
+      for i = 2, #edge do pts[#pts + 1] = { edge[i][1], edge[i][2] + side * gap } end
+      pts[#pts + 1] = { edge[#edge][1] - 16 - 6 * k, edge[#edge][2] + side * gap }
+      local cum = { 0 }
+      for i = 2, #pts do
+        local ax, ay = pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]
+        cum[i] = cum[i - 1] + math.sqrt(ax * ax + ay * ay)
+      end
+      local grey = 255 - 20 * k -- the inner lines white, the outer grey
+      return { pts = pts, cum = cum, total = cum[#cum], rgb = grey * 0x10101, k = k }
+    end
+
+    local LINES = {}
+    for k = 0, LINES_A_SIDE - 1 do
+      LINES[#LINES + 1] = streamline(TOP, -1, k)
+      LINES[#LINES + 1] = streamline(BOTTOM, 1, k)
+    end
+
+    local function along(line, at)
+      local pts, cum = line.pts, line.cum
+      for i = 2, #pts do
+        if at <= cum[i] or i == #pts then
+          local t = (at - cum[i - 1]) / (cum[i] - cum[i - 1])
+          return pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t, pts[i - 1][2] + (pts[i][2] - pts[i - 1][2]) * t
+        end
+      end
+    end
+
+    local RIBBON = { sprite = ART .. "dash_line.png", blend = "alpha", depth = HELI_DEPTH, points = {} }
+    for j = 1, STREAK_POINTS do
+      RIBBON.points[j] = { x = 0, y = 0, width = 1.5, color = 0, u = (j - 1) / (STREAK_POINTS - 1) }
+    end
+
+    -- More lines, more streaks a line, longer and stronger ones, the faster it goes.
+    local function draw_streaks(h, x, y, facing, worm)
+      local air = math.max(0, math.min(1, (h.speed - AIR_FROM) / (AIR_FULL - AIR_FROM)))
+      if air <= 0 then return end
+      local lines, streaks = math.ceil(LINES_A_SIDE * air), 1 + math.ceil((STREAKS - 1) * air)
+      local length = math.min(12 + 0.8 * h.speed, 36)
+      local flowed = h.flow + flow_speed(h.speed) * wa.draw.fraction()
+      local r = math.rad(h.angle or 0)
+      local c, s = math.cos(r), math.sin(r)
+      local ax, ay, dx, dy = facing * c, facing * s, -s, c -- the sprite's ahead and down on screen
+      RIBBON.visibility = worm
+      for i, line in ipairs(LINES) do
+        if line.k < lines then
+          local loop = line.total + length
+          local strength = air * (1 - 0.1 * line.k)
+          for n = 0, streaks - 1 do
+            local start = (flowed + loop * (n / STREAKS + i * 0.37)) % loop - length
+            local from, to = math.max(0, start), math.min(line.total, start + length)
+            if to - from >= 3 then
+              for j = 1, STREAK_POINTS do
+                local t = (j - 1) / (STREAK_POINTS - 1)
+                local at = from + (to - from) * t
+                local fx, fy = along(line, at)
+                local fade = math.max(0, math.min(1, at / 10, (line.total - at) / 30))
+                local p = RIBBON.points[j]
+                p.x = x + ax * fx + dx * fy
+                p.y = y + ay * fx + dy * fy
+                p.color = (math.floor(230 * strength * fade * math.sin(math.pi * t)) << 24) | line.rgb
+              end
+              wa.draw.ribbon(RIBBON)
+            end
+          end
+        end
+      end
+    end
+
+    local function body_top(angle, facing)
+      local r = math.rad(angle)
+      local c, s = math.cos(r), math.sin(r)
+      local top = 0
+      for _, p in ipairs(BODY) do
+        local y = p[1] * facing * s + p[2] * c
+        if y < top then top = y end
+      end
+      return top
+    end
+
+    -- At the heli actor's drawn place: it follows the worm smoothly, the hidden worm doesn't.
+    local function draw_heli(h)
+      local body, worm = h.body, h.worm
+      local x, y = body.x, body.y
+      local full = dash_full()
+      if full > 0 then
+        local left = math.floor(x - BAR_W / 2 + 0.5)
+        local top = math.floor(y + body_top(h.angle or 0, body.facing) - BAR_H - 4 + 0.5)
+        local cx, cy = left + BAR_W / 2, top + BAR_H / 2
+        local w = INNER_W * math.max(0, math.min(1, h.dash_left / full))
+        local fx = left + RING + w / 2
+        bar:box(cx, cy, INNER_W, INNER_H, 0, 0, 0xE0363E82, worm)
+        if w > 0 then
+          if h.dash then
+            glow:box(fx, cy, w + 12, INNER_H + 12, 0, 0, 0x50FF4A2A, worm)
+            bar:box(fx, cy, w, INNER_H, 0, 0, 0xFFFE6A5A, worm)
+          else
+            bar:box(fx, cy, w, INNER_H, 0, 0, 0xFF9C9DFE, worm)
+          end
+        end
+        frame:box(cx, cy, BAR_W, BAR_H, 0, 0, 0xFFFFFFFF, worm)
+      end
+      draw_streaks(h, x, y, body.facing, worm)
+    end
+
+    wa.on.draw(function()
+      for _, h in pairs(helis) do
+        if h.flying and h.body and h.dash_left then draw_heli(h) end
+      end
+    end)
+  end
   end
 end
 
@@ -249,6 +496,12 @@ function weapon.configure(ctx, spec)
   local fuel = ctx.option("fuel")
   require("lib/shared").helicopter_fuel = fuel
   spec.jet_pack.fuel = math.min(fuel, 255)
+  require("lib/shared").helicopter_dash = {
+    fuel = ctx.option("dash_fuel"),
+    speed = ctx.option("dash_speed"),
+    steer = ctx.option("dash_steer_factor"),
+    refill = ctx.option("dash_refill_factor"),
+  }
 end
 
 return weapon

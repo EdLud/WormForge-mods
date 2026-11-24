@@ -1,0 +1,229 @@
+-- lua mods/tests/px/test_helicopter.lua
+-- Helicopter Dash: Shift locks one of eight directions and ramps to dash speed,
+-- then the heli coasts on; the other arrows steer across it, the fuel drains and refills, the bar draws.
+local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
+package.path = root .. "?.lua;" .. package.path
+
+package.loaded["wf-lib/own_time"] = { frames = function() return 1 end }
+
+local function check(what, ok, detail)
+  if not ok then error("FAIL: " .. what .. (detail and ("   [" .. tostring(detail) .. "]") or ""), 2) end
+  print("  ok   " .. what)
+end
+
+local function near(a, b) return math.abs(a - b) < 1e-9 end
+
+local handlers, draws, quads, ribbons, spawned, worms, shift
+
+local function new_match(options)
+  handlers, draws, quads, ribbons, spawned, worms, shift = {}, {}, {}, {}, {}, {}, false
+  wa = {
+    depth = { FRONT = 0x10000 },
+    msg = { FRAME_FINISH = 2 },
+    on = {
+      worm_message = function(f) handlers[#handlers + 1] = f end,
+      draw = function(f) draws[#draws + 1] = f end,
+    },
+    sound = { play = function() end },
+    random = function() return 1 end,
+    math = { sin = math.sin },
+    actors = {
+      spawn = function(spec)
+        local a = { sprite = spec.sprite }
+        function a:gfx(g) for k, v in pairs(g) do self[k] = v end end
+        function a:frame(i) self.shown = i end
+        function a:remove() self.dead = true end
+        spawned[#spawned + 1] = a
+        return a
+      end,
+    },
+    world = {
+      keys = function() return { shift = shift } end,
+      water = function() return 10000 end,
+      retreat = function() return 0 end,
+      frame = function() return 0 end,
+    },
+    draw = {
+      quad = function(q) quads[#quads + 1] = q end,
+      ribbon = function(r)
+        for _, p in ipairs(r.points) do -- the engine reads these fields by name
+          for _, key in ipairs({ "x", "y", "width", "u" }) do
+            assert(type(p[key]) == "number" and p[key] == p[key], "ribbon point " .. key)
+          end
+        end
+        ribbons[#ribbons + 1] = { sprite = r.sprite, n = #r.points, alpha = r.points[3].color >> 24 }
+      end,
+      fraction = function() return 0 end,
+    },
+    worms = { all = function() return worms end },
+  }
+  dofile(root .. "../tests/brush_mock.lua")(wa)
+  package.loaded["lib/shared"] = nil
+  local weapon = dofile(root .. "weapons/helicopter.lua")
+  local values = { fuel = 100, dash_fuel = 100, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30 }
+  for k, v in pairs(options or {}) do values[k] = v end
+  weapon.configure({ option = function(key) return values[key] end }, { jet_pack = {} })
+  weapon.setup()
+  local w = { id = 3, x = 500, y = 300, vx = 0, vy = 0, facing = 1, gravity = 1, wind = 0, fuel = 100,
+    state = "prefiring", weapon = "px.helicopter", turn = true, body_visible = true, keys = {} }
+  function w:jetpack_steer() end
+  worms[1] = w
+  return w
+end
+
+local function frame(w, n)
+  for _ = 1, n or 1 do
+    for _, f in ipairs(handlers) do f(w, wa.msg.FRAME_FINISH) end
+  end
+end
+
+local function take_off(w)
+  frame(w)
+  w.state = "jetpacking"
+  frame(w)
+end
+
+local function draw()
+  quads, ribbons = {}, {}
+  for _, f in ipairs(draws) do f() end
+  return quads
+end
+
+local function width(q) return q.points[2][1] - q.points[1][1] end
+
+local function strongest()
+  local top = 0
+  for _, r in ipairs(ribbons) do top = math.max(top, r.alpha) end
+  return top
+end
+
+local BAR, FRAME = "sprites/helicopter/dash_bar.png", "sprites/helicopter/dash_frame.png"
+local GLOW, LINE = "sprites/helicopter/dash_glow.png", "sprites/helicopter/dash_line.png"
+
+local function sheets(list, sheet)
+  local found = {}
+  for _, q in ipairs(list) do if q.sprite == sheet then found[#found + 1] = q end end
+  return found
+end
+
+print("helicopter dash: direction, ramp, lock, steering, fuel")
+do
+  local w = new_match()
+  take_off(w)
+  local body = spawned[#spawned]
+  body.x, body.y = 503.5, 301.25 -- drawn ahead of the worm, as the follow puts it
+  local bars, frames = sheets(draw(), BAR), sheets(quads, FRAME)
+  check("flying: a full stock-blue bar in its outline, above the heli's drawn place",
+    #bars == 2 and #frames == 1 and near(width(bars[2]), 40) and bars[2].color == 0xFF9C9DFE
+    and near(width(frames[1]), 44) and frames[1].points[1][1] == 482 and frames[1].points[3][2] < body.y - 21
+    and #sheets(quads, GLOW) == 0 and #ribbons == 0, frames[1].points[1][1])
+
+  w.keys = { up = true, right = true }
+  shift = true
+  frame(w)
+  local d = 0.70710678118654752
+  check("Shift with up and right: up-right, ramping from a standstill, no gravity or wind",
+    near(w.vx, 3 * d) and near(w.vy, -3 * d) and w.gravity == 0 and w.wind == 0, w.vx .. "," .. w.vy)
+  frame(w)
+  check("the heli turns to the dash, 30 degrees a frame", body.angle == 315, body.angle)
+  w.keys = {}
+  frame(w, 7)
+  check("9 frames in: not yet at dash speed", near(w.vx, 27 * d))
+  frame(w)
+  check("300% of the heli's top speed, reached in 200 ms", near(w.vx, 30 * d) and near(w.vy, -30 * d))
+  frame(w, 5)
+  check("then the direction and speed stay locked", near(w.vx, 30 * d) and near(w.vy, -30 * d))
+
+  w.keys = { down = true }
+  frame(w)
+  local across = 0.4 * d
+  check("down steers across the dash at half the heli's push",
+    near(w.vx, 30 * d + across) and near(w.vy, -30 * d + across), w.vx .. "," .. w.vy)
+  w.keys = { up = true, right = true }
+  frame(w)
+  check("the dash's own keys don't steer: the sideways speed eases off",
+    near(w.vx - 30 * d, across / 1.105) and near(w.vy + 30 * d, across / 1.105))
+
+  bars = sheets(draw(), BAR)
+  local lines = sheets(ribbons, LINE)
+  check("dashing: the fill turns red and glows, streaks of air flow round the heli",
+    bars[2].color == 0xFFFE6A5A and #sheets(quads, GLOW) == 1 and #lines > 20 and #lines == #ribbons
+    and lines[1].n == 5, #lines)
+  local dashing, dashing_count = strongest(), #ribbons
+
+  w.keys = {}
+  frame(w, 133)
+  check("100 fuel lasts 150 frames", w.gravity == 0, w.gravity)
+  frame(w)
+  check("empty: the dash ends, the heli's gravity and wind back", w.gravity == 0.2 and w.wind == 0.2)
+  local vx, vy = w.vx, w.vy
+  frame(w)
+  local drag = 1 / (1 + 0.0015 * math.sqrt(vx * vx + vy * vy))
+  check("then it coasts, air drag slowing it by the square of its speed",
+    near(w.vx, vx * drag) and near(w.vy, vy * drag), w.vx)
+  frame(w, 20)
+  check("still holding Shift starts no new dash", w.gravity == 0.2)
+  check("22 frames on it's still faster than the heli flies", w.vx * w.vx + w.vy * w.vy > 100)
+  draw()
+  check("and the air lines thin out with it: fewer and fainter", #ribbons > 0 and #ribbons < dashing_count
+    and strongest() < dashing, #ribbons .. " < " .. dashing_count .. ", " .. strongest() .. " < " .. dashing)
+
+  shift = false
+  frame(w, 49)
+  bars = sheets(draw(), BAR)
+  check("the refill runs from the dash's end at 30% of the burn: 71 frames, 14.2 fuel",
+    near(width(bars[2]), 40 * 0.3 * 71 / 150), width(bars[2]))
+  check("slowed to the heli's own speed, the coast is over", w.vx * w.vx + w.vy * w.vy < 100 and strongest() == 0)
+  w.vx, w.vy = -4, 3
+  shift = true
+  w.facing = -1
+  frame(w)
+  check("Shift with no arrows dashes the way the heli faces, from its speed that way",
+    near(w.vx, -7) and near(w.vy, 3 / 1.105), w.vx .. "," .. w.vy)
+  frame(w, 21)
+  check("a part-filled bar dashes for what it holds: 21.3 frames", w.gravity == 0)
+  frame(w)
+  check("then the dash ends", w.gravity == 0.2)
+end
+
+print("helicopter dash: 10000%")
+do
+  local w = new_match({ dash_speed = 10000 })
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 10)
+  check("100 times the heli's top speed, in 200 ms", near(w.vx, 1000))
+  shift = false
+  frame(w)
+  check("the coast slows it without turning it round", w.vx > 0 and w.vx < 1000, w.vx)
+end
+
+print("helicopter dash: no fresh press, vertical, the dash turned off")
+do
+  local w = new_match()
+  shift = true
+  take_off(w)
+  frame(w)
+  check("Shift held from the take-off doesn't dash", w.gravity == 0.2)
+  shift = false
+  frame(w)
+  w.keys = { up = true, left = true, right = true }
+  w.facing = -1
+  shift = true
+  frame(w)
+  frame(w, 5)
+  check("left and right cancel: straight up, the facing kept",
+    w.vx == 0 and near(w.vy, -18) and w.facing == -1 and spawned[#spawned].angle == 90, spawned[#spawned].angle)
+  shift = false
+  frame(w)
+  check("letting Shift go ends the dash", w.gravity == 0.2)
+
+  w = new_match({ dash_fuel = 0 })
+  take_off(w)
+  shift = true
+  w.keys = { right = true }
+  frame(w)
+  check("dash fuel 0: no dash and no bar", w.gravity == 0.2 and #sheets(draw(), BAR) == 0)
+end
+
+print("ALL PASS")

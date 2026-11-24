@@ -287,6 +287,18 @@ play = "loop"
 fps = 15
 play = "loop"
 
+[sprites."sprites/helicopter/dash_bar.png"]
+frames = 1
+
+[sprites."sprites/helicopter/dash_frame.png"]
+frames = 1
+
+[sprites."sprites/helicopter/dash_glow.png"]
+frames = 1
+
+[sprites."sprites/helicopter/dash_line.png"]
+frames = 1
+
 [sprites."sprites/homing_fire_cluster/bullet.png"]
 fps = 15
 play = "loop"
@@ -2170,7 +2182,7 @@ id = "px.helicopter"
 type = "weapon"
 name = "Helicopter"
 credits = "sprites by raffie, improved by 0rang3"
-description = "Fly a jet pack as a helicopter: arrow keys steer, and a fast collision crashes it."
+description = "Fly a jet pack as a helicopter: arrow keys steer, hold Shift to dash, and a fast collision crashes it."
 entry = "components/weapon.lua"
 icon = "sprites/helicopter/heli_ico.png"
 default_position = { row = "utility", column = 1 }
@@ -2186,6 +2198,42 @@ max = 999
 default = 100
 label = "Fuel"
 description = "The helicopter's fuel; 0 is unlimited."
+
+[[components.options]]
+key = "dash_fuel"
+type = "int"
+min = 0
+max = 999
+default = 100
+label = "Dash fuel"
+description = "Fuel for the Shift dash; 100 lasts 3 seconds, and 0 turns the dash off."
+
+[[components.options]]
+key = "dash_speed"
+type = "int"
+min = 100
+max = 10000
+default = 300
+label = "Dash speed (%)"
+description = "The dash's top speed as a percentage of normal flying speed, reached in 1 second."
+
+[[components.options]]
+key = "dash_steer_factor"
+type = "int"
+min = 0
+max = 100
+default = 50
+label = "Dash steering (%)"
+description = "How strongly the arrow keys steer during a dash, as a percentage of normal steering."
+
+[[components.options]]
+key = "dash_refill_factor"
+type = "int"
+min = 0
+max = 1000
+default = 30
+label = "Dash refill (%)"
+description = "How fast dash fuel refills between dashes, as a percentage of how fast a dash uses it."
 
 [[components]]
 id = "px.gravity_control"

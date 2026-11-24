@@ -6708,7 +6708,8 @@ do
     new_match()
     HIGHLANDER_CLAIMING = "px.helicopter"
     require("components/loader").install({ id = "px.helicopter", option = function(key)
-      assert(key == "fuel"); return fuel
+      if key == "fuel" then return fuel end
+      return assert(({ dash_fuel = 100, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30 })[key], key)
     end })
     HIGHLANDER_CLAIMING = nil
     local spec = replaced[#replaced]
