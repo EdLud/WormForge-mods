@@ -638,6 +638,7 @@ local function new_match(opts)
     },
     oil = { all = function() return M.oil end },
     graves = { all = function() return M.graves end },
+    arrows = { all = function() return M.arrows or {} end },
     inventory = inventory_api(),
     land = {
       stamp = function(spec) M.stamps = M.stamps or {}; M.stamps[#M.stamps + 1] = spec end,
@@ -6988,6 +6989,29 @@ do
     and not shared.owns("stock.mine") and not shared.owns(nil))
   local index = require("weapons/index")
   check("only a Highlander weapon has a claim", index["stock.mine"] == nil and index["px.double_jump"] == nil)
+end
+
+print("Ice Arrow: its own arrows drawn icy, WA's hidden")
+do
+  new_match()
+  local ice = { weapon = "px.ice_arrow", visible = true, x = 100, y = 50, frame = 8 }
+  local plain = { weapon = "stock.longbow", visible = true, x = 10, y = 20, frame = 3 }
+  M.arrows = { ice, plain }
+  local function icy()
+    local n, q = 0, nil
+    for _, d in ipairs(M.quads) do
+      if d.sprite == "sprites/ice_arrow/arrow.png" then n, q = n + 1, d end
+    end
+    return n, q
+  end
+  M.frame = 3; M.quads = {}; M.draw()
+  local n, q = icy()
+  check("the Ice Arrow's arrow is hidden and drawn once, at its frame and PX's 180 opacity",
+    not ice.visible and n == 1 and q.frame == 8 and q.color == 0xB4FFFFFF)
+  check("another weapon's arrow is WA's to draw", plain.visible)
+  M.frame = 10; M.quads = {}; M.draw()
+  check("twice on every tenth game frame, as PX's", (icy()) == 2)
+  M.arrows = nil
 end
 
 print("")

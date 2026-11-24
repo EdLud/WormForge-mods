@@ -1,6 +1,8 @@
 -- Ice Arrow: an arrow that freezes the worm it hits.
 
 local weapon = {}
+local ID = "px.ice_arrow"
+local ARROW = "sprites/ice_arrow/arrow.png"
 
 weapon.record = {
   handling = {
@@ -13,6 +15,7 @@ function weapon.definition()
   return require("lib/weapon").merge(weapon.record, {
     wep = "weps/armageddon.wep",
     panel_icon = "sprites/ice_arrow/icon.png",
+    sprites = { ARROW },
     worm_sprites = {
       wbowlnk = "sprites/ice_arrow/wbowlnk.png",
       wbowlnku = "sprites/ice_arrow/wbowlnku.png",
@@ -38,7 +41,7 @@ function weapon.setup()
   local pending = {} -- stable worm id -> freeze on that worm's next frame
 
   wa.on.hurt(function(hit)
-    if hit.phase == "post" and hit.source_weapon == "px.ice_arrow"
+    if hit.phase == "post" and hit.source_weapon == ID
       and hit.kind == "arrow" then
       pending[hit.worm.id] = true
     end
@@ -50,6 +53,25 @@ function weapon.setup()
       worm:freeze()
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
+
+  -- In flight and stuck, PX draws WA's arrow icy, through
+  -- SetColorMod(ARGB(180, 20, 90, 170), 8), twice on every tenth game frame.
+  -- The colour is baked into the sheet (tools/export_ice_arrow_sprite.py).
+  if wa.on.draw then
+    local DEPTH = 0x50001 -- the depth WA draws arrows at (ArrowEntity::render)
+    local ICE = 0xB4FFFFFF -- PX's 180 opacity
+    local brush = wa.draw.brush{ sprite = ARROW, depth = DEPTH }
+    wa.on.draw(function()
+      local twice = wa.world.frame() % 10 == 0
+      for _, a in ipairs(wa.arrows.all()) do
+        if a.weapon == ID then
+          if a.visible then a.visible = false end
+          brush:box(a.x, a.y, 60, 60, 0, a.frame, ICE)
+          if twice then brush:box(a.x, a.y, 60, 60, 0, a.frame, ICE) end
+        end
+      end
+    end)
+  end
 end
 
 return weapon
