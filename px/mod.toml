@@ -2205,6 +2205,7 @@ type = "int"
 min = 0
 max = 9999
 default = 100
+zero = "off"
 label = "Dash fuel"
 description = "Fuel for the Shift dash; 100 lasts 0.3 seconds, and 0 turns the dash off."
 
