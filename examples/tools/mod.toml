@@ -94,7 +94,7 @@ type = "choice"
 choices = ["first", "all"]
 default = "first"
 label = "Passed over"
-description = "first: each team's first worm. all: every worm, so WA's own pick has to stand and turns go on as usual."
+description = "first: each team's first worm. all: every worm, so WA's normal pick stands and turns go on as usual."
 
 [[components.options]]
 key = "walk"
@@ -116,21 +116,21 @@ key = "spikes"
 type = "bool"
 default = false
 label = "Name what spikes spent their time on"
-description = "Each perf spike line in wkLua.log also names the Lua lines and the verbs (as [C] play) a slow Lua call spent its time on. Lua runs slower while it is on."
+description = "Each perf spike line in wkLua.log also names the Lua lines and the verbs (as [C] play) a slow Lua call spent its time on. Lua runs slower while it's on."
 
 [[components.options]]
 key = "packs"
 type = "bool"
 default = false
-label = "Time each pack"
-description = "The perf lua line in wkLua.log also gives each pack's hook handler time. Every hook call runs slower while it is on."
+label = "Time each mod"
+description = "The perf lua line in wkLua.log also reports how long each mod's hook handlers take. Every hook call runs slower while it's on."
 
 [[components.options]]
 key = "natives"
 type = "bool"
 default = false
 label = "Time each verb"
-description = "The perf lua line in wkLua.log also gives the slowest verbs (as quad or all), every call of each summed, not only inside spikes. Lua runs slower while it is on."
+description = "The perf lua line in wkLua.log also lists the slowest verbs (as quad or all), summing every call of each, not only inside spikes. Lua runs slower while it's on."
 
 [[components]]
 id = "tools.worm_state_logger"
@@ -153,7 +153,7 @@ id = "tools.stress"
 diagnostics = true
 type = "feature"
 name = "Stress test"
-description = "Eight batches of projectiles and effects in the first turn, stock and modded, for performance and sync. Record a replay and play it back; tools/stress-report.py gives each batch its frame rate."
+description = "Eight batches of projectiles and effects in the first turn, stock and modded, for performance and sync. Record a replay and play it back; tools/stress-report.py reports each batch's frame rate."
 entry = "stress/stress.lua"
 
 [[components]]
@@ -169,7 +169,7 @@ key = "copies"
 type = "bool"
 default = false
 label = "Fire the copies past 70"
-description = "Each case fires its plain copy (tools.copy_<name>) in place of WA's own; with the profile's custom_slots = \"past_70\" they sit past 70, so a difference from a home run is something WA ties to the slot id."
+description = "Each case fires its plain copy (tools.copy_<name>) in place of the stock weapon; with the profile's custom_slots = \"past_70\" they sit past 70, so a difference from a home run is something WA ties to the slot id."
 
 [[components.options]]
 key = "scope"

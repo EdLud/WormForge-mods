@@ -66,7 +66,7 @@ local RING_KEYS = { "radius", "segments", "noise", "r", "g", "b", "depth",
 local REBUFFER_KEYS = { "at", "noise", "r", "g", "b", "fade", "segments" }
 
 -- `src` is an overrides table, so `fx.emitter{ spark = true }` means "on with
--- the preset's numbers". Anything that is not a table is read as "no
+-- the preset's numbers". Anything that isn't a table is read as "no
 -- overrides", so a flag never throws and takes the caller's `on_fire` with it.
 local function merge(dst, src, keys)
   if type(src) ~= "table" then return dst end
@@ -517,7 +517,7 @@ local function update_ring(st)
     -- The bend follows the owner's heading (PX aligns the ring with the thing it
     -- rides), so a lens ring faces where the round is going. `angle` becomes an
     -- offset from that heading, and a spin would be overwritten every frame, so
-    -- `speed` is not applied while tracking. A ring on a muzzle that is moved by
+    -- `speed` isn't applied while tracking. A ring on a muzzle that is moved by
     -- `move_to` has no velocity, so it keeps its own angle and spins.
     if (st.vx or 0) ~= 0 or (st.vy or 0) ~= 0 then
       st.angle = wa.math.atan(st.vy or 0, st.vx or 0) + (st.angle_offset or 0)
@@ -660,7 +660,7 @@ end
 -- Each install registers the callback for its own mod and draws only what that
 -- mod created. `px_effects` is required once, so a single shared callback used
 -- to draw another mod's spark under this mod's sprite claim, and the engine
--- refused the quad (`sprite ... is not installed`). The effect lists stay
+-- refused the quad (`sprite … isn't installed`). The effect lists stay
 -- shared, because the driver that ticks them is shared too.
 draw = function(mod)
   if mod == nil then mod = wa._mod or "" end

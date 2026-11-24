@@ -48,7 +48,7 @@ WormForge-site/
 Before editing a submodule, switch it to a branch, for example
 `git switch -c update-health-zone`. Commit and push changes in that repository
 first; then commit the new submodule pointer in the engine or website. Updating
-one parent does not automatically update the other. Never pin an unpublished
+one parent doesn't automatically update the other. Never pin an unpublished
 mods commit in a parent that other people need to clone.
 
 Run engine integration tests from an engine checkout using the same mods
@@ -106,7 +106,7 @@ The builder prepares a complete candidate, checks its signature, archives,
 version manifests and retained blobs, then replaces the local `downloads/`.
 A failure preserves the previous downloads. Review and commit the website's
 submodule pointer and generated files together, then deploy that snapshot.
-Building does not commit, push or deploy anything.
+Building doesn't commit, push or deploy anything.
 
 ## Publishing
 
@@ -119,7 +119,7 @@ Current DLLs continue to accept older schema 2 catalogues.
 3. Verify (`--verify`) and review the complete generated downloads, then commit
    and deploy. Retain historical version
 manifests and blobs so old replays remain reconstructible. Roll back by restoring
-a previously tested mods pointer and rebuilding against the retained store.
+an earlier tested mods pointer and rebuilding against the retained store.
 
 ## History
 

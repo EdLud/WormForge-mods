@@ -25,7 +25,7 @@ The numbers are stored per worm, so two placed weapons keep their own.
 
 - The homing pass steers mines, missiles, oil drums and arrows natively
   (`wa.on.missile_frame`, `wa.on.body_move`), as PX's `ChaseTargetCurse` does.
-  A Lua actor that moves itself (the Bowling Ball, both Bunker Busters) cannot
+  A Lua actor that moves itself (the Bowling Ball, both Bunker Busters) can't
   be steered that way; the curse instead registers an attract `wa.magnetism`
   field at the cursed worm (the Cursor's 300 px magnet). Magnetic actors are
   pulled by their own movement code through the engine's shared field service;

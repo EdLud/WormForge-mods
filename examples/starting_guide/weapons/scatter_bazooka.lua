@@ -9,7 +9,7 @@ return {
   },
 
   install = function(ctx)
-    -- ctx.data: the defaults above, with the settings of the profile over them.
+    -- ctx.data: the defaults above, with the profile settings over them.
     local p = ctx.position
     wa.log(("on %s, column %d: ammo %d, delay %d"):format(
       p.row, p.column, ctx.data.ammo.round_start, ctx.data.delay))

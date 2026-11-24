@@ -1141,7 +1141,7 @@ id = "px.windy_cluster"
 type = "weapon"
 name = "Windy Cluster"
 authors = ["Curtis"]
-description = "A cluster bomb whose cluster bits are carried by the wind."
+description = "A cluster bomb whose clusters drift with the wind."
 entry = "components/weapon.lua"
 icon = "sprites/windy_cluster/ico_windyc.png"
 default_position = { row = "F2", column = 2 }
@@ -1154,7 +1154,7 @@ id = "px.super_gravedigger"
 type = "weapon"
 name = "Super Gravedigger"
 authors = ["Curtis"]
-description = "A banana bomb that bursts on impact into cluster bits that skip along the ground before blowing up."
+description = "A banana bomb that bursts on impact into clusters that skip along the ground before blowing up."
 entry = "components/weapon.lua"
 icon = "sprites/super_gravedigger/sgrave_ico.png"
 default_position = { row = "F2", column = 3 }
@@ -1167,7 +1167,7 @@ id = "px.thumper_nade"
 type = "weapon"
 name = "Thumper Nade"
 authors = ["Curtis"]
-description = "A heavy grenade that bounces twice, then bursts into cluster bits with a hard push."
+description = "A heavy grenade that bounces twice, then bursts into clusters with a hard push."
 entry = "components/weapon.lua"
 icon = "sprites/thumper_nade/thumpern_ico.png"
 default_position = { row = "F2", column = 4 }
@@ -1551,7 +1551,7 @@ id = "px.nuke_rocket"
 type = "weapon"
 name = "Nuke Rocket"
 authors = ["PyroMan"]
-description = "Place a rocket that can carry worms and explodes into cluster bits."
+description = "Place a rocket that can carry worms and explodes into clusters."
 entry = "components/weapon.lua"
 icon = "sprites/nuke_rocket/nuke_rocket_ico.png"
 default_position = { row = "F5", column = 2 }
@@ -1830,7 +1830,7 @@ key = "mid_air_aim"
 type = "bool"
 default = true
 label = "Mid-air aim"
-description = "While jumping or falling, a crosshair shows the aim and each arrow press moves it. Off: the shot takes the arrows held as Space is pressed."
+description = "While jumping or falling, a crosshair shows the aim and each arrow press moves it. Off: the shot uses the arrow keys held when Space is pressed."
 
 [components.suggests."hl.rules"]
 pool = "second"
@@ -1853,7 +1853,7 @@ id = "px.homing_fire_cluster"
 type = "weapon"
 name = "Homing Fire Cluster"
 authors = ["PyroMan"]
-description = "Click a target, then throw a grenade that homes on it and bursts into five cluster bits, each bursting into fire."
+description = "Click a target, then throw a grenade that homes on it and bursts into five clusters, each bursting into fire."
 entry = "components/weapon.lua"
 icon = "sprites/homing_fire_cluster/homing_fire_cluster_ico.png"
 default_position = { row = "F9", column = 8 }
@@ -1866,7 +1866,7 @@ id = "px.fire_cluster_bomb"
 type = "weapon"
 name = "Fire Cluster Bomb"
 authors = ["PyroMan"]
-description = "A grenade that bursts into five cluster bits, each bursting into fire."
+description = "A grenade that bursts into five clusters, each bursting into fire."
 entry = "components/weapon.lua"
 icon = "sprites/fire_cluster/fire_cluster_ico.png"
 default_position = { row = "F9", column = 9 }
@@ -1879,7 +1879,7 @@ id = "px.digging_cluster_bomb"
 type = "weapon"
 name = "Digging Cluster Bomb"
 authors = ["PyroMan"]
-description = "A grenade that digs through land and bursts into five digging cluster bits, each bursting into fire."
+description = "A grenade that digs through land and bursts into five digging clusters, each bursting into fire."
 entry = "components/weapon.lua"
 icon = "sprites/digging_cluster/digging_cluster_ico.png"
 default_position = { row = "F10", column = 3 }
@@ -1906,8 +1906,8 @@ id = "px.homing_cluster_bomb"
 type = "weapon"
 name = "Homing Cluster Bomb"
 authors = ["PyroMan"]
-credits = "cluster bit homing by reddaz"
-description = "Click a target, then throw a grenade whose blast throws five cluster bits that home on the target."
+credits = "cluster homing by reddaz"
+description = "Click a target, then throw a grenade whose blast throws five clusters that home on the target."
 entry = "components/weapon.lua"
 icon = "sprites/homing_cluster/homing_cluster_ico.png"
 default_position = { row = "F10", column = 8 }
@@ -2425,7 +2425,7 @@ default_position = { row = "F2", column = 8 }
 id = "px.tnt"
 type = "weapon"
 name = "TNT"
-description = "Drop a dynamite with a smaller blast that bursts into three cluster bits."
+description = "Drop a dynamite with a smaller blast that bursts into three clusters."
 entry = "components/weapon.lua"
 icon = "sprites/tnt/ico_tnt.png"
 default_position = { row = "F5", column = 1 }

@@ -3,8 +3,8 @@
 Project X's Kill the King with the king placed by the mod instead of by a
 hand-made map.
 
-One king. The attackers must destroy its terrain before the attack timer runs
-out; the defenders win otherwise.
+There's one king: the attackers must destroy its terrain before the attack
+timer runs out, or the defenders win.
 
 ## Where the king goes
 
@@ -56,5 +56,5 @@ With `move_worms = true` (default), on the first frame:
 - `ktk.control` takes the king box from `king1_x`/`king1_y` options; AutoKTK
   finds the ground itself and stamps PX's king art there.
 - AutoKTK is one king only, and it moves the worms.
-- The edge object cleaner is not duplicated here; enable `ktk.control`'s rules
-  or the `px.ports` cleaner for that. Do not run both KTK components at once.
+- The edge object cleaner isn't duplicated here; enable `ktk.control`'s rules
+  or the `px.ports` cleaner for that. Don't run both KTK components at once.

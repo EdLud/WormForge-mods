@@ -1,4 +1,4 @@
-Example bundles. Copy a folder to `WormForge/Mods/` next to `WA.exe`, then pick one of
+These are example mods. Copy a folder to `WormForge/Mods/` next to `WA.exe`, then pick one of
 its profiles under **Bundled profiles** in the loader's profile line, where it
 has one, or add its weapons (**Manage Weapon Panel**) and add-ons (a click on
 its card) to your own profile. Nothing in a bundle runs until a profile selects it, and a
@@ -50,7 +50,7 @@ of war, +N Seconds and the Cursor) and `mods/sdk/`.
     Strikes, Electric Grenades, Fire Cluster Bombs, Lightning Strikes, Saws
     (when placed) and Toxic Grenades, one batch every 8 seconds. Each batch
     writes a `stress: batch` line to `wkLua.log`, and
-    `tools/stress-report.py` gives each one its frame rate. Its sprites load
+    `tools/stress-report.py` reports each one's frame rate. Its sprites load
     as assets (`wa.assets.load`), and its glows are drawn as one list of
     boxes with a brush (`wa.draw.brush`, `brush:boxes`).
   - `profiles/Diagnostics.toml` selects the profiler and the state logger over

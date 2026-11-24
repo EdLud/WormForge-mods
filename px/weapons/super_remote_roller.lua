@@ -118,7 +118,7 @@ function weapon.definition()
     hold = {
       thrown = true,
       -- At the chest, as the Fire Cluster Bomb's hold, a little further out for
-      -- the bigger roller: PX's own (hand_radius -16, weap_radius -11.5,
+      -- the bigger roller: PX's values (hand_radius -16, weap_radius -11.5,
       -- hand_scale 1.15) holds it up at the face.
       sheet = ART .. "sremoter.png", frames = 12, hand_type = 1, hand_radius = 18,
       weap_rotation = 0.5, weap_radius = 11,

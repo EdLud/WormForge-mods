@@ -4,7 +4,7 @@ This diagnostic fires real WA weapons through `worm:input`, not their Lua
 handlers. **Audit home** places all 70 stock weapons at home; **Audit copies
 past 70** places a plain copy of each, every one past WA's 70 slots. A
 difference between the two is something WA ties to the slot id. Each fired weapon receives infinite ammo at case setup; instant utilities receive one stocked item without a fire input. Delays are zero, crate weights zero,
-and their records do not end the turn. Native special weapons may still end it.
+and their records don't end the turn. Native special weapons may still end it.
 
 Build the diagnostic DLL explicitly:
 
@@ -25,7 +25,7 @@ installing by copying files, also copy its `profiles/Audit*.toml` files
 into `WormForge/Profiles/`; the profile dropdown reads that folder. In the
 WormForge loader, select **Audit home** in the Profile dropdown. The profile
 owns the match settings (its `[scheme]`: no mines, oil drums or crates, a
-95-second turn; worm health and the rest Intermediate's), whatever scheme
+95-second turn; the other settings as in Intermediate), whatever scheme
 the lobby shows. Import `Audit.png` from `User/SavedLevels/` into WA's map
 editor and select this same saved map for every run. Use three human teams
 with three worms each, team 3 reserved for Surrender. Keep the same teams,
@@ -39,16 +39,16 @@ first worm's turn becomes active, moves the waiting worms to the reserve,
 and runs automatically. Any team may start: the audit skips ordinary turns
 until team 1's first worm receives its turn, then begins the first case.
 Keep physical keys released during the test. Save
-`wkLua.log` after the HUD says `Audit complete`; a stopped/error audit is not
+`wkLua.log` after the HUD shows `Audit complete`; a stopped/error audit isn't
 a complete comparison. Then run **Audit copies past 70** on the same map,
 with the same teams. Save each log separately.
 
 **Copies past 70.** The `tools` bundle also has a plain copy of each of WA's
 weapons (`tools.copy_<name>`, `copy_from` and nothing else). **Audit copies past
-70** places the copies alone, each on a slot past WA's 70 as every weapon that
-isn't WA's own, and the add-on's `copies` option fires each case's copy
-in place of WA's own; WA's own Skip Go still ends the turns, and WA's own Bazooka stays
-on slot 1 with infinite ammo, as at home: after a shot WA does not re-select, it
+70** places the copies alone, each on a slot past WA's 70 as every non-stock weapon
+is, and the add-on's `copies` option fires each case's copy
+in place of the stock weapon; the stock Skip Go still ends the turns, and the stock Bazooka stays
+on slot 1 with infinite ammo, as at home: after a shot WA doesn't re-select, it
 selects whatever is on slot 1, and both runs need the same there. Its signals keep
 the stock names, so it compares with a home run:
 
@@ -110,11 +110,11 @@ uses team 3 exclusively. Cases end at the firing worm's turn end/change or
 removal, even if later effects continue. Such later effects can affect a
 subsequent case and must be considered when interpreting differences.
 The pending worm and weapon are logged. Waiting stops with an error after
-6000 simulation frames (two minutes), rather than cycling for ten minutes.
+6000 simulation frames (two minutes).
 
 Hurts on audit worms are logged before returning `"eat"`. Existing hurt API
 semantics skip the whole native hurt handler, including its knockback;
-this audit does not validate the knockback that a cancelled hurt would cause.
+this audit doesn't validate the knockback that a cancelled hurt would cause.
 Direct worm removal and global turn actions still run natively.
 
 Before each case the test fixture seeds native RNGs and makes the gameplay
@@ -124,11 +124,11 @@ native state/bodies can still change the number of draws. Run home twice as
 a control; new moved/home differences are candidates until their state trace
 or native caller identifies the slot-dependent site. No slot fix is included.
 
-The scheduler regression (`lua mods/examples/tools/audit/test_audit.lua`)
+The scheduler test (`lua mods/examples/tools/audit/test_audit.lua`)
 validates sequencing against a mock, not WA physics. Live aim, grenade and
 cursor assertions still need the first real matches. Headless `/getlog`
 playback with a changed engine also needs a newly recorded audit; ordinary
-replays do not contain these diagnostic scripts/fixtures.
+replays don't contain these diagnostic scripts/fixtures.
 
 
 ## Native input messages
@@ -156,12 +156,24 @@ counts, without inspecting the selected weapon's slot.
 ## Quick sheep check
 
 Select **Audit sheep** to run Sheep Launcher, Sheep, Super Sheep and Aqua Sheep with the
-same Audit map. It retains the full home weapon table, but runs
+same Audit map. It keeps the full home weapon table, but runs
 four cases instead of 70. This takes roughly half a minute of simulation when
-each case settles normally, longer if a missile remains active. The `scope`
+each case settles normally, longer if a missile stays active. The `scope`
 option can also be set to `sheep` on the copies profile for a targeted comparison.
-Both compared logs must use the same scope and protocol version. Version 2
-corrects the active-weapon controls; do not compare it with a version 1 log.
+Both compared logs must use the same scope and protocol version (currently 11);
+compare only logs of the same version.
+
+The Sheep Launcher case runs both of its paths. The first launch uses the
+normal 45-degree aim, starting 128 pixels left of the station centre. Space at
+frame 90, while the rocket is still away from terrain, releases its sheep;
+Space at 140 detonates that sheep. After that body is gone, the worm returns to
+the station and launches again with an 85-degree aim, keeping the landing near
+the platform. The second Space press waits for a replacement sheep body, three
+near-ground samples and near-zero vertical speed. The landed path has no third
+activation and no extra shot after the sheep disappears. Landed detection uses
+the missile and terrain APIs; no native contact flag is exposed. Native
+missile, burst and explosion traces record what each input did. The audit stops
+if the case times out with a launcher sheep still alive.
 
 ## Quick utilities check
 
@@ -169,105 +181,75 @@ Set `scope = "utilities"` on Audit home (and on Audit copies past 70 for the
 matching log) to run only Jet Pack, Low Gravity, Fast Walk, Laser Sight,
 Invisibility, Damage ×2, Crate Spy, Double Time and Crate Shower.
 
-The live report from 2026-10-15 exposed a routing error: sending every Space
-press directly to the worm fired Bazooka after the sheep launch. Native
-TeamEntity input checks its activation/steering counts and broadcasts `0x2C`
-with the team id for the next Space press, and `0x2D`/`0x2E` for steering a
-flying sheep. `worm:input` now follows that same routing, independent of the
-selected fallback weapon or any stock slot. The first press still fires
-through the worm; the remote activation has no power-bar release edge.
+Space presses follow the routing of WA's TeamEntity: it checks its activation and
+steering counts and broadcasts `0x2C` with the team id for the next Space
+press, and `0x2D`/`0x2E` for steering a flying sheep. `worm:input` follows that
+routing, whatever fallback weapon is selected and whatever is on the stock
+slots. The first press still fires through the worm; the remote activation has
+no power-bar release edge.
 
 
 ## Automatic utilities and the scheme
 
-WA automatically consumes stock in utility cells 6..9 (normally Damage x2,
-Crate Spy, Double Turn Time and Crate Shower). Infinite ammo there enables
-these effects even when the `.wsc` has them off. The original audit profiles
-mistakenly did that; the completed version 2 sheep run consequently included
-crate drops unrelated to the sheep cases.
+WA automatically uses the stock in utility cells 6..9 (normally Damage x2,
+Crate Spy, Double Turn Time and Crate Shower). Infinite ammo there turns these
+effects on even when the `.wsc` has them off, so every audit profile starts
+those cells with zero ammo. Before each case, the add-on clears their stock on
+every team and gives the case's selected weapon infinite ammo. It clears them
+again after recording the result, so the sheep-only run never stocks Crate
+Shower. In the full audit, WA's automatic processing still runs normally while
+a weapon placed in one of those cells is tested; that is an observed slot
+dependency, not an engine fix or a hidden result. Effects already activated by
+their own case may last into later cases, as with other match-wide weapons.
 
-Protocol 3 starts those physical cells with zero ammo in every audit profile,
-Before each case, the add-on clears their
-stock on every team and gives the case's selected weapon infinite ammo. It
-clears them again after recording the result. Thus the sheep-only run never
-stocks Crate Shower. In the full audit, WA's automatic processing still runs
-normally during a test of a weapon placed in one of those cells; that is an
-observed slot dependency, not an engine fix or a suppressed result. Effects
-already activated by their own case may persist into later cases, as with
-other match-wide weapons.
-
-Protocol 4 waits until the first turn is active before validating the roster,
+The audit waits until the first turn is active before checking the roster,
 reads it through that round's worm, and requires three worms on each of three
 teams. It uses the existing map, with nine separate places on the reserve
-strip. Earlier protocols used a different starting roster.
+strip. Any team may start: the audit skips to team 1's first worm before the
+first case, with no restart or forced turn handover.
 
-Protocol 5 accepts any starting team and automatically skips to team 1's
-first worm before beginning the cases. No restart lottery or forced turn
-handover is needed.
+Damage ×2, Crate Spy, Double Turn Time and Crate Shower run as instant
+utilities: no equip or fire, one item stocked at frame 40, then the remaining
+stock and the change in turn clock are sampled. This exercises WA's normal
+per-turn automatic activation after stocking; it doesn't test crate collision,
+the crate deck, or the scheme's expedited activation at pickup. Both these
+utility IDs and the automatic-use cells start empty and are cleared between
+cases. Moved utilities that aren't used stay visible as slot dependencies.
+Native utility effects can last afterwards.
 
-Protocol 6 treats Double Damage, Crate Spy, Double Turn Time and Crate Shower
-as instant utilities: no equip/fire, one item stocked at frame 40, then the
-remaining stock and change in turn clock are sampled. This exercises WA's
-normal per-turn automatic activation after stocking; it does not test crate
-collision, the crate deck, or the scheme's expedited activation at pickup.
-Both these utility IDs and physical automatic-consumption cells start empty
-and are cleared between cases. Moved utilities that are not consumed remain
-visible as slot dependencies. Native utility effects can persist afterwards.
-Compare fresh protocol 6 home/moved logs together.
+Every case starts with the turn clock at 60 seconds
+(`wa.world.set_turn_clock`), so a turn never runs out part way through a case,
+and Double Time's result doesn't depend on the time left.
+
+## Audit followup
 
 **Audit followup** runs Bungee, the four instant utilities, then the nine final
 fresh-worm cases (14 total). It uses the existing map and three teams of three
-worms, and avoids repeating the first 61 cases just to check turn rotation.
-Restart WA for the DLL fix: spawned worms now update the native team-arena
-count used by ordinary turn rotation, as well as the setup count. No turn
-handover was added.
+worms, and checks turn rotation without repeating the first 61 cases. Spawned
+worms update WA's team-arena count used by ordinary turn rotation, as well as
+the setup count; the audit adds no turn handover.
 
-Protocol 7 corrects this Space/Enter routing. The protocol 6 followup attached
-Bungee successfully but its supposed Space press fired the fallback Bazooka
-and left the worm hanging. The audit now records both attachment and
-detachment, and stops before advancing if a case leaves its worm in any of
-the four active mobility states. A timeout is not permission to carry that
-state into later cases. Compare fresh protocol 7 logs together.
+The audit records both the Bungee's attachment and its detachment, and stops
+before going on if a case leaves its worm in any of the four active mobility
+states. A timeout doesn't carry that state into later cases.
 
-Protocol 8 exercises Select Worm beyond its activation: Space at frame 40,
-release at 55, Tab at 90 and 120, then Right at 150 to commit the choice.
-Tab at 170 must leave that choice unchanged. The audit follows the team's
-currently controlled worm throughout these handovers, rather than treating
-the old worm losing control as a completed case. It logs both cycle results,
-the confirmation, and the final lock check. Its coverage reports the number
-of observed cycles and whether the choice stayed locked. Compare fresh
-protocol 8 home/moved logs together.
+Select Worm is tested beyond its activation: Space at frame 40, release at 55,
+Tab at 90 and 120, then Right at 150 to commit the choice. Tab at 170 must
+leave that choice unchanged. The audit follows the worm the team controls
+through these handovers, rather than treating the old worm losing control as
+a completed case. It logs both cycle results, the confirmation and the final
+lock check; its coverage reports the number of cycles seen and whether the
+choice stayed locked.
 
 `worm:input{key = "tab"}` uses WA's native selection handler and its gates;
 it does nothing outside selection mode or when called on an inactive worm.
-It cannot select a requested worm or give a newly spawned worm a turn.
+It can't select a requested worm or give a newly spawned worm a turn.
 It runs only from simulation callbacks.
 
-Protocol 9 adds both Sheep Launcher paths within its one weapon case. The
-first launch uses the normal 45-degree aim, starting 128 pixels left of the
-station centre. Space at frame 90, while the original rocket remains away
-from terrain, releases its sheep; Space at 140 detonates the promoted sheep.
-After that body is gone, the worm returns to the station and launches again
-with an 85-degree aim, keeping the landing near the platform. The second
-Space press waits for an observed replacement sheep body, three near-ground
-samples and near-zero vertical speed. There is no third activation on this
-landed path, and no extra shot after the sheep disappears. Landed detection
-uses the existing missile and terrain APIs; no native contact flag is exposed.
-Native missile/burst/explosion traces record the actual result of each input.
-The audit stops if the case times out with a surviving launcher sheep.
-**Audit sheep** includes this case now; **Audit home/moved** still have 70
-weapon cases. Compare fresh protocol 9 logs together.
+## Girders
 
-Protocol 10 sets the turn clock to 60 seconds at the start of every case
-(`wa.world.set_turn_clock`). A turn running out part way through a case cut it
-short at a different case in every run, handed the turn to another team, and
-made Double Time's result depend on the time left. Compare protocol 10 logs
-together.
-
-Protocol 11 places the girders in open air. The Girder's click 8 pixels above
-the station overlapped the land and WA refused it. Both girder cases now click
-above the worm, halfway up the gap between its platform and the one above
-(288 pixels above the station). The Girder Starter Pack places five girders,
-20 pixels apart and centred on the worm, a click and a fire press every 30
-frames. After each one, a `girder` signal says whether there is land at the
-click (`placed`). Compare protocol 11 logs together.
+Both girder cases click in open air above the worm, halfway up the gap between
+its platform and the one above (288 pixels above the station). The Girder
+Starter Pack places five girders, 20 pixels apart and centred on the worm, with
+a click and a fire press every 30 frames. After each one, a `girder` signal
+reports whether there is land at the click (`placed`).

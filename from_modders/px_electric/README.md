@@ -11,12 +11,12 @@ come from the shared `effects.sdk`:
   mines and Lua actors whose `body.hit_by` takes blasts. It sends the hit as
   the shared `kind = "taze"` (override with `kind`), so a recipient that reads
   kinds sees the electric hit. The taze pass then holds every worm in range.
-  A 0 HP worm WA has not started killing is given the same falloff and push by
+  A 0 HP worm WA hasn't started killing is given the same falloff and push by
   hand when the taze is off.
 - `lib/electric_damage.lua` -- the taze hold: the worm is taken, posed and
   shown `tazed1`/`tazed2` with the loop sound, then released with the push.
   WA's `dying`/`drowning`/`dead` states stay WA's: no new hold, and a hold that
-  starts dying is only let go. A zero-HP worm WA has not started killing is
+  starts dying is only let go. A zero-HP worm WA hasn't started killing is
   still taken, but the hold ends the frame after and hands it back with its
   push; a worm killed during the hold takes no extra damage.
 - `lib/taze_mine.lua` -- mark any mine as tazed from an electric weapon. The

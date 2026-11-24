@@ -77,7 +77,7 @@ weapon.definition = require("lib/weapon").merge(weapon.record, {
   sounds = { PRIMING },
   hold = {
     thrown = true,
-    -- The Fire Cluster Bomb's hold, at the chest: PX's own (hand_radius
+    -- The Fire Cluster Bomb's hold, at the chest: PX's values (hand_radius
     -- -9.8, weap_radius -10, hand_scale 1.2) holds it up at the face.
     sheet = ART .. "poisong.png", hand_type = 1, hand_radius = 16,
     weap_rotation = 0.5, weap_radius = 9,

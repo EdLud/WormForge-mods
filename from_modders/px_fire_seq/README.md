@@ -34,7 +34,7 @@ seq.fire_seq_mis({ ... })           -- real WA missiles via wa.weapons.launch
 | `delay` | frames between shots; a number or `function(i, worm)`, default 1 |
 | `vx`, `vy` | launch velocity; a number or `function(i, worm)`, read again for every shot so the aim stays live |
 | `x`, `y` | spawn point; same forms, defaults to the worm's position |
-| `standoff` | push each spawn point this many px along its own velocity, so a missile does not start inside the firing worm |
+| `standoff` | push each spawn point this many px along its own velocity, so a missile doesn't start inside the firing worm |
 | `spread` | `{ x = n, y = n }`, up to ±n px/frame, drawn with `wa.random` over thousandths |
 | `on_shot(i, worm)` | runs before every shot |
 | `on_done(owner, fired)` | runs when the burst ends (last shot, cancel or interruption); `fired` counts a shot launched in the same tick as a cancel |
@@ -82,7 +82,7 @@ counters held.
 - The counters are written only by the timer's brain, never from `on_fire`:
   `on_fire` for a projectile runs inside WA's `CreateWeaponProjectile` hook, and
   grounding WA's fire loop from there changes its state mid-iteration.
-- Do not re-enter `wa.weapons.fire` from `on_fire`: the slot's `on_fire` already
+- Don't re-enter `wa.weapons.fire` from `on_fire`: the slot's `on_fire` already
   ran this frame, so the shot double-fires.
 - After the last shot the guard drains 10 frames, swallowing WA's queued
   re-fire instead of starting a second burst.
@@ -103,8 +103,8 @@ none of this: keep the record a gun and let WA fire it.
 Reference: `Mods/wf-lib/mole_shopper/weapons/precipitator.lua` — a Minigun copy
 with `gun = { bullets = 25 }` and an `on_fire` that launches one payload.
 
-Keep this base when the shots are not the record's projectile (Lua actors), the
-cadence is not uniform, or the burst must stop on a button release or an impact.
+Keep this base when the shots aren't the record's projectile (Lua actors), the
+cadence isn't uniform, or the burst must stop on a button release or an impact.
 
 ## This bundle's weapons
 
@@ -114,7 +114,7 @@ cadence is not uniform, or the burst must stop on a button release or an impact.
 - `px.famas` — missiles in 3/3/3/2 groups.
 
 `lib/targetting_missiles.lua` is their shared homing pass (one target scan per
-frame). It is not exported.
+frame). It isn't exported.
 
 ## Checking
 

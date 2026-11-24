@@ -31,7 +31,7 @@ caller created, which is why a bundle must call it from every component that
 makes effects (`wa._mod` is the component's id). A bundle that installs once
 from its first weapon is still fine: an effect made by another component of the
 same bundle is assigned to that installer and logged once. Without that, an
-effect with no callback is not an error, it is simply invisible.
+effect with no callback isn't an error, it is simply invisible.
 
 `trail.BEAM` and `trail.GLOW` are qualified `wf-lib/effects/...` asset paths.
 Put both in the component's `sprites` table; the engine resolves them from this
@@ -44,10 +44,10 @@ is imported.
 
 ## Owners
 
-The hidden driver actor that ticks a trail or effect needs a real owner;
+The hidden driver actor that runs a trail or effect needs a real owner;
 `wa.actors.spawn` refuses a zero handle. Event fields such as `ev.worm` can be
 one (a zero handle is still a truthy userdata), so `trail.add` and the effect
-manager fall back to the turn's worm, and skip the effect when there is none.
+manager fall back to the turn's worm, and skip the effect when there's no turn worm either.
 
 ## Trail
 
@@ -91,7 +91,7 @@ game frames.
   after zeroing the record's own `explosion.power`. The radial damage goes
   through `wa.world.blast`, PX's `Env->Objs` walk, so worms, mines, crates,
   drums, missiles, arrows and Lua actors whose `body.hit_by` takes blasts are
-  all hit; a 0 HP worm WA has not started killing gets the same falloff and
+  all hit; a 0 HP worm WA hasn't started killing gets the same falloff and
   push by hand because the engine leaves it out. `kind = "taze"` (or a
   bundle's own kind) names the hit the recipients read, otherwise it is a
   plain blast. The electric variant stays in `px.electric` because it also
@@ -105,7 +105,7 @@ module itself take `rainbow = true` or `rainbow = { speed, offset }`, PX's
 (centred at 180, so the colour never goes black) and the clock is the
 simulation's own frame counter, never a draw callback's: two peers tint the
 same frame the same way. `fx.emitter` propagates its own `rainbow` to whichever
-parts do not set one, which is what PX's single manager switch does.
+parts don't set one, which is what PX's single manager switch does.
 
 ## Emitter
 
@@ -138,8 +138,8 @@ local e = fx.emitter{
 - `ring.track = true` points the bend along the owner's heading
   (`wa.math.atan(vy, vx)`), so a lens ring faces where the round is going: the
   long axis is `x` of the ellipse. `ring.angle` then becomes an offset from that
-  heading, and `ring.speed` is not applied, because the heading is written every
-  frame and a spin could not accumulate. A ring whose owner has no velocity (a
+  heading, and `ring.speed` isn't applied, because the heading is written every
+  frame and a spin couldn't accumulate. A ring whose owner has no velocity (a
   muzzle emitter moved by `move_to`) keeps its own angle and spins.
 - `rainbow`, `ring.rainbow`, `trail.rainbow` as above. `trail = false` keeps the
   emitter's own ribbon off; the trail module is normally the round's job.

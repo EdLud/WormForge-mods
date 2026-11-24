@@ -1,2 +1,2 @@
-description = "The profiler and the worm state logger, over the lobby's own weapons."
+description = "The profiler and the worm state logger, with the lobby's weapons."
 features = ["tools.perf", "tools.worm_state_logger"]

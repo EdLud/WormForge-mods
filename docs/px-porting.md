@@ -68,7 +68,7 @@ stops at them:
 
 The arc links to what is within PX's 12.35 pixels (`sqrt(10 / distance) >= 0.9`).
 A magnet's turns and a sentry's stun count each of its owner's turns once:
-Tab, which starts the turn again, does not count. A pack's own object joins
+Tab, which starts the turn again, doesn't count. A pack's own object joins
 with `require("lib/electrical").register{ kind, targets, zap, strike }`.
 
 ## Super Tele
@@ -78,7 +78,7 @@ and PX icon. The click position is held for 50 game frames while WA plays its
 teleport animation, then the worm moves there. Three 12-pixel terrain cuts at
 the click and 10 and 22 pixels above make room to arrive inside land. Cavern
 clicks are clamped to 19 pixels below the ceiling, as in PX. The click comes
-from WA's synchronized fire context, so the destination cannot follow a
+from WA's synchronized fire context, so the destination can't follow a
 later mouse movement.
 During manual placement the worm starts at WA's off-map holding position, so
 Super Tele places it immediately and plays its start sound at the destination.
@@ -145,8 +145,8 @@ Health Zone's animated medical crate/fallout, its held-vial particles and both
 weapons' flight trails use the original art and particle parameters from the
 28.09.2026 PX build. Blast Zone uses PX's three rotated, additive explosion
 animations. Expired zones fade visually for three seconds after their effects
-stop; fading does not heal or explode. Cosmetic particles use a separate
-random stream and do not alter gameplay randomness.
+stop; fading doesn't heal or explode. Cosmetic particles use a separate
+random stream and don't alter gameplay randomness.
 
 ## Homing Air Strike
 
@@ -240,7 +240,7 @@ option. Open points:
 - **Teleport on the invisibility slot:** WA disables Invisibility's slot in
   offline games, so the Teleport is unavailable offline. Not yet checked
   online.
-- **The scheme's header fields** (the dwords before the fire type) do not
+- **The scheme's header fields** (the dwords before the fire type) don't
   match WA's stock values. For example, the bat's first flag is 0 where WA's
   is 1. The whole record is imported, as PX writes it, except whether the
   weapon ends the turn (below); the bat plays no differently for it.
@@ -337,7 +337,7 @@ PX's 0 draws no worm in WA 3.8.1.
 | donkey | Crate Strike | icon | three crates on parachutes from 50 pixels above the map, at the click and 50 to either side (`wa.crates.spawn`); each a weapon, utility or health crate at random, WA picking what is inside; a health crate gives 20-40, 40-60 or 60-80 by its place |
 | freeze | Weapon Crate | icon, the worm's take-out and hold (in place of the Dynamite WA's record would have it hold) | PX's record: placed as WA places a mine (its take-out, placing and ammo), and the turn goes on; what it places is one of WA's weapon crates, its contents WA's pick, teleported in 40 pixels in front of the worm (`wa.crates.spawn`), for the worm to collect. Each team gets one a round. |
 | kamikaze | Sentry Gun | icon, the turret (base, head, flare), casings, impact, the worm's take-out and placing, its sounds | placed as WA places a mine, it plants where the worm stands with passage for the planter until clear, searching nearby if blocked; its head sweeps, takes the nearest moving enemy within 360 pixels, ignores terrain within its barrel-sweep grace area, requires clear sight beyond it and fires from a clear barrel tip, up to 20 rounds a turn (PX's spread, casings), holds fire on its owner's colour's turns, reloads each turn; positive damage disables it for the turn, and at 0 of its 50 health it explodes. Its head is drawn in its owner's colour, and so is the housing the worm carries (`worm_sprites_team_tint`). The shared turret (`lib/turret.lua`) is for the Sentry Laser too |
-| dragon_ball | Sentry Laser | icon, the turret (base, body, barrel), the worm's take-out and placing, its sounds | placed as the Sentry Gun; it shoots the nearest moving missile, mine or Bowling Ball of another colour within 300 pixels (`object.team`), ignoring terrain within its barrel-sweep grace area, requiring clear sight beyond it and firing only from a clear barrel tip, 20 frames after it finds it, turning 5 degrees a frame; each of its 4 shots a turn is a short beam in its owner's colour that disintegrates a target reached before terrain without a blast (`object:remove()`), burns worms (10) and crates and oil drums (20) in between, arms a mine it crosses, and cuts a 4-pixel hole where it stops; it fires on every colour's turn, and at 0 of its 35 health it explodes. Its body is drawn in its owner's colour, the barrel grey, and so is the body the worm carries. Not PX's: WA's arrows are not listed to Lua, so it ignores them. |
+| dragon_ball | Sentry Laser | icon, the turret (base, body, barrel), the worm's take-out and placing, its sounds | placed as the Sentry Gun; it shoots the nearest moving missile, mine or Bowling Ball of another colour within 300 pixels (`object.team`), ignoring terrain within its barrel-sweep grace area, requiring clear sight beyond it and firing only from a clear barrel tip, 20 frames after it finds it, turning 5 degrees a frame; each of its 4 shots a turn is a short beam in its owner's colour that disintegrates a target reached before terrain without a blast (`object:remove()`), burns worms (10) and crates and oil drums (20) in between, arms a mine it crosses, and cuts a 4-pixel hole where it stops; it fires on every colour's turn, and at 0 of its 35 health it explodes. Its body is drawn in its owner's colour, the barrel grey, and so is the body the worm carries. Not PX's: WA's arrows aren't listed to Lua, so it ignores them. |
 | suicide_bomber | Kamikaze Rocket | icon, the take-out, the launch, the rocket in flight | PX's scheme record, WA's Kamikaze's: WA flies the worm, digs its way and hits the worms it passes. Fired only with Ctrl held (Ctrl + Space; without, nothing is used and the coalition's weapon tooltip says so). The worm becomes a rocket from where it stood, along its aim at 8 pixels a frame, turned 9 degrees a frame by left and right, digging an 8-pixel hole each frame, for 4 seconds (counted down on the HUD); then it blows up (damage 30, blast 100) and the worm goes into the water. As PX's, it ends sooner if WA's Kamikaze does: in the water, or out of the map. |
 
 **Holds drawn at run time.** For some weapons PX draws the worm holding it
@@ -468,7 +468,7 @@ A few things differ from PX on purpose, for weapons drawn at run time:
   (`worm.keys`). The engine consumes the keys after the script reads them
   (`worm:jetpack_steer(true)`), so WA's jet pack neither thrusts nor burns fuel.
   Speed builds while a key is held, towards
-  10 pixels a frame, and dies away when it is not. Gravity and wind act at
+  10 pixels a frame, and dies away when it isn't. Gravity and wind act at
   0.2, and Shift keeps the facing.
 - **Fuel:** 100 (`worm.fuel`), burnt by flying and by each key, but not
   during retreat. the stock fuel counter shows it, because only the worm's
@@ -486,7 +486,7 @@ A few things differ from PX on purpose, for weapons drawn at run time:
 banana. When it explodes, five more Chillis burst out of it, straight up with
 a random spread: real WA missiles of the same slot (`wa.weapons.launch`), each
 with damage 30, an 8 s fuse, no countdown, the fire key setting it off, and a
-burst of fire where it ends. They do not burst again: a missile PX's script
+burst of fire where it ends. They don't burst again: a missile PX's script
 makes has no weapon of its own. PX draws the chilli turned to its flight
 and leaves WA's sprite 0; so does the pack, with `hold_as =
 "stock.super_banana"` for the throw pose. Not ported: PX's particles, the five's smoke trail power
@@ -505,7 +505,7 @@ Worn, a worm that falls into the water swims instead of drowning:
   strikes (every cursor weapon of this pack is built on one), the Teleport and
   the Girder, judged as WA judges them from its bungee (`fire_as = "bungee"`),
   as PX's swimmer in the bungee state fired them. Aimed weapons (the Homing
-  Missile, the Pigeon) are not. A Teleport takes it out of the water with the
+  Missile, the Pigeon) aren't. A Teleport takes it out of the water with the
   suit on.
 - **Leaving the water:** out of the water it flies on as from a jump with a
   plop (WA's SnotPlop, 56; PX's was silent), the suit still on, to swim
@@ -710,7 +710,7 @@ explicit ammo accounting. Portals reactivate at turn start and stop transporting
 when retreat ends. Each endpoint stays visible independently of its partner
 and activity, including between turns. Missiles, worms, mines, crates, oil drums, arrows
 (including Ice Arrow), graves and Bowling Balls can pass. Portal bolts,
-Electromagnets and flames do not; the last two were not traversed by PX's
+Electromagnets and flames don't; the last two weren't traversed by PX's
 active Portal Gun loop.
 
 `lib/portals.lua` owns pairs, placement, reentry suppression, swept crossings
@@ -743,7 +743,7 @@ Added engine surface:
 - The weapon data `airborne = true` in `weapon.defaults` (its "Fires
   jumping, falling" setting, which a profile may change) enables `on_fire` for synchronized
   Space press edges in flight. The event has `airborne = true`; native
-  ammo/turn processing is not invoked. A worm the Swim Suit holds fires
+  ammo/turn processing isn't invoked. A worm the Swim Suit holds fires
   nothing of it (`worm:take{ fire = ... }`). No aiming or steering physics
   is changed by the verb. Ground `on_fire.power` is normalized charge 0..1.
 - `wa.on.body_move(fn, { kinds = {...} })` runs before stock sea, gravity and
@@ -780,7 +780,7 @@ immediately. Real terrain and overlapping masks from other actors remain solid.
 The original foot art is unchanged: its bottom
 8 pixels have no collision, so the feet sit in the ground while the trimmed
 mask can overlap the soil by a further 8 pixels. The support probes sit
-beside the buried silhouette so it cannot support itself after terrain is
+beside the buried silhouette so it can't support itself after terrain is
 removed. The feet are drawn behind terrain, which hides the buried pixels.
 Worms and weapons collide with the feet; removing the ground beneath them makes
 the sentry fall and settle again. Hits retain horizontal and vertical knockback.
@@ -792,7 +792,7 @@ includes sentries in its impact selection (20 damage, quarter incoming velocity)
 with no duplicate contact impulse. Contact alone deals no damage. Damage
 is counted once and disables the sentry until the next turn. The original
 health defaults are Gun 50 and Laser 35. Moving enemies can trigger the Gun
-during any turn, including the planter's; friendly worms are not acquired.
+during any turn, including the planter's; friendly worms aren't acquired.
 
 The Gun fires one native stock Uzi round per firing tick through
 `wa.weapons.fire_bullet`, with 2 damage by default and the sentry's existing spread.
@@ -800,12 +800,12 @@ WA supplies the Uzi's small impact graphics, terrain hits, directional push
 and nearby damage. It traces intervening worms and objects, including allies.
 Only the firing sentry's body/feet are excluded from the trace; real terrain
 and other sentries remain obstacles. The stock record is captured before
-panel overrides, so Highlander's Laser Gun on the Uzi slot does not alter it.
+panel overrides, so Highlander's Laser Gun on the Uzi slot doesn't alter it.
 There are no synthetic per-round explosion actors. Casings remain as before.
 Hits also affect jumping and flying worms: WA applies the Uzi push and hit
 state, which cancels Helicopter steering and restores the worm's body.
 If its coalition has no living worm, the Gun retains its colour and ammo but
-cannot fire native rounds until a living parent exists (revival or capture).
+can't fire native rounds until a living parent exists (revival or capture).
 
 Sentry Gun component options, also saved in profiles:
 
@@ -826,7 +826,7 @@ Ownership belongs to coalition colour, including allied teams. A Lightning
 Strike that directly selects a sentry captures it for the caster's colour at
 fire time, preserves its health and ammo, and disables it for the current turn.
 A living coalition member supplies WA's required parent for subsequent shots;
-the placing worm's death does not change ownership.
+the placing worm's death doesn't change ownership.
 
 The shared `lib/turret.lua` configuration keeps motion in Lua:
 `slide_friction = 0.20` pixels/frame per supported frame,
@@ -1042,7 +1042,7 @@ Each migrated weapon module owns:
 - `weapon.configure(ctx, spec)`: optional component-option handling.
 - `weapon.missile_sprite`: optional visual settings for the shared renderer.
 - `weapon.requires`: runtime dependencies, `lib/` modules only; loading one
-  does not claim it.
+  doesn't claim it.
 
 A profile may place any weapon alone, and the loader sets up only what the
 placed weapons require, so a weapon's behaviour lives in its own module and
@@ -1053,7 +1053,7 @@ module (the Hot Air Balloon refuses the Super Drill). The lua-host test
 
 Keep module loading pure: the editor reads defaults before a match exists.
 Use `wa` only inside the runtime functions. The loader copies the definition's
-nested tables, so options cannot mutate the declared defaults.
+nested tables, so options can't mutate the declared defaults.
 
 Common animation, beam rendering, input dispatch and claim mechanics remain
 in `lib/`. Weapon-specific actions and values belong in their weapon files.
@@ -1068,7 +1068,7 @@ For modding, start with these files:
 - `mod.toml`: declares components and their exposed options.
 
 Development tests live outside this pack in [`../tests/px/`](../tests/px/).
-They are not installed, published with PX, or included in its replay archive.
+They aren't installed, published with PX, or included in its replay archive.
 
 ## Tests
 

@@ -32,7 +32,7 @@ is active. The Utilities global option and PX inventory utility both use it.
 speed, as the Random Race add-on does.
 `air_input(worm, msg)` identifies its airborne jump inputs. Controllers share
 Parkour cooldowns and deduplicate inputs/frames within the match, so enabling
-both forms cannot apply a movement input twice.
+both forms can't apply a movement input twice.
 
 `require("wf-lib/own_time")` counts a worm's own frames under `worm.time_scale`
 (Bullet Time's). A `FRAME_FINISH` hook runs once a world frame: what it does
@@ -83,7 +83,7 @@ lightning.strike{ x = 300, y = 200, side = 1, owner = worm, effects = true }
 ```
 
 The bolt comes down to (x, y) at 30 degrees, from the left with `side` 1 and
-from the right with -1. It gives a 150-frame warning, then strikes: it heals
+from the right with -1. It warns for 150 frames, then strikes: it heals
 worms on its line by 25, revives graves at `revive_health` (10), starts mines
 and hits crates and oil drums. With `effects = false` it only lights up and
 thunders. `owner` is a worm or `"none"`; the thunder plays at `thunder_on`,

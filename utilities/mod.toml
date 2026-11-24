@@ -359,7 +359,7 @@ type = "choice"
 choices = ["everyone", "active"]
 default = "everyone"
 label = "Explosion vision"
-description = "Explosion vision ownership: everyone, active"
+description = "Explosion light ownership: everyone, or only the active alliance."
 
 [[components.options]]
 key = "explosion_shadow_cast"
@@ -397,7 +397,7 @@ type = "choice"
 choices = ["everything", "all but enemies", "only my side"]
 default = "all but enemies"
 label = "Camera follows"
-description = "everything: normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only own side's worms, cursor and shots."
+description = "everything: normal camera. all but enemies: never the enemies' worms, cursor or shots, so the camera can't give them away; crates, barrels, fire and explosions still pull it. only my side: not those either, only your side's worms, cursor and shots."
 
 [[components.options]]
 key = "hide_enemy_hud"

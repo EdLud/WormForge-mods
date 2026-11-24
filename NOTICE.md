@@ -1,7 +1,7 @@
 # Assets not under the MIT license
 
 WormForge's code, documentation, art and sounds are under the MIT license
-in [LICENSE](LICENSE). The art and sounds listed here are not. They belong to
+in [LICENSE](LICENSE). The art and sounds listed here aren't. They belong to
 their authors, were never published under a license, and nobody here can grant
 rights to them. WormForge ships them, credited, as a free fan port of Project
 X. Don't take them from this repository into other work on the strength of the
