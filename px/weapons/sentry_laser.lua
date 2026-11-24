@@ -60,7 +60,7 @@ function weapon.setup()
   local RECOIL_FRAMES = 12
   local HOLE = 4 -- MakeHole where the beam stops
   local WORM_DAMAGE, OBJECT_DAMAGE = 10, 20
-  local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9 }
+  local RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, actor = 6 }
 
   local TEAM_TINT = shared.sentry_team_tint or { 0xFF6447, 0x4764FF, 0x47FF64, 0xE6E647, 0xE647E6, 0x47E6E6 }
   local BEAM_RGB = {
@@ -86,11 +86,11 @@ function weapon.setup()
     return out
   end
 
-  local function touched(x0, y0, dx, dy, length, skip)
+  local function touched(x0, y0, dx, dy, length, skip, self)
     local out = {}
-    for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
-      for _, obj in ipairs(group.all()) do
-        if obj.id ~= skip then
+    for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil, wa.actors }) do
+      for _, obj in ipairs(group.all and group.all() or {}) do
+        if obj.id ~= skip and obj.id ~= self and (obj.kind ~= "actor" or laser.shootable(obj)) then
           local ox, oy = (obj.x - x0), (obj.y - y0)
           local along = ox * dx + oy * dy
           local across = math.abs(ox * dy - oy * dx)
@@ -181,9 +181,11 @@ function weapon.setup()
     wa.sound.play(a, "sounds/laser_gun/laser_start.wav")
 
     wa.land.cut({ x = hx, y = hy, shape = "circle", radius = HOLE })
-    for _, obj in ipairs(touched(x0, y0, dx, dy, length, target.obj and target.obj.id)) do
+    for _, obj in ipairs(touched(x0, y0, dx, dy, length, target.obj and target.obj.id, a.id)) do
       if obj.kind == "worm" then
         if obj.hp > 0 then obj:hit(WORM_DAMAGE) end
+      elseif obj.kind == "actor" then
+        obj:hit(WORM_DAMAGE, dx, dy, "bullet")
       elseif obj.kind == "crate" or obj.kind == "oil" then
         obj:hit(OBJECT_DAMAGE, dx, dy)
       elseif obj.kind == "mine" and not s.armed[obj.id] then

@@ -2,6 +2,8 @@
 
 local M = {}
 
+local health_label = require("lib/health_label")
+
 M.DEBUG = false
 
 M.SPRITE = "sprites/bee_flight.png"
@@ -176,7 +178,21 @@ local function hasEscapeRoom(x, y)
   return blockedN <= 1
 end
 
-local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx)
+-- Whether the worm can move from (fx, fy) to (tx, ty) without passing
+-- through land: worm:carry is a teleport, so a spot that fits can still be
+-- on the far side of a thin ledge. Steps of at most 2 px, the start left out.
+local REACH_STEP_PX = 2
+local function reachable(worm, fx, fy, tx, ty)
+  local dx, dy = tx - fx, ty - fy
+  local n = math.ceil(math.sqrt(dx * dx + dy * dy) / REACH_STEP_PX)
+  for i = 1, n do
+    if not worm:fits(fx + dx * i / n, fy + dy * i / n, "terrain") then return false end
+  end
+  return true
+end
+
+-- With `from` ({ x, y }), only a spot the worm can reach from there.
+local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx, from)
   maxRadiusPx = maxRadiusPx or 50
   clearRadiusPx = math.max(clearRadiusPx or 0, SPAWN_CLEAR_RADIUS_PX)
   local r = 0
@@ -190,7 +206,8 @@ local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx)
       if roomClear(tx, ty, clearRadiusPx)
          and isClearOfTerrain(tx, ty, BEE_RADIUS_PX + 1)
          and hasEscapeRoom(tx, ty)
-         and (not worm or worm:fits(tx, ty)) then
+         and (not worm or worm:fits(tx, ty))
+         and (not from or reachable(worm, from.x, from.y, tx, ty)) then
         return tx, ty
       end
       angdeg = angdeg + step
@@ -368,8 +385,23 @@ local STING_GAP_PX = 18 -- worm above the stinger
 local STING_DRIFT_PX = 37 -- total sideways drift, random each sting
 local STING_ANGLE = 90 -- head down, tail (the sting) up at the worm
 
+local STING_RESCUE_PX = 24
+local STING_GAPS = { STING_GAP_PX, 12, 6, 0 }
+
+local function stingSpot(a, worm)
+  for i = 1, #STING_GAPS do
+    local y = a.y - STING_GAPS[i]
+    if worm:fits(a.x, y) and reachable(worm, worm.x, worm.y, a.x, y) then
+      return a.x, y
+    end
+  end
+  return nil, nil
+end
+
 local function startSting(a, s, worm)
   if not worm or worm.hp <= 0 then return false end
+  local cx, cy = stingSpot(a, worm)
+  if not cx then return false end
   if not worm:take({ turn = "run" }) then return false end
   wa.sound.play(worm,87)
   wa.sound.play(worm,33)
@@ -386,19 +418,8 @@ local function startSting(a, s, worm)
   s.rot, s.gfxAngle = angle, angle
   a:gfx{ angle = angle }
   a.vx, a.vy = s.sting.vx, -STING_LIFT_PX
-  worm:carry(a.x, a.y - STING_GAP_PX)
+  worm:carry(cx, cy)
   return true
-end
-
-local STING_RESCUE_PX = 24
-local STING_GAPS = { STING_GAP_PX, 12, 6, 0 }
-
-local function stingSpot(a, worm)
-  for i = 1, #STING_GAPS do
-    local y = a.y - STING_GAPS[i]
-    if worm:fits(a.x, y) then return a.x, y end
-  end
-  return nil, nil
 end
 
 local function stingTick(a, s)
@@ -418,7 +439,8 @@ local function stingTick(a, s)
  
   local cx, cy = stingSpot(a, w)
   if not cx then
-    cx, cy = checkSpawnPointNoLOS(w, a.x, a.y - STING_GAP_PX, STING_RESCUE_PX, 10)
+    cx, cy = checkSpawnPointNoLOS(w, a.x, a.y - STING_GAP_PX, STING_RESCUE_PX, 10,
+                                  { x = w.x, y = w.y })
   end
   if not cx or not w:carry(cx, cy) then
     letGo(s, a.vx, a.vy)
@@ -521,9 +543,15 @@ local function hatCorner(t, cx, cy, cos, sin, lx, ly)
   t.y = cy + lx * sin + ly * cos
 end
 
+local HEALTH_DEPTH = HAT_DEPTH - 1
+local HEALTH_ABOVE_PX = 12 -- the digits' bottom above the bee's centre
+
 local function drawHats()
   for _, a in ipairs(wa.actors.all()) do
     local s = state[a.id]
+    if s and s.hp > 0 and not a:in_water() then
+      health_label.draw(s.hp, s.maxHp, a.x, a.y - HEALTH_ABOVE_PX, HEALTH_DEPTH)
+    end
     if s and not s.rogue and (s.hatLost or 0) <= 0 then
       local cx, cy = a.x, a.y + hatY(s)
       local rad = (s.gfxAngle or 0) * (math.pi / 180)
@@ -634,7 +662,7 @@ local function think(a, ev)
   updateHat(a, s)
 
   if a:in_water() then
-    a.vx = 0 a.vy = 1.5 s.desiredAngle = math.PI / 4
+    a.vx = 0 a.vy = 1.5 s.desiredAngle = 45
     if s.sting then letGo(s, 0, 0) end
     dropHat(a, s)
     updateAnim(a, s)
@@ -717,12 +745,12 @@ local function think(a, ev)
 
     s.chaseCD = (s.chaseCD or 0) - 1
     if s.chaseCD <= 0 then
-      steer(a, target.x, target.y, CHASE_SPEED, CHASE_STRENGTH)
+      steer(a, target.x, target.y, CHASE_SPEED * s.chaseScale, CHASE_STRENGTH)
       s.chaseCD = CHASE_STEER_EVERY
     end
 
     if tdist <= CONTACT_RADIUS_PX then
-      if startSting(a, s, target) then return end
+      if not s.burstOnReach and startSting(a, s, target) then return end
       s.dead = true; log("[BEE] dead: reached target")
       detonate(a, s)
       return
@@ -833,7 +861,7 @@ local function onContact(a, ev)
   if not s or s.dead or s.sting then return end
   local other = ev and ev.other
   if isEnemyWorm(s, other) then
-    if not s.spin and not s.softSpin and startSting(a, s, other) then
+    if not s.burstOnReach and not s.spin and not s.softSpin and startSting(a, s, other) then
       log("[BEE] sting: enemy worm contact id=" .. tostring(a.id))
     else
       log("[BEE] detonate: enemy worm contact id=" .. tostring(a.id))
@@ -869,7 +897,8 @@ function M.spawn_actor(opts)
     owner   = owner,
     persist = opts.persist ~= false,
     body    = { shape = M.BODY_MASK, hits = { land = true, worms = true },
-                hit_by = { fire = true, blasts = true } },
+                hit_by = { fire = true, blasts = true, bullets = true, arrows = true,
+                          missiles = true, mines = true, actors = true } },
     grab    = "projectile",
     on      = { frame = opts.brain or brain, hit = hurt, touched = onContact, contact = bump },
   })
@@ -884,6 +913,9 @@ function M.spawn_actor(opts)
         or (owner and owner.kind == "worm" and owner.alliance) or nil,
       owner           = owner,
       hp              = opts.hp or MAX_HP,
+      maxHp           = opts.hp or MAX_HP,
+      chaseScale      = opts.chase_scale or 1, -- the chase's speed, a factor
+      burstOnReach    = opts.attack == "sting", -- bursts on reaching a worm, no carry
       dead            = false,
       freeMe          = false,
       stopMe          = false,
@@ -922,7 +954,9 @@ function M.spawn_actor(opts)
   return body
 end
 
-function M.spawn_map_bees(quantity, ownerWorm)
+-- `opts`: the swarm's settings for its bees: hp, chase_scale, attack.
+function M.spawn_map_bees(quantity, ownerWorm, opts)
+  opts = opts or {}
   quantity = math.max(1, math.floor(quantity or BEE_SPAWN_QUANTITY))
   if not ownerWorm then
     wa.log("[BEE SPAWN] no worm to seed from")
@@ -971,6 +1005,9 @@ function M.spawn_map_bees(quantity, ownerWorm)
             y     = spawnY,
             owner = ownerWorm,
             rogue = true,
+            hp    = opts.hp,
+            chase_scale = opts.chase_scale,
+            attack = opts.attack,
           })
           spawnedInSlice = true
           planted = planted + 1
@@ -990,8 +1027,14 @@ end
 
 M.spawnRandomBees = M.spawn_map_bees
 
+local function loadHealthLabel()
+  wa.assets.load({ sprites = { health_label.SHEET }, gpu_prefix = "sprites/health/" })
+end
+
 function M.install_weapon(ctx)
+  local hp = ctx.option("bee_health")
   wa.assets.load({ sprites = { M.HAT }, gpu_prefix = "sprites/" })
+  loadHealthLabel()
   installHat()
   wa.weapons.replace({
     name      = "Keeper Bee",
@@ -1016,6 +1059,7 @@ function M.install_weapon(ctx)
         y     = sy,
         owner = worm,
         rogue = false,
+        hp    = hp,
       })
     end,
   })
@@ -1024,16 +1068,23 @@ end
 function M.install_swarm(ctx)
   wa.assets.load({ sprites = { M.SPRITE, M.HAT }, sounds = M.SOUNDS,
                    gpu_prefix = "sprites/" })
+  loadHealthLabel()
   installHat()
 
   local on = ctx.option("spawn_map_bees")
   local amount = ctx.option("bee_amount")
-  wa.log(("Keeper Bee swarm: %s, %d bees"):format(on and "on" or "off", amount))
+  local bees = {
+    hp = ctx.option("bee_health"),
+    chase_scale = ctx.option("bee_speed") / 100,
+    attack = ctx.option("bee_attack"),
+  }
+  wa.log(("Keeper Bee swarm: %s, %d bees, %d health, %d%% speed, %s")
+    :format(on and "on" or "off", amount, bees.hp, ctx.option("bee_speed"), bees.attack))
   if not on then return end
 
   wa.on.turn_start(function(ev)
     if swarmPlanted then return end
-    if M.spawn_map_bees(amount, ev.worm) > 0 then swarmPlanted = true end
+    if M.spawn_map_bees(amount, ev.worm, bees) > 0 then swarmPlanted = true end
   end)
 end
 

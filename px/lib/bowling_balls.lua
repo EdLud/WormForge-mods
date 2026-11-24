@@ -181,7 +181,7 @@ function balls.setup()
   shared.bowling_balls = {} -- actor id -> ball
 
   local clock, clock_ball = 0, nil
-  local recover = {} -- worm id -> clock at which it can be hurt again
+  local recover = {} -- worm id (or "actor:" id) -> clock at which it can be hurt again
 
   local function tick(id)
     if clock_ball == nil or not shared.bowling_balls[clock_ball] then clock_ball = id end
@@ -224,6 +224,11 @@ function balls.setup()
         recover[obj.id] = clock + RECOVER_FRAMES
       elseif obj.kind == "crate" or obj.kind == "oil" then
         damage = OBJECT_DAMAGE
+      elseif obj.kind == "actor" then
+        local key = "actor:" .. obj.id
+        if (recover[key] or 0) > clock then return end
+        damage = dmg
+        recover[key] = clock + RECOVER_FRAMES
       else
         damage = dmg
       end
@@ -247,6 +252,14 @@ function balls.setup()
     end
     for _, group in ipairs({ wa.worms, wa.mines, wa.crates, wa.oil }) do
       for _, obj in ipairs(group.all() or {}) do hit(obj) end
+    end
+    -- Actors only when they ask for it: a hit_by that names actors (the
+    -- bees). One left at "all" (a trampoline, a magnet, another ball) isn't hit.
+    if wa.actors.all then
+      for _, obj in ipairs(wa.actors.all()) do
+        local by = obj.id ~= a.id and obj.alive and obj.hit_by
+        if type(by) == "table" and by.actors then hit(obj) end
+      end
     end
   end
 

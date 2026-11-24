@@ -6,6 +6,14 @@ laser.GLOW = "sprites/laser_gun/laser_glow.png"
 laser.BEAM = "sprites/laser_gun/laser_beam.png"
 laser.DEPTH = wa.depth.FRONT
 
+-- Actors a gun's bullets would hit: a body whose hit_by lets bullets in. A
+-- body-less actor (hit_by {}) and one that leaves bullets out stay unhit.
+function laser.shootable(a)
+  if not a.alive then return false end
+  local by = a.hit_by
+  return by == "all" or (type(by) == "table" and by.bullets == true)
+end
+
 function laser.rand(r)
   r.seed = (r.seed * 1103515245 + 12345) % 0x80000000
   return r.seed / 0x80000000

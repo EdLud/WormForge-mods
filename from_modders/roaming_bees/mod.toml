@@ -22,6 +22,15 @@ icon = "sprites/beeico.png"
 credits = "Keeper Bee by reddaz (Project X port)"
 default_position = { row = "F1", column = 1 }
 
+[[components.options]]
+key = "bee_health"
+type = "int"
+default = 25
+min = 1
+max = 1000
+label = "Bee health"
+description = "How much damage a fired bee takes before it bursts."
+
 [[components]]
 id = "spawn.bees.swarm"
 type = "feature"
@@ -43,6 +52,37 @@ key = "bee_amount"
 type = "int"
 default = 4
 min = 1
-max = 60
+max = 250
 label = "Map bees"
 description = "How many bees to spread across the map, one per slice."
+
+[[components.options]]
+key = "bee_health"
+type = "int"
+default = 25
+min = 1
+max = 1000
+label = "Bee health"
+description = "How much damage a map bee takes before it bursts."
+
+[[components.options]]
+key = "bee_speed"
+type = "int"
+default = 100
+min = 1
+max = 1000
+label = "Bee speed"
+description = "How fast a map bee flies at the worm it chases, in % of its normal speed."
+
+[[components.options]]
+key = "bee_attack"
+type = "choice"
+choices = ["carry", "sting"]
+default = "carry"
+label = "Bee attack"
+description = "carry: the bee lifts the worm it reaches, then bursts. sting: it bursts as it reaches the worm."
+
+[sprites."sprites/health/digits.png"]
+frames = 14
+fps = 1
+play = "loop"

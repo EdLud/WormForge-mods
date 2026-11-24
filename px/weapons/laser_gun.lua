@@ -78,10 +78,15 @@ function weapon.setup()
           for _, obj in ipairs(group.all()) do out[#out + 1] = obj end
         end
       end
+      if wa.actors.all then
+        for _, a in ipairs(wa.actors.all()) do
+          if laser.shootable(a) then out[#out + 1] = a end
+        end
+      end
       return out
     end
 
-    local LASER_RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9 }
+    local LASER_RADIUS = { worm = 6, mine = 5, crate = 9, oil = 9, actor = 6 }
 
     local function laser_trace(r, w)
       local x1 = r.x + (LASER_REACH * r.dx)
@@ -114,11 +119,15 @@ function weapon.setup()
         if along >= 0 and along <= length and across <= 5 + (LASER_RADIUS[obj.kind] or 6)
             and not (obj.kind == "worm" and obj.id == w.id) then
           local key = obj.kind .. ":" .. obj.id
-          if obj.kind == "worm" then
-            if obj.hp > 0 then
+          if obj.kind == "worm" or obj.kind == "actor" then
+            if obj.kind == "actor" or obj.hp > 0 then
               local taken = r.taken[key] or 0
               local amount = taken >= 45 and 0 or taken >= 10 and 1 or 2
-              obj:hit({ amount = amount, vx = r.dx, vy = r.dy })
+              if obj.kind == "worm" then
+                obj:hit({ amount = amount, vx = r.dx, vy = r.dy })
+              else
+                obj:hit(amount, r.dx, r.dy, "bullet")
+              end
               r.taken[key] = taken + amount
             end
           elseif obj.kind == "oil" or obj.kind == "crate" then
