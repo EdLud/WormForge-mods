@@ -6,11 +6,17 @@ package.preload["own_time"] = function() return dofile(root .. "../sdk/own_time.
 local actions, hooks, sounds, banners = {}, {}, {}, {}
 package.loaded["lib/turn_controls"] = {register=function(id,callbacks) actions[id]=callbacks end}
 local clock,tick=30000,0
+local tray={} -- the utility tray's open entries, by weapon and worm id
 wa = {
   msg={FRAME_FINISH=2,JUMP=36,JUMP_UP=37},
   on={worm_message=function(f)hooks[#hooks+1]=f end},
   sound={play=function(w,s) sounds[#sounds+1]=s end},
-  hud={message_top=function(text,opts) assert(opts.to=="coalition");banners[#banners+1]=text end},
+  hud={message_top=function(text,opts) assert(opts.to=="coalition");banners[#banners+1]=text end,
+    utilities={add=function(spec)
+      local k=spec.weapon.." "..spec.worm.id
+      tray[k]=true
+      return {is_open=function()return tray[k]==true end,remove=function()tray[k]=nil end}
+    end}},
   world={frame=function()return tick end,turn_clock=function()return clock end,set_turn_clock=function(t)clock=t end},
 }
 dofile(root .. "../tests/tooltip_mock.lua")(root)
@@ -55,18 +61,21 @@ local function input(msg)
   utility_hook(w,msg)
   global_hook(w,msg) -- Real dispatch invokes every hook, even after "eat".
 end
-parkour.fire(w);input(wa.msg.JUMP)
+parkour.fire(w);assert(tray["px.parkour 17"],"on: its icon in the utility tray")
+input(wa.msg.JUMP)
 assert(w.vx==-4.5 and w.vy==-3.5 and w.facing==-1 and jumps==1,"one wall jump, not two")
 w.vx,w.vy=0,-1;input(wa.msg.JUMP)
 assert(w.vx==0 and w.vy==-1,"global option cannot bypass utility cooldown")
 for _=1,15 do input(wa.msg.FRAME_FINISH) end
 input(wa.msg.JUMP);assert(w.vx==-3 and w.vy==-3)
-parkour.fire(w);w.vx,w.vy=0,0;input(wa.msg.JUMP)
+parkour.fire(w);assert(not tray["px.parkour 17"],"off: its icon gone")
+w.vx,w.vy=0,0;input(wa.msg.JUMP)
 assert(w.vx==0 and w.vy==0,"toggling cannot bypass the shared movement cooldown")
 for _=1,15 do input(wa.msg.FRAME_FINISH) end
 input(wa.msg.JUMP)
 assert(w.vx==-3 and w.vy==-2,"global movement still works when the utility is off")
 parkour.fire(w);parkour.finish();w.vx,w.vy=0,0
+assert(not tray["px.parkour 17"],"the turn's end takes its icon away")
 assert(utility_hook(w,wa.msg.JUMP)==nil and w.vx==0,"handoff disables utility")
 parkour.fire(w);w.state="standing"
 assert(utility_hook(w,wa.msg.JUMP)==nil,"standing jump remains native")

@@ -26,9 +26,15 @@ local weapon = {
 
 function weapon.setup()
   local on = {}
+  local icon = require("lib/utility_icon")
   local function switch(worm)
     on[worm.id] = not on[worm.id]
-    if on[worm.id] then wa.sound.play(worm, SOUND) end
+    if on[worm.id] then
+      wa.sound.play(worm, SOUND)
+      icon.on(ID, worm)
+    else
+      icon.off(ID, worm)
+    end
   end
   require("lib/shared").anti_fall_damage_on = function(worm)
     if not on[worm.id] then switch(worm) end
@@ -40,7 +46,10 @@ function weapon.setup()
       switch(worm)
       return true
     end,
-    finish = function() on = {} end,
+    finish = function()
+      on = {}
+      icon.off_all(ID)
+    end,
     hint = function(worm)
       return "Anti Fall Damage: " .. (on[worm.id] and "ON" or "OFF") .. "\nSpace: on/off"
     end,

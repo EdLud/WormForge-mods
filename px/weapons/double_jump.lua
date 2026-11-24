@@ -7,6 +7,7 @@ local function install(ctx)
   local id = ctx.id
   local shared = require("lib/shared")
   local controls = require("lib/turn_controls")
+  local icon = require("lib/utility_icon")
   wa.weapons.replace({
     wep = "weps/double_jump.wep",
     panel_icon = "sprites/double_jump/icon.png",
@@ -30,12 +31,15 @@ local function install(ctx)
 
   local function switch_on(worm)
     on, armed = true, true
+    -- On for the turn, whichever worm has it: the team's.
+    icon.on(id, worm.team)
     require("lib/weapon_hint").notice(worm, "Double Jump: ON")
   end
   controls.register(id, {
     fire = function(worm)
       if on then
         on, armed, from_water = false, false, false
+        icon.off_all(id)
         require("lib/weapon_hint").notice(worm, "Double Jump: OFF")
       else
         switch_on(worm)
@@ -48,7 +52,10 @@ local function install(ctx)
       switch_on(worm)
       return true
     end,
-    finish = function() on, armed, from_water = false, false, false end,
+    finish = function()
+      on, armed, from_water = false, false, false
+      icon.off_all(id)
+    end,
   })
   controls.configure(id, ctx.data)
   controls.setup()

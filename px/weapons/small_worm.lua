@@ -25,6 +25,7 @@ function weapon.setup()
     worm.gravity = worm.gravity * GRAVITY
     worm.mass = worm.mass * MASS
     worm.body_scale = BODY
+    require("lib/utility_icon").on(ID, worm)
     require("lib/weapon_hint").notice(worm, "Small worm mode: ON")
   end
 
@@ -42,6 +43,7 @@ function weapon.setup()
     worm.gravity = worm.gravity / GRAVITY
     worm.mass = worm.mass / MASS
     worm.body_scale = nil
+    require("lib/utility_icon").off(ID, worm)
     require("lib/weapon_hint").notice(worm, "Small worm mode: OFF")
   end
 

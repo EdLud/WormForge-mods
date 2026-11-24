@@ -112,12 +112,14 @@ function weapon.setup()
   local function suit_on(worm, s)
     wa.sound.play(worm, "sounds/swim_suit/putting_on_ssuit.wav")
     s.suit, s.plopready = true, true
+    require("lib/utility_icon").on("px.swim_suit", worm)
     swim_in_game = true
     worm.collision_mask = SWIM_SUIT_MASK
   end
 
   local function suit_off(worm, s, sink, vx, vy)
     s.suit, s.plopready, s.plopped, s.floating = false, false, false, false
+    require("lib/utility_icon").off("px.swim_suit", worm)
     swim_drop_art(worm, s)
     if sink then
       worm:release(vx, vy, { tumble = true })

@@ -41,6 +41,7 @@ function weapon.setup()
   local function gravity_back()
     gravity_factor, clock_seen, settling = nil, {}, false
     wa.world.set_gravity(gravity_initial)
+    require("lib/utility_icon").off_all("px.gravity_control")
   end
 
   local function watch_clock(worm)
@@ -89,6 +90,8 @@ function weapon.setup()
       clock_seen = {}
       wa.sound.play(worm, "sounds/gravity_control/activate.wav")
       wa.world.set_gravity(gravity_initial * gravity_factor)
+      -- All gravity changes; the icon shows on the turn of the team that fired it.
+      require("lib/utility_icon").on("px.gravity_control", worm.team)
     end,
     finish = function()
       retreating = false

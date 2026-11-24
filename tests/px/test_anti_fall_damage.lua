@@ -10,6 +10,9 @@ local function check(name, ok, detail)
 end
 
 local actions, sounds = {}, 0
+-- The utility tray: the entries open, by weapon and worm id.
+local tray = {}
+local function in_tray(w) return tray["px.anti_fall_damage " .. w.id] == true end
 local on = { turn_start = {}, turn_end = {}, worm_message = {} }
 -- The real turn controls (its Auto-Use), keeping each weapon's callbacks.
 package.loaded["lib/weapon_hint"] = { register = function() end }
@@ -17,6 +20,11 @@ wa = {
   msg = { FRAME_FINISH = 1, FIRE_WEAPON = 2 },
   sound = { play = function() sounds = sounds + 1 end },
   world = { keys = function() return {} end },
+  hud = { utilities = { add = function(spec)
+    local k = spec.weapon .. " " .. spec.worm.id
+    tray[k] = true
+    return { is_open = function() return tray[k] == true end, remove = function() tray[k] = nil end }
+  end } },
   on = {},
 }
 local turn_controls = require("lib/turn_controls")
@@ -49,6 +57,7 @@ check("off: the tumble is left alone", w.state == "tumbling")
 -- Fired by hand: on for the turn, with its sound.
 controls.fire(w)
 check("firing plays the sound", sounds == 1)
+check("on: its icon is in the tray", in_tray(w))
 fire("worm_message", w, wa.msg.FRAME_FINISH)
 check("on: a tumble faster than 8 becomes a fall", w.state == "falling")
 w.state, w.vx, w.vy = "blasted", -9, 0
@@ -70,10 +79,13 @@ w.turn = true
 controls.fire(w)
 fire("worm_message", w, wa.msg.FRAME_FINISH)
 check("fired again: off", w.state == "hit")
+check("off: its icon is gone", not in_tray(w))
 controls.fire(w)
+check("on again: the icon is back", in_tray(w))
 controls.finish()
 fire("worm_message", w, wa.msg.FRAME_FINISH)
 check("the turn's end switches it off", w.state == "hit")
+check("the turn's end takes the icon away", not in_tray(w))
 
 -- Auto-Use: on at turn start while there is ammo, a unit spent.
 afd.configure({ data = { instant_use = "auto_use", auto_use = true } })

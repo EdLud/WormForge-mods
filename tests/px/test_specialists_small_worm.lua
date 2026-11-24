@@ -4,6 +4,7 @@ package.path=root.."?.lua;"..package.path
 
 local hooks,ends,messages,cuts={},{},{},{}
 local fits=true
+local tray={} -- the utility tray's open entries, by weapon and worm id
 local worm={id=1,x=100,y=200,vx=0,vy=0,gravity=1,mass=1,shape="worm",body_visible=true,facing=-1,
   state="standing",turn=true,weapon="px.small_worm",alliance=0,hp=100}
 function worm:fits()return fits end
@@ -11,7 +12,12 @@ wa={msg={FRAME_FINISH=2,FIRE_WEAPON=0x26},
   world={keys=function()return {} end},
   worms={all=function()return {worm} end},
   land={cut=function(c)cuts[#cuts+1]=c end},
-  hud={message_top=function(t)messages[#messages+1]=t end},
+  hud={message_top=function(t)messages[#messages+1]=t end,
+    utilities={add=function(spec)
+      local k=spec.weapon.." "..spec.worm.id
+      tray[k]=true
+      return {is_open=function()return tray[k]==true end,remove=function()tray[k]=nil end}
+    end}},
   on={worm_message=function(f,o)hooks[#hooks+1]={f=f,msgs=o.msgs}end,
     turn_end=function(f)ends[#ends+1]=f end}}
 local function send(msg)
@@ -33,12 +39,14 @@ worm.vx=0;send(wa.msg.FIRE_WEAPON)
 check(worm.shape=="mine" and worm.y==195,"small: WA's mine shape, lifted 5 px")
 check(near(worm.gravity,0.75) and near(worm.mass,1.5),"three quarters of its gravity, half again its mass")
 check(messages[#messages]=="Small worm mode: ON","PX's message")
+check(tray["px.small_worm 1"],"its icon in the utility tray")
 check(worm.body_visible and near(worm.body_scale.scale,0.85) and worm.body_scale.y==-2,
   "its own body at 0.85 (PX's WAP->Size), on the mine shape's bottom")
 -- Fired again: itself, 9 px up, stopped, gravity and mass given back.
 worm.vx,worm.vy=0,0;send(wa.msg.FIRE_WEAPON)
 check(worm.shape=="worm" and worm.y==186 and near(worm.gravity,1) and near(worm.mass,1),"fired again: itself again")
 check(worm.body_scale==nil and messages[#messages]=="Small worm mode: OFF" and #cuts==0,"full size, no holes where it fits")
+check(not tray["px.small_worm 1"],"its icon gone")
 -- The turn's end ends it once it stands still; stuck, PX's holes free it.
 send(wa.msg.FIRE_WEAPON)
 for _,f in ipairs(ends) do f() end
@@ -47,4 +55,5 @@ check(worm.shape=="mine","after the turn, still small while it moves")
 fits=false;worm.state="standing";send(wa.msg.FRAME_FINISH)
 check(worm.shape=="worm" and #cuts==6 and cuts[1].radius==5 and cuts[1].y==worm.y-4,"standing: itself, six holes when stuck")
 check(worm.body_scale==nil,"full size once it is itself")
+check(not tray["px.small_worm 1"],"its icon gone once it is itself")
 print("Specialists Small Worm: ALL PASS")
