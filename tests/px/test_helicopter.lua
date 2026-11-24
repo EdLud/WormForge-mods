@@ -5,6 +5,8 @@ local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px
 package.path = root .. "?.lua;" .. package.path
 
 package.loaded["wf-lib/own_time"] = { frames = function() return 1 end }
+local hints = {}
+package.loaded["lib/weapon_hint"] = { hint = function(id, reader) hints[id] = reader end }
 
 local function check(what, ok, detail)
   if not ok then error("FAIL: " .. what .. (detail and ("   [" .. tostring(detail) .. "]") or ""), 2) end
@@ -111,6 +113,7 @@ end
 print("helicopter dash: direction, ramp, lock, steering, fuel")
 do
   local w = new_match()
+  check("its tooltip tells the player about the dash", hints["px.helicopter"](w) == "Helicopter\nPress Shift to dash")
   take_off(w)
   local body = spawned[#spawned]
   body.x, body.y = 503.5, 301.25 -- drawn ahead of the worm, as the follow puts it
@@ -256,7 +259,8 @@ do
   shift = true
   w.keys = { right = true }
   frame(w)
-  check("dash fuel 0: no dash and no bar", w.gravity == 0.2 and #sheets(draw(), BAR) == 0)
+  check("dash fuel 0: no dash, no bar and no tooltip",
+    w.gravity == 0.2 and #sheets(draw(), BAR) == 0 and hints["px.helicopter"](w) == nil)
 end
 
 print("ALL PASS")

@@ -347,6 +347,10 @@ function weapon.setup()
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
+  require("lib/weapon_hint").hint("px.helicopter", function()
+    if dash_options().fuel > 0 then return "Helicopter\nPress Shift to dash" end
+  end)
+
   if wa.on.contact then
     wa.on.contact(function(worm, other, c)
       local h = helis[worm.id]
