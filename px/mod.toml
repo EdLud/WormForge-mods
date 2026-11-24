@@ -2235,6 +2235,15 @@ default = 5
 label = "Dash refill (%)"
 description = "How fast dash fuel refills between dashes, as a percentage of how fast a dash uses it."
 
+[[components.options]]
+key = "crash_speed_scale"
+type = "int"
+min = 0
+max = 1000
+default = 0
+label = "Crash scales with speed (%)"
+description = "How much a crash's explosion grows with the heli's speed: 0 keeps it the same size, 100 is full scaling."
+
 [[components]]
 id = "px.gravity_control"
 type = "weapon"

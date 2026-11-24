@@ -31,7 +31,7 @@ local function new_match(options)
     math = { sin = math.sin },
     actors = {
       spawn = function(spec)
-        local a = { sprite = spec.sprite }
+        local a = { sprite = spec.sprite, explode = spec.explode }
         function a:gfx(g) for k, v in pairs(g) do self[k] = v end end
         function a:frame(i) self.shown = i end
         function a:remove() self.dead = true end
@@ -62,7 +62,8 @@ local function new_match(options)
   dofile(root .. "../tests/brush_mock.lua")(wa)
   package.loaded["lib/shared"] = nil
   local weapon = dofile(root .. "weapons/helicopter.lua")
-  local values = { fuel = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30 }
+  local values = { fuel = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30,
+    crash_speed_scale = 0 }
   for k, v in pairs(options or {}) do values[k] = v end
   weapon.configure({ option = function(key) return values[key] end }, { jet_pack = {} })
   weapon.setup()
@@ -220,6 +221,17 @@ do
   w.vy, w.keys = 0, { up = true }
   frame(w)
   check("down to its own top speed, they steer at 100% again", near(w.vy, -0.8), w.vy)
+end
+
+print("helicopter crash: its size grows with speed only as far as the option says")
+for _, case in ipairs({ { 0, 10 }, { 50, 17 }, { 100, 24 } }) do
+  local w = new_match({ crash_speed_scale = case[1] })
+  take_off(w)
+  w.vx, w.y = 20, 20000 -- 10 a frame by the crash's measure, into the water
+  frame(w)
+  local blast = spawned[#spawned].explode
+  check("scale " .. case[1] .. "%: size " .. case[2], blast and blast.id == case[2] and blast.damage == 2 * case[2],
+    blast and blast.id)
 end
 
 print("helicopter dash: 10000%")

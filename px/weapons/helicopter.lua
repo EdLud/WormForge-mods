@@ -100,6 +100,8 @@ function weapon.setup()
     local speed = (math.abs(sy) + math.abs(sx)) / 2
     local size = trunc((worm.fuel - 75) / 10 * speed)
     if size < 10 then size = 10 end
+    -- how much of that growth with speed the profile wants: 0 none, 100 all of it
+    size = trunc(10 + (size - 10) * (shared.helicopter_crash_scale or 0) / 100)
     wa.actors.spawn({
       sprite = false, x = worm.x, y = worm.y, owner = worm, explode = { damage = size * 2, id = size, now = true },
     })
@@ -507,6 +509,7 @@ function weapon.configure(ctx, spec)
   local fuel = ctx.option("fuel")
   require("lib/shared").helicopter_fuel = fuel
   spec.jet_pack.fuel = math.min(fuel, 255)
+  require("lib/shared").helicopter_crash_scale = ctx.option("crash_speed_scale")
   require("lib/shared").helicopter_dash = {
     fuel = ctx.option("dash_fuel") * 0.1, -- the option's 100 is 10 units of fuel
     speed = ctx.option("dash_speed"),

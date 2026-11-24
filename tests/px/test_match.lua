@@ -6709,7 +6709,8 @@ do
     HIGHLANDER_CLAIMING = "px.helicopter"
     require("components/loader").install({ id = "px.helicopter", option = function(key)
       if key == "fuel" then return fuel end
-      return assert(({ dash_fuel = 100, dash_speed = 600, dash_steer_factor = 50, dash_refill_factor = 5 })[key], key)
+      return assert(({ dash_fuel = 100, dash_speed = 600, dash_steer_factor = 50, dash_refill_factor = 5,
+        crash_speed_scale = 100 })[key], key)
     end })
     HIGHLANDER_CLAIMING = nil
     local spec = replaced[#replaced]
@@ -6727,7 +6728,7 @@ do
     if fuel == 999 then
       M.contact(w, { kind = "land" }, { vx = 10, vy = 10 })
       local boom = M.spawned[#M.spawned].spec.explode
-      check("helicopter: high-fuel crash retains PX's formula", boom.id == 923 and boom.damage == 1846,
+      check("helicopter: high-fuel crash at 100% speed scaling retains PX's formula", boom.id == 923 and boom.damage == 1846,
         "blast=" .. boom.id .. " damage=" .. boom.damage)
     end
   end
