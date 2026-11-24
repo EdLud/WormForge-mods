@@ -459,13 +459,10 @@ local function updateAnim(a, s)
   end
 end
 
-local function cheapClear(x, y)
-  if wa.land.solid(x, y) then return false end
-  return not (wa.land.solid(x - 3, y) or wa.land.solid(x + 3, y)
-    or wa.land.solid(x, y - 3) or wa.land.solid(x, y + 3))
-end
-
-local function findFreeSpot(x, y, maxRadius)
+-- The bee's whole body (a 16 px disc) against the land, saws' outlines
+-- included: a spot whose centre is clear can still hold the rim in land,
+-- and WA then refuses every move the bee makes.
+local function findFreeSpot(a, x, y, maxRadius)
   local r = 0
   while r <= maxRadius do
     local step = (r == 0) and 360 or math.max(15, math.floor(360 / (r / 2) + 0.5))
@@ -474,7 +471,7 @@ local function findFreeSpot(x, y, maxRadius)
       local rad = angdeg * math.pi / 180
       local tx = x + math.floor(r * wa.math.cos(rad))
       local ty = y + math.floor(r * wa.math.sin(rad))
-      if cheapClear(tx, ty) and isClearOfTerrain(tx, ty, BEE_RADIUS_PX + 1) then
+      if a:fits(tx, ty) then
         return tx, ty
       end
       angdeg = angdeg + step
@@ -485,7 +482,7 @@ local function findFreeSpot(x, y, maxRadius)
 end
 
 local function unbury(a, s)
-  local tx, ty = findFreeSpot(a.x, a.y, UNBURY_MAX_RADIUS_PX)
+  local tx, ty = findFreeSpot(a, a.x, a.y, UNBURY_MAX_RADIUS_PX)
   if not tx then tx, ty = s.lastSafeX, s.lastSafeY end
   a.x, a.y = tx, ty
   a.vx, a.vy = 0, 0
@@ -497,14 +494,15 @@ local function unbury(a, s)
 end
 
 local function checkClipping(a, s)
-  if s.bonk == 0 and s.clipFrames < 1 and cheapClear(a.x, a.y) then
+  local fits = a:fits(a.x, a.y)
+  if s.bonk == 0 and s.clipFrames < 1 and fits then
     s.lastSafeX, s.lastSafeY = a.x, a.y
   end
   if s.bonk > 0 and (s.ticks or 0) % 10 == 0 then
     s.bonk = s.bonk - 1
   end
 
-  if wa.land.solid(a.x, a.y) then
+  if not fits then
     s.clipFrames = (s.clipFrames or 0) + 1
     if s.clipFrames > CLIP_FRAMES_LIMIT then
       unbury(a, s)
