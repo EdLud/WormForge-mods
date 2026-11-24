@@ -52,6 +52,7 @@ function weapon.setup()
   local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
   local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: the option's 100 (10 here) lasts 15 frames
   local DIAGONAL = 0.70710678118654752 -- 1 / sqrt(2)
+  local CRATE_POP = 115 -- WA's CratePop
   local DASH_ANGLE = { -- degrees for facing right, by dy then dx (-1, 0, 1)
     [-1] = { [-1] = 225, [0] = 270, [1] = 315 },
     [0] = { [-1] = 180, [0] = 0, [1] = 0 },
@@ -240,7 +241,7 @@ function weapon.setup()
         local dash = dash_options()
         if h.dash and (not shift or h.dash_left <= 0) then
           dash_end(worm, h)
-        elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 then
+        elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 and h.dash_left >= dash_full() then
           dash_start(worm, h, k, vx, vy)
         end
         h.shift_was = shift
@@ -257,7 +258,12 @@ function weapon.setup()
           d.speed = math.min(top, d.speed + top / DASH_RAMP)
           vx, vy = d.dx * d.speed - d.dy * d.side, d.dy * d.speed + d.dx * d.side
         else
-          h.dash_left = math.min(dash.fuel * DASH_FRAMES, h.dash_left + dash.refill / 100)
+          local full = dash.fuel * DASH_FRAMES
+          if h.dash_left < full then
+            h.dash_left = math.min(full, h.dash_left + dash.refill / 100)
+            -- ready again: the crate pop an octave up (the take-off's full bar stays quiet)
+            if h.dash_left >= full then wa.sound.play(worm, CRATE_POP, { pitch = 12 }) end
+          end
           if h.coast and math.abs(vx) <= HELI_TOP_SPEED and math.abs(vy) <= HELI_TOP_SPEED then
             h.coast = false
             worm:jetpack_steer(true) -- back within the scheme's top speed

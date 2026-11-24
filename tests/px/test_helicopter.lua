@@ -15,10 +15,10 @@ end
 
 local function near(a, b) return math.abs(a - b) < 1e-9 end
 
-local handlers, draws, quads, ribbons, spawned, worms, shift
+local handlers, draws, quads, ribbons, spawned, worms, shift, pops
 
 local function new_match(options)
-  handlers, draws, quads, ribbons, spawned, worms, shift = {}, {}, {}, {}, {}, {}, false
+  handlers, draws, quads, ribbons, spawned, worms, shift, pops = {}, {}, {}, {}, {}, {}, false, {}
   wa = {
     depth = { FRONT = 0x10000 },
     msg = { FRAME_FINISH = 2 },
@@ -26,7 +26,9 @@ local function new_match(options)
       worm_message = function(f) handlers[#handlers + 1] = f end,
       draw = function(f) draws[#draws + 1] = f end,
     },
-    sound = { play = function() end },
+    sound = { play = function(_, id, opts)
+      if id == 115 then pops[#pops + 1] = opts and opts.pitch end
+    end },
     random = function() return 1 end,
     math = { sin = math.sin },
     actors = {
@@ -116,6 +118,7 @@ do
   local w = new_match()
   check("its tooltip tells the player about the dash", hints["px.helicopter"](w) == "Helicopter\nPress Shift to dash")
   take_off(w)
+  check("the take-off's full bar makes no pop", #pops == 0)
   local body = spawned[#spawned]
   body.x, body.y = 503.5, 301.25 -- drawn ahead of the worm, as the follow puts it
   local bars, frames = sheets(draw(), BAR), sheets(quads, FRAME)
@@ -183,16 +186,22 @@ do
     near(width(bars[2]), 40 * 0.3 * 71 / 150), width(bars[2]))
   check("slowed to the heli's own speed, the coast is over and the limit back",
     math.abs(w.vx) <= 5 and math.abs(w.vy) <= 5 and strongest() == 0 and w.steer == "true limited", w.steer)
+  shift = true
+  frame(w)
+  check("a part-filled bar doesn't dash", w.gravity == 0.2 and #pops == 0)
+  shift = false
+  local waited = 0
+  while #pops == 0 and waited < 1000 do frame(w); waited = waited + 1 end
+  check("full again after 128.7 more frames: the crate pop, an octave up",
+    waited == 429 and pops[1] == 12, waited .. " frames, pitch " .. tostring(pops[1]))
+  frame(w, 10)
+  check("once", #pops == 1)
   w.vx, w.vy = -4, 3
   shift = true
   w.facing = -1
   frame(w)
   check("Shift with no arrows dashes the way the heli faces, from its speed that way",
     near(w.vx, -5.5) and near(w.vy, 3 / 1.105), w.vx .. "," .. w.vy)
-  frame(w, 21)
-  check("a part-filled bar dashes for what it holds: 21.3 frames", w.gravity == 0)
-  frame(w)
-  check("then the dash ends", w.gravity == 0.2)
 end
 
 print("helicopter dash: the option's fuel, steering on the coast")
