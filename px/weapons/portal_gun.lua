@@ -283,7 +283,7 @@ function weapon.setup()
     local sparks = 0
     local function draw_crosshair(worm, x, y, aim, colour, step)
       local now = wa.world.frame() + wa.draw.fraction()
-      local turn = -(aim * 2 % 1) * math.pi * worm.facing
+      local turn = -aim * math.pi * worm.facing -- half a circle from down to up: an X at 45 degrees
       local breath = 0.9 + 0.1 * math.sin(now * 0.21)
       local glow = GLOW[colour]
       local halo = (math.floor(0x70 * glow) << 24) | (colours[colour] & 0xFFFFFF)
