@@ -54,7 +54,17 @@ function weapon.setup()
     end
   end, { msgs = { wa.msg.FRAME_FINISH } })
 
-  -- In flight and stuck, PX draws WA's arrow icy, through
+  -- Planted, WA writes the arrow into the land in its own colours; the icy
+  -- frame goes over the same pixels, its colours shown on the GPU layer.
+  if wa.on.arrow_land then
+    wa.on.arrow_land(function(ev)
+      if ev.weapon == ID then
+        wa.land.stamp{ sprite = ARROW, frame = ev.frame, x = ev.x // 1, y = ev.y // 1, true_colour = true }
+      end
+    end)
+  end
+
+  -- In flight, PX draws WA's arrow icy, through
   -- SetColorMod(ARGB(180, 20, 90, 170), 8), twice on every tenth game frame.
   -- The colour is baked into the sheet (tools/export_ice_arrow_sprite.py).
   if wa.on.draw then

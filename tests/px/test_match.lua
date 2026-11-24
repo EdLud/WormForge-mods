@@ -924,6 +924,14 @@ local function new_match(opts)
           for _, h in ipairs(M.hurt_handlers) do h(hit) end
         end
       end,
+      -- As the engine's: an arrow WA has just written into the land.
+      arrow_land = function(f)
+        M.arrow_land_handlers = M.arrow_land_handlers or {}
+        M.arrow_land_handlers[#M.arrow_land_handlers + 1] = f
+        M.arrow_land = function(ev)
+          for _, h in ipairs(M.arrow_land_handlers) do h(ev) end
+        end
+      end,
       -- As the engine's: a completed acquisition (a crate's, here).
       weapon_grant = function(f)
         M.grant_handlers = M.grant_handlers or {}
@@ -7012,6 +7020,13 @@ do
   M.frame = 10; M.quads = {}; M.draw()
   check("twice on every tenth game frame, as PX's", (icy()) == 2)
   M.arrows = nil
+  M.stamps = {}
+  M.arrow_land({ arrow = ice, x = 577.27, y = 317.48, frame = 4, weapon = "px.ice_arrow" })
+  M.arrow_land({ arrow = plain, x = 10, y = 20, frame = 3, weapon = "stock.longbow" })
+  local st = M.stamps[1]
+  check("planted, its icy frame goes over WA's pixels in true colour, another arrow left as WA's",
+    #M.stamps == 1 and st.sprite == "sprites/ice_arrow/arrow.png" and st.frame == 4
+      and st.x == 577 and st.y == 317 and st.true_colour == true)
 end
 
 print("")
