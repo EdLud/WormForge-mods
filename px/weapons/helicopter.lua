@@ -50,7 +50,7 @@ function weapon.setup()
   local HELI_TOP_SPEED = 5 -- pixels a frame an axis: the scheme's default Maximum Jet Pack Speed, as px profiles keep it
   local DASH_RAMP = 10 -- frames to reach dash speed from a standstill: 200 ms
   local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
-  local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: 100 lasts 3 seconds
+  local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: the option's 100 (10 here) lasts 15 frames
   local DIAGONAL = 0.70710678118654752 -- 1 / sqrt(2)
   local DASH_ANGLE = { -- degrees for facing right, by dy then dx (-1, 0, 1)
     [-1] = { [-1] = 225, [0] = 270, [1] = 315 },
@@ -121,7 +121,7 @@ function weapon.setup()
   end
 
   local function dash_options()
-    return shared.helicopter_dash or { fuel = 100, speed = 300, steer = 50, refill = 30 }
+    return shared.helicopter_dash or { fuel = 10, speed = 600, steer = 50, refill = 5 }
   end
 
   local function dash_full()
@@ -275,23 +275,25 @@ function weapon.setup()
               end
             end
           end
+          -- still the dash's steering until it's back down to its own top speed
+          local grip = h.coast and dash.steer / 100 or 1
           if up then
             if burn then fuel = fuel - 0.2 end
-            vy = push(vy, -1)
+            vy = vy + (push(vy, -1) - vy) * grip
           end
           if down then
             if burn then fuel = fuel - 0.020 end
-            vy = push(vy, 1)
+            vy = vy + (push(vy, 1) - vy) * grip
           end
           if left then
             if burn then fuel = fuel - 0.1 end
             if not shift then worm.facing = -1 end
-            vx = push(vx, -1)
+            vx = vx + (push(vx, -1) - vx) * grip
           end
           if right then
             if burn then fuel = fuel - 0.1 end
             if not shift then worm.facing = 1 end
-            vx = push(vx, 1)
+            vx = vx + (push(vx, 1) - vx) * grip
           end
         end
         worm.vx, worm.vy, worm.fuel = vx, vy, fuel
@@ -502,7 +504,7 @@ function weapon.configure(ctx, spec)
   require("lib/shared").helicopter_fuel = fuel
   spec.jet_pack.fuel = math.min(fuel, 255)
   require("lib/shared").helicopter_dash = {
-    fuel = ctx.option("dash_fuel"),
+    fuel = ctx.option("dash_fuel") * 0.1, -- the option's 100 is 10 units of fuel
     speed = ctx.option("dash_speed"),
     steer = ctx.option("dash_steer_factor"),
     refill = ctx.option("dash_refill_factor"),

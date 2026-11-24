@@ -2203,19 +2203,19 @@ description = "The helicopter's fuel; 0 is unlimited."
 key = "dash_fuel"
 type = "int"
 min = 0
-max = 999
+max = 9999
 default = 100
 label = "Dash fuel"
-description = "Fuel for the Shift dash; 100 lasts 3 seconds, and 0 turns the dash off."
+description = "Fuel for the Shift dash; 100 lasts 0.3 seconds, and 0 turns the dash off."
 
 [[components.options]]
 key = "dash_speed"
 type = "int"
 min = 100
 max = 10000
-default = 300
+default = 600
 label = "Dash speed (%)"
-description = "The dash's top speed as a percentage of normal flying speed, reached in 1 second."
+description = "The dash's top speed as a percentage of normal flying speed, reached in 0.2 seconds."
 
 [[components.options]]
 key = "dash_steer_factor"
@@ -2224,14 +2224,14 @@ min = 0
 max = 100
 default = 50
 label = "Dash steering (%)"
-description = "How strongly the arrow keys steer during a dash, as a percentage of normal steering."
+description = "How strongly the arrow keys steer during a dash and until the heli slows to normal speed, as a percentage of normal steering."
 
 [[components.options]]
 key = "dash_refill_factor"
 type = "int"
 min = 0
 max = 1000
-default = 30
+default = 5
 label = "Dash refill (%)"
 description = "How fast dash fuel refills between dashes, as a percentage of how fast a dash uses it."
 

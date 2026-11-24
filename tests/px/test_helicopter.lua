@@ -60,7 +60,7 @@ local function new_match(options)
   dofile(root .. "../tests/brush_mock.lua")(wa)
   package.loaded["lib/shared"] = nil
   local weapon = dofile(root .. "weapons/helicopter.lua")
-  local values = { fuel = 100, dash_fuel = 100, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30 }
+  local values = { fuel = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30 }
   for k, v in pairs(options or {}) do values[k] = v end
   weapon.configure({ option = function(key) return values[key] end }, { jet_pack = {} })
   weapon.setup()
@@ -156,7 +156,7 @@ do
 
   w.keys = {}
   frame(w, 133)
-  check("100 fuel lasts 150 frames", w.gravity == 0, w.gravity)
+  check("1000 fuel (100 units) lasts 150 frames", w.gravity == 0, w.gravity)
   frame(w)
   check("empty: the dash ends, the heli's gravity and wind back", w.gravity == 0.2 and w.wind == 0.2)
   local vx, vy = w.vx, w.vy
@@ -189,6 +189,34 @@ do
   check("a part-filled bar dashes for what it holds: 21.3 frames", w.gravity == 0)
   frame(w)
   check("then the dash ends", w.gravity == 0.2)
+end
+
+print("helicopter dash: the option's fuel, steering on the coast")
+do
+  local w = new_match({ dash_fuel = 100 })
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 15)
+  check("the option's 100 is 10 units: 15 frames of dash", w.gravity == 0)
+  frame(w)
+  check("then it ends", w.gravity == 0.2)
+
+  w = new_match()
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 20)
+  shift, w.keys = false, {}
+  frame(w)
+  w.keys = { up = true }
+  frame(w)
+  check("coasting, the arrows steer at the dash's 50%: half the heli's 0.8 push",
+    near(w.vy, -0.4) and w.vx > 5, w.vy .. ", " .. w.vx)
+  w.keys = {}
+  while w.vx > 5 do frame(w) end
+  frame(w)
+  w.vy, w.keys = 0, { up = true }
+  frame(w)
+  check("down to its own top speed, they steer at 100% again", near(w.vy, -0.8), w.vy)
 end
 
 print("helicopter dash: 10000%")
