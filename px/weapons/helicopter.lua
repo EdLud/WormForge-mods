@@ -49,6 +49,7 @@ function weapon.setup()
   local HELI_DEPTH = wa.depth.FRONT -- in front of worms and terrain
   local HELI_TOP_SPEED = 5 -- pixels a frame an axis: the scheme's default Maximum Jet Pack Speed, as px profiles keep it
   local DASH_RAMP = 10 -- frames to reach dash speed from a standstill: 200 ms
+  local DASH_AIM = 5 -- frames after Shift in which newly held arrows re-aim the dash: 100 ms
   local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
   local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: the option's 100 (10 here) lasts 15 frames
   local DIAGONAL = 0.70710678118654752 -- 1 / sqrt(2)
@@ -131,19 +132,26 @@ function weapon.setup()
     return dash_options().fuel * DASH_FRAMES
   end
 
-  -- The arrows held pick one of eight directions; none held dashes forward.
-  -- The speed along it ramps up from what the heli has; its speed across eases off.
-  local function dash_start(worm, h, k, vx, vy)
-    local kx = (k.right and 1 or 0) - (k.left and 1 or 0)
-    local ky = (k.down and 1 or 0) - (k.up and 1 or 0)
-    if kx == 0 and ky == 0 then kx = worm.facing end
+  local function arrows(k)
+    return (k.right and 1 or 0) - (k.left and 1 or 0), (k.down and 1 or 0) - (k.up and 1 or 0)
+  end
+
+  -- Points the dash one of eight ways. The speed along it carries on from what the
+  -- heli has (then ramps up); its speed across eases off.
+  local function dash_aim(worm, d, kx, ky, vx, vy)
     if kx ~= 0 then worm.facing = kx end
     local scale = (kx ~= 0 and ky ~= 0) and DIAGONAL or 1
-    local dx, dy = kx * scale, ky * scale
-    h.dash = {
-      dx = dx, dy = dy, angle = DASH_ANGLE[ky][kx],
-      speed = math.max(0, vx * dx + vy * dy), side = vy * dx - vx * dy,
-    }
+    d.kx, d.ky, d.dx, d.dy, d.angle = kx, ky, kx * scale, ky * scale, DASH_ANGLE[ky][kx]
+    d.speed, d.side = math.max(0, vx * d.dx + vy * d.dy), vy * d.dx - vx * d.dy
+  end
+
+  -- The arrows held with Shift pick the way (none: forward). Read from the same
+  -- synchronized keys as Shift, so the two are one moment's.
+  local function dash_start(worm, h, keys, vx, vy)
+    local kx, ky = arrows(keys)
+    if kx == 0 and ky == 0 then kx = worm.facing end
+    h.dash = { aim = DASH_AIM }
+    dash_aim(worm, h.dash, kx, ky, vx, vy)
     worm.gravity, worm.wind = 0, 0
     worm:jetpack_steer(true, { speed_limit = false }) -- WA clamps a jet pack to the scheme's top speed
   end
@@ -237,12 +245,13 @@ function weapon.setup()
         end
         local k = worm.keys
         local up, down, left, right = k.up, k.down, k.left, k.right
-        local shift = wa.world.keys().shift
+        local sync = wa.world.keys()
+        local shift = sync.shift
         local dash = dash_options()
         if h.dash and (not shift or h.dash_left <= 0) then
           dash_end(worm, h)
         elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 and h.dash_left >= dash_full() then
-          dash_start(worm, h, k, vx, vy)
+          dash_start(worm, h, sync, vx, vy)
         end
         h.shift_was = shift
         h.frame = (h.frame + 1) % 3
@@ -251,6 +260,15 @@ function weapon.setup()
         if burn then fuel = fuel - 0.020 end
         local d = h.dash
         if d then
+          if d.aim > 0 then
+            -- a diagonal's second arrow, pressed just after Shift, still counts
+            d.aim = d.aim - 1
+            local kx, ky = arrows(sync)
+            if (kx ~= 0 or ky ~= 0) and (kx ~= d.kx or ky ~= d.ky) then
+              dash_aim(worm, d, kx, ky, vx, vy)
+              d.speed, d.side = math.sqrt(vx * vx + vy * vy), 0 -- a correction: all of it the new way
+            end
+          end
           h.dash_left = math.max(0, h.dash_left - 1)
           d.side = dash_steer(d, k, dash.steer / 100)
           -- a percentage of the heli's own top speed that way: 5 an axis, about 7.1 on a diagonal

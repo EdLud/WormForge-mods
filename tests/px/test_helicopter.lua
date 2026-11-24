@@ -42,7 +42,10 @@ local function new_match(options)
       end,
     },
     world = {
-      keys = function() return { shift = shift } end,
+      keys = function() -- the synchronized keys: Shift, and the arrows the worm holds
+        local k = worms[1] and worms[1].keys or {}
+        return { shift = shift, up = k.up, down = k.down, left = k.left, right = k.right }
+      end,
       water = function() return 10000 end,
       retreat = function() return 0 end,
       frame = function() return 0 end,
@@ -241,6 +244,36 @@ for _, case in ipairs({ { 0, 10 }, { 50, 17 }, { 100, 24 } }) do
   local blast = spawned[#spawned].explode
   check("scale " .. case[1] .. "%: size " .. case[2], blast and blast.id == case[2] and blast.damage == 2 * case[2],
     blast and blast.id)
+end
+
+print("helicopter dash: a diagonal's second arrow just after Shift")
+do
+  local w = new_match()
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 2)
+  check("Shift with right: right", w.vy == 0 and near(w.vx, 3))
+  w.keys = { right = true, up = true }
+  frame(w)
+  local d = 0.70710678118654752
+  check("up pressed 40 ms later: the dash turns up-right, all its speed the new way",
+    near(w.vx, (3 + 1.5 / d) * d) and near(w.vy, -(3 + 1.5 / d) * d), w.vx .. "," .. w.vy)
+
+  w = new_match()
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 6)
+  w.keys = { right = true, up = true }
+  frame(w)
+  check("up pressed past 100 ms: still right, up only steers", near(w.vy, -0.4) and w.vx > 9, w.vx .. "," .. w.vy)
+
+  w = new_match()
+  take_off(w)
+  shift, w.keys = true, { right = true, up = true }
+  frame(w)
+  w.keys = {}
+  frame(w)
+  check("letting go in the window keeps the way", near(w.vx, -w.vy) and w.vx > 0)
 end
 
 print("helicopter dash: 10000%")
