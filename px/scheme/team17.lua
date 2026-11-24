@@ -1,5 +1,7 @@
 -- Team17 3.3's own scripts (scheme_team17): crates and 30 HP for a kill, a
--- health crate every few minutes, one F4 and one F7 weapon a turn.
+-- health crate every few minutes, one F4 and one F7 weapon a turn. A tray at
+-- the top of the screen shows F4, F7 and the Super Tele, greyed once used up
+-- for the turn.
 
 local crate_spot = require("lib/crate_spot")
 
@@ -37,6 +39,7 @@ local SETS = {
   { "stock.blow_torch", "stock.pneumatic_drill", "stock.girder" },
 }
 local SUPER_TELE = "px.super_tele"
+local SET_NAMES = { "F4", "F7" }
 
 local RULES = {
   { "Team17 3.3", color = "purple" },
@@ -134,10 +137,47 @@ function team17.install(ctx)
     for _, id in ipairs(set) do in_set[id] = n end
   end
 
+  -- The tray, per team: the Super Tele's cell (greyed by the engine while
+  -- its delay runs, a lock included) and a text cell for each set, greyed
+  -- while none of its weapons can be used. Oldest at the right, so they
+  -- read F4, F7, Super Tele.
+  local tray = wa.hud and wa.hud.tray
+  local cells = {} -- team -> { set n -> { entry, greyed } }
+  local function usable(worm, set)
+    for _, id in ipairs(set) do
+      if placed[id] and worm:delay(id) == 0 and worm:ammo(id) ~= 0 then return true end
+    end
+    return false
+  end
+  local function show(worm)
+    if not tray then return end
+    if placed[SUPER_TELE] and worm:ammo(SUPER_TELE) ~= 0 then
+      tray.add{ weapon = SUPER_TELE, team = worm.team }
+    end
+    local team = cells[worm.team] or {}
+    cells[worm.team] = team
+    for n = #SETS, 1, -1 do
+      team[n] = team[n] or { entry = tray.add{ text = SET_NAMES[n], team = worm.team }, greyed = false }
+    end
+  end
+  local function grey(worm)
+    for n, c in ipairs(cells[worm.team] or {}) do
+      local greyed = not usable(worm, SETS[n])
+      if greyed ~= c.greyed then
+        c.entry:set{ greyed = greyed }
+        c.greyed = greyed
+      end
+    end
+  end
+
   local rules_window, rules_at = nil, nil
   wa.on.turn_start(function(ev)
     turn_on = true
-    if ev.worm then current = ev.worm end
+    if ev.worm then
+      current = ev.worm
+      show(ev.worm)
+      grey(ev.worm)
+    end
     for _, c in ipairs(wa.crates.all()) do c.camera = false end
     if not rules_window then
       rules_window = wa.hud.window({ lines = RULES, align = "top", y = 60, over_panel = false })
@@ -164,7 +204,10 @@ function team17.install(ctx)
     local frame = wa.world.frame()
     if frame == last_frame then return end
     last_frame = frame
-    if turn_on then health_timer() end
+    if turn_on then
+      health_timer()
+      if current then grey(current) end
+    end
     if rules_at and frame - rules_at >= RULES_FRAMES then
       rules_window:close()
       rules_at = nil

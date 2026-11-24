@@ -9,7 +9,7 @@ local function check(name, ok, detail)
   print("  FAIL " .. name .. (detail ~= nil and ("   [" .. tostring(detail) .. "]") or ""))
 end
 
-local frame, rolls, worms, crates, spawned, banners, windows = 0, {}, {}, {}, {}, {}, {}
+local frame, rolls, worms, crates, spawned, banners, windows, tray = 0, {}, {}, {}, {}, {}, {}, {}
 local on
 -- wa.random takes its answers from `rolls` in turn (then the lowest).
 wa = {
@@ -54,6 +54,16 @@ wa = {
       windows[#windows + 1] = w
       return w
     end,
+    -- As the engine's: one entry per team and weapon or text, oldest first.
+    tray = { add = function(spec)
+      for _, e in ipairs(tray) do
+        if e.team == spec.team and e.weapon == spec.weapon and e.text == spec.text then return e end
+      end
+      local e = { weapon = spec.weapon, text = spec.text, team = spec.team, greyed = spec.greyed or false }
+      function e:set(t) for k, v in pairs(t) do self[k] = v end return true end
+      tray[#tray + 1] = e
+      return e
+    end },
   },
   on = {},
 }
@@ -67,6 +77,7 @@ local delays = {}
 local function worm(id, team)
   local w = { id = id, team = team, ammo_group = team, hp = 100, turn = false }
   function w:heal(n) self.hp = self.hp + n end
+  function w:ammo() return -1 end
   function w:delay(weapon, turns)
     delays[self.ammo_group] = delays[self.ammo_group] or {}
     if turns == nil then return delays[self.ammo_group][weapon] or 0 end
@@ -108,6 +119,14 @@ crates = { old_crate }
 
 turn(a)
 check("the rules window opens at the first turn", #windows == 1 and windows[1].open)
+local function cell(team, text)
+  for _, e in ipairs(tray) do
+    if e.team == team and e.text == text then return e end
+  end
+end
+check("the tray reads F4, F7, Super Tele from the left", #tray == 3 and tray[1].weapon == "px.super_tele"
+  and tray[2].text == "F7" and tray[3].text == "F4" and tray[1].team == 1)
+check("nothing greyed at the turn's start", not cell(1, "F4").greyed and not cell(1, "F7").greyed)
 check("crates out at the turn start keep the camera", old_crate.camera == false)
 
 -- A kill: 30 HP, then a utility crate and a weapon crate.
@@ -155,9 +174,13 @@ fire("worm_message", a, wa.msg.WEAPON_RELEASED)
 check("F4: the Dragon Ball is locked", delay(1, "stock.dragon_ball") == -1)
 check("F4: the Super Tele is locked", delay(1, "px.super_tele") == -1)
 check("F4: the F7 weapons stay", delay(1, "stock.girder") == 0)
+step(a)
+check("F4: its cell greys", cell(1, "F4").greyed and not cell(1, "F7").greyed)
 a.weapon = "stock.girder"
 fire("worm_message", a, wa.msg.WEAPON_RELEASED)
 check("F7: the BlowTorch is locked", delay(1, "stock.blow_torch") == -1)
+step(a)
+check("F7: its cell greys", cell(1, "F7").greyed)
 a.weapon = "px.double_bazooka"
 fire("worm_message", a, wa.msg.WEAPON_RELEASED)
 check("another weapon locks nothing", delay(1, "px.double_bazooka") == 0)
@@ -167,6 +190,11 @@ check("the turn's end lifts the locks", delay(1, "stock.dragon_ball") == 0 and d
   and delay(1, "stock.blow_torch") == 0)
 check("a delay that wasn't a lock stays", delay(1, "stock.prod") == 3)
 check("crates pull the camera again between turns", old_crate.camera == nil)
+turn(b)
+check("each team its own cells", #tray == 6 and cell(2, "F4") and not cell(2, "F4").greyed)
+fire("turn_end")
+turn(a)
+check("the next turn: ungreyed, the same cells", #tray == 6 and not cell(1, "F4").greyed and not cell(1, "F7").greyed)
 
 -- The health crate: after 18000 frames and some of 7200, while at most four crates are out.
 crates, spawned, banners = {}, {}, {}
