@@ -22,6 +22,7 @@ function weapon.definition()
     copy_from = "stock.bazooka",
     name = "Double Bazooka",
     panel_icon = "sprites/double_bazooka/double_bazooka_ico.png",
+    hold_as = "stock.homing_pigeon", -- PX's blue launcher (subtype 7)
     on_explode = function(ev) shared.double_bazooka_explode(ev) end,
   })
 end

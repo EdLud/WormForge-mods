@@ -7,17 +7,12 @@ weapon.requires = { "lib/magnet" }
 
 local ID = "px.magnetic_missile"
 local ART = "sprites/magnetic_missile/"
-local LAUNCH = "sprites/barrel_launcher/"
 local BEAM = "sprites/px_effects/beam.png"
 
 weapon.definition = {
   wep = "weps/barrel_launcher.wep",
   name = "Magnetic Missile",
   panel_icon = ART .. "ico_magmissile.png",
-  worm_sprites = {
-    weaponlnk = LAUNCH .. "aim.png", weaponlnku = LAUNCH .. "aimu.png", weaponlnkd = LAUNCH .. "aimd.png",
-    wthrow = LAUNCH .. "draw.png", wthrowu = LAUNCH .. "drawu.png", wthrowd = LAUNCH .. "drawd.png",
-  },
   sprites = { ART .. "magmissile.png", ART .. "magmissile2.png", BEAM, table.unpack(magnet.sprites) },
   params = { gpu_prefix = "sprites/" },
   on_fire = function(fire) require("lib/shared").fires.magnetic_missile(fire) end,
