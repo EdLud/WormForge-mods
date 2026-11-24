@@ -47,7 +47,7 @@ function weapon.setup()
   local HELI_REALISTIC = true -- gravity and wind act on it, at 0.2
   local HELI_EXPLODE_ON_TURN_END = true
   local HELI_DEPTH = wa.depth.FRONT -- in front of worms and terrain
-  local HELI_TOP_SPEED = 10 -- pixels a frame, where push stops adding
+  local HELI_TOP_SPEED = 5 -- pixels a frame an axis: the scheme's default Maximum Jet Pack Speed, as px profiles keep it
   local DASH_RAMP = 10 -- frames to reach dash speed from a standstill: 200 ms
   local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
   local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: 100 lasts 3 seconds
@@ -142,6 +142,7 @@ function weapon.setup()
       speed = math.max(0, vx * dx + vy * dy), side = vy * dx - vx * dy,
     }
     worm.gravity, worm.wind = 0, 0
+    worm:jetpack_steer(true, { speed_limit = false }) -- WA clamps a jet pack to the scheme's top speed
   end
 
   local function dash_end(worm, h)
@@ -249,12 +250,16 @@ function weapon.setup()
         if d then
           h.dash_left = math.max(0, h.dash_left - 1)
           d.side = dash_steer(d, k, dash.steer / 100)
-          local top = HELI_TOP_SPEED * dash.speed / 100
+          -- a percentage of the heli's own top speed that way: 5 an axis, about 7.1 on a diagonal
+          local top = HELI_TOP_SPEED * dash.speed / 100 / ((d.dx ~= 0 and d.dy ~= 0) and DIAGONAL or 1)
           d.speed = math.min(top, d.speed + top / DASH_RAMP)
           vx, vy = d.dx * d.speed - d.dy * d.side, d.dy * d.speed + d.dx * d.side
         else
           h.dash_left = math.min(dash.fuel * DASH_FRAMES, h.dash_left + dash.refill / 100)
-          h.coast = h.coast and vx * vx + vy * vy > HELI_TOP_SPEED * HELI_TOP_SPEED
+          if h.coast and math.abs(vx) <= HELI_TOP_SPEED and math.abs(vy) <= HELI_TOP_SPEED then
+            h.coast = false
+            worm:jetpack_steer(true) -- back within the scheme's top speed
+          end
           if h.coast then
             -- past the heli's own top speed, only air drag slows it, by the square of its speed
             local f = 1 / (1 + COAST_DRAG * math.sqrt(vx * vx + vy * vy)) -- stays above 0 at any speed
@@ -366,7 +371,7 @@ function weapon.setup()
     local BOTTOM = { { 34, 6 }, { 24, 16 }, { 10, 22 }, { -4, 23 }, { -16, 15 }, { -28, 4 }, { -54, 1 } }
     local NOSE_X, NOSE_Y = 37, 3
     local LINES_A_SIDE, STREAKS, STREAK_POINTS = 5, 4, 5
-    local AIR_FROM, AIR_FULL = 7.5, 20 -- pixels a frame: no lines up to the heli's own top speed, all by 20
+    local AIR_FROM, AIR_FULL = 7.5, 15 -- pixels a frame: none up to the heli's own top speed, all by 300%
 
     local function streamline(edge, side, k)
       local gap = 3 + 4 * k
