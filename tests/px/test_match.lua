@@ -6718,8 +6718,8 @@ do
     HIGHLANDER_CLAIMING = "px.helicopter"
     require("components/loader").install({ id = "px.helicopter", option = function(key)
       if key == "fuel" then return fuel end
-      return assert(({ dash_fuel = 100, dash_speed = 600, dash_steer_factor = 50, dash_refill_factor = 5,
-        crash_speed_scale = 100 })[key], key)
+      return assert(({ acceleration = 100, dash_fuel = 100, dash_speed = 600, dash_steer_factor = 50,
+        dash_refill_factor = 5, crash_speed_scale = 100 })[key], key)
     end })
     HIGHLANDER_CLAIMING = nil
     local spec = replaced[#replaced]

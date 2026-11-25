@@ -301,8 +301,9 @@ function weapon.setup()
               end
             end
           end
-          -- still the dash's steering until it's back down to its own top speed
-          local grip = h.coast and dash.steer / 100 or 1
+          -- still the dash's steering until it's back down to its own top speed; the
+          -- Acceleration option scales it all (its 100 multiplies by exactly 1)
+          local grip = (h.coast and dash.steer / 100 or 1) * (shared.helicopter_acceleration or 1)
           if up then
             if burn then fuel = fuel - 0.2 end
             vy = vy + (push(vy, -1) - vy) * grip
@@ -533,6 +534,7 @@ function weapon.configure(ctx, spec)
   local fuel = ctx.option("fuel")
   require("lib/shared").helicopter_fuel = fuel
   spec.jet_pack.fuel = math.min(fuel, 255)
+  require("lib/shared").helicopter_acceleration = ctx.option("acceleration") / 100
   require("lib/shared").helicopter_crash_scale = ctx.option("crash_speed_scale")
   require("lib/shared").helicopter_dash = {
     fuel = ctx.option("dash_fuel") * 0.1, -- the option's 100 is 10 units of fuel

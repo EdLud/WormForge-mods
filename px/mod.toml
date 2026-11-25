@@ -2200,6 +2200,15 @@ label = "Fuel"
 description = "The helicopter's fuel; 0 is unlimited."
 
 [[components.options]]
+key = "acceleration"
+type = "int"
+min = 10
+max = 1000
+default = 100
+label = "Acceleration (%)"
+description = "How quickly the arrow keys bring the heli up to its top speed, as a percentage of normal; 100 gets there in about 0.2 seconds."
+
+[[components.options]]
 key = "dash_fuel"
 type = "int"
 min = 0

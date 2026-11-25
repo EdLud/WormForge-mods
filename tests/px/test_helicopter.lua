@@ -67,7 +67,7 @@ local function new_match(options)
   dofile(root .. "../tests/brush_mock.lua")(wa)
   package.loaded["lib/shared"] = nil
   local weapon = dofile(root .. "weapons/helicopter.lua")
-  local values = { fuel = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30,
+  local values = { fuel = 100, acceleration = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30,
     crash_speed_scale = 0 }
   for k, v in pairs(options or {}) do values[k] = v end
   weapon.configure({ option = function(key) return values[key] end }, { jet_pack = {} })
@@ -233,6 +233,31 @@ do
   w.vy, w.keys = 0, { up = true }
   frame(w)
   check("down to its own top speed, they steer at 100% again", near(w.vy, -0.8), w.vy)
+end
+
+print("helicopter acceleration: the option scales the arrows' push, not the top speed")
+for _, case in ipairs({ { 100, 9 }, { 200, 4 }, { 50, 22 } }) do
+  local w = new_match({ acceleration = case[1] })
+  take_off(w)
+  w.keys = { right = true }
+  local frames = 0
+  repeat
+    frame(w)
+    w.vx = math.min(w.vx, 5) -- WA's Maximum Jet Pack Speed, which the mock leaves out
+    frames = frames + 1
+  until w.vx >= 5 or frames > 100
+  check(case[1] .. "%: top speed in " .. case[2] .. " frames", frames == case[2], frames)
+end
+do
+  local w = new_match({ acceleration = 200 })
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w, 20)
+  shift, w.keys = false, {}
+  frame(w)
+  w.keys = { up = true }
+  frame(w)
+  check("200%: the coast's 50% steering doubles too", near(w.vy, -0.8), w.vy)
 end
 
 print("helicopter crash: its size grows with speed only as far as the option says")
