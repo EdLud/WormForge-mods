@@ -138,6 +138,11 @@ do
     near(w.vx, 1.5) and near(w.vy, -1.5) and w.gravity == 0 and w.wind == 0, w.vx .. "," .. w.vy)
   frame(w)
   check("the heli turns to the dash, 30 degrees a frame", body.angle == 315, body.angle)
+  local level = frames[1].points[1][2]
+  body.x, body.y = 503.5, 301.25
+  local tilted = sheets(draw(), FRAME)[1]
+  check("the bar keeps its height over the tilted heli", tilted.points[1][2] == level and level == 266,
+    tilted.points[1][2] .. " " .. level)
   w.keys = {}
   frame(w, 7)
   check("9 frames in: not yet at dash speed", near(w.vx, 13.5))
@@ -258,6 +263,30 @@ do
   w.keys = { up = true }
   frame(w)
   check("200%: the coast's 50% steering doubles too", near(w.vy, -0.8), w.vy)
+end
+
+print("helicopter fuel: infinite counts up from 0, as WA's infinite jet pack does")
+do
+  local w = new_match({ fuel = 0 })
+  take_off(w)
+  check("the counter starts at 0", w.fuel < 0.03, w.fuel)
+  local start = w.fuel
+  frame(w)
+  check("idle: the counter goes up by what a limited heli burns", near(w.fuel - start, 0.02), w.fuel - start)
+  w.keys = { up = true, right = true }
+  local before = w.fuel
+  frame(w)
+  check("up and right: 0.32 more", near(w.fuel - before, 0.32), w.fuel - before)
+  w.keys = {}
+  frame(w, 2000)
+  local blasts = 0
+  for _, a in ipairs(spawned) do if a.explode then blasts = blasts + 1 end end
+  check("it never runs out: still flying, no crash", w.gravity == 0.2 and blasts == 0 and w.fuel > 40, w.fuel)
+
+  w = new_match({ fuel = 1 })
+  take_off(w)
+  frame(w, 60)
+  check("limited fuel still runs out and crashes", spawned[#spawned].explode ~= nil)
 end
 
 print("helicopter crash: its size grows with speed only as far as the option says")

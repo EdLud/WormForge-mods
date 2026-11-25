@@ -4296,9 +4296,9 @@ end
 print("helicopter: PX's script on WA's jet pack")
 do
   -- WA starts the jet pack with the fuel of the record fired (the
-  -- Helicopter's jet_pack.fuel, 100; engine/jet_fuel.rs).
+  -- Helicopter's jet_pack.fuel, 255; engine/jet_fuel.rs).
   local function jet_pack_starts(w)
-    w.state, w.fuel = "jetpacking", 100
+    w.state, w.fuel = "jetpacking", 255
   end
   new_match()
   frame()
@@ -4316,7 +4316,7 @@ do
   jet_pack_starts(w)
   w.keys.up = true
   M.message(w, wa.msg.FRAME_FINISH)
-  check("launch: the record's fuel, PX's gravity and wind", w.fuel < 100 and w.fuel > 99 and w.gravity == (0.2)
+  check("launch: the record's fuel, PX's gravity and wind", w.fuel < 255 and w.fuel > 254 and w.gravity == (0.2)
     and w.wind == (0.2), w.fuel .. " " .. w.gravity .. " " .. w.wind)
   check("up: a kick of 0.8 from standstill", near(w.vy, -0.8), tostring(w.vy))
   check("the engine owns the keys after the script reads them", w.steered and w.keys.up)

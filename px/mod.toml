@@ -2195,9 +2195,10 @@ key = "fuel"
 type = "int"
 min = 0
 max = 999
-default = 100
+default = 255
+zero = "infinite"
 label = "Fuel"
-description = "The helicopter's fuel; 0 is unlimited."
+description = "The helicopter's fuel; 0 is infinite, and its counter goes up with the fuel used, as WA's infinite jet pack does."
 
 [[components.options]]
 key = "acceleration"
@@ -2213,7 +2214,7 @@ key = "dash_fuel"
 type = "int"
 min = 0
 max = 9999
-default = 100
+default = 80
 zero = "off"
 label = "Dash fuel"
 description = "Fuel for the Shift dash; 100 lasts 0.3 seconds, and 0 turns the dash off."
@@ -2223,7 +2224,7 @@ key = "dash_speed"
 type = "int"
 min = 100
 max = 10000
-default = 600
+default = 300
 label = "Dash speed (%)"
 description = "The dash's top speed as a percentage of normal flying speed, reached in 0.2 seconds."
 
@@ -2241,7 +2242,7 @@ key = "dash_refill_factor"
 type = "int"
 min = 0
 max = 1000
-default = 5
+default = 35
 label = "Dash refill (%)"
 description = "How fast dash fuel refills between dashes, as a percentage of how fast a dash uses it."
 

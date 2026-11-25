@@ -7,7 +7,7 @@ weapon.record = {
     retreat = -1,
   },
   jet_pack = {
-    fuel = 100,
+    fuel = 255,
   },
 }
 
@@ -100,7 +100,8 @@ function weapon.setup()
       return
     end
     local speed = (math.abs(sy) + math.abs(sx)) / 2
-    local size = trunc((worm.fuel - 75) / 10 * speed)
+    -- infinite fuel's counter is the fuel used, not what's left: its blast is sized as for 1 left
+    local size = trunc(((shared.helicopter_fuel == 0 and 1 or worm.fuel) - 75) / 10 * speed)
     if size < 10 then size = 10 end
     -- how much of that growth with speed the profile wants: 0 none, 100 all of it
     size = trunc(10 + (size - 10) * (shared.helicopter_crash_scale or 0) / 100)
@@ -125,7 +126,7 @@ function weapon.setup()
   end
 
   local function dash_options()
-    return shared.helicopter_dash or { fuel = 10, speed = 600, steer = 50, refill = 5 }
+    return shared.helicopter_dash or { fuel = 8, speed = 300, steer = 50, refill = 35 }
   end
 
   local function dash_full()
@@ -198,8 +199,8 @@ function weapon.setup()
       h.jump_phase = h.jump_phase + 0.047 * own_time.frames(worm)
     end
     if h and h.armed and state == "jetpacking" and not h.flying then
-      local fuel = shared.helicopter_fuel or 100
-      worm.fuel = fuel == 0 and 1 or fuel -- unlimited: held at 1
+      local fuel = shared.helicopter_fuel or 255
+      worm.fuel = fuel -- infinite: WA's counter from 0, which it hides until it moves
       worm.gravity = HELI_REALISTIC and 0.2 or 0
       worm:jetpack_steer(true)
       h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
@@ -256,8 +257,10 @@ function weapon.setup()
         h.shift_was = shift
         h.frame = (h.frame + 1) % 3
         local fuel = worm.fuel
-        local burn = wa.world.retreat() == 0 and shared.helicopter_fuel ~= 0
-        if burn then fuel = fuel - 0.020 end
+        local burn = wa.world.retreat() == 0
+        -- infinite fuel counts what it uses up, as WA's infinite jet pack does
+        local used = shared.helicopter_fuel == 0 and -1 or 1
+        if burn then fuel = fuel - 0.020 * used end
         local d = h.dash
         if d then
           if d.aim > 0 then
@@ -305,26 +308,26 @@ function weapon.setup()
           -- Acceleration option scales it all (its 100 multiplies by exactly 1)
           local grip = (h.coast and dash.steer / 100 or 1) * (shared.helicopter_acceleration or 1)
           if up then
-            if burn then fuel = fuel - 0.2 end
+            if burn then fuel = fuel - 0.2 * used end
             vy = vy + (push(vy, -1) - vy) * grip
           end
           if down then
-            if burn then fuel = fuel - 0.020 end
+            if burn then fuel = fuel - 0.020 * used end
             vy = vy + (push(vy, 1) - vy) * grip
           end
           if left then
-            if burn then fuel = fuel - 0.1 end
+            if burn then fuel = fuel - 0.1 * used end
             if not shift then worm.facing = -1 end
             vx = vx + (push(vx, -1) - vx) * grip
           end
           if right then
-            if burn then fuel = fuel - 0.1 end
+            if burn then fuel = fuel - 0.1 * used end
             if not shift then worm.facing = 1 end
             vx = vx + (push(vx, 1) - vx) * grip
           end
         end
         worm.vx, worm.vy, worm.fuel = vx, vy, fuel
-        if worm.fuel <= 0.1 then
+        if used > 0 and worm.fuel <= 0.1 then
           heli_crash(worm, h, worm.vx, worm.vy)
           return
         end
@@ -395,7 +398,10 @@ function weapon.setup()
     local glow = wa.draw.brush({ sprite = ART .. "dash_glow.png", blend = "add", depth = HELI_DEPTH })
     local BAR_W, BAR_H, RING = 44, 10, 2 -- dash_frame.png: a grey and a black ring, as stock bars
     local INNER_W, INNER_H = BAR_W - 2 * RING, BAR_H - 2 * RING
-    local BODY = { { -48, -21 }, { 36, -21 }, { 36, 22 }, { -48, 22 } } -- the flying frame's fuselage and rotor
+    -- the bar's bottom above the heli's centre: clear of its rotor in level flight. It stays
+    -- there whatever the tilt (a dash tilts the heli into it, and it draws over the heli),
+    -- since following the tilted outline made it jump at every dash and bob with speed
+    local BAR_ABOVE = 25
 
     -- Streamlines hugging the heli, in the flying sprite's frame facing right (x ahead,
     -- y down): each bends round the nose like a U, follows the outline a few pixels out
@@ -485,17 +491,6 @@ function weapon.setup()
       end
     end
 
-    local function body_top(angle, facing)
-      local r = math.rad(angle)
-      local c, s = math.cos(r), math.sin(r)
-      local top = 0
-      for _, p in ipairs(BODY) do
-        local y = p[1] * facing * s + p[2] * c
-        if y < top then top = y end
-      end
-      return top
-    end
-
     -- At the heli actor's drawn place: it follows the worm smoothly, the hidden worm doesn't.
     local function draw_heli(h)
       local body, worm = h.body, h.worm
@@ -503,7 +498,7 @@ function weapon.setup()
       local full = dash_full()
       if full > 0 then
         local left = math.floor(x - BAR_W / 2 + 0.5)
-        local top = math.floor(y + body_top(h.angle or 0, body.facing) - BAR_H - 4 + 0.5)
+        local top = math.floor(y - BAR_ABOVE - BAR_H + 0.5)
         local cx, cy = left + BAR_W / 2, top + BAR_H / 2
         local w = INNER_W * math.max(0, math.min(1, h.dash_left / full))
         local fx = left + RING + w / 2
