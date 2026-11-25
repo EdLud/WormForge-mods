@@ -4,17 +4,20 @@ local settings = {}
 local CLOUDS = 0.7 -- how opaque the band of clouds at the top of the level is
 local WIND = 1 -- how much the wind slants the rain and drives the flakes and clouds, as a factor
 local DARKNESS = 0.5 -- how much the storm darkens the world in rain
+local RAIN_VOLUME = 0.7 -- the rain sound at its heaviest
+local SNOW_VOLUME = 0.5 -- the blizzard sound
 
 function settings.rain(option)
+  local low, high = option("rain_low"), option("rain_high")
   return {
-    amount = option("rain") / 100,
+    amount = math.max(low, high) / 100,
+    amount_low = math.min(low, high) / 100,
+    every = option("rain_every"),
     wind = WIND,
     clouds = CLOUDS,
     darkness = DARKNESS,
-    ripples = option("ripples"),
     chance = option("lightning_chance"),
-    strike = option("lightning_effect") == "strike",
-    volume = option("volume") / 100,
+    volume = RAIN_VOLUME,
   }
 end
 
@@ -23,19 +26,16 @@ function settings.snow(option)
     amount = option("snow") / 100,
     wind = WIND,
     clouds = CLOUDS,
-    settle = option("settle"),
     settle_depth = option("settle_depth"),
-    volume = option("snow_volume") / 100,
+    volume = SNOW_VOLUME,
   }
 end
 
 function settings.cycle(option)
   return {
-    change_chance = option("change_chance"),
-    rain_weight = option("rain_weight"),
-    snow_weight = option("snow_weight"),
-    clear_weight = option("clear_weight"),
-    start = option("start"),
+    clear = option("clear_share"),
+    rain = option("rain_share"),
+    snow = option("snow_share"),
     melt = option("melt"),
   }
 end

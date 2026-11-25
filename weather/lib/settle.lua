@@ -296,16 +296,13 @@ function settle.place(s, x, top, water, reconcile)
   return true
 end
 
--- The top `px` of the snow in every column, queued to melt.
-function settle.melt(s, px)
+-- The top pixel of the snow in `percent` % of the snowy columns, picked at random, queued to melt.
+function settle.melt(s, percent)
   for _, x in ipairs(s.order) do
     local col = s.cols[x]
-    if col.depth > 0 then
-      local h = math.min(px, col.depth)
-      strips(x, col.top, col.top + h - 1, function(f, cx, bottom)
-        s.queue[#s.queue + 1] = { f = f, x = cx, bottom = bottom }
-      end)
-      col.top, col.depth = col.top + h, col.depth - h
+    if col.depth > 0 and wa.random(1, 100) <= percent then
+      s.queue[#s.queue + 1] = { f = settle.STRIP, x = x, bottom = col.top }
+      col.top, col.depth = col.top + 1, col.depth - 1
     end
   end
 end
@@ -322,11 +319,11 @@ function settle.drain(s)
   if s.head > #s.queue then s.queue, s.head = {}, 1 end
 end
 
--- On the weather clock: snow settles while it snows and falls when its land goes; with the cycle it melts at
--- each turn cycle, twice as fast in rain.
+-- On the weather clock: snow settles while it snows and falls when its land goes; it melts a little at the start of
+-- each clear or rainy turn, twice as fast in rain.
 function settle.install(W)
   local cfg = W.kinds.snow
-  if not (cfg and cfg.settle and cfg.amount > 0) then return end
+  if not (cfg and cfg.amount > 0) then return end
   local s = settle.new_state()
   settle.state = s
   s.cfg = cfg
@@ -345,9 +342,9 @@ function settle.install(W)
       if stamps < STAMPS and settle.try(s, cfg, size) then stamps = stamps + 1 end
     end
   end
-  W.on_cycle[#W.on_cycle + 1] = function()
+  W.on_turn[#W.on_turn + 1] = function()
     local melt = W.cycle_cfg and W.cycle_cfg.melt or 0
-    if melt > 0 and W.target.snow == 0 then settle.melt(s, W.target.rain == 1 and 2 * melt or melt) end
+    if melt > 0 and W.target.snow == 0 then settle.melt(s, math.min(100, W.target.rain == 1 and 2 * melt or melt)) end
   end
 end
 

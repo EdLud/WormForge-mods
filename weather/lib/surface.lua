@@ -72,7 +72,7 @@ function surface.install(W)
   end
 
   local function add_ring(x, y, water, st)
-    if not cfg.ripples or #rings >= MAX_RINGS then return end
+    if #rings >= MAX_RINGS then return end
     local reach = water and WATER_RING or PUDDLE_RING
     local open
     if water then
@@ -151,8 +151,8 @@ function surface.install(W)
   end
 
   -- Splashes a frame of the world: one for every 400 pixels of view at full rain.
-  local rate = cfg.amount * 0.6
   return function(st)
+    local rate = (st.rain_amount or cfg.amount) * 0.6
     local step = last and st.now - last or 0
     if step < 0 or step > 50 then step = 0 end
     last = st.now

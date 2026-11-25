@@ -10,5 +10,8 @@ features = ["tools.stress", "core.weather"]
 "px.toxic_grenade" = true
 
 [options."core.weather"]
-weather = "rain"
-rain = 100
+clear_share = 0
+rain_share = 100
+snow_share = 0
+rain_high = 100
+rain_low = 100

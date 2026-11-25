@@ -38,16 +38,13 @@ function sim.targets()
   return out
 end
 
-function sim.strike(cfg)
+-- A strike as the Lightning Strike's, on one of the targets; none when there is nothing to aim at.
+function sim.strike()
   local side = wa.random(0, 1) == 0 and -1 or 1
-  if cfg.strike then
-    local list = sim.targets()
-    if #list == 0 then return end
-    local obj = list[wa.random(1, #list)]
-    return L.strike({ x = obj.x, y = obj.y, side = side, owner = "none", effects = true })
-  end
-  local size = wa.world.size()
-  return L.strike({ x = wa.random(0, math.max(0, size.w - 1)), y = 0, side = side, owner = "none", effects = false })
+  local list = sim.targets()
+  if #list == 0 then return end
+  local obj = list[wa.random(1, #list)]
+  return L.strike({ x = obj.x, y = obj.y, side = side, owner = "none", effects = true })
 end
 
 -- On the weather's clock: a try once a second while it rains.
@@ -57,7 +54,7 @@ function sim.install(W)
   if chance == 0 then return end
   W.ticks[#W.ticks + 1] = function(frame)
     if frame % SECOND ~= 0 or W.target.rain == 0 then return end
-    if wa.random(1, MILLION) <= chance then sim.strike(cfg) end
+    if wa.random(1, MILLION) <= chance then sim.strike() end
   end
 end
 

@@ -36,10 +36,9 @@ local function listing(get)
   end
 end
 
-local RAIN = { rain = 80, ripples = true,
-  lightning_chance = 100, lightning_effect = "strike", volume = 70 }
-local SNOW = { snow = 60, settle = false, settle_depth = 10, volume = 50 }
-local CYCLE = { change_chance = 35, rain_weight = 40, snow_weight = 40, clear_weight = 20, start = "random", melt = 4 }
+-- `rain` stands for a heaviness that doesn't change: rain_low and rain_high both.
+local RAIN = { rain = 80, lightning_chance = 100, rain_every = 20 }
+local SNOW = { snow = 60, settle_depth = 10 }
 
 local function merged(defaults, given)
   local out = {}
@@ -51,7 +50,8 @@ local function merged(defaults, given)
   end }
 end
 
--- `options` for Rain (false: Rain not selected); `extra.snow` / `extra.cycle` select those too.
+-- `options` for the rain, `extra.snow` for the snow; `extra.cycle` gives the shares { clear, rain, snow } and melt.
+-- Without it, all the share goes to the rain, or to the snow when `options` is false.
 local function new_match(options, extra)
   extra = extra or {}
   modules = {}
@@ -130,6 +130,8 @@ local function new_match(options, extra)
         if x0 < 200 and y1 >= 400 then return { x = x0, y = 400 } end
         return nil
       end,
+      stamp = function(t) M.stamps[#M.stamps + 1] = t end,
+      cut = function(t) M.cuts[#M.cuts + 1] = t end,
     },
     assets = { load = function(t) M.assets = t end },
     sound = {
@@ -159,16 +161,19 @@ local function new_match(options, extra)
     worms = { all = listing(function() return M.worms end) },
     graves = { all = listing(function() return M.graves end) },
   }
-  -- The one Weather add-on: snow without rain, rain without snow, or with the cycle both.
-  local mode = extra.cycle and "cycle" or (options == false and "snow" or "rain")
-  local values = { weather = mode }
-  for k, v in pairs(CYCLE) do values[k] = v end
-  for k, v in pairs(extra.cycle or {}) do values[k] = v end
-  for k, v in pairs(SNOW) do values[k == "volume" and "snow_volume" or k] = v end
+  local cycle = extra.cycle or (options == false and { snow = 100 } or { rain = 100 })
+  local values = { clear_share = cycle.clear or 0, rain_share = cycle.rain or 0, snow_share = cycle.snow or 0,
+    melt = cycle.melt or 10 }
+  for k, v in pairs(SNOW) do values[k] = v end
   for k, v in pairs(RAIN) do values[k] = v end
   for k, v in pairs(options or {}) do values[k] = v end
   for k, v in pairs(extra.snow or {}) do
-    values[k == "volume" and "snow_volume" or k] = v
+    values[k] = v
+  end
+  if values.rain then
+    values.rain_low = values.rain_low or values.rain
+    values.rain_high = values.rain_high or values.rain
+    values.rain = nil
   end
   M.options = values
   load_module("features/weather")({ option = function(key)
@@ -317,12 +322,10 @@ do
     M.sounds[1] == "wf-lib/px/sounds/lightning/thunder.wav" and hit, table.concat(M.sounds, ","))
   check("the worm off the line keeps its health", worm.hp == 50)
 
-  new_match({ lightning_effect = "looks" })
-  M.mines = { mine }
-  mine.armed = nil
+  new_match()
   for _, f in ipairs(M.turn_starts) do f({}) end
   frames(220)
-  check("looks: bolts but nothing struck", #M.spawned >= 2 and mine.armed == nil)
+  check("nothing to aim at: no strike", #M.spawned == 1, #M.spawned)
 
   new_match({ lightning_chance = 0 })
   for _, f in ipairs(M.turn_starts) do f({}) end
@@ -534,6 +537,69 @@ do
   check("0 % draws no snow and plays no sound", #M.quads == 0 and M.ambients["sounds/blizzard.wav"] == nil)
 end
 
+print("rain: its heaviness changes at random within its range")
+do
+  new_match({ rain_low = 20, rain_high = 80, rain_every = 10 })
+  local W = load_module("lib/weather")
+  local cfg = W.kinds.rain
+  local lo, hi, inside, ramps = math.huge, -math.huge, true, true
+  for k = 0, 40 do
+    local start = k * 500
+    local a, b = W.rain_amount(cfg, start), W.rain_amount(cfg, start + 500)
+    for t = start, start + 499, 7 do
+      local v = W.rain_amount(cfg, t)
+      inside = inside and v >= 0.2 - 1e-9 and v <= 0.8 + 1e-9
+      lo, hi = math.min(lo, v), math.max(hi, v)
+      -- A straight ramp from each picked level to the next, all the way between them.
+      ramps = ramps and math.abs(v - (a + (b - a) * (t - start) / 500)) < 1e-9
+    end
+  end
+  check("always within the lowest and highest", inside, lo .. ".." .. hi)
+  check("it spreads over the range", lo < 0.35 and hi > 0.65, lo .. ".." .. hi)
+  check("it ramps from each level to the next", ramps)
+  local jump = 0
+  for t = 0, 20000 do jump = math.max(jump, math.abs(W.rain_amount(cfg, t + 1) - W.rain_amount(cfg, t))) end
+  check("never more than the range over the interval a frame", jump <= 0.6 / 500 + 1e-9, jump)
+  check("the same at every playback", W.rain_amount(cfg, 12345) == W.rain_amount(cfg, 12345))
+
+  -- What it draws at a given heaviness: the sheet's frames and their alpha, behind the land and in front.
+  local function drawn_at(amount)
+    W.rain_amount = function() return amount end
+    frames(1)
+    local top, alpha, front = -1, {}, 0
+    for _, q in ipairs(M.quads) do
+      if q.sprite == "sprites/rain.png" and q.depth ~= wa.depth.FRONT then
+        top = math.max(top, q.frame)
+        alpha[q.frame] = math.max(alpha[q.frame] or 0, q.colour >> 24)
+      elseif q.sprite == "sprites/rain.png" then
+        front = math.max(front, q.colour >> 24)
+      end
+    end
+    return top, alpha, front
+  end
+  local top, alpha, front = drawn_at(0.4)
+  check("between steps of density: one frame of the sheet", top == 1 and front == 0, top)
+  local full1 = alpha[1]
+  top, alpha = drawn_at(0.48)
+  check("near the next step its frame fades in", top == 2 and alpha[2] < full1 and alpha[2] > 0, top)
+  top, alpha = drawn_at(0.5)
+  check("at the step only that frame", top == 2 and alpha[2] > 0)
+  local _, _, front_low = drawn_at(0.52)
+  local _, _, front_high = drawn_at(0.8)
+  check("the rain in front of the land comes in past half", front_low > 0 and front_low < front_high,
+    front_low .. "," .. front_high)
+  check("and the sound gets louder with it", M.ambients["sounds/rain.wav"].volume > 0.55, M.ambients["sounds/rain.wav"].volume)
+  drawn_at(0.3)
+  check("quieter in light rain", M.ambients["sounds/rain.wav"].volume < 0.45, M.ambients["sounds/rain.wav"].volume)
+
+  new_match({ rain_low = 90, rain_high = 30 })
+  cfg = load_module("lib/weather").kinds.rain
+  check("the two either way round", cfg.amount == 0.9 and cfg.amount_low == 0.3)
+  new_match({ rain_low = 50, rain_high = 50 })
+  cfg = load_module("lib/weather").kinds.rain
+  check("the same lowest and highest: a steady rain", load_module("lib/weather").rain_amount(cfg, 777) == 0.5)
+end
+
 print("snow: settling on open ground")
 local function ground(x, y)
   if x >= 800 and x < 900 and y >= 300 and y <= 310 then return true end -- a roof over open ground
@@ -548,7 +614,7 @@ local function settling(snow_options, extra, land_shape)
   return land
 end
 do
-  local land = settling({ settle = true, snow = 100 })
+  local land = settling({ snow = 100 })
   turn(1)
   check("one clock for the weather", #M.spawned == 1)
   sim_frames(3000)
@@ -573,14 +639,14 @@ do
   local first = {}
   for i, t in ipairs(M.stamps) do first[i] = t.x .. "," .. t.y .. "," .. t.frame end
 
-  settling({ settle = true, snow = 100 })
+  settling({ snow = 100 })
   turn(1)
   sim_frames(3000)
   local same = #M.stamps == #first
   for i, t in ipairs(M.stamps) do same = same and first[i] == t.x .. "," .. t.y .. "," .. t.frame end
   check("the same match settles the same snow", same)
 
-  land = settling({ settle = true, snow = 100 })
+  land = settling({ snow = 100 })
   M.worms = { { x = 500, y = 395, team = 1, hp = 100 } }
   turn(1)
   sim_frames(3000)
@@ -590,10 +656,10 @@ do
   end
   check("none grows into a worm", near == 0, near)
 
-  settling({ settle = false })
+  settling({ snow = 0 })
   turn(1)
   sim_frames(500)
-  check("off: no snow settles, no clock", #M.stamps == 0 and #M.spawned == 0)
+  check("no snowfall: no snow settles, no clock", #M.stamps == 0 and #M.spawned == 0)
 
   -- Grass: bumps of one to three pixels and single-pixel spikes.
   local BUMPS = { 0, 2, 3, 1, 0, 3, 2 }
@@ -601,7 +667,7 @@ do
     if x % 23 == 0 and y >= 394 then return true end
     return y >= 400 + BUMPS[x % 7 + 1]
   end
-  land = settling({ settle = true, snow = 100 }, nil, grass)
+  land = settling({ snow = 100 }, nil, grass)
   turn(1)
   sim_frames(3000)
   local on_spikes = 0
@@ -625,7 +691,7 @@ do
   check("it lies as a blanket, without spikes", spikes == 0, spikes)
 
   -- A round knoll: the snow follows its curve as a layer, with no blocks on the ledges of its steep sides.
-  land = settling({ settle = true, snow = 100 }, nil, function(x, y)
+  land = settling({ snow = 100 }, nil, function(x, y)
     local dx = x - 1000
     if math.abs(dx) < 70 then return y >= 330 + math.floor(70 - math.sqrt(70 * 70 - dx * dx)) end
     return y >= 400
@@ -644,7 +710,7 @@ do
   check("and builds no blocks on its sides", blocks == 0, blocks)
 
   -- A steep slope of steps 2 and 3 pixels high in turn: no column of snow stands up over both of its neighbours.
-  land = settling({ settle = true, snow = 100 }, nil, function(x, y)
+  land = settling({ snow = 100 }, nil, function(x, y)
     if x >= 1400 and x < 1440 then
       local k = x - 1400
       return y >= 300 + 2 * k + k // 2
@@ -665,7 +731,7 @@ do
   check("on a steep staircase no snow stands up in pillars", pillars == 0, pillars)
 
   -- A slope rising three pixels a column: the snow slides down it to the foot.
-  land = settling({ settle = true, snow = 100 }, nil, function(x, y)
+  land = settling({ snow = 100 }, nil, function(x, y)
     if x >= 1500 and x < 1530 then return y >= 400 - 3 * (x - 1499) end
     return y >= 400
   end)
@@ -681,7 +747,7 @@ do
   check("none holds on a steep slope; it drifts at the foot", on_slope == 0 and foot >= 10, on_slope .. "," .. foot)
 
   -- A crater under deep snow: the snow starts again at its floor.
-  land = settling({ settle = true, snow = 100, settle_depth = 4 })
+  land = settling({ snow = 100, settle_depth = 4 })
   turn(1)
   sim_frames(2000)
   for x = 300, 339 do
@@ -700,7 +766,7 @@ do
 
   -- A ledge under snow blown away: its snow falls to the ground below.
   local function ledge(x, y) return y >= 400 or (x >= 1200 and x < 1300 and y >= 300 and y < 310) end
-  land = settling({ settle = true, snow = 100 }, nil, ledge)
+  land = settling({ snow = 100 }, nil, ledge)
   turn(1)
   sim_frames(3000)
   local on_ledge = 0
@@ -747,7 +813,7 @@ do
     if x >= 1400 and x < 1440 then local k = x - 1400; return y >= 300 + 2 * k + k // 2 end
     return y >= (x < 1400 and 300 or 400)
   end
-  land = settling({ settle = true, snow = 100 }, nil, stairs)
+  land = settling({ snow = 100 }, nil, stairs)
   turn(1)
   load_module("lib/weather").target.snow = 0
   sim_frames(1)
@@ -772,7 +838,7 @@ do
     in_air .. "," .. fallen_pillars)
 
   -- A cave open to the wind: however hard it blows, no snow settles under its roof.
-  land = settling({ settle = true, snow = 100 }, nil, function(x, y)
+  land = settling({ snow = 100 }, nil, function(x, y)
     if x >= 600 and x < 900 and y >= 250 and y < 300 then return true end -- the roof, open on its right
     if x >= 590 and x < 600 and y >= 250 then return true end -- the back wall
     return y >= 400
@@ -789,7 +855,7 @@ do
   check("strong wind blows no snow deep into a cave", in_cave == 0, in_cave)
 
   -- The wind blows it onto the side facing it.
-  land = settling({ settle = true, snow = 100 }, nil, function(x, y) return y >= 400 or (x >= 1000 and x < 1100 and y >= 200) end)
+  land = settling({ snow = 100 }, nil, function(x, y) return y >= 400 or (x >= 1000 and x < 1100 and y >= 200) end)
   wa.world.wind = function() return 0.1 end
   turn(1)
   sim_frames(3000)
@@ -804,29 +870,45 @@ do
   check("downwind of a tower the ground stays bare in its lee", under_lee == 0 and lee > 0, under_lee .. "," .. lee)
 end
 
-print("snow: melting at a turn cycle's start")
+print("snow: melting a little at each clear or rainy turn")
 do
-  local land = settling({ settle = true, snow = 100 },
-    { cycle = { start = "snow", change_chance = 100, rain_weight = 0, snow_weight = 0, clear_weight = 100, melt = 4 } })
+  local land = settling({ snow = 100 }, { cycle = { snow = 100, melt = 10 } })
   local W = load_module("lib/weather")
-  check("the first weather is the one asked for, before the first turn", W.kind == "snow" and W.target.snow == 1)
+  local s0 = load_module("lib/settle")
+  check("a weather with all the share is there before the first turn", W.kind == "snow" and W.target.snow == 1)
   turn(1)
   turn(2)
   sim_frames(3000)
+  local s = s0.state
+  check("no melting while it snows", #s.queue == 0 and #M.cuts == 0, #s.queue)
   local before = land.count()
+  local snowy = 0
+  for _, x in ipairs(s.order) do if s.cols[x].depth > 0 then snowy = snowy + 1 end end
   local _, deep_before = land.columns()
+  W.cycle_cfg.snow, W.cycle_cfg.clear = 0, 100
   turn(1)
   check("the weather clears at the turn cycle", W.kind == "clear" and W.target.snow == 0 and W.cycles == 1)
-  local s = load_module("lib/settle").state
   local queued = #s.queue
   M.cuts = {}
   sim_frames(1)
-  check("a big melt is spread over frames", queued > 40 and #M.cuts == 40, queued .. "," .. #M.cuts)
+  check("a melt is spread over frames", queued > 40 and #M.cuts == 40, queued .. "," .. #M.cuts)
   sim_frames(100)
   local _, deep_after = land.columns()
-  check("the top of every pile melts", land.count() < before and deep_after <= deep_before - 3,
-    deep_before .. " -> " .. deep_after)
-  for _ = 1, 6 do
+  check("about a tenth of the snowy columns lose a pixel", queued > snowy * 0.06 and queued < snowy * 0.14,
+    queued .. " of " .. snowy)
+  check("one pixel each", before - land.count() == queued and deep_after >= deep_before - 1,
+    (before - land.count()) .. "," .. deep_before .. " -> " .. deep_after)
+
+  -- Twice as much in rain: the next turn of the same cycle, the weather set by hand.
+  W.target.rain = 1
+  turn(2)
+  local in_rain = #s.queue - s.head + 1
+  check("rain melts twice as much", in_rain > queued * 1.6 and in_rain < queued * 2.4, in_rain .. " vs " .. queued)
+  W.target.rain = 0
+  sim_frames(100)
+
+  W.cycle_cfg.melt = 100
+  for _ = 1, 12 do
     turn(2)
     turn(1)
     sim_frames(100)
@@ -835,7 +917,7 @@ do
   for k in pairs(land.removed) do
     if ground(k % 100000, k // 100000) then ground_cut = ground_cut + 1 end
   end
-  check("cycle by cycle it all melts", land.count() == 0, land.count())
+  check("turn by turn it all melts", land.count() == 0, land.count())
   check("and the ground under it stays whole", ground_cut == 0, ground_cut)
   check("no snow settles while it's clear", W.target.snow == 0)
 end
@@ -861,28 +943,42 @@ do
     local kinds = {}
     turn(1)
     kinds[1] = W2.kind
-    for i = 2, 12 do
+    for i = 2, 24 do
       turn(2); turn(1)
       kinds[i] = W2.kind
     end
     return table.concat(kinds, ",")
   end
-  local a = run({ change_chance = 100, clear_weight = 0 })
-  check("every cycle changes between the two", not a:find("clear") and not a:find("rain,rain") and not a:find("snow,snow"), a)
-  check("the same match gives the same weather", run({ change_chance = 100, clear_weight = 0 }) == a)
-  local b = run({ change_chance = 100, snow_weight = 0 })
-  check("a kind with no share never comes", not b:find("snow"), b)
-  local c = run({ change_chance = 0, start = "rain" })
-  check("0 %: the first weather stays", c == string.rep("rain", 12, ","), c)
+  local a = run({ rain = 50, snow = 50 })
+  check("both come by their shares", a:find("rain") and a:find("snow") and not a:find("clear"), a)
+  check("and may stay for the next cycle", a:find("rain,rain") or a:find("snow,snow"), a)
+  check("the same match gives the same weather", run({ rain = 50, snow = 50 }) == a)
+  local b = run({ clear = 50, rain = 50 })
+  check("a weather with no share never comes", not b:find("snow") and b:find("clear"), b)
+  local c = run({ rain = 100 })
+  check("100 %: always that weather", c == string.rep("rain", 24, ","), c)
+  local mixed = { 0, 0, 0 }
+  local d = run({ clear = 20, rain = 40, snow = 40 })
+  for kind in d:gmatch("%a+") do
+    local i = kind == "clear" and 1 or kind == "rain" and 2 or 3
+    mixed[i] = mixed[i] + 1
+  end
+  check("each weather comes", mixed[1] > 0 and mixed[2] > 0 and mixed[3] > 0, d)
 
-  new_match({ lightning_chance = 0 }, { cycle = { start = "rain", change_chance = 100, clear_weight = 0, snow_weight = 0 } })
-  check("rain alone with no other share stays rain", (function() turn(1); turn(2); turn(1); return load_module("lib/weather").kind end)() == "rain")
+  new_match({ lightning_chance = 0 }, { snow = {}, cycle = { rain = 50, snow = 50 } })
+  W = load_module("lib/weather")
+  frames(3)
+  check("shared: no weather before the first turn", W.kind == nil and #M.quads == 0, #M.quads)
+  turn(1)
+  check("the first turn picks one", W.kind == "rain" or W.kind == "snow", W.kind)
 
   -- On screen the change fades: the rain thins out while the snow comes in.
-  new_match({}, { snow = {}, cycle = { start = "rain", change_chance = 100, clear_weight = 0 } })
+  new_match({}, { snow = {}, cycle = { rain = 50, snow = 50 } })
   W = load_module("lib/weather")
-  turn(1); turn(2)
-  frames(5)
+  turn(1)
+  W.set_kind("rain")
+  turn(2)
+  frames(200)
   local function alpha_of(sprite)
     local top = 0
     for _, q in ipairs(M.quads) do
@@ -891,6 +987,7 @@ do
     return top
   end
   local rain_full = alpha_of("sprites/rain.png")
+  W.cycle_cfg.rain, W.cycle_cfg.snow = 0, 100
   turn(1)
   check("the cycle turns to snow", W.kind == "snow")
   frames(60)
@@ -903,25 +1000,20 @@ do
     M.ambients["sounds/rain.wav"].volume == 0 and M.ambients["sounds/blizzard.wav"].volume > 0)
 
   -- Lightning only while it rains.
-  new_match({ lightning_chance = 100 }, { snow = {}, cycle = { start = "snow", change_chance = 0 } })
+  new_match({ lightning_chance = 100 }, { snow = {}, cycle = { rain = 50, snow = 50 } })
+  W = load_module("lib/weather")
   turn(1)
+  W.set_kind("snow")
   frames(300)
   check("no lightning in the snow", #M.sounds == 0, #M.sounds)
 
-  -- The cycle brings rain and snow.
-  new_match(false, { cycle = { start = "rain", change_chance = 100, clear_weight = 0 } })
+  -- Rain with all the share falls from the match's start.
+  new_match({ lightning_chance = 0 })
   W = load_module("lib/weather")
   frames(3)
-  check("the cycle starts with the rain asked for", W.kind == "rain" and W.target.rain == 1)
   local rain_drawn = 0
   for _, q in ipairs(M.quads) do if q.sprite == "sprites/rain.png" then rain_drawn = rain_drawn + q.count end end
-  check("and draws it", rain_drawn > 0, rain_drawn)
-  turn(1); turn(2); turn(1)
-  check("and turns to snow", W.kind == "snow" and W.target.snow == 1)
-  frames(200)
-  local flakes = 0
-  for _, q in ipairs(M.quads) do if q.sprite == "sprites/flake.png" then flakes = flakes + q.count end end
-  check("and draws that", flakes > 0, flakes)
+  check("rain with all the share draws before the first turn", W.kind == "rain" and rain_drawn > 0, rain_drawn)
 
   -- The options the add-on reads are the ones mod.toml declares.
   local toml = io.open(ROOT .. "weather/mod.toml"):read("a")
