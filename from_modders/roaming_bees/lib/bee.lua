@@ -68,6 +68,16 @@ local BUMP_LOOKOUT_FRAMES = 45
 local ROAM_SLOWDOWN_RADIUS_PX = 60
 local ROAM_SLOWDOWN_MIN_FRAC  = 0.35
 
+-- An idle bee (roaming, no worm within LOD_RADIUS_PX) runs its whole brain
+-- every LOD_EVERY frames; between them it only flaps and turns. WA moves it
+-- every frame at the speed it was given, and picking a target still runs
+-- for every bee every frame, so a worm coming near wakes it at once.
+local LOD_RADIUS_PX = 600
+local LOD_EVERY = 3
+-- Per-frame factors applied over the frames one think covers (1 to LOD_EVERY).
+local ROAM_DAMP = { 0.75, 0.75 * 0.75, 0.75 * 0.75 * 0.75 }
+local ROAM_PULL = { 0.1, 1 - 0.9 * 0.9, 1 - 0.9 * 0.9 * 0.9 } -- ROAM_STRENGTH compounded
+
 local BEE_FRAME_COUNT = 4
 local BEE_FRAME_HOLD  = 5
 local BEE_FRAME_HOLD_MIN = 2
@@ -294,6 +304,9 @@ local wormsById = {}
 -- This frame's moving worms, read once for every bee: { worm, x, y, team }.
 local candidates = {}
 local candidateCount = 0
+-- Every living worm's position this frame, flat: x1, y1, x2, y2, ...
+local wormSpots = {}
+local wormSpotCount = 0
 
 local function closestEnemy(s, x, y)
   local best, bestDist2
@@ -325,10 +338,15 @@ local function refreshTargets()
  
   local worms = wa.worms.all()
   candidateCount = 0
+  wormSpotCount = 0
   wormsById = {}
   for i = 1, #worms do
     local w = worms[i]
     wormsById[w.id] = w
+    if w.hp > 0 then
+      wormSpots[wormSpotCount * 2 + 1], wormSpots[wormSpotCount * 2 + 2] = w.x, w.y
+      wormSpotCount = wormSpotCount + 1
+    end
     local knocked = KNOCKED[w.state or ""] or false
     local moving = w.vx ~= 0 or w.vy ~= 0 or w.state == "walking" or knocked
     if w.hp > 0 and not w.taken and moving then
@@ -692,8 +710,8 @@ local function dropHat(a, s)
   }
 end
 
-local function updateHat(a, s)
-  if (s.hatLost or 0) > 0 then s.hatLost = s.hatLost - 1 end
+local function updateHat(a, s, step)
+  if (s.hatLost or 0) > 0 then s.hatLost = s.hatLost - step end
   local speed = speedPx(s)
   if not s.rogue and not s.dead and not s.spin and not s.softSpin
       and (s.hatLost or 0) <= 0 and s.wasChasing
@@ -714,9 +732,30 @@ local function installHat()
   wa.on.draw(drawHats)
 end
 
+local MAX_PITCH_DEG = 90 * 0.7
+
+-- One frame of the bee turning toward its desired angle.
+local function turnToward(a, s)
+  s.desiredAngle = math.max(-MAX_PITCH_DEG, math.min(MAX_PITCH_DEG, s.desiredAngle or 0))
+
+  if s.rot < s.desiredAngle then
+    s.rot = math.min(s.rot + ROT_SMOOTH_DEG, s.desiredAngle)
+  elseif s.rot > s.desiredAngle then
+    s.rot = math.max(s.rot - ROT_SMOOTH_DEG, s.desiredAngle)
+  end
+
+  if s.facing < 0 then
+    s.gfxAngle = -s.rot
+  else
+    s.gfxAngle = s.rot
+  end
+  turn(a, s, s.gfxAngle)
+end
+
 -- `s` holds the body this frame read (readBody); the frame hands its speed
--- back (writeSpeed).
-local function think(a, s)
+-- back (writeSpeed). `step`: the frames since this bee last thought (more
+-- than 1 for an idle bee, see LOD_EVERY).
+local function think(a, s, step)
   if s.freeMe then
     letGo(s, 0, 0)
     state[s.id] = nil
@@ -730,7 +769,7 @@ local function think(a, s)
     s.spinN = 0
   end
 
-  updateHat(a, s)
+  updateHat(a, s, step)
 
   s.inWater = a:in_water()
   if s.inWater then
@@ -742,7 +781,6 @@ local function think(a, s)
   end
 
   checkClipping(a, s)
-  refreshTargets()
 
   if s.sting then
     stingTick(a, s)
@@ -770,7 +808,7 @@ local function think(a, s)
     return
   end
 
-  s.ticks = (s.ticks or 0) + 1
+  s.ticks = (s.ticks or 0) + step
 
   updateAnim(a, s)
 
@@ -840,9 +878,9 @@ local function think(a, s)
     s.homingDuration = 0
 
     if (s.roamCooldown or 0) > 0 then
-      s.roamCooldown = s.roamCooldown - 1
+      s.roamCooldown = s.roamCooldown - step
       s.desiredAngle = 0
-      setSpeed(s, s.vx * 0.75, s.vy * 0.75)
+      setSpeed(s, s.vx * ROAM_DAMP[step], s.vy * ROAM_DAMP[step])
       if s.roamCooldown <= 0 then
         pickRoamPoint(a, s)
       end
@@ -863,7 +901,7 @@ local function think(a, s)
           end
           speed = baseSpeed * frac
         end
-        steer(s, s.arriveX, s.arriveY, speed, ROAM_STRENGTH)
+        steer(s, s.arriveX, s.arriveY, speed, step == 1 and ROAM_STRENGTH or ROAM_PULL[step])
         s.roamCD = ROAM_STEER_EVERY
       end
       local vxpx, vypx = s.vx, s.vy
@@ -873,21 +911,7 @@ local function think(a, s)
     end
   end
 
-  local MAX_PITCH_DEG = 90 * 0.7
-  s.desiredAngle = math.max(-MAX_PITCH_DEG, math.min(MAX_PITCH_DEG, s.desiredAngle or 0))
-
-  if s.rot < s.desiredAngle then
-    s.rot = math.min(s.rot + ROT_SMOOTH_DEG, s.desiredAngle)
-  elseif s.rot > s.desiredAngle then
-    s.rot = math.max(s.rot - ROT_SMOOTH_DEG, s.desiredAngle)
-  end
-
-  if s.facing < 0 then
-    s.gfxAngle = -s.rot
-  else
-    s.gfxAngle = s.rot
-  end
-  turn(a, s, s.gfxAngle)
+  turnToward(a, s)
 end
 
 -- A tool that picks things up (the Gravity Gun) moves the bee, and its own
@@ -900,18 +924,44 @@ local function speedOf(s)
   return math.sqrt(vx * vx + vy * vy)
 end
 
-local function brain(a)
-  local s = state[a.id]
-  if not s then return end
+-- Whether no living worm is within LOD_RADIUS_PX of (x, y).
+local function farFromWorms(x, y)
+  local r2 = LOD_RADIUS_PX * LOD_RADIUS_PX
+  for i = 0, wormSpotCount - 1 do
+    local dx, dy = wormSpots[i * 2 + 1] - x, wormSpots[i * 2 + 2] - y
+    if dx * dx + dy * dy < r2 then return false end
+  end
+  return true
+end
+
+-- Roaming with nothing to wake it: no target, not knocked, burst, stinging,
+-- sinking, bumped or buried.
+local function idle(s)
+  return not (s.targetId or s.spin or s.softSpin or s.dead or s.sting or s.freeMe
+    or s.stopMe or s.inWater) and s.bonk == 0 and s.clipFrames == 0
+end
+
+local function brain(a, s)
+  if not s or state[s.id] ~= s then return end
+  refreshTargets()
+  if s.skip > 0 and idle(s) then
+    s.skip, s.skipped = s.skip - 1, s.skipped + 1
+    updateAnim(a, s)
+    turnToward(a, s)
+    return
+  end
+  local step = s.skipped + 1
+  s.skip, s.skipped = 0, 0
   readBody(a, s)
   if s.lastSpeed and not s.dead and not s.sting
       and speedOf(s) > s.lastSpeed + THROWN_PX then
     s.softSpin, s.spinN = true, 0
   end
-  think(a, s)
-  if state[s.id] then
+  think(a, s, step)
+  if state[s.id] == s then
     writeSpeed(a, s)
     s.lastSpeed = speedOf(s)
+    if idle(s) and farFromWorms(s.x, s.y) then s.skip = LOD_EVERY - 1 end
   end
 end
 
@@ -964,6 +1014,7 @@ function M.spawn_actor(opts)
 
   log("[ACTOR SPAWN] Attempting spawn at X=" .. tostring(opts.x) .. " Y=" .. tostring(opts.y))
   if not owner then return nil end
+  local s -- the bee's state, made once it is spawned
   local body = wa.actors.spawn({
     sprite  = opts.sprite or M.SPRITE,
     x       = opts.x,
@@ -977,14 +1028,17 @@ function M.spawn_actor(opts)
                 hit_by = { fire = true, blasts = true, bullets = true, arrows = true,
                           missiles = true, mines = true, actors = true } },
     grab    = "projectile",
-    on      = { frame = opts.brain or brain, hit = hurt, touched = onContact, contact = bump },
+    on      = { frame = opts.brain or function(a) brain(a, s) end,
+                hit = hurt, touched = onContact, contact = bump },
   })
 
   if body then
     log("[ACTOR SPAWN] Successfully spawned actor ID=" .. tostring(body.id) ..
         " (Rogue=" .. tostring(opts.rogue or false) .. ")")
-    state[body.id] = {
+    s = {
       id              = body.id,
+      skip            = 0, -- frames this idle bee rests before thinking again
+      skipped         = 0, -- frames it has rested since it last thought
       rogue           = opts.rogue or false,
       team            = opts.team or (owner and owner.team) or -1,
       colour          = opts.colour
@@ -1026,6 +1080,7 @@ function M.spawn_actor(opts)
       lookoutCooldown = 0,
       ambientBuzzCD   = rand(30, 60), -- set by the original, read by nothing
     }
+    state[body.id] = s
   else
     log("[ACTOR SPAWN ERROR] wa.actors.spawn returned nil!")
   end
