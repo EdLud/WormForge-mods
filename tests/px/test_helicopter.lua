@@ -1,6 +1,7 @@
 -- lua mods/tests/px/test_helicopter.lua
--- Helicopter Dash: Shift locks one of eight directions and ramps to dash speed,
--- then the heli coasts on; the other arrows steer across it, the fuel drains and refills, the bar draws.
+-- Helicopter Dash: while Shift is held the heli flies as normal, only faster (at the Dash steering share of
+-- its grip), then coasts on; the fuel drains and refills, the bar draws.
+-- Each press costs part of the bar; run dry, the bar turns red until it's full again.
 local root = HIGHLANDER_ROOT or ((arg[0]:match("^(.*[/\\])") or "") .. "../../px/")
 package.path = root .. "?.lua;" .. package.path
 
@@ -14,6 +15,46 @@ local function check(what, ok, detail)
 end
 
 local function near(a, b) return math.abs(a - b) < 1e-9 end
+
+local function push(v, dir)
+  local s = -dir * v
+  if s > -1 then s = s - 0.2 end
+  if s > -4 then s = s - 0.4 end
+  if s > -8 then s = s - 0.15 end
+  if s > -10 then s = s - 0.05 end
+  return -dir * s
+end
+
+-- One frame of the dash as the pack works it out: normal flight at 1/k of the speed, at
+-- `steer` of its grip and slowing, the whole speed held to 5k; no arrow speeds it up the way it goes.
+local function dash_step(vx, vy, keys, k, steer, facing)
+  k, steer, facing = k or 3, steer or 0.5, facing or 1
+  local x, y = vx / k, vy / k
+  if not (keys.up or keys.down or keys.left or keys.right) then
+    local s = math.sqrt(x * x + y * y)
+    local dx, dy = facing, 0
+    if s * k >= 1 then dx, dy = x / s, y / s end
+    s = s + (push(s, 1) - s) * steer
+    x, y = dx * s, dy * s
+  else
+    if not keys.up and not keys.down then y = y / (1 + 0.105 * steer) end
+    if not keys.left and not keys.right then x = x / (1 + 0.105 * steer) end
+    if keys.up and keys.down then y = y / 1.095 end
+    if keys.left and keys.right then x = x / 1.095 end
+    if keys.up then y = y + (push(y, -1) - y) * steer end
+    if keys.down then y = y + (push(y, 1) - y) * steer end
+    if keys.left then x = x + (push(x, -1) - x) * steer end
+    if keys.right then x = x + (push(x, 1) - x) * steer end
+  end
+  local s = math.sqrt(x * x + y * y)
+  if s > 5 then x, y = x * 5 / s, y * 5 / s end
+  return x * k, y * k
+end
+
+local function dash_frames(vx, vy, keys, n, k, steer, facing)
+  for _ = 1, n do vx, vy = dash_step(vx, vy, keys, k, steer, facing) end
+  return vx, vy
+end
 
 local handlers, draws, quads, ribbons, spawned, worms, shift, pops
 
@@ -30,7 +71,7 @@ local function new_match(options)
       if id == 115 then pops[#pops + 1] = opts and opts.pitch end
     end },
     random = function() return 1 end,
-    math = { sin = math.sin },
+    math = { sin = math.sin, atan = math.atan },
     actors = {
       spawn = function(spec)
         local a = { sprite = spec.sprite, explode = spec.explode }
@@ -68,7 +109,7 @@ local function new_match(options)
   package.loaded["lib/shared"] = nil
   local weapon = dofile(root .. "weapons/helicopter.lua")
   local values = { fuel = 100, acceleration = 100, dash_fuel = 1000, dash_speed = 300, dash_steer_factor = 50, dash_refill_factor = 30,
-    crash_speed_scale = 0 }
+    dash_use_cost = 0, crash_speed_scale = 0 }
   for k, v in pairs(options or {}) do values[k] = v end
   weapon.configure({ option = function(key) return values[key] end }, { jet_pack = {} })
   weapon.setup()
@@ -133,60 +174,63 @@ do
   w.keys = { up = true, right = true }
   shift = true
   frame(w)
-  local d = 0.70710678118654752
-  check("Shift with up and right: up-right, ramping from a standstill, no gravity or wind",
-    near(w.vx, 1.5) and near(w.vy, -1.5) and w.gravity == 0 and w.wind == 0, w.vx .. "," .. w.vy)
+  local ex, ey = dash_step(0, 0, w.keys)
+  check("Shift with up and right: normal flight's push, 3 times as big at half its grip, no gravity or wind",
+    near(w.vx, ex) and near(w.vy, ey) and near(w.vx, 1.2) and w.gravity == 0 and w.wind == 0, w.vx .. "," .. w.vy)
   frame(w)
-  check("the heli turns to the dash, 30 degrees a frame", body.angle == 315, body.angle)
+  check("the heli turns its nose the way it goes, 30 degrees a frame", math.abs(body.angle - 315) < 1e-6, body.angle)
   local level = frames[1].points[1][2]
   body.x, body.y = 503.5, 301.25
   local tilted = sheets(draw(), FRAME)[1]
   check("the bar keeps its height over the tilted heli", tilted.points[1][2] == level and level == 266,
     tilted.points[1][2] .. " " .. level)
-  w.keys = {}
-  frame(w, 7)
-  check("9 frames in: not yet at dash speed", near(w.vx, 13.5))
-  frame(w)
-  check("300% of the heli's top speed that way (5 an axis), reached in 200 ms",
-    near(w.vx, 15) and near(w.vy, -15) and w.steer == "true unlimited", w.steer)
-  frame(w, 5)
-  check("then the direction and speed stay locked", near(w.vx, 15) and near(w.vy, -15))
+  frame(w, 28)
+  ex, ey = dash_frames(0, 0, w.keys, 30)
+  check("held, up and right reach 300% of the heli's top speed (5) together: a diagonal is no faster",
+    near(w.vx, ex) and near(math.sqrt(w.vx * w.vx + w.vy * w.vy), 15) and near(w.vx, -w.vy)
+    and w.steer == "true unlimited", w.vx .. "," .. w.vy)
 
   w.keys = { down = true }
-  frame(w)
-  local across = 0.4 * d
-  check("down steers across the dash at half the heli's push",
-    near(w.vx, 15 + across) and near(w.vy, -15 + across), w.vx .. "," .. w.vy)
-  w.keys = { up = true, right = true }
-  frame(w)
-  check("the dash's own keys don't steer: the sideways speed eases off",
-    near(w.vx - 15, across / 1.105) and near(w.vy + 15, across / 1.105))
+  local vx0, vy0 = w.vx, w.vy
+  frame(w, 30)
+  ex, ey = dash_frames(vx0, vy0, w.keys, 30)
+  check("down turns it any way, as in normal flight: the unheld axis slows at half the rate",
+    near(w.vx, ex) and near(w.vy, ey) and w.vy > 10 and w.vx < 3, w.vx .. "," .. w.vy)
+  w.keys = {}
+  vx0, vy0 = w.vx, w.vy
+  frame(w, 10)
+  ex, ey = dash_frames(vx0, vy0, w.keys, 10)
+  check("no arrow: it keeps on the way it goes, at the dash's speed",
+    near(w.vx, ex) and near(w.vy, ey) and near(w.vx / w.vy, vx0 / vy0)
+    and near(math.sqrt(w.vx * w.vx + w.vy * w.vy), 15), w.vx .. "," .. w.vy)
 
   bars = sheets(draw(), BAR)
+  local lines = sheets(ribbons, LINE)  bars = sheets(draw(), BAR)
   local lines = sheets(ribbons, LINE)
   check("dashing: the fill turns red and glows, streaks of air flow round the heli",
     bars[2].color == 0xFFFE6A5A and #sheets(quads, GLOW) == 1 and #lines > 20 and #lines == #ribbons
     and lines[1].n == 5, #lines)
   local dashing, dashing_count = strongest(), #ribbons
 
-  w.keys = {}
-  frame(w, 133)
+  frame(w, 80)
   check("1000 fuel (100 units) lasts 150 frames", w.gravity == 0, w.gravity)
   frame(w)
   check("empty: the dash ends, the heli's gravity and wind back", w.gravity == 0.2 and w.wind == 0.2)
   local vx, vy = w.vx, w.vy
   frame(w)
   local drag = 1 / (1 + 0.0015 * math.sqrt(vx * vx + vy * vy))
-  check("then it coasts, air drag slowing it by the square of its speed",
-    near(w.vx, vx * drag) and near(w.vy, vy * drag), w.vx)
-  frame(w, 20)
+  local function braked(v) return v / (1 + 0.105 * math.min(1, 5 / math.abs(v)) ^ 8) end
+  check("then it coasts: air drag by the square of its speed, then braking that grows near the top speed",
+    near(w.vx, braked(vx * drag)) and near(w.vy, braked(vy * drag)), w.vx)
+  frame(w, 3)
   check("still holding Shift starts no new dash", w.gravity == 0.2)
-  check("22 frames on it's still faster than the heli flies, the limit still lifted",
-    math.abs(w.vx) > 5 and w.steer == "true unlimited", w.vx)
+  check("5 frames on it's still faster than the heli flies, the limit still lifted",
+    math.sqrt(w.vx * w.vx + w.vy * w.vy) > 5 and w.steer == "true unlimited", w.vx .. "," .. w.vy)
   draw()
   check("and the air lines thin out with it: fewer and fainter", #ribbons > 0 and #ribbons < dashing_count
     and strongest() < dashing, #ribbons .. " < " .. dashing_count .. ", " .. strongest() .. " < " .. dashing)
 
+  frame(w, 17)
   shift = false
   frame(w, 49)
   bars = sheets(draw(), BAR)
@@ -196,7 +240,10 @@ do
     math.abs(w.vx) <= 5 and math.abs(w.vy) <= 5 and strongest() == 0 and w.steer == "true limited", w.steer)
   shift = true
   frame(w)
-  check("a part-filled bar doesn't dash", w.gravity == 0.2 and #pops == 0)
+  bars, frames = sheets(draw(), BAR), sheets(quads, FRAME)
+  check("run dry, the bar refills red and Shift doesn't dash",
+    w.gravity == 0.2 and #pops == 0 and bars[2].color == 0xFFD8282E and frames[1].color == 0xFFFF7070,
+    string.format("%X", bars[2].color))
   shift = false
   local waited = 0
   while #pops == 0 and waited < 1000 do frame(w); waited = waited + 1 end
@@ -206,10 +253,41 @@ do
   check("once", #pops == 1)
   w.vx, w.vy = -4, 3
   shift = true
-  w.facing = -1
+  w.facing = 1
   frame(w)
-  check("Shift with no arrows dashes the way the heli faces, from its speed that way",
-    near(w.vx, -5.5) and near(w.vy, 3 / 1.105), w.vx .. "," .. w.vy)
+  bars, frames = sheets(draw(), BAR), sheets(quads, FRAME)
+  check("full again: the outline is white again", frames[1].color == 0xFFFFFFFF)
+  ex, ey = dash_step(-4, 3, {})
+  check("moving, Shift with no arrow speeds it up the way it goes and turns it that way",
+    near(w.vx, ex) and near(w.vy, ey) and near(w.vx / w.vy, -4 / 3) and w.facing == -1, w.vx .. "," .. w.vy)
+end
+
+print("helicopter coast: no sudden stop, and wind can't keep it going")
+for _, held in ipairs({ {}, { right = true } }) do
+  local w = new_match()
+  take_off(w)
+  shift, w.keys = true, held
+  frame(w, 15)
+  shift = false
+  local speeds, frames = { w.vx }, 0
+  repeat
+    frame(w)
+    w.vx = w.vx + 0.05 -- a strong tailwind, which WA adds and the mock leaves out
+    w.vx = math.min(w.vx, w.steer == "true limited" and 5 or math.huge) -- WA's limit, back after the coast
+    speeds[#speeds + 1] = w.vx
+    frames = frames + 1
+  until (held.right and w.steer == "true limited") or (not held.right and w.vx < 1.5) or frames > 200
+  local jump = 0
+  for i = 3, #speeds do
+    jump = math.max(jump, math.abs((speeds[i - 1] - speeds[i]) - (speeds[i - 2] - speeds[i - 1])))
+  end
+  if held.right then
+    check("right held: a long glide back to the heli's top speed and normal flight in 76 frames, despite the wind",
+      frames == 76 and near(w.vx, 5), frames .. " " .. w.vx)
+  else
+    check("no key: a long glide, slowing evenly, below 1.5 in 2 seconds despite the wind",
+      frames > 80 and frames < 100 and jump < 0.13, frames .. " frames, slowing changed by " .. jump)
+  end
 end
 
 print("helicopter dash: the option's fuel, steering on the coast")
@@ -300,34 +378,33 @@ for _, case in ipairs({ { 0, 10 }, { 50, 17 }, { 100, 24 } }) do
     blast and blast.id)
 end
 
-print("helicopter dash: a diagonal's second arrow just after Shift")
+print("helicopter dash: no arrow, the way the heli moves or faces; leftover speed fades")
 do
   local w = new_match()
   take_off(w)
-  shift, w.keys = true, { right = true }
-  frame(w, 2)
-  check("Shift with right: right", w.vy == 0 and near(w.vx, 3))
-  w.keys = { right = true, up = true }
-  frame(w)
-  local d = 0.70710678118654752
-  check("up pressed 40 ms later: the dash turns up-right, all its speed the new way",
-    near(w.vx, (3 + 1.5 / d) * d) and near(w.vy, -(3 + 1.5 / d) * d), w.vx .. "," .. w.vy)
+  w.vx, w.vy, w.keys = 3, -1, {}
+  shift = true
+  frame(w, 5)
+  check("moving at an angle: it keeps that angle, the heli's nose into it",
+    near(w.vx / w.vy, -3) and math.abs(spawned[#spawned].angle - math.deg(math.atan(-1, 3)) % 360) < 1e-6,
+    spawned[#spawned].angle)
 
   w = new_match()
   take_off(w)
-  shift, w.keys = true, { right = true }
-  frame(w, 6)
-  w.keys = { right = true, up = true }
+  w.vx, w.vy, w.facing, w.keys = 0, 0.2, -1, {}
+  shift = true
   frame(w)
-  check("up pressed past 100 ms: still right, up only steers", near(w.vy, -0.4) and w.vx > 9, w.vx .. "," .. w.vy)
+  check("nearly still: the way the heli faces", w.vx < 0 and near(w.vy, 0), w.vx .. "," .. w.vy)
 
+  -- the 2026-11-25 match, frame 1146: Up held, still drifting left from a dash before
   w = new_match()
   take_off(w)
-  shift, w.keys = true, { right = true, up = true }
-  frame(w)
-  w.keys = {}
-  frame(w)
-  check("letting go in the window keeps the way", near(w.vx, -w.vy) and w.vx > 0)
+  w.vx, w.vy, w.keys = -2.155, -4.952, { up = true }
+  shift = true
+  frame(w, 20)
+  local ex, ey = dash_frames(-2.155, -4.952, w.keys, 20)
+  check("Up alone: the leftover sideways speed fades as in normal flight, the heli climbing",
+    near(w.vx, ex) and near(w.vy, ey) and math.abs(w.vx) < 0.8 and w.vy < -12, w.vx .. "," .. w.vy)
 end
 
 print("helicopter dash: 10000%")
@@ -335,8 +412,9 @@ do
   local w = new_match({ dash_speed = 10000 })
   take_off(w)
   shift, w.keys = true, { right = true }
-  frame(w, 10)
-  check("100 times the heli's top speed, in 200 ms", near(w.vx, 500))
+  local frames = 0
+  repeat frame(w); frames = frames + 1 until w.vx >= 500 or frames > 100
+  check("100 times the heli's top speed, in half a second", near(w.vx, 500) and frames == 22, frames)
   shift = false
   frame(w)
   check("the coast slows it without turning it round", w.vx > 0 and w.vx < 500, w.vx)
@@ -356,8 +434,9 @@ do
   shift = true
   frame(w)
   frame(w, 5)
+  local _, ey = dash_frames(0, 0, w.keys, 6)
   check("left and right cancel: straight up, the facing kept",
-    w.vx == 0 and near(w.vy, -9) and w.facing == -1 and spawned[#spawned].angle == 90, spawned[#spawned].angle)
+    near(w.vx, 0) and near(w.vy, ey) and w.facing == -1 and spawned[#spawned].angle == 90, spawned[#spawned].angle)
   shift = false
   frame(w)
   check("letting Shift go ends the dash", w.gravity == 0.2)
@@ -369,6 +448,43 @@ do
   frame(w)
   check("dash fuel 0: no dash, no bar and no tooltip",
     w.gravity == 0.2 and #sheets(draw(), BAR) == 0 and hints["px.helicopter"](w) == nil)
+end
+
+print("helicopter dash: each press costs part of the bar, and a dry bar waits until it's full")
+do
+  local w = new_match({ dash_fuel = 100, dash_use_cost = 15 })
+  take_off(w)
+  shift, w.keys = true, { right = true }
+  frame(w)
+  local bars = sheets(draw(), BAR)
+  check("a press takes 15% of the bar, then the dash burns its frame",
+    w.gravity == 0 and near(width(bars[2]), 40 * (15 - 2.25 - 1) / 15), width(bars[2]))
+  shift = false
+  frame(w)
+  shift = true
+  frame(w)
+  check("a part-filled bar dashes again", w.gravity == 0)
+  local taps = 2
+  repeat
+    shift = false
+    frame(w)
+    shift = true
+    frame(w)
+    taps = taps + 1
+  until sheets(draw(), FRAME)[1].color == 0xFFFF7070 or taps > 20
+  check("tapping on runs it dry: 5 taps, then the outline turns red", taps == 5 and #pops == 0, taps)
+  shift = false
+  frame(w)
+  shift = true
+  frame(w)
+  check("dry: Shift doesn't dash", w.gravity == 0.2, w.gravity)
+  shift = false
+  local waited = 0
+  while #pops == 0 and waited < 1000 do frame(w); waited = waited + 1 end
+  check("full again: the crate pop, once", #pops == 1 and sheets(draw(), FRAME)[1].color == 0xFFFFFFFF, waited)
+  shift = true
+  frame(w)
+  check("and it dashes again", w.gravity == 0)
 end
 
 print("ALL PASS")

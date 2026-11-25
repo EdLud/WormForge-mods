@@ -2195,7 +2195,7 @@ key = "fuel"
 type = "int"
 min = 0
 max = 999
-default = 255
+default = 40
 zero = "infinite"
 label = "Fuel"
 description = "The helicopter's fuel; 0 is infinite, and its counter goes up with the fuel used, as WA's infinite jet pack does."
@@ -2214,28 +2214,37 @@ key = "dash_fuel"
 type = "int"
 min = 0
 max = 9999
-default = 80
+default = 50
 zero = "off"
 label = "Dash fuel"
 description = "Fuel for the Shift dash; 100 lasts 0.3 seconds, and 0 turns the dash off."
+
+[[components.options]]
+key = "dash_use_cost"
+type = "int"
+min = 0
+max = 50
+default = 15
+label = "Dash cost per press (%)"
+description = "How much of a full dash bar each press of Shift takes, on top of what the dash burns. A bar that runs dry turns red, and the dash waits until it's full again."
 
 [[components.options]]
 key = "dash_speed"
 type = "int"
 min = 100
 max = 10000
-default = 300
+default = 330
 label = "Dash speed (%)"
-description = "The dash's top speed as a percentage of normal flying speed, reached in 0.2 seconds."
+description = "The top speed while dashing, as a percentage of normal flying speed, the same in every direction."
 
 [[components.options]]
 key = "dash_steer_factor"
 type = "int"
 min = 0
-max = 100
-default = 50
+max = 1000
+default = 130
 label = "Dash steering (%)"
-description = "How strongly the arrow keys steer during a dash and until the heli slows to normal speed, as a percentage of normal steering."
+description = "How strongly the arrow keys steer during a dash and until the heli slows to normal speed, as a percentage of normal steering; above 100 steers harder than normal flying."
 
 [[components.options]]
 key = "dash_refill_factor"

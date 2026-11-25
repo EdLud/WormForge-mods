@@ -48,17 +48,11 @@ function weapon.setup()
   local HELI_EXPLODE_ON_TURN_END = true
   local HELI_DEPTH = wa.depth.FRONT -- in front of worms and terrain
   local HELI_TOP_SPEED = 5 -- pixels a frame an axis: the scheme's default Maximum Jet Pack Speed, as px profiles keep it
-  local DASH_RAMP = 10 -- frames to reach dash speed from a standstill: 200 ms
-  local DASH_AIM = 5 -- frames after Shift in which newly held arrows re-aim the dash: 100 ms
+  local DASH_FOLLOW = 1 -- pixels a frame: from this speed on, a dash with no arrows goes the way the heli moves
   local COAST_DRAG = 0.0015 -- air drag after a dash, a fraction of the speed a frame per pixel a frame
+  local HELI_SLOW = 0.105 -- normal flight slows an unheld axis by 1 / 1.105 a frame
   local DASH_FRAMES = 1.5 -- frames of dash a unit of fuel: the option's 100 (10 here) lasts 15 frames
-  local DIAGONAL = 0.70710678118654752 -- 1 / sqrt(2)
   local CRATE_POP = 115 -- WA's CratePop
-  local DASH_ANGLE = { -- degrees for facing right, by dy then dx (-1, 0, 1)
-    [-1] = { [-1] = 225, [0] = 270, [1] = 315 },
-    [0] = { [-1] = 180, [0] = 0, [1] = 0 },
-    [1] = { [-1] = 135, [0] = 90, [1] = 45 },
-  }
 
   local helis = {}
 
@@ -126,33 +120,15 @@ function weapon.setup()
   end
 
   local function dash_options()
-    return shared.helicopter_dash or { fuel = 8, speed = 300, steer = 50, refill = 35 }
+    return shared.helicopter_dash or { fuel = 5, speed = 330, steer = 130, refill = 35, cost = 15 }
   end
 
   local function dash_full()
     return dash_options().fuel * DASH_FRAMES
   end
 
-  local function arrows(k)
-    return (k.right and 1 or 0) - (k.left and 1 or 0), (k.down and 1 or 0) - (k.up and 1 or 0)
-  end
-
-  -- Points the dash one of eight ways. The speed along it carries on from what the
-  -- heli has (then ramps up); its speed across eases off.
-  local function dash_aim(worm, d, kx, ky, vx, vy)
-    if kx ~= 0 then worm.facing = kx end
-    local scale = (kx ~= 0 and ky ~= 0) and DIAGONAL or 1
-    d.kx, d.ky, d.dx, d.dy, d.angle = kx, ky, kx * scale, ky * scale, DASH_ANGLE[ky][kx]
-    d.speed, d.side = math.max(0, vx * d.dx + vy * d.dy), vy * d.dx - vx * d.dy
-  end
-
-  -- The arrows held with Shift pick the way (none: forward). Read from the same
-  -- synchronized keys as Shift, so the two are one moment's.
-  local function dash_start(worm, h, keys, vx, vy)
-    local kx, ky = arrows(keys)
-    if kx == 0 and ky == 0 then kx = worm.facing end
-    h.dash = { aim = DASH_AIM }
-    dash_aim(worm, h.dash, kx, ky, vx, vy)
+  local function dash_start(worm, h)
+    h.dash = {}
     worm.gravity, worm.wind = 0, 0
     worm:jetpack_steer(true, { speed_limit = false }) -- WA clamps a jet pack to the scheme's top speed
   end
@@ -163,20 +139,59 @@ function weapon.setup()
     worm.wind = HELI_REALISTIC and 0.2 or 0
   end
 
-  -- Arrows steer across the locked dash at `factor` of the heli's push and top speed.
-  local function dash_steer(d, k, factor)
-    if factor <= 0 then return 0 end
-    local across = ((k.right and 1 or 0) - (k.left and 1 or 0)) * -d.dy
-      + ((k.down and 1 or 0) - (k.up and 1 or 0)) * d.dx
-    local s = d.side / factor
-    if across > 0 then
-      s = push(s, 1)
-    elseif across < 0 then
-      s = push(s, -1)
-    else
-      s = s / 1.105
+  -- Near the heli's top speed, the coast after a dash brakes each axis harder and harder:
+  -- (top / speed)^8 of normal flight's slowing. It glides on air drag, then eases into
+  -- normal flight with no sudden stop, and a tailwind can't keep it going. Held the way it
+  -- moves, an axis stops at the top speed, where normal flight's keys hold it.
+  local function coast_slow(v, plus, minus)
+    local a = math.abs(v)
+    if a == 0 then return 0 end
+    local held = (v > 0 and plus and not minus) or (v < 0 and minus and not plus)
+    if held and a <= HELI_TOP_SPEED then return v end
+    local r = math.min(1, HELI_TOP_SPEED / a)
+    r = r * r
+    r = r * r
+    local slowed = v / (1 + HELI_SLOW * r * r)
+    if held and math.abs(slowed) < HELI_TOP_SPEED then
+      return v > 0 and HELI_TOP_SPEED or -HELI_TOP_SPEED
     end
-    return s * factor
+    return slowed
+  end
+
+  -- An arrow's push. In the coast it adds nothing past the top speed the way it pushes:
+  -- the scheme's limit is lifted then, and it would hold the heli at 8 pixels a frame.
+  local function thrust(v, dir, grip, coast)
+    if coast and v * dir >= HELI_TOP_SPEED then return v end
+    return v + (push(v, dir) - v) * grip
+  end
+
+  -- The dash is normal flight made k times as fast: worked out at 1/k of the speed, the
+  -- arrows push and an unheld axis slows as they do in normal flight, at `grip` of their
+  -- push and `slow` of the slowing. The whole speed is held to k times the heli's top speed,
+  -- so a diagonal is no faster. With no arrow held, it speeds up the way it goes (nearly
+  -- still: the way it faces).
+  local function dash_fly(vx, vy, k, grip, slow, keys, facing)
+    local up, down, left, right = keys.up, keys.down, keys.left, keys.right
+    local x, y = vx / k, vy / k
+    if not (up or down or left or right) then
+      local s = math.sqrt(x * x + y * y)
+      local dx, dy = facing, 0
+      if s * k >= DASH_FOLLOW then dx, dy = x / s, y / s end
+      s = s + (push(s, 1) - s) * grip
+      x, y = dx * s, dy * s
+    else
+      if not up and not down then y = y / (1 + HELI_SLOW * slow) end
+      if not left and not right then x = x / (1 + HELI_SLOW * slow) end
+      if up and down then y = y / 1.095 end
+      if left and right then x = x / 1.095 end
+      if up then y = y + (push(y, -1) - y) * grip end
+      if down then y = y + (push(y, 1) - y) * grip end
+      if left then x = x + (push(x, -1) - x) * grip end
+      if right then x = x + (push(x, 1) - x) * grip end
+    end
+    local s = math.sqrt(x * x + y * y)
+    if s > HELI_TOP_SPEED then x, y = x * HELI_TOP_SPEED / s, y * HELI_TOP_SPEED / s end
+    return x * k, y * k
   end
 
   -- How fast the air lines stream back past the heli, in pixels a frame.
@@ -205,6 +220,7 @@ function weapon.setup()
       worm:jetpack_steer(true)
       h.flying, h.launch, h.ticks, h.armed = true, true, 0, false
       h.dash, h.coast, h.dash_left, h.worm = nil, false, dash_full(), worm -- dash_left counts frames
+      h.dash_empty = false
       h.speed, h.flow = 0, 0
       h.shift_was = wa.world.keys().shift -- a dash needs a fresh press
       h.angle = 0
@@ -251,8 +267,14 @@ function weapon.setup()
         local dash = dash_options()
         if h.dash and (not shift or h.dash_left <= 0) then
           dash_end(worm, h)
-        elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 and h.dash_left >= dash_full() then
-          dash_start(worm, h, sync, vx, vy)
+        elseif not h.dash and shift and not h.shift_was and h.dash_left > 0 and not h.dash_empty then
+          -- each press takes its share of the full bar first, so pressing too often runs it dry
+          h.dash_left = math.max(0, h.dash_left - dash_full() * dash.cost / 100)
+          if h.dash_left > 0 then
+            dash_start(worm, h)
+          else
+            h.dash_empty = true
+          end
         end
         h.shift_was = shift
         h.frame = (h.frame + 1) % 3
@@ -261,38 +283,36 @@ function weapon.setup()
         -- infinite fuel counts what it uses up, as WA's infinite jet pack does
         local used = shared.helicopter_fuel == 0 and -1 or 1
         if burn then fuel = fuel - 0.020 * used end
-        local d = h.dash
-        if d then
-          if d.aim > 0 then
-            -- a diagonal's second arrow, pressed just after Shift, still counts
-            d.aim = d.aim - 1
-            local kx, ky = arrows(sync)
-            if (kx ~= 0 or ky ~= 0) and (kx ~= d.kx or ky ~= d.ky) then
-              dash_aim(worm, d, kx, ky, vx, vy)
-              d.speed, d.side = math.sqrt(vx * vx + vy * vy), 0 -- a correction: all of it the new way
-            end
-          end
+        if h.dash then
           h.dash_left = math.max(0, h.dash_left - 1)
-          d.side = dash_steer(d, k, dash.steer / 100)
-          -- a percentage of the heli's own top speed that way: 5 an axis, about 7.1 on a diagonal
-          local top = HELI_TOP_SPEED * dash.speed / 100 / ((d.dx ~= 0 and d.dy ~= 0) and DIAGONAL or 1)
-          d.speed = math.min(top, d.speed + top / DASH_RAMP)
-          vx, vy = d.dx * d.speed - d.dy * d.side, d.dy * d.speed + d.dx * d.side
+          if h.dash_left <= 0 then h.dash_empty = true end
+          if burn then
+            -- each arrow burns as in normal flight
+            fuel = fuel - ((up and 0.2 or 0) + (down and 0.020 or 0) + (left and 0.1 or 0) + (right and 0.1 or 0)) * used
+          end
+          local steer = dash.steer / 100
+          vx, vy = dash_fly(vx, vy, dash.speed / 100, steer * (shared.helicopter_acceleration or 1), steer, k, worm.facing)
+          local speed = math.sqrt(vx * vx + vy * vy)
+          if speed > 0 and math.abs(vx) > 0.2 * speed then worm.facing = vx > 0 and 1 or -1 end
         else
           local full = dash.fuel * DASH_FRAMES
           if h.dash_left < full then
             h.dash_left = math.min(full, h.dash_left + dash.refill / 100)
-            -- ready again: the crate pop an octave up (the take-off's full bar stays quiet)
-            if h.dash_left >= full then wa.sound.play(worm, CRATE_POP, { pitch = 12 }) end
-          end
-          if h.coast and math.abs(vx) <= HELI_TOP_SPEED and math.abs(vy) <= HELI_TOP_SPEED then
-            h.coast = false
-            worm:jetpack_steer(true) -- back within the scheme's top speed
+            -- run dry, the dash waits for the whole bar: then the crate pop an octave up
+            if h.dash_left >= full and h.dash_empty then
+              h.dash_empty = false
+              wa.sound.play(worm, CRATE_POP, { pitch = 12 })
+            end
           end
           if h.coast then
-            -- past the heli's own top speed, only air drag slows it, by the square of its speed
+            -- past the heli's own top speed, air drag slows it by the square of its speed
             local f = 1 / (1 + COAST_DRAG * math.sqrt(vx * vx + vy * vy)) -- stays above 0 at any speed
-            vx, vy = vx * f, vy * f
+            vx, vy = coast_slow(vx * f, right, left), coast_slow(vy * f, down, up)
+            -- checked after the slowing, so a tailwind's bit each frame can't hold it past the top speed
+            if math.abs(vx) <= HELI_TOP_SPEED and math.abs(vy) <= HELI_TOP_SPEED then
+              h.coast = false
+              worm:jetpack_steer(true) -- back within the scheme's top speed
+            end
           else
             if not up and not down then vy = vy / 1.105 end
             if not left and not right then vx = vx / 1.105 end
@@ -309,21 +329,21 @@ function weapon.setup()
           local grip = (h.coast and dash.steer / 100 or 1) * (shared.helicopter_acceleration or 1)
           if up then
             if burn then fuel = fuel - 0.2 * used end
-            vy = vy + (push(vy, -1) - vy) * grip
+            vy = thrust(vy, -1, grip, h.coast)
           end
           if down then
             if burn then fuel = fuel - 0.020 * used end
-            vy = vy + (push(vy, 1) - vy) * grip
+            vy = thrust(vy, 1, grip, h.coast)
           end
           if left then
             if burn then fuel = fuel - 0.1 * used end
             if not shift then worm.facing = -1 end
-            vx = vx + (push(vx, -1) - vx) * grip
+            vx = thrust(vx, -1, grip, h.coast)
           end
           if right then
             if burn then fuel = fuel - 0.1 * used end
             if not shift then worm.facing = 1 end
-            vx = vx + (push(vx, 1) - vx) * grip
+            vx = thrust(vx, 1, grip, h.coast)
           end
         end
         worm.vx, worm.vy, worm.fuel = vx, vy, fuel
@@ -345,8 +365,8 @@ function weapon.setup()
       a.x, a.y, a.vx, a.vy, a.facing = worm.x, worm.y, 0, 0, f
       a:frame(h.frame)
       local tilt = math.deg(wa.math.sin(worm.vx / 24))
-      if h.dash then
-        tilt = h.dash.angle + (f < 0 and 180 or 0)
+      if h.dash and (worm.vx ~= 0 or worm.vy ~= 0) then
+        tilt = math.deg(wa.math.atan(worm.vy, worm.vx)) + (f < 0 and 180 or 0) -- nose into the way it goes
       end
       -- for the air lines: how fast it goes, and how far the air has streamed past it
       h.speed = math.sqrt(worm.vx * worm.vx + worm.vy * worm.vy)
@@ -507,11 +527,13 @@ function weapon.setup()
           if h.dash then
             glow:box(fx, cy, w + 12, INNER_H + 12, 0, 0, 0x50FF4A2A, worm)
             bar:box(fx, cy, w, INNER_H, 0, 0, 0xFFFE6A5A, worm)
+          elseif h.dash_empty then
+            bar:box(fx, cy, w, INNER_H, 0, 0, 0xFFD8282E, worm) -- run dry: red until it's full again
           else
             bar:box(fx, cy, w, INNER_H, 0, 0, 0xFF9C9DFE, worm)
           end
         end
-        frame:box(cx, cy, BAR_W, BAR_H, 0, 0, 0xFFFFFFFF, worm)
+        frame:box(cx, cy, BAR_W, BAR_H, 0, 0, h.dash_empty and 0xFFFF7070 or 0xFFFFFFFF, worm)
       end
       draw_streaks(h, x, y, body.facing, worm)
     end
@@ -536,6 +558,7 @@ function weapon.configure(ctx, spec)
     speed = ctx.option("dash_speed"),
     steer = ctx.option("dash_steer_factor"),
     refill = ctx.option("dash_refill_factor"),
+    cost = ctx.option("dash_use_cost"),
   }
 end
 

@@ -4296,9 +4296,9 @@ end
 print("helicopter: PX's script on WA's jet pack")
 do
   -- WA starts the jet pack with the fuel of the record fired (the
-  -- Helicopter's jet_pack.fuel, 255; engine/jet_fuel.rs).
+  -- Helicopter's jet_pack.fuel, 40 by default; engine/jet_fuel.rs).
   local function jet_pack_starts(w)
-    w.state, w.fuel = "jetpacking", 255
+    w.state, w.fuel = "jetpacking", 40
   end
   new_match()
   frame()
@@ -4316,7 +4316,7 @@ do
   jet_pack_starts(w)
   w.keys.up = true
   M.message(w, wa.msg.FRAME_FINISH)
-  check("launch: the record's fuel, PX's gravity and wind", w.fuel < 255 and w.fuel > 254 and w.gravity == (0.2)
+  check("launch: the record's fuel, PX's gravity and wind", w.fuel < 40 and w.fuel > 39 and w.gravity == (0.2)
     and w.wind == (0.2), w.fuel .. " " .. w.gravity .. " " .. w.wind)
   check("up: a kick of 0.8 from standstill", near(w.vy, -0.8), tostring(w.vy))
   check("the engine owns the keys after the script reads them", w.steered and w.keys.up)
@@ -4390,7 +4390,7 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   jet_pack_starts(w); w.weapon = nil
   M.message(w, wa.msg.FRAME_FINISH)
-  check("the last one still flies: armed in the wind-up", w.fuel > 99, tostring(w.fuel))
+  check("the last one still flies: armed in the wind-up", w.fuel > 39, tostring(w.fuel))
   local before = #M.spawned
   M.contact(w, { kind = "land" }, { vx = 0, vy = 3, flags = 0 })
   check("a fast landing crashes it, as in PX", #M.spawned == before + 1 and M.spawned[#M.spawned].explode)
@@ -6719,7 +6719,7 @@ do
     require("components/loader").install({ id = "px.helicopter", option = function(key)
       if key == "fuel" then return fuel end
       return assert(({ acceleration = 100, dash_fuel = 100, dash_speed = 600, dash_steer_factor = 50,
-        dash_refill_factor = 5, crash_speed_scale = 100 })[key], key)
+        dash_refill_factor = 5, dash_use_cost = 15, crash_speed_scale = 100 })[key], key)
     end })
     HIGHLANDER_CLAIMING = nil
     local spec = replaced[#replaced]
