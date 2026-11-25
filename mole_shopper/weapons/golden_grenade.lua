@@ -1,55 +1,20 @@
--- Golden Grenade: a charged grenade with a wide blast and four explosive secondary grenades.
+-- Golden Grenade: a charged grenade that bursts into five golden clusters, as the Banana Bomb does.
 
 local holds = require("wf-lib/holds")
 local ART = "sprites/golden_grenade/"
-local CHILD = {
-  collision_shape = 2, animation = 1, speed_pct = 100, wind_pct = 0, gravity_pct = 100,
-  countdown = 0, fuse = 8000, flight_sound = 0, explode_on_space = false,
-  action = "none", burst = "nothing", impact_particles = false,
-  ends_on_contact = {land = true, worms = true, worms_frozen = true,
-    crates = true, donor_cards = true, objects = true},
-  explosion = {power = 0, push_pct = 0, bias = 0},
-  explosion_sound = {enabled = false},
-  trail = {sprite = 0, power = 0, speed = 0},
-}
 
 return {
   install = function(ctx)
-    local children, parents, bursts, trails = {}, {}, {}, {}
-    local launching_children = 0
+    local bits, bursts, trails = {}, {}, {}
+    local bit_sprite
     local function explode(ev)
-      local child = children[ev.missile] or (launching_children > 0 and not parents[ev.missile])
-      children[ev.missile], parents[ev.missile], trails[ev.missile] = nil, nil, nil
-      local damage, push, reach = child and 60 or 90, child and 100 or 60, child and 124 or 184
-      local sound_owner = ev.worm
-      if not sound_owner or sound_owner.id == 0 then sound_owner = wa.worms.all()[1] end
-      if sound_owner then
-        local born = wa.world.frame()
-        local speaker = wa.actors.spawn{sprite = false, owner = sound_owner,
-          x = ev.x, y = ev.y, persist = true,
-          on = function(a)
-            if wa.world.frame() - born >= 150 then a:remove() end
-          end}
-        wa.sound.play(speaker, wa.random(69, 71))
-      end
-      wa.world.blast{x = ev.x, y = ev.y, owner = ev.worm,
-        damage = damage, radius = reach, push_pct = push, terrain_radius = damage}
-      bursts[#bursts + 1] = {x = ev.x, y = ev.y, born = wa.world.frame(), radius = child and 20 or 30}
-      if child then return end
-      CHILD.sprite = wa.weapons.data(ctx.id).clusters.bit.sprite
-      for i = 0, 3 do
-        local radians = (-97.5 + i * 5) * math.pi / 180
-        launching_children = launching_children + 1
-        local ok, id = pcall(wa.weapons.launch, {weapon = ctx.id, owner = ev.worm,
-          x = ev.x, y = ev.y - 20, vx = wa.math.cos(radians) * 10, vy = wa.math.sin(radians) * 10,
-          missile = CHILD})
-        launching_children = launching_children - 1
-        if ok and id then children[id] = true
-        elseif not ok then wa.log("Golden Grenade: secondary launch failed: " .. tostring(id)) end
-      end
+      local bit = ev.missile and bits[ev.missile]
+      if ev.missile then bits[ev.missile], trails[ev.missile] = nil, nil end
+      bursts[#bursts + 1] = {x = ev.x, y = ev.y, born = wa.world.frame(), radius = bit and 20 or 30}
     end
+    -- Project X's record: the blast, the five clusters and how they fly.
     wa.weapons.replace{
-      copy_from = "stock.grenade", name = "Golden Grenade", panel_icon = ART .. "icon.png",
+      wep = "weps/golden_grenade.wep", name = "Golden Grenade", panel_icon = ART .. "icon.png",
       sprite = ART .. "body", cluster_sprite = ART .. "fragment", params = {sprite_columns = 1},
       worm_sprites = holds.PX_POSTURE,
       hold = {sheet = ART .. "hold.png", frames = 1, thrown = true,
@@ -58,14 +23,14 @@ return {
         weap_radial_rotation = 0, weap_rotation = 0.5, weap_radius = -10},
       handling = {remember_selection = false},
       sprites = {ART .. "pixel.png", ART .. "fragment"},
-      missile = {burst = "nothing", impact_particles = false,
-        explosion = {power = 0, push_pct = 0, bias = 0},
-        explosion_sound = {enabled = false}, trail = {sprite = 0, speed = 0}},
       on_explode = explode,
     }
     local function track_trail(m)
       if m.weapon ~= ctx.id then return end
-      if m.phase == "pre" and not children[m.id] then parents[m.id] = true end
+      if m.phase == "pre" and bits[m.id] == nil then
+        bit_sprite = bit_sprite or wa.weapons.data(ctx.id).clusters.bit.sprite
+        bits[m.id] = m.sprite == bit_sprite
+      end
       if m.phase == "post" then
         trails[m.id] = {x = m.x, y = m.y, frame = wa.world.frame()}
       end

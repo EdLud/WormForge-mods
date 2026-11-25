@@ -60,50 +60,15 @@ frame=1
 launches={}
 require("weapons/golden_grenade").install{id="px.golden_grenade"}
 local gold=claims[2]
-assert(gold.copy_from=="stock.grenade" and gold.missile.burst=="nothing")
-assert(gold.missile.explosion.power==0 and not gold.missile.explosion_sound.enabled)
-hook{weapon="px.golden_grenade",phase="pre",id=77}
+assert(gold.wep=="weps/golden_grenade.wep" and gold.copy_from==nil, "PX's own record: blast and clusters")
+assert(gold.missile==nil and gold.clusters==nil, "nothing overrides the record's firing")
+assert(gold.cluster_sprite and gold.sprite)
+-- The grenade and its clusters are WA's: the script only draws.
+hook{weapon="px.golden_grenade",phase="pre",id=77,sprite=1}
 gold.on_explode{worm=w,missile=77,x=50,y=60}
-assert(#blasts==1 and blasts[1].damage==90 and blasts[1].radius==184)
-assert(blasts[1].push_pct==60 and blasts[1].terrain_radius==90)
-assert(#launches==4 and #sounds==1)
-assert(sounds[1][1]==speakers[1] and sounds[1][1]~=w, "audio must use the blast emitter, not the event owner")
-assert(speakers[1].spec.x==50 and speakers[1].spec.y==60)
-assert(speakers[1].spec.persist and speakers[1].spec.body==nil)
-frame=150
-speakers[1].spec.on(speakers[1])
-assert(not speakers[1].dead)
-frame=151
-speakers[1].spec.on(speakers[1])
-assert(speakers[1].dead, "the nonblocking sound emitter must expire")
-for i,shot in ipairs(launches) do
-  assert(shot.weapon=="px.golden_grenade" and shot.owner==w and shot.x==50 and shot.y==40)
-  assert(shot.missile.sprite==900 and shot.missile.fuse==8000 and shot.missile.action=="none")
-  local angle=(-97.5+(i-1)*5)*math.pi/180
-  assert(math.abs(shot.vx-math.cos(angle)*10)<1e-9 and math.abs(shot.vy-math.sin(angle)*10)<1e-9)
-end
-gold.on_explode{worm=w,missile=101,x=1,y=2}
-assert(#launches==4 and #blasts==2, "children never create a further generation")
-assert(blasts[2].damage==60 and blasts[2].radius==124 and blasts[2].push_pct==100 and blasts[2].terrain_radius==60)
--- A child can hit terrain and burst inside its constructor, before launch returns an id.
-local base=wa.weapons.launch
-wa.weapons.launch=function(v)
-  local id=base(v)
-  gold.on_explode{worm=w,missile=id,x=v.x,y=v.y}
-  return id
-end
-hook{weapon="px.golden_grenade",phase="pre",id=78}
-gold.on_explode{worm=w,missile=78,x=50,y=60}
-assert(#launches==8 and #blasts==7, "constructor-time child bursts must not recurse into more children")
--- If a launch is refused or errors, finish the callback rather than leaving a turn waiting forever.
-wa.weapons.launch=function() return nil end
-hook{weapon="px.golden_grenade",phase="pre",id=79}
-gold.on_explode{worm=w,missile=79,x=50,y=60}
-wa.weapons.launch=function() error("pool full") end
-hook{weapon="px.golden_grenade",phase="pre",id=80}
-gold.on_explode{worm=w,missile=80,x=50,y=60}
-local before=#sounds
--- A secondary still has a sound emitter after its original owner was freed.
-gold.on_explode{worm={id=0},missile=105,x=4,y=5}
-assert(#sounds==before+1 and speakers[#speakers].spec.owner==w)
-print("Golden blast/fan/stages/reentrancy/audio and Precipitator payload/aim/pose passed")
+hook{weapon="px.golden_grenade",phase="pre",id=78,sprite=900}
+gold.on_explode{worm=w,missile=78,x=1,y=2}
+assert(#launches==0 and #blasts==0 and #sounds==0, "no scripted secondaries, blasts or sounds")
+-- A missile of another weapon is left alone.
+hook{weapon="px.precipitator",phase="pre",id=79,sprite=900}
+print("Golden Grenade record and Precipitator payload/aim/pose passed")

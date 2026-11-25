@@ -102,7 +102,7 @@ frames = 7
 id = "px.golden_grenade"
 type = "weapon"
 name = "Golden Grenade"
-description = "A charged grenade with a wide blast and four explosive secondary grenades."
+description = "A grenade that bursts into five golden clusters, like a Banana Bomb."
 entry = "weapons/golden_grenade.lua"
 icon = "sprites/golden_grenade/icon.png"
 default_position = { row = "F1", column = 1 }
