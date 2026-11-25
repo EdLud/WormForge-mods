@@ -90,6 +90,58 @@ local function shouldStop(s)
   return s.dead or s.freeMe or s.stopMe
 end
 
+-- The bee's position, speed and facing, read once a frame into its state
+-- (s.x, s.y, s.vx, s.vy, s.facing). Each field read is a call into the
+-- engine, and 250 bees reading them ~30 times a frame cost most of a frame.
+local function readBody(a, s)
+  s.x, s.y, s.vx, s.vy, s.facing = a.x, a.y, a.vx, a.vy, a.facing
+  s.sped = false
+end
+
+-- A speed as the engine keeps a written one (16.16, ties away from zero),
+-- so the copy reads as `a.vx` would after the write.
+local function fixed(v)
+  local n = v * 65536
+  local whole = n >= 0 and math.floor(n) or math.ceil(n)
+  local rest = n - whole
+  if rest >= 0.5 then
+    whole = whole + 1
+  elseif rest <= -0.5 then
+    whole = whole - 1
+  end
+  return whole / 65536
+end
+
+local function setSpeed(s, vx, vy)
+  s.vx, s.vy, s.sped = fixed(vx), fixed(vy), true
+end
+
+-- The speed set this frame, to the engine: at the end of the frame, and
+-- before the bee bursts.
+local function writeSpeed(a, s)
+  if s.sped then
+    a.vx, a.vy = s.vx, s.vy
+    s.sped = false
+  end
+end
+
+local function face(a, s, facing)
+  if facing ~= s.facing then
+    a.facing = facing
+    s.facing = facing
+  end
+end
+
+-- The drawn angle, only when it changes.
+local GFX = {}
+local function turn(a, s, angle)
+  if angle ~= s.drawnAngle then
+    GFX.angle = angle
+    a:gfx(GFX)
+    s.drawnAngle = angle
+  end
+end
+
 local function takeHit(a, s, damage, spin)
   if (damage or 0) <= 0 then return end
   s.hp = s.hp - damage
@@ -216,41 +268,43 @@ local function checkSpawnPointNoLOS(worm, x, y, maxRadiusPx, clearRadiusPx, from
   end
   return nil, nil
 end
-local function steer(a, tx, ty, speed, strength)
+local function steer(s, tx, ty, speed, strength)
   speed = speed * SPEED_SCALE
-  local dx, dy = tx - a.x, ty - a.y
+  local dx, dy = tx - s.x, ty - s.y
   local dist = math.sqrt(dx * dx + dy * dy)
   if dist > 0 then dx, dy = dx / dist, dy / dist end
   local wantVx = dx * speed
   local wantVy = dy * speed
-  a.vx = a.vx + (wantVx - a.vx) * strength
-  a.vy = a.vy + (wantVy - a.vy) * strength
+  setSpeed(s, s.vx + (wantVx - s.vx) * strength, s.vy + (wantVy - s.vy) * strength)
 end
 
-local function distPx(a, tx, ty)
-  local dx, dy = (tx - a.x), (ty - a.y)
+local function distPx(s, tx, ty)
+  local dx, dy = (tx - s.x), (ty - s.y)
   return math.sqrt(dx * dx + dy * dy)
 end
 
-local function isThereLandThere(a, tx, ty)
-  local hit = wa.land.trace(a.x, a.y, tx, ty)
+local function isThereLandThere(x, y, tx, ty)
+  local hit = wa.land.trace(x, y, tx, ty)
   return hit and hit.hit
 end
 
 local SENSOR_RADIUS_SQ = SENSOR_RADIUS_PX * SENSOR_RADIUS_PX
 local targetFrame = nil
 local wormsById = {}
+-- This frame's moving worms, read once for every bee: { worm, x, y, team }.
+local candidates = {}
+local candidateCount = 0
 
-local function closestEnemy(a, s, worms)
+local function closestEnemy(s, x, y)
   local best, bestDist2
-  for i = 1, #worms do
-    local w = worms[i]
-    if s.rogue or w.team ~= s.team then
-      local dx, dy = w.x - a.x, w.y - a.y
+  for i = 1, candidateCount do
+    local c = candidates[i]
+    if s.rogue or c.team ~= s.team then
+      local dx, dy = c.x - x, c.y - y
       local d2 = dx * dx + dy * dy
       if d2 <= SENSOR_RADIUS_SQ and (not bestDist2 or d2 < bestDist2) then
-        if not isThereLandThere(a, w.x, w.y) then
-          best, bestDist2 = w, d2
+        if not isThereLandThere(x, y, c.x, c.y) then
+          best, bestDist2 = c.worm, d2
         end
       end
     end
@@ -270,8 +324,7 @@ local function refreshTargets()
   targetFrame = frame
  
   local worms = wa.worms.all()
-  local candidates = {}
-  local targetable = {}
+  candidateCount = 0
   wormsById = {}
   for i = 1, #worms do
     local w = worms[i]
@@ -279,8 +332,13 @@ local function refreshTargets()
     local knocked = KNOCKED[w.state or ""] or false
     local moving = w.vx ~= 0 or w.vy ~= 0 or w.state == "walking" or knocked
     if w.hp > 0 and not w.taken and moving then
-      candidates[#candidates + 1] = w
-      targetable[w.id] = true
+      candidateCount = candidateCount + 1
+      local c = candidates[candidateCount]
+      if not c then
+        c = {}
+        candidates[candidateCount] = c
+      end
+      c.worm, c.x, c.y, c.team = w, w.x, w.y, w.team
     end
   end
 
@@ -298,7 +356,7 @@ local function refreshTargets()
         s.targetId = nil
       end
       if not target and (s.lookoutCooldown or 0) <= 0 then
-        target = closestEnemy(a, s, candidates)
+        target = candidateCount > 0 and closestEnemy(s, a.x, a.y) or nil
         s.targetId = target and target.id or nil
       end
     end
@@ -325,7 +383,7 @@ local function tryFindPath(a, s, scale)
   
   local waterY = math.floor(wa.world.water())
   if ty > waterY - 14 then ty  = waterY -15 end
-  if not isThereLandThere(a, tx, ty) then
+  if not isThereLandThere(s.x, s.y, tx, ty) then
     return tx, ty
   end
   return nil, nil
@@ -371,10 +429,11 @@ local function letGo(s, vx, vy)
 end
 
 local function detonate(a, s)
-  letGo(s, a.vx, a.vy)
+  letGo(s, s.vx, s.vy)
+  writeSpeed(a, s)
   wa.sound.play(a,54)
   a:explode({ damage = s.supercharged and 55 or 40, id = 100 })
-  state[a.id] = nil
+  state[s.id] = nil
   a:remove()
 end
 
@@ -388,11 +447,11 @@ local STING_ANGLE = 90 -- head down, tail (the sting) up at the worm
 local STING_RESCUE_PX = 24
 local STING_GAPS = { STING_GAP_PX, 12, 6, 0 }
 
-local function stingSpot(a, worm)
+local function stingSpot(s, worm)
   for i = 1, #STING_GAPS do
-    local y = a.y - STING_GAPS[i]
-    if worm:fits(a.x, y) and reachable(worm, worm.x, worm.y, a.x, y) then
-      return a.x, y
+    local y = s.y - STING_GAPS[i]
+    if worm:fits(s.x, y) and reachable(worm, worm.x, worm.y, s.x, y) then
+      return s.x, y
     end
   end
   return nil, nil
@@ -400,12 +459,12 @@ end
 
 local function startSting(a, s, worm)
   if not worm or worm.hp <= 0 then return false end
-  local cx, cy = stingSpot(a, worm)
+  local cx, cy = stingSpot(s, worm)
   if not cx then return false end
   if not worm:take({ turn = "run" }) then return false end
   wa.sound.play(worm,87)
   wa.sound.play(worm,33)
-  local facing = a.facing < 0 and -1 or 1
+  local facing = s.facing < 0 and -1 or 1
   local angle = STING_ANGLE * facing
   s.sting = {
     worm = worm,
@@ -416,8 +475,8 @@ local function startSting(a, s, worm)
   s.targetId = nil
   s.homingDuration = 0
   s.rot, s.gfxAngle = angle, angle
-  a:gfx{ angle = angle }
-  a.vx, a.vy = s.sting.vx, -STING_LIFT_PX
+  turn(a, s, angle)
+  setSpeed(s, s.sting.vx, -STING_LIFT_PX)
   worm:carry(cx, cy)
   return true
 end
@@ -428,28 +487,28 @@ local function stingTick(a, s)
   st.ticks = st.ticks + 1
 
   if not w or not w.taken or w.hp <= 0 or st.ticks >= STING_FRAMES then
-    letGo(s, a.vx, a.vy)
+    letGo(s, s.vx, s.vy)
     detonate(a, s)
     return
   end
  
-  a.vx, a.vy = st.vx, -STING_LIFT_PX
-  a:gfx{ angle = st.angle }
+  setSpeed(s, st.vx, -STING_LIFT_PX)
+  turn(a, s, st.angle)
   s.gfxAngle = st.angle
  
-  local cx, cy = stingSpot(a, w)
+  local cx, cy = stingSpot(s, w)
   if not cx then
-    cx, cy = checkSpawnPointNoLOS(w, a.x, a.y - STING_GAP_PX, STING_RESCUE_PX, 10,
+    cx, cy = checkSpawnPointNoLOS(w, s.x, s.y - STING_GAP_PX, STING_RESCUE_PX, 10,
                                   { x = w.x, y = w.y })
   end
   if not cx or not w:carry(cx, cy) then
-    letGo(s, a.vx, a.vy)
+    letGo(s, s.vx, s.vy)
     detonate(a, s)
   end
 end
 
 local function updateAnim(a, s)
-  local speedPx = (math.abs(a.vx) + math.abs(a.vy))
+  local speedPx = (math.abs(s.vx) + math.abs(s.vy))
   local hold = math.max(BEE_FRAME_HOLD_MIN, BEE_FRAME_HOLD - (speedPx / 2))
   s.animTick = (s.animTick or 0) + 1
   if s.animTick >= hold then
@@ -482,10 +541,11 @@ local function findFreeSpot(a, x, y, maxRadius)
 end
 
 local function unbury(a, s)
-  local tx, ty = findFreeSpot(a, a.x, a.y, UNBURY_MAX_RADIUS_PX)
+  local tx, ty = findFreeSpot(a, s.x, s.y, UNBURY_MAX_RADIUS_PX)
   if not tx then tx, ty = s.lastSafeX, s.lastSafeY end
   a.x, a.y = tx, ty
-  a.vx, a.vy = 0, 0
+  s.x, s.y = a.x, a.y
+  setSpeed(s, 0, 0)
   s.clipFrames, s.bonk, s.targetId, s.arriveX = 0, 0, nil, nil 
   s.desiredAngle = 0
   s.roamCooldown = rand(ROAM_COOLDOWN_MIN, ROAM_COOLDOWN_MAX)
@@ -494,9 +554,9 @@ local function unbury(a, s)
 end
 
 local function checkClipping(a, s)
-  local fits = a:fits(a.x, a.y)
+  local fits = a:fits(s.x, s.y)
   if s.bonk == 0 and s.clipFrames < 1 and fits then
-    s.lastSafeX, s.lastSafeY = a.x, a.y
+    s.lastSafeX, s.lastSafeY = s.x, s.y
   end
   if s.bonk > 0 and (s.ticks or 0) % 10 == 0 then
     s.bonk = s.bonk - 1
@@ -544,14 +604,28 @@ end
 local HEALTH_DEPTH = HAT_DEPTH - 1
 local HEALTH_ABOVE_PX = 12 -- the digits' bottom above the bee's centre
 
+local REACH_PX = 40 -- a label or hat showing past the screen's edge
+local ON_SCREEN = { near = { 0, 0, 0 } }
+
+-- Only the bees the screen shows.
 local function drawHats()
-  for _, a in ipairs(wa.actors.all()) do
+  local v = wa.world.view()
+  if v.w <= 0 or v.h <= 0 then return end
+  local zoom = v.zoom > 0 and v.zoom or 1
+  local hw, hh = v.w / zoom / 2 + REACH_PX, v.h / zoom / 2 + REACH_PX
+  local near = ON_SCREEN.near
+  near[1], near[2], near[3] = v.cx, v.cy, math.sqrt(hw * hw + hh * hh)
+  health_label.start(HEALTH_DEPTH)
+  for _, a in ipairs(wa.actors.all(ON_SCREEN)) do
     local s = state[a.id]
-    if s and s.hp > 0 and not a:in_water() then
-      health_label.draw(s.hp, s.maxHp, a.x, a.y - HEALTH_ABOVE_PX, HEALTH_DEPTH)
+    local x, y
+    if s and s.hp > 0 and not s.inWater then
+      x, y = a.x, a.y
+      health_label.add(s.hp, s.maxHp, x, y - HEALTH_ABOVE_PX)
     end
     if s and not s.rogue and (s.hatLost or 0) <= 0 then
-      local cx, cy = a.x, a.y + hatY(s)
+      if not x then x, y = a.x, a.y end
+      local cx, cy = x, y + hatY(s)
       local rad = (s.gfxAngle or 0) * (math.pi / 180)
       local cos, sin = wa.math.cos(rad), wa.math.sin(rad)
       local p = HAT.points
@@ -571,6 +645,7 @@ local function drawHats()
       wa.draw.quad(HAT)
     end
   end
+  health_label.finish()
 end
 
 local function hatDropTick(h)
@@ -585,18 +660,18 @@ local function hatDropTick(h)
   end
 end
 
-local function speedPx(a)
-  return math.abs(a.vx) + math.abs(a.vy)
+local function speedPx(s)
+  return math.abs(s.vx) + math.abs(s.vy)
 end
 
 local function dropHat(a, s)
   s.hatLost = HAT_REGROW_FRAMES
   local h = wa.actors.spawn({
     sprite = M.HAT,
-    x = a.x,
-    y = a.y + hatY(s),
-    vx = a.vx * 0.4 + rand(-2, 2),
-    vy = a.vy * 0.4 - rand(2, 4),
+    x = s.x,
+    y = s.y + hatY(s),
+    vx = s.vx * 0.4 + rand(-2, 2),
+    vy = s.vy * 0.4 - rand(2, 4),
     origin = "center",
     owner = s.owner,
     body = { shape = M.HAT, hits = { land = true }, hit_by = {} },
@@ -606,20 +681,20 @@ local function dropHat(a, s)
   })
   if not h then return end
   h:gfx{ angle = s.gfxAngle or 0 }
-  h.facing = a.facing
+  h.facing = s.facing
   h:gfx{ depth = HAT_DEPTH }
   local colour = TEAM_COLOUR[s.colour]
   if colour then h:gfx{ tint = colour & 0x00FFFFFF } end
   hatDrops[h.id] = {
     rot = s.gfxAngle or 0,
-    spin = rand(5, 9) * (a.facing < 0 and -1 or 1),
+    spin = rand(5, 9) * (s.facing < 0 and -1 or 1),
     age = 0,
   }
 end
 
 local function updateHat(a, s)
   if (s.hatLost or 0) > 0 then s.hatLost = s.hatLost - 1 end
-  local speed = speedPx(a)
+  local speed = speedPx(s)
   if not s.rogue and not s.dead and not s.spin and not s.softSpin
       and (s.hatLost or 0) <= 0 and s.wasChasing
       and speed < (s.lastSpeed or speed) - HAT_STOP_DIFF then
@@ -639,14 +714,12 @@ local function installHat()
   wa.on.draw(drawHats)
 end
 
-local function think(a, ev)
-  local s = state[a.id]
-  if not s then return end
-  ev = ev or {}
-
+-- `s` holds the body this frame read (readBody); the frame hands its speed
+-- back (writeSpeed).
+local function think(a, s)
   if s.freeMe then
     letGo(s, 0, 0)
-    state[a.id] = nil
+    state[s.id] = nil
     a:remove()
     return
   end
@@ -659,8 +732,9 @@ local function think(a, ev)
 
   updateHat(a, s)
 
-  if a:in_water() then
-    a.vx = 0 a.vy = 1.5 s.desiredAngle = 45
+  s.inWater = a:in_water()
+  if s.inWater then
+    setSpeed(s, 0, 1.5) s.desiredAngle = 45
     if s.sting then letGo(s, 0, 0) end
     dropHat(a, s)
     updateAnim(a, s)
@@ -678,7 +752,7 @@ local function think(a, ev)
   if s.spin or s.softSpin then
     if s.spinN == 0 then playBuzz(a) end
     s.rot = (s.rot + (s.dead and 9 or 7)) % 360
-    a:gfx{ angle = s.rot }
+    turn(a, s, s.rot)
     s.gfxAngle = s.rot
     s.spinN = s.spinN + 1
     if s.spinN >= SPIN_FRAMES then
@@ -692,7 +766,7 @@ local function think(a, ev)
   end
 
   if shouldStop(s) then
-    a.vx, a.vy = 0, 0
+    setSpeed(s, 0, 0)
     return
   end
 
@@ -700,8 +774,8 @@ local function think(a, ev)
 
   updateAnim(a, s)
 
-  if a.vx ~= 0 then
-    a.facing = a.vx > 0 and 1 or -1
+  if s.vx ~= 0 then
+    face(a, s, s.vx > 0 and 1 or -1)
   end
 
   local target = wormById(s.targetId)
@@ -715,7 +789,7 @@ local function think(a, ev)
   if target then
     s.roamCooldown = 0
 
-    if distPx(a, s.startX, s.startY) > ROAM_MAX_DIST_PX then
+    if distPx(s, s.startX, s.startY) > ROAM_MAX_DIST_PX then
       s.targetId = nil
       s.homingDuration = 0
       s.lookoutCooldown = LOOKOUT_COOLDOWN_GIVEUP
@@ -723,7 +797,7 @@ local function think(a, ev)
       return
     end
 
-    local tdist = distPx(a, target.x, target.y)
+    local tdist = distPx(s, target.x, target.y)
     if tdist > HOMING_MAX_DIST_PX then
       s.targetId = nil
       s.homingDuration = 0
@@ -743,7 +817,7 @@ local function think(a, ev)
 
     s.chaseCD = (s.chaseCD or 0) - 1
     if s.chaseCD <= 0 then
-      steer(a, target.x, target.y, CHASE_SPEED * s.chaseScale, CHASE_STRENGTH)
+      steer(s, target.x, target.y, CHASE_SPEED * s.chaseScale, CHASE_STRENGTH)
       s.chaseCD = CHASE_STEER_EVERY
     end
 
@@ -758,7 +832,7 @@ local function think(a, ev)
       playBuzz(a)
     end
 
-    local vxpx, vypx = a.vx, a.vy
+    local vxpx, vypx = s.vx, s.vy
     if vxpx ~= 0 or vypx ~= 0 then
       s.desiredAngle = deg(wa.math.atan(vypx, math.abs(vxpx) + 0.001))
     end
@@ -768,21 +842,20 @@ local function think(a, ev)
     if (s.roamCooldown or 0) > 0 then
       s.roamCooldown = s.roamCooldown - 1
       s.desiredAngle = 0
-      a.vx = a.vx * 0.75
-      a.vy = a.vy * 0.75
+      setSpeed(s, s.vx * 0.75, s.vy * 0.75)
       if s.roamCooldown <= 0 then
         pickRoamPoint(a, s)
       end
     elseif not s.arriveX then
       pickRoamPoint(a, s)
-    elseif distPx(a, s.arriveX, s.arriveY) < ROAM_ARRIVE_PX then
+    elseif distPx(s, s.arriveX, s.arriveY) < ROAM_ARRIVE_PX then
       s.roamCooldown = rand(ROAM_COOLDOWN_MIN, ROAM_COOLDOWN_MAX)
     else
       s.roamCD = (s.roamCD or 0) - 1
       if s.roamCD <= 0 then
         local baseSpeed = s.roamSpeed or ROAM_SPEED
         local speed = baseSpeed
-        local dist = distPx(a, s.arriveX, s.arriveY)
+        local dist = distPx(s, s.arriveX, s.arriveY)
         if dist < ROAM_SLOWDOWN_RADIUS_PX then
           local frac = dist / ROAM_SLOWDOWN_RADIUS_PX
           if frac < ROAM_SLOWDOWN_MIN_FRAC then
@@ -790,10 +863,10 @@ local function think(a, ev)
           end
           speed = baseSpeed * frac
         end
-        steer(a, s.arriveX, s.arriveY, speed, ROAM_STRENGTH)
+        steer(s, s.arriveX, s.arriveY, speed, ROAM_STRENGTH)
         s.roamCD = ROAM_STEER_EVERY
       end
-      local vxpx, vypx = a.vx, a.vy
+      local vxpx, vypx = s.vx, s.vy
       if vxpx ~= 0 or vypx ~= 0 then
         s.desiredAngle = deg(wa.math.atan(vypx, math.abs(vxpx) + 0.001))
       end
@@ -809,12 +882,12 @@ local function think(a, ev)
     s.rot = math.max(s.rot - ROT_SMOOTH_DEG, s.desiredAngle)
   end
 
-  if a.facing < 0 then
+  if s.facing < 0 then
     s.gfxAngle = -s.rot
   else
     s.gfxAngle = s.rot
   end
-  a:gfx{ angle = s.gfxAngle }
+  turn(a, s, s.gfxAngle)
 end
 
 -- A tool that picks things up (the Gravity Gun) moves the bee, and its own
@@ -822,20 +895,24 @@ end
 -- makes in a frame: the bee tumbles away, as from a knock.
 local THROWN_PX = 4
 
-local function speedOf(a)
-  local vx, vy = a.vx, a.vy
+local function speedOf(s)
+  local vx, vy = s.vx, s.vy
   return math.sqrt(vx * vx + vy * vy)
 end
 
-local function brain(a, ev)
+local function brain(a)
   local s = state[a.id]
-  if s and s.lastSpeed and not s.dead and not s.sting
-      and speedOf(a) > s.lastSpeed + THROWN_PX then
+  if not s then return end
+  readBody(a, s)
+  if s.lastSpeed and not s.dead and not s.sting
+      and speedOf(s) > s.lastSpeed + THROWN_PX then
     s.softSpin, s.spinN = true, 0
   end
-  think(a, ev)
-  s = state[a.id]
-  if s then s.lastSpeed = speedOf(a) end
+  think(a, s)
+  if state[s.id] then
+    writeSpeed(a, s)
+    s.lastSpeed = speedOf(s)
+  end
 end
 
 local function hurt(a, ev)
@@ -859,7 +936,9 @@ local function onContact(a, ev)
   if not s or s.dead or s.sting then return end
   local other = ev and ev.other
   if isEnemyWorm(s, other) then
+    readBody(a, s)
     if not s.burstOnReach and not s.spin and not s.softSpin and startSting(a, s, other) then
+      writeSpeed(a, s)
       log("[BEE] sting: enemy worm contact id=" .. tostring(a.id))
     else
       log("[BEE] detonate: enemy worm contact id=" .. tostring(a.id))
@@ -905,6 +984,7 @@ function M.spawn_actor(opts)
     log("[ACTOR SPAWN] Successfully spawned actor ID=" .. tostring(body.id) ..
         " (Rogue=" .. tostring(opts.rogue or false) .. ")")
     state[body.id] = {
+      id              = body.id,
       rogue           = opts.rogue or false,
       team            = opts.team or (owner and owner.team) or -1,
       colour          = opts.colour

@@ -1,8 +1,12 @@
 -- A bee's health over its head: small 5x7 digits, green at full health and
 -- red when almost gone. Project X's sentry label (px's lib/sentry_health).
+-- Inside wa.on.draw: start(depth), add(...) for each bee, finish(); every
+-- label is one brush and one list of boxes, a box a digit and its shadow.
 
 local M = { SHEET = "sprites/health/digits.png" }
 local WIDTH, HEIGHT, ADVANCE = 5, 7, 6
+local SHADOW = 0x60000000
+local MAX_BOXES = 4096 -- brush:boxes' limit a call
 
 local function colour(health, maximum)
   local ratio = math.max(0, math.min(1, health / maximum))
@@ -18,29 +22,75 @@ local function colour(health, maximum)
   return 0xB0000000 | (r << 16) | (g << 8) | b
 end
 
-local QUAD = { sprite = M.SHEET, blend = "alpha", points = { {}, {}, {}, {} } }
+-- Each colour and each number's digits, worked out once.
+local tints = {}
+local function tint(health, maximum)
+  local byHealth = tints[maximum]
+  if not byHealth then
+    byHealth = {}
+    tints[maximum] = byHealth
+  end
+  local c = byHealth[health]
+  if not c then
+    c = colour(health, maximum)
+    byHealth[health] = c
+  end
+  return c
+end
 
-local function digit(frame, x, y, tint, depth)
-  local p = QUAD.points
-  p[1][1], p[1][2] = x, y
-  p[2][1], p[2][2] = x + WIDTH, y
-  p[3][1], p[3][2] = x + WIDTH, y + HEIGHT
-  p[4][1], p[4][2] = x, y + HEIGHT
-  QUAD.frame, QUAD.color, QUAD.depth = frame, tint, depth
-  wa.draw.quad(QUAD)
+local numbers = {}
+local function digits(n)
+  local d = numbers[n]
+  if not d then
+    d = {}
+    local text = tostring(n)
+    for i = 1, #text do d[i] = tonumber(text:sub(i, i)) end
+    numbers[n] = d
+  end
+  return d
+end
+
+local brushes = {}
+local brush
+local list, count = {}, 0
+
+-- A 5x7 digit with its top left at (x, y).
+local function box(x, y, frame, color)
+  if count == MAX_BOXES then
+    brush:boxes(list, count)
+    count = 0
+  end
+  local i = count * 7
+  list[i + 1], list[i + 2], list[i + 3], list[i + 4] = x + WIDTH / 2, y + HEIGHT / 2, WIDTH, HEIGHT
+  list[i + 5], list[i + 6], list[i + 7] = 0, frame, color
+  count = count + 1
+end
+
+function M.start(depth)
+  brush = brushes[depth]
+  if not brush then
+    brush = wa.draw.brush{ sprite = M.SHEET, blend = "alpha", depth = depth }
+    brushes[depth] = brush
+  end
+  count = 0
 end
 
 -- `health` centred on x, its digits' bottom at `bottom`.
-function M.draw(health, maximum, x, bottom, depth)
-  local text = tostring(math.max(0, math.ceil(health)))
-  local left = math.floor(x - (#text * ADVANCE - 1) / 2 + 0.5)
+function M.add(health, maximum, x, bottom)
+  local d = digits(math.max(0, math.ceil(health)))
+  local left = math.floor(x - (#d * ADVANCE - 1) / 2 + 0.5)
   local top = math.floor(bottom - HEIGHT - 1)
-  local tint = colour(health, maximum)
-  for i = 1, #text do
-    local frame, dx = tonumber(text:sub(i, i)), left + (i - 1) * ADVANCE
-    digit(frame, dx + 1, top + 1, 0x60000000, depth)
-    digit(frame, dx, top, tint, depth)
+  local c = tint(health, maximum)
+  for i = 1, #d do
+    local dx = left + (i - 1) * ADVANCE
+    box(dx + 1, top + 1, d[i], SHADOW)
+    box(dx, top, d[i], c)
   end
+end
+
+function M.finish()
+  if count > 0 then brush:boxes(list, count) end
+  count = 0
 end
 
 return M
