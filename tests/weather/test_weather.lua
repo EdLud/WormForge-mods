@@ -356,7 +356,7 @@ do
   check("the cells across it show only their part above", cut > 0, cut)
   check("the rain sound loops from the start", M.ambient and M.ambient.path == "sounds/rain.wav")
   check("the sheets are loaded with the lightning's",
-    M.assets and #M.assets.sprites == 10 and #M.assets.sounds == 4, M.assets and #M.assets.sprites)
+    M.assets and #M.assets.sprites == 11 and #M.assets.sounds == 4, M.assets and #M.assets.sprites)
 
   new_match({ rain = 40 })
   frames(3)
@@ -605,10 +605,12 @@ local function ground(x, y)
   if x >= 800 and x < 900 and y >= 300 and y <= 310 then return true end -- a roof over open ground
   return y >= 400
 end
-local function settling(snow_options, extra, land_shape)
+-- Lying snow only, unless `frost` (the share of the snow that frosts the land) is given.
+local function settling(snow_options, extra, land_shape, frost)
   extra = extra or {}
   extra.snow = snow_options
   new_match(false, extra)
+  load_module("lib/settle").FROST_SHARE = frost or 0
   local land = pixel_land(land_shape or ground)
   wa.world.wind = function() return 0 end
   return land
@@ -623,7 +625,6 @@ do
   for k in pairs(land.added) do
     local x, y = k % 100000, k // 100000
     if ground(x, y) then in_ground = in_ground + 1 end
-    -- Snow sliding off the roof drifts at its foot, a few pixels in under its edge.
     if x >= 812 and x < 888 and y > 310 then under_roof = under_roof + 1 end
   end
   for x = 0, 1999 do if cols[x] then covered = covered + 1 end end
@@ -633,7 +634,7 @@ do
   check("snow settles over most of the ground", covered > 1500, covered)
   check("only into the air above the land", in_ground == 0, in_ground)
   check("none stands on air", land.floating() == 0, land.floating())
-  check("none under the roof", under_roof == 0, under_roof)
+  check("it comes anywhere, under the roof too", under_roof > 0, under_roof)
   check("never deeper than the setting", deepest <= 10, deepest)
   check("stamped in its own colours, blended a little with the ground", colour)
   local first = {}
@@ -670,10 +671,15 @@ do
   land = settling({ snow = 100 }, nil, grass)
   turn(1)
   sim_frames(3000)
+  -- Snow on a spike's top standing over the snow beside it; deep snow that buries the spikes is a blanket.
+  local function top_of(x)
+    for y = 300, 420 do if land.solid(x, y) then return y end end
+    return 420
+  end
   local on_spikes = 0
   for k in pairs(land.added) do
     local x, y = k % 100000, k // 100000
-    if x % 23 == 0 and y < 394 then on_spikes = on_spikes + 1 end
+    if x % 23 == 0 and y < 394 and top_of(x - 1) - y >= 2 and top_of(x + 1) - y >= 2 then on_spikes = on_spikes + 1 end
   end
   check("on bumpy grass none stands on air", land.count() > 1000 and land.floating() == 0, land.floating())
   check("it slides off single-pixel spikes", on_spikes == 0, on_spikes)
@@ -837,7 +843,7 @@ do
   check("snow falling onto a steep face settles without pillars", in_air == 0 and fallen_pillars == 0,
     in_air .. "," .. fallen_pillars)
 
-  -- A cave open to the wind: however hard it blows, no snow settles under its roof.
+  -- A cave open on one side: snow comes deep inside it too, the wind or not.
   land = settling({ snow = 100 }, nil, function(x, y)
     if x >= 600 and x < 900 and y >= 250 and y < 300 then return true end -- the roof, open on its right
     if x >= 590 and x < 600 and y >= 250 then return true end -- the back wall
@@ -849,12 +855,11 @@ do
   local in_cave = 0
   for k in pairs(land.added) do
     local x, y = k % 100000, k // 100000
-    -- The mouth's edge: flakes slanting 0.7 a pixel reach under it as far as that from the open side.
     if x >= 600 and x < 830 and y > 300 then in_cave = in_cave + 1 end
   end
-  check("strong wind blows no snow deep into a cave", in_cave == 0, in_cave)
+  check("deep in a cave too, whatever the wind", in_cave > 0, in_cave)
 
-  -- The wind blows it onto the side facing it.
+  -- The wind leaves no lee: it doesn't carry the settling snow.
   land = settling({ snow = 100 }, nil, function(x, y) return y >= 400 or (x >= 1000 and x < 1100 and y >= 200) end)
   wa.world.wind = function() return 0.1 end
   turn(1)
@@ -862,12 +867,121 @@ do
   local lee, under_lee = 0, 0
   for k in pairs(land.added) do
     local x, y = k % 100000, k // 100000
-    -- Settling flakes slant at most 0.7 pixels across a pixel down: the lee reaches 140 pixels past the
-    -- tower; snow sliding off its top drifts against its foot.
     if x >= 1115 and x < 1235 and y > 380 then under_lee = under_lee + 1 end
     if x >= 1300 then lee = lee + 1 end
   end
-  check("downwind of a tower the ground stays bare in its lee", under_lee == 0 and lee > 0, under_lee .. "," .. lee)
+  check("downwind of a tower the ground is snowy as anywhere", under_lee > 0 and lee > 0, under_lee .. "," .. lee)
+end
+
+print("snow: land a cut can't take, and a trace that stops short")
+do
+  -- As found in a match: ground from row 399, and at x 1000 a hole in it at 399 under a pixel of indestructible land
+  -- at 398, with WA's trace stopping a pixel short of the land in that column.
+  local function odd(x, y)
+    if x == 1000 then return y == 398 or y >= 400 end
+    return y >= 399
+  end
+  local land = settling({ snow = 100 }, nil, odd)
+  local trace = wa.land.trace
+  wa.land.trace = function(x0, y0, x1, y1)
+    local hit = trace(x0, y0, x1, y1)
+    if hit and x0 == 1000 and not hit.starts_solid then hit.y = hit.y - 1 end
+    return hit
+  end
+  local cut = wa.land.cut
+  wa.land.cut = function(t)
+    cut(t)
+    land.removed[398 * 100000 + 1000] = nil
+  end
+  local settle = load_module("lib/settle")
+  -- Spawns straight onto that column, from just above the hole and from higher up.
+  turn(1)
+  sim_frames(1)
+  local s = settle.state
+  for _, y in ipairs({ 399, 397, 300 }) do
+    -- What the trace gives there, taken as the land's top.
+    local hit = wa.land.trace(1000, y, 1000, 560)
+    settle.place(s, 1000, math.floor(hit.y), 560, true)
+  end
+  M.cuts = {}
+  sim_frames(600)
+  local col = s.cols[1000]
+  check("no snow is laid over land", not (col and col.depth > 0 and col.top <= 398 and col.top + col.depth > 398),
+    col and (col.top .. "+" .. col.depth))
+  check("no column is cut and laid again over and over", #M.cuts < 20, #M.cuts)
+  check("none stands on air", land.floating() == 0, land.floating())
+end
+
+print("snow: frost in the land, squares and the glow")
+do
+  local land = settling({ snow = 100 }, nil, nil, 100)
+  local settle = load_module("lib/settle")
+  turn(1)
+  sim_frames(3000)
+  local s = settle.state
+  local deepest, outside, squares, inside_frost = 0, 0, 0, 0
+  for _, t in ipairs(M.stamps) do if t.frame >= settle.SQUARE then squares = squares + 1 end end
+  for _, spot in ipairs(s.frost) do
+    for dx = 0, spot.w - 1 do
+      for dy = 0, spot.w - 1 do
+        local x, y = spot.x + dx, spot.y + dy
+        if not ground(x, y) then outside = outside + 1 end
+        -- How far into the land it is: its depth under the top of the land it is in.
+        local top = y
+        while ground(x, top - 1) do top = top - 1 end
+        deepest = math.max(deepest, y - top)
+        if y - top >= 1 then inside_frost = inside_frost + 1 end
+      end
+    end
+  end
+  check("all frost: nothing lies on the land", #s.order == 0, #s.order)
+  check("frost stamps only the land that is there", outside == 0, outside)
+  check("up to its depth into the land", deepest < settle.FROST and deepest >= settle.FROST / 2, deepest)
+  check("some of it under the top", inside_frost > 0, inside_frost)
+  check("single pixels and 2x2 squares", squares > 0 and squares < #M.stamps, squares .. " of " .. #M.stamps)
+  local frost_count = #s.frost
+
+  -- Frost whose land goes is forgotten, and the glow follows.
+  local glow = load_module("lib/glow")
+  local c = 4 -- the chunk from x 512
+  local list = {}
+  local before = glow.boxes(s, c, list)
+  local cut_x0, cut_x1 = 512, 640
+  local old_ground = ground
+  wa.land.solid = function(x, y) return old_ground(x, y) and not (x >= cut_x0 and x < cut_x1) end
+  check("the glow leaves land blown away at once", glow.boxes(s, c, list) == 0)
+  load_module("lib/weather").target.snow = 0
+  sim_frames(2 * math.ceil(frost_count / 16))
+  local left = 0
+  for _, spot in ipairs(s.frost) do if spot.x >= cut_x0 and spot.x < cut_x1 then left = left + 1 end end
+  check("and the simulation forgets that frost", before > 0 and left == 0 and #(s.chunks[c] or {}) == 0, left)
+
+  -- Half and half, as the add-on comes: more snow than lying snow alone gave.
+  -- The committed single pixels laid 4792 in this time over this land, held by the falls a tick.
+  local function laid(frost, big)
+    settling({ snow = 100 }, nil, nil, frost)
+    settle = load_module("lib/settle")
+    settle.BIG = big or settle.BIG
+    turn(1)
+    sim_frames(3000)
+    local n = 0
+    for _, t in ipairs(M.stamps) do n = n + #settle.frame_pixels(t.frame) end
+    return n
+  end
+  local singles, mixed = laid(0, 0), laid(50)
+  check("2x2 squares bring twice the snow or more", mixed > 2 * singles, mixed .. " vs " .. singles)
+
+  -- The glow: a box on each column's top and each frost spot, drawn on the ground in front of the land.
+  settling({ snow = 100 }, nil, nil, 50)
+  turn(1)
+  sim_frames(3000)
+  draw()
+  local boxes, depth = 0, nil
+  for _, q in ipairs(M.quads) do
+    if q.sprite == "sprites/glow.png" then boxes, depth = boxes + q.count, q.depth end
+  end
+  check("snow on screen glows", boxes > 100, boxes)
+  check("on the ground, in front of the land", depth == wa.depth.TERRAIN - 1, depth)
 end
 
 print("snow: melting a little at each clear or rainy turn")

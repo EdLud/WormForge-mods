@@ -5,7 +5,7 @@ local W = {}
 
 W.RAIN_SOUND, W.SNOW_SOUND = "sounds/rain.wav", "sounds/blizzard.wav"
 local SPRITES = { "sprites/rain.png", "sprites/splash.png", "sprites/ring.png", "sprites/oval.png", "sprites/flat.png",
-  "sprites/flake.png", "sprites/settle.png" }
+  "sprites/flake.png", "sprites/settle.png", "sprites/glow.png" }
 local KINDS = { "rain", "snow" }
 local FADE = 150 -- frames a kind takes to fade in or out on screen
 local SECOND = 50 -- frames
@@ -119,7 +119,7 @@ local function draw()
   if v.w <= 0 or v.h <= 0 then return end
   if not draws then
     draws = {}
-    for _, name in ipairs({ "lib/sky", "lib/rain", "lib/surface", "lib/snow" }) do
+    for _, name in ipairs({ "lib/sky", "lib/rain", "lib/surface", "lib/snow", "lib/glow" }) do
       draws[#draws + 1] = require(name).install(W)
     end
   end

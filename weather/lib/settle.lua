@@ -1,23 +1,26 @@
--- Settling snow: a pixel at a time on the land, sliding off steep steps, falling when its land goes, melting.
-local snow = require("lib/snow")
-
+-- Settling snow: anywhere on the map, a pixel or a 2x2 square at a time, lying on the land or frosting it a little
+-- way in; lying snow slides off steep steps, falls when its land goes and melts.
 local settle = {}
 
 settle.SHEET = "sprites/settle.png"
 local FRAME = 9 -- pixels, the square frames of the sheet; each draws on the middle column, from the bottom row up
 settle.SHADES = 4 -- frames 0..3: one pixel of snow, in four shades
 settle.STRIP = 4 -- frame STRIP + h - 1: a column of h pixels of snow, h 1..FRAME
+settle.SQUARE = settle.STRIP + FRAME -- frames SQUARE..SQUARE + 3: a 2x2 square, in four shades
 local TICK = 5 -- frames between tries
 local WIDTH_PER_TRY = 250 -- pixels of map width a try a tick stands for, at full snow
-local STAMPS = 8 -- pixels of snow laid a tick at most
+local STAMPS = 8 -- falls of snow (a pixel or a 2x2 square) laid a tick at most
 local CLEAR = 14 -- pixels kept free round worms and objects
 local SLIDE = 3 -- a pixel of snow slides to the next column when that is this much lower or more
 local SLIDES = 64 -- columns a pixel slides across at most
 local LEVEL = 6 -- columns a pixel moves across at most onto thinner snow
 local REACH = 2 -- pixels up or down the next column's top may lie for snow to spread onto it
 local LEDGE = 2 -- pixels of snow a column holds on a steep face
-local CLIMB = 16 -- pixels up through the land a flake looks for its top
-local LEAN = 0.7 -- most a settling flake's path slants in the wind, pixels across a pixel fallen
+settle.BIG = 50 -- % of the snow that comes as 2x2 squares, the rest as single pixels
+settle.FROST_SHARE = 50 -- % of the snow that frosts the land rather than lying on it
+settle.FROST = 10 -- pixels into the land frost reaches, more often near its top
+local FROST_CHECKS = 16 -- frost spots checked a frame for their land blown away
+settle.CHUNK = 128 -- pixels of map width the glow is kept for together
 local CHECKS = 24 -- snowy columns checked a frame for land taken from under them
 local NEAR = 3 -- columns either side checked at once after one changes
 local MELT_CUTS = 40 -- melting cuts a frame at most
@@ -30,33 +33,41 @@ end
 
 -- The pixels frame f draws, as offsets from its centre.
 function settle.frame_pixels(f)
+  if f >= settle.SQUARE then
+    local b = FRAME // 2
+    return { { 0, b }, { 1, b }, { 0, b - 1 }, { 1, b - 1 } }
+  end
   local h = f < settle.SHADES and 1 or f - settle.STRIP + 1
   local out = {}
   for k = 0, h - 1 do out[k + 1] = { 0, FRAME // 2 - k } end
   return out
 end
 
--- The snow of a match: by column, the top pixel of its snow and how deep it is; the columns in the order they
--- first had snow; the columns to check first; the cuts waiting to melt.
+-- The snow of a match: by column, the top pixel of its lying snow and how deep it is; the columns in the order they
+-- first had snow; the columns to check first; the cuts waiting to melt; the frost spots, in the order laid and by
+-- chunk of the map; and each chunk's count of changes, for the glow to follow.
 function settle.new_state()
-  return { cols = {}, order = {}, sweep = 1, urgent = {}, marked = {}, queue = {}, head = 1, due = 0 }
+  return { cols = {}, order = {}, sweep = 1, urgent = {}, marked = {}, queue = {}, head = 1, due = 0,
+    frost = {}, frosted = {}, chunks = {}, fsweep = 1, changes = {} }
 end
 
--- The first land at or below (x, y), down to the water; nil over the water.
+-- The glow over column x changes.
+local function touch(s, x)
+  local c = x // settle.CHUNK
+  s.changes[c] = (s.changes[c] or 0) + 1
+end
+
+-- The first land at or below (x, y), down to the water; nil over the water. WA's trace can stop a pixel short of the
+-- land: the row returned is always solid.
 local function land_below(x, y, water)
   local hit = wa.land.trace(x, y, x, water)
-  return hit and math.floor(hit.y)
-end
-
--- The top of the land a flake meets at (x, y): it falls to the land below, or climbs to the top of the land it hit.
-local function surface(x, y, water)
-  local s = land_below(x, y, water)
-  if not s then return nil end
-  for _ = 1, CLIMB do
-    if not wa.land.solid(x, s - 1) then return s end
-    s = s - 1
+  if not hit then return nil end
+  local s = math.floor(hit.y)
+  for _ = 1, 2 do
+    if wa.land.solid(x, s) then return s end
+    s = s + 1
   end
-  return nil
+  return wa.land.solid(x, s) and s or nil
 end
 
 -- Where a pixel of snow landing on top of column x (land at s) comes to rest: on the next column while that is
@@ -200,6 +211,7 @@ function settle.check(s, x, water)
   -- Its top, middle and the land under it still there: as it was, without reading every pixel.
   local solid = wa.land.solid
   if solid(x, base) and solid(x, col.top) and solid(x, col.top + col.depth // 2) then return false end
+  touch(s, x)
   local left, run, in_run = 0, 0, true
   for y = base - 1, col.top, -1 do
     if wa.land.solid(x, y) then
@@ -219,9 +231,11 @@ function settle.check(s, x, water)
   end
   strips(x, col.top, base - 1, cut)
   col.depth = 0
+  -- Land a cut can't take (indestructible) was never snow: the column is forgotten, nothing falls.
+  if wa.land.solid(x, col.top) then return false end
   -- What is left falls and settles again a pixel at a time, as flakes do; a pixel that finds no place is lost.
   for _ = 1, left do
-    local top = surface(x, base, water)
+    local top = land_below(x, base, water)
     if not (top and settle.place(s, x, top, water, false)) then break end
   end
   return true
@@ -252,19 +266,86 @@ function settle.sweep(s, water)
   end
 end
 
--- One flake: where the wind brings it down on open ground, what it slides to, a pixel of snow there.
-function settle.try(s, cfg, size)
-  local x = wa.random(0, size.w - 1)
+-- One fall of snow: a spot anywhere in the air of the map, straight down onto the land under it, a pixel or a 2x2
+-- square, lying there or frosting the land. Returns how many pixels it laid.
+function settle.try(s, size)
   local water = wa.world.water()
-  s.slant = math.max(-LEAN, math.min(LEAN, snow.slant(wa.world.wind(), cfg)))
-  local lean = s.slant * (water + 64)
-  local hit = wa.land.trace(x - lean, -64, x, water)
-  if not hit or hit.starts_solid then return false end
-  local hx = math.floor(hit.x)
-  if hx < 0 or hx >= size.w then return false end
-  local top = surface(hx, math.floor(hit.y), water)
-  if not top then return false end
-  return settle.place(s, hx, top, water, true)
+  local x, y = wa.random(0, size.w - 2), wa.random(0, water - 1)
+  local big = wa.random(1, 100) <= settle.BIG
+  if wa.land.solid(x, y) then return 0 end
+  if wa.random(1, 100) <= settle.FROST_SHARE then
+    local top = land_below(x, y, water)
+    return top and settle.frost(s, x, top, big) or 0
+  end
+  local laid = 0
+  for dx = 0, big and 1 or 0 do
+    for _ = 1, big and 2 or 1 do
+      -- Each pixel looks for the top again: the one before may have raised it.
+      local top = not wa.land.solid(x + dx, y) and land_below(x + dx, y, water)
+      if top and settle.place(s, x + dx, top, water, true) then laid = laid + 1 end
+    end
+  end
+  return laid
+end
+
+-- Whether the w x w square at (x, y) is all land, none of it lying snow.
+local function bare_land(s, x, y, w)
+  for dx = 0, w - 1 do
+    local col = s.cols[x + dx]
+    for dy = 0, w - 1 do
+      if not wa.land.solid(x + dx, y + dy) or s.frosted[(y + dy) * 65536 + x + dx] then return false end
+      if col and col.depth > 0 and y + dy >= col.top and y + dy < col.top + col.depth then return false end
+    end
+  end
+  return true
+end
+
+-- Frost on the land whose top is row `top` of column x: under any snow lying there, up to FROST pixels in.
+function settle.frost(s, x, top, big)
+  local col = s.cols[x]
+  local ground = (col and col.depth > 0 and col.top == top) and top + col.depth or top
+  local r = wa.random(0, 99)
+  local y = ground + (settle.FROST - (big and 1 or 0)) * r * r // 10000
+  local w = big and 2 or 1
+  if not bare_land(s, x, y, w) then
+    if not big or not bare_land(s, x, y, 1) then return 0 end
+    w = 1
+  end
+  local f = wa.random(0, settle.SHADES - 1) + (w == 2 and settle.SQUARE or 0)
+  stamp(f, x, y + w - 1)
+  local spot = { x = x, y = y, w = w }
+  s.frost[#s.frost + 1] = spot
+  local c = x // settle.CHUNK
+  local chunk = s.chunks[c] or {}
+  s.chunks[c] = chunk
+  chunk[#chunk + 1] = spot
+  for dx = 0, w - 1 do
+    for dy = 0, w - 1 do s.frosted[(y + dy) * 65536 + x + dx] = true end
+  end
+  touch(s, x)
+  return w * w
+end
+
+-- The next frost spots: one whose land was blown away is forgotten.
+function settle.frost_sweep(s)
+  for _ = 1, math.min(FROST_CHECKS, #s.frost) do
+    if s.fsweep > #s.frost then s.fsweep = 1 end
+    local spot = s.frost[s.fsweep]
+    if wa.land.solid(spot.x, spot.y) then
+      s.fsweep = s.fsweep + 1
+    else
+      s.frost[s.fsweep] = s.frost[#s.frost]
+      s.frost[#s.frost] = nil
+      local c = spot.x // settle.CHUNK
+      local kept = {}
+      for _, other in ipairs(s.chunks[c]) do if other ~= spot then kept[#kept + 1] = other end end
+      s.chunks[c] = kept
+      for dx = 0, spot.w - 1 do
+        for dy = 0, spot.w - 1 do s.frosted[(spot.y + dy) * 65536 + spot.x + dx] = nil end
+      end
+      touch(s, spot.x)
+    end
+  end
 end
 
 -- A pixel of snow come down on the land at the top (row `top`) of column x: where it slides and spreads to, and
@@ -282,9 +363,8 @@ function settle.place(s, x, top, water, reconcile)
   if col and col.depth >= cfg.settle_depth then return false end
   if col and col.depth >= LEDGE and steep(s.cols, px, col.top + col.depth, width) then return false end
   if spire(px, py - 1, width) then return false end
-  -- Open to the sky the way the wind brings flakes: none settles under a ledge or in a cave.
-  local up = py - 1 + 64
-  if wa.land.trace(px, py - 1, px - (s.slant or 0) * up, -64) then return false end
+  -- Only into the air: snow is never laid over land.
+  if wa.land.solid(px, py - 1) then return false end
   if crowded(px, py - 1) then return false end
   stamp(wa.random(0, settle.SHADES - 1), px, py - 1)
   if col then
@@ -293,6 +373,7 @@ function settle.place(s, x, top, water, reconcile)
     s.cols[px] = { top = py - 1, depth = 1 }
     s.order[#s.order + 1] = px
   end
+  touch(s, px)
   return true
 end
 
@@ -303,6 +384,7 @@ function settle.melt(s, percent)
     if col.depth > 0 and wa.random(1, 100) <= percent then
       s.queue[#s.queue + 1] = { f = settle.STRIP, x = x, bottom = col.top }
       col.top, col.depth = col.top + 1, col.depth - 1
+      touch(s, x)
     end
   end
 end
@@ -319,8 +401,8 @@ function settle.drain(s)
   if s.head > #s.queue then s.queue, s.head = {}, 1 end
 end
 
--- On the weather clock: snow settles while it snows and falls when its land goes; it melts a little at the start of
--- each clear or rainy turn, twice as fast in rain.
+-- On the weather clock: snow settles while it snows and lying snow falls when its land goes; it melts a little at the
+-- start of each clear or rainy turn, twice as fast in rain. Frost stays.
 function settle.install(W)
   local cfg = W.kinds.snow
   if not (cfg and cfg.amount > 0) then return end
@@ -334,12 +416,13 @@ function settle.install(W)
     settle.drain(s)
     local water = wa.world.water()
     settle.sweep(s, water)
+    settle.frost_sweep(s)
     if frame % TICK ~= 0 or W.target.snow == 0 then return end
     s.due = s.due + size.w * cfg.amount / WIDTH_PER_TRY
-    local stamps = 0
+    local falls = 0
     while s.due >= 1 do
       s.due = s.due - 1
-      if stamps < STAMPS and settle.try(s, cfg, size) then stamps = stamps + 1 end
+      if falls < STAMPS and settle.try(s, size) > 0 then falls = falls + 1 end
     end
   end
   W.on_turn[#W.on_turn + 1] = function()

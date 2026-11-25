@@ -1,7 +1,7 @@
 # Weather: clear skies, rain and snow, each with its share of the turn cycles.
 id = "core.weather"
 name = "Weather"
-version = "0.3.0"
+version = "0.3.1"
 author = "WormForge"
 api_version = 5
 format_version = 2
@@ -96,7 +96,7 @@ default = 10
 min = 2
 max = 40
 label = "Deepest settled snow (px)"
-description = "Snow builds up on open ground as land that worms stand on, dig and blow up."
+description = "Snow builds up anywhere on the ground as land that worms stand on, dig and blow up, and frosts the land a little way in."
 
 [[components.options]]
 key = "melt"

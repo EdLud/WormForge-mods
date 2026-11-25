@@ -8,7 +8,9 @@ splash.png  6 frames of 32x32: a drop's crown splash, rising and falling.
 ring.png    64x16: a soft line across, for the ring ribbons.
 flat.png    8x8 white: full-view quads coloured per corner.
 flake.png   3 frames of 16x16: soft round snowflakes with a cool edge.
-settle.png  9x9 frames: settling snow, a pixel or a column of pixels each.
+settle.png  9x9 frames: settling snow, a pixel, a column of pixels or a 2x2
+            square each.
+glow.png    16x16: a soft white glow round a pixel of settled snow.
 """
 from pathlib import Path
 
@@ -139,7 +141,9 @@ def flake(size: int = 16) -> None:
 def settle(size: int = 9) -> None:
     """lib/settle.lua's sheet, everything on the middle column from the bottom
     row up: four single pixels of snow in slightly different whites, then
-    columns of 1..9 pixels, white on top and cooler underneath. All opaque."""
+    columns of 1..9 pixels, white on top and cooler underneath, then four 2x2
+    squares (the middle column and the one right of it), lighter on top. All
+    opaque."""
     shades = [(250, 252, 255), (242, 246, 252), (236, 241, 250), (246, 249, 255)]
     out = []
     for rgb in shades:
@@ -153,7 +157,24 @@ def settle(size: int = 9) -> None:
             rgb = (1 - t) * np.array([226, 234, 248.0]) + t * np.array([250, 252, 255.0])
             rgba[size - 1 - k, size // 2] = [*rgb, 255]
         out.append(rgba)
+    for rgb in shades:
+        rgba = np.zeros((size, size, 4))
+        under = np.array(rgb, dtype=np.float64) * 0.97
+        for dx in (0, 1):
+            rgba[size - 2, size // 2 + dx] = [*rgb, 255]
+            rgba[size - 1, size // 2 + dx] = [*under, 255]
+        out.append(rgba)
     save(np.concatenate(out, axis=0), "settle.png")
+
+
+def glow(size: int = 16) -> None:
+    """A soft white disc fading to nothing at the edge, drawn added over the
+    snow."""
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float64)
+    c = size / 2 - 0.5
+    d = np.sqrt((xx - c) ** 2 + (yy - c) ** 2) / (size / 2)
+    alpha = np.clip(1 - d, 0, 1) ** 2
+    save(rgba_from_alpha(alpha, np.array([255, 255, 255.0])), "glow.png")
 
 
 if __name__ == "__main__":
@@ -164,6 +185,7 @@ if __name__ == "__main__":
     flat()
     flake()
     settle()
+    glow()
     for p in sorted(OUT.glob("*.png")):
         with Image.open(p) as img:
             print(p.name, img.size)
