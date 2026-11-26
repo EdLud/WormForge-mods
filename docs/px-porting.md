@@ -1031,27 +1031,44 @@ declares `rem` inside its message handler, so it starts empty on every
 message and the restore branches never run: whenever the turn's worm with
 the utility on moves faster than 8 pixels a frame (either axis) in
 `WS_JUMP`, `WS_FLYING2`, `WS_SLIDING`, `WS_FLYING`, `WS_AFTERROPE` or
-`WS_POWERFLY`, PX sets it to `WS_IDLE`. The port moves the worm into falling
-instead, once a frame (`FRAME_FINISH`, `worm:set_state("falling")`), and
-only from jump_falling, tumbling, hit, blasted and after_rope: falling and
-jumping already land softly. Holding the worm in standing (the first port)
-let it walk in mid-air and kept the Portal Gun from firing there: WA put it
-back into falling before moving it each frame, but at the frame's end, where
-the engine checks for a mid-air shot, it was standing (Random Race replay,
-2026-11-23: 54 Space presses with the gun lost while falling faster than 8
-pixels a frame).
+`WS_POWERFLY`, PX sets it to `WS_IDLE`. The port changes no state: once a
+frame (`FRAME_FINISH`), in jumping, falling, jump_falling, tumbling, hit,
+blasted and after_rope, it holds the worm's downward speed at 7.9 pixels a
+frame (`worm.vy`). Its sideways and upward speed are kept. A worm walking or
+jumping off a high ledge then falls and lands as one off a low ledge. The two
+earlier ports changed the state. Holding the worm in standing let it walk in
+mid-air and kept the Portal Gun from firing there: WA put it back into
+falling before moving it each frame, but at the frame's end, where the engine
+checks for a mid-air shot, it was standing (Random Race replay, 2026-11-23:
+54 Space presses with the gun lost while falling faster than 8 pixels a
+frame). Moving it into falling (2026-11-23 to 2026-11-26) took over states
+other weapons and WA had set, and a high fall still went into the spin.
 
-Why falling works, from WA 3.8.1's worm collision handler: its state table
+Why the limit works, from WA 3.8.1:
+
+- **The spin.** The worm's frame (0x515650) reads the downward speed (+0x94)
+  as it starts. In punching, jumping, falling and tumbling (0x6C, 0x79, 0x7E,
+  0x7F; table 0x516660), 8 pixels a frame or more (0x515D1A) arms the
+  landing-damage factor (+0x15C) from the scheme's Fall Damage, calls
+  0x51A540, and, unless the worm is now parachuting, sets hit (0x80).
+- **The landing.** Both checks in the worm collision handler read only the
+  downward speed. Fall damage (0x50DFDC..0x50E064) is the speed less 8 pixels
+  a frame and the scheme's gravity ([world+0x528]+0x22C), scaled by the
+  landing-damage factor, with none at 0 or under. Getting up (0x50E1F8)
+  needs the speed to be at least 8 pixels a frame plus that gravity.
+
+A limit under 8 at the frame's end clears all three.
+
+The states, from the same handler: its state table
 (0x50E4C0, index 0x50E4D4, state - 0x6C) sends tumbling, hit, blasted and
 skimming (0x7F, 0x80, 0x81, 0x89) to 0x50DF47, which takes fall damage by
 the landing-damage factor (+0x15C, check at 0x50DFD0) and, landing on the
 floor at 8 pixels a frame or more (0x80000, 0x50E1F8), sets getting up
 (0x76, 0x50E2B5): the loss of control. Jumping, parachuting and falling
 (0x79, 0x7D, 0x7E) land at 0x50DD14 without either: on the floor it zeroes
-the speed and plays the landing sound, at any speed. Jump_falling and
-after_rope (0x7A, 0x73) take WA's default branch 0x50E3BA. None of WA's three
-SetState(0x7F) calls (0x50D591, 0x50D743, 0x5124C5) depends on the speed of a
-fall, so a falling worm stays falling until it lands.
+the speed and plays the landing sound, at any speed. After_rope (0x73) is
+set to hit (0x80) as it lands (0x50DCBC) and lands as one. Jump_falling
+(0x7A) takes WA's default branch 0x50E3BA.
 Its record is PX's: a scripted utility (0x3C = 8), no retreat.
 
 ## Lockstep

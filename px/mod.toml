@@ -2944,7 +2944,7 @@ id = "px.anti_fall_damage"
 type = "weapon"
 name = "Anti Fall Damage"
 authors = ["PyroMan"]
-description = "For the turn, a worm flying faster than 8 pixels a frame lands on its feet, unhurt and in control."
+description = "For the turn, a worm falls no faster than 8 pixels a frame, so it lands unhurt and in control."
 entry = "components/weapon.lua"
 icon = "sprites/anti_fall_damage/anti_fd_ico.png"
 default_position = { row = "utility", column = 6 }

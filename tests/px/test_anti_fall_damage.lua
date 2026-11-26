@@ -52,39 +52,43 @@ local controls = actions["px.anti_fall_damage"]
 local w = worm()
 w.state, w.vy = "tumbling", 12
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("off: the tumble is left alone", w.state == "tumbling")
+check("off: the tumble is left alone", w.vy == 12)
 
 -- Fired by hand: on for the turn, with its sound.
 controls.fire(w)
 check("firing plays the sound", sounds == 1)
 check("on: its icon is in the tray", in_tray(w))
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("on: a tumble faster than 8 becomes a fall", w.state == "falling")
-w.state, w.vx, w.vy = "blasted", -9, 0
+check("on: a tumble falls just under 8", w.vy == 7.9, w.vy)
+check("on: the tumble stays a tumble", w.state == "tumbling" and #w.states == 0)
+w.state, w.vx, w.vy = "blasted", -12, -15
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("on: a blast sideways faster than 8 too", w.state == "falling")
+check("sideways and upward speed are kept", w.vx == -12 and w.vy == -15)
+w.state, w.vy = "falling", 9
+fire("worm_message", w, wa.msg.FRAME_FINISH)
+check("a fall off a high ledge stays under 8", w.vy == 7.9, w.vy)
 w.state, w.vy = "jumping", 20
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("a fast jump already lands softly: left alone", w.state == "jumping")
-w.state, w.vx, w.vy = "after_rope", 3, 8
+check("a jump comes down under 8 too", w.vy == 7.9, w.vy)
+w.state, w.vx, w.vy = "after_rope", 3, 7.5
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("8 itself is not faster than 8", w.state == "after_rope")
+check("a fall under the limit keeps its speed", w.vy == 7.5)
 w.state, w.vy = "roping", 20
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("the rope is left alone", w.state == "roping")
+check("the rope is left alone", w.vy == 20)
 w.state, w.vy, w.turn = "hit", 20, false
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("a worm without the turn is left alone", w.state == "hit")
+check("a worm without the turn is left alone", w.vy == 20)
 w.turn = true
 controls.fire(w)
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("fired again: off", w.state == "hit")
+check("fired again: off", w.vy == 20)
 check("off: its icon is gone", not in_tray(w))
 controls.fire(w)
 check("on again: the icon is back", in_tray(w))
 controls.finish()
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("the turn's end switches it off", w.state == "hit")
+check("the turn's end switches it off", w.vy == 20)
 check("the turn's end takes the icon away", not in_tray(w))
 
 -- Auto-Use: on at turn start while there is ammo, a unit spent.
@@ -94,15 +98,15 @@ w.units = 1
 fire("turn_start", { worm = w })
 w.state, w.vy = "tumbling", 10
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("auto-use: on at turn start", w.state == "falling")
+check("auto-use: on at turn start", w.vy == 7.9)
 check("auto-use: a unit spent", w.units == 0, w.units)
 fire("turn_start", { worm = w })
 check("a worm switch keeps it on", w.units == 0)
 controls.finish()
 fire("turn_start", { worm = w })
-w.state = "tumbling"
+w.state, w.vy = "tumbling", 10
 fire("worm_message", w, wa.msg.FRAME_FINISH)
-check("auto-use: none left, off", w.state == "tumbling")
+check("auto-use: none left, off", w.vy == 10)
 w.units = -1
 controls.finish()
 fire("turn_start", { worm = w })
