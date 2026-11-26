@@ -1,5 +1,5 @@
 # Reflective Laser Gun -- Project X's weapon_gun_laserreflect, ported to
-# WormForge.
+# WormBench.
 #
 # The record is PX's own `weapon_lasergun.wep` from that pack, so the slot fires
 # exactly as PX's does; the gun itself is Lua (one reflected path, buffered,

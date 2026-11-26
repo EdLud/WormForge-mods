@@ -35,7 +35,7 @@ function rules_window.install(lines)
   end)
 
   local keys = wa.hud.key and wa.panel and wa.panel.stock and true
-  if not keys then wa.log("rules window: this WormForge has no wa.hud.key; no Shift + T") end
+  if not keys then wa.log("rules window: this WormBench has no wa.hud.key; no Shift + T") end
   local held = false
   wa.on.hud(function()
     if close_at and wa.world.frame() >= close_at then

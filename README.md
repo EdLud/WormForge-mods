@@ -1,14 +1,14 @@
-# WormForge mods
+# WormBench mods
 
-The source repository for WormForge's Lua packs, artwork, sounds, profiles and
+The source repository for WormBench's Lua packs, artwork, sounds, profiles and
 pack tests. Mod changes belong here. The engine lives in
-[EdLud/WormForgeNew](https://github.com/EdLud/WormForgeNew); the production
-catalogue is served by [EdLud/WormForge](https://github.com/EdLud/WormForge).
+[EdLud/WormBench-engine](https://github.com/EdLud/WormBench-engine); the production
+catalogue is served by [EdLud/WormBench](https://github.com/EdLud/WormBench).
 
 The mods players receive, selected by `catalogue.toml` with their profiles:
 
 - `px/` — the Project X ports and their rule sets, Highlander and Kill the King.
-- `utilities/` — WormForge's add-ons and tools: Utilities, Fog of war,
+- `utilities/` — WormBench's add-ons and tools: Utilities, Fog of war,
   +N Seconds, Bullet Time and the Cursor.
 - `sdk/` — the shared helpers other packs build on.
 - `from_modders/` — community mods, without their profiles (those stay out of
@@ -22,10 +22,10 @@ and their support files are removed during public staging.
 ## Working locally
 
 In the game installation, make your own mod directly under
-`WormForge/Mods/<my-mod>/`. Catalogue downloads go under `Mods/wf-lib/`. Update
+`WormBench/Mods/<my-mod>/`. Catalogue downloads go under `Mods/wf-lib/`. Update
 all skips mods with local changes; **Replace (backup)** installs the copy from
-the catalogue and moves the previous folder to `WormForge/Backups/Packs/`.
-Saved profiles stay under `WormForge/Profiles/`.
+the catalogue and moves the previous folder to `WormBench/Backups/Packs/`.
+Saved profiles stay under `WormBench/Profiles/`.
 
 The public [SDK helpers](sdk/README.md) expose the PX sprite builder, postures
 and hands through `require("wf-lib/px_sprite_builder")` with
@@ -40,7 +40,7 @@ them with `git submodule update --init --recursive` after cloning a parent.
 The usual catalogue workspace is:
 
 ```text
-WormForge-site/
+WormBench-site/
   catalogue/             this repository; edit and commit mods here
   downloads/             generated, signed catalogue and retained content store
 ```
@@ -72,7 +72,7 @@ for the runtime files to edit when making weapons or Highlander rules.
 
 Requires Python 3.11+ and `python3 -m pip install -r requirements.txt`.
 
-From `WormForge-site/`:
+From `WormBench-site/`:
 
 ```sh
 python3 catalogue/tools/test_catalogue.py
@@ -90,15 +90,15 @@ that exact commit, excluding ignored or untracked files. The signed index record
 the source repository and commit. With the same retained store and base URL,
 building the same commit produces the same catalogue bytes.
 
-Build in the website checkout (EdLud/WormForge, served at
-`https://edlud.github.io/WormForge/`, the only catalogue address):
+Build in the website checkout (EdLud/WormBench, served at
+`https://edlud.github.io/WormBench/`, the only catalogue address):
 
 ```sh
 python3 catalogue/tools/publish-packs.py --site .
 ```
 
 The signing seed stays outside Git, by default at
-`~/.config/wormforge/catalogue-signing.key`. The catalogue needs a key trusted by
+`~/.config/wormbench/catalogue-signing.key`. The catalogue needs a key trusted by
 the DLL. The public key is safe to share; the seed must not enter source, logs,
 release archives or website files. Building locally uses the existing key.
 

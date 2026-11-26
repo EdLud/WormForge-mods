@@ -1,6 +1,6 @@
 # Project X ports: porting notes
 
-How the Project X ports were built on WormForge: what each weapon takes from
+How the Project X ports were built on WormBench: what each weapon takes from
 PX, what differs and why, and what the engine grew for them. Players need
 none of this; [the Project X ports README](../px/README.md) is for playing. Modders start with
 [Layout](#layout).
@@ -847,7 +847,7 @@ shots still collide with all terrain from that muzzle onward.
 
 ## Hazardous Sentries
 
-`px.hazardous_sentries` is a WormForge add-on, not a Project X
+`px.hazardous_sentries` is a WormBench add-on, not a Project X
 script: at the first turn of each round it places neutral copies of the six
 sentries and turrets above (Sentry Gun, Sentry Laser, Petrol, Flame and Mine
 Turrets, Auto Ballista) on the map. Each has a count (0 to 100, default 1) and
@@ -904,7 +904,7 @@ once, so they don't need it.
 The profile is PX's `RACE - Random - 0rang3.pxs` (September 2026 build):
 its WSC for the scheme, its records for the panel. `random_race.rules`
 (`scheme/random_race.lua`) is the scheme's `give_weapons` script, with
-a list of races for WormForge: Parkour with Jump and Low Gravity, or
+a list of races for WormBench: Parkour with Jump and Low Gravity, or
 Portal Gun, both with Anti Fall Damage; Wings; Helicopter; or Ninja Rope
 with Parachute. Each time the
 first team to play has its turn (the team whose turn it is, once that
@@ -1083,7 +1083,7 @@ hands. Nothing reads local input or the clock.
 
 ## Reusable engine features
 
-- `worm:ammo(name, { set = n })`: an absolute ammo write, WormForge's
+- `worm:ammo(name, { set = n })`: an absolute ammo write, WormBench's
   version of PX's `SetWeaponEx`. The older `worm:ammo(name, n)` adds to
   the current ammo and never changes infinite.
 - `wa.inventory.create({ id, slots })`: a pack-scoped, per-worm virtual

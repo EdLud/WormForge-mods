@@ -1,4 +1,4 @@
-These are example mods. Copy a folder to `WormForge/Mods/` next to `WA.exe`, then pick one of
+These are example mods. Copy a folder to `WormBench/Mods/` next to `WA.exe`, then pick one of
 its profiles under **Bundled profiles** in the loader's profile line, where it
 has one, or add its weapons (**Manage Weapon Panel**) and add-ons (a click on
 its card) to your own profile. Nothing in a bundle runs until a profile selects it, and a
@@ -10,7 +10,7 @@ weapons, with Highlander and Kill the King), `mods/utilities/` (Utilities, Fog
 of war, +N Seconds and the Cursor) and `mods/sdk/`.
 
 - `starting_guide` (`example.starting_guide`) — the example of the
-  [WormForge starting guide](https://github.com/EdLud/WormForge/blob/main/docs/starting-guide-1-your-first-mod.md),
+  [WormBench starting guide](https://github.com/EdLud/WormBench/blob/main/docs/starting-guide-1-your-first-mod.md),
   growing part by part. Part 1: `guide.moon_grenade`, the stock Grenade with about
   a third of the gravity and a small burst, which digs three craters in the
   ground below it (`missile.explosion.power`, `on_explode`, `wa.random`,

@@ -20,10 +20,10 @@ fixture requires the bundle's `debug_input = true` and is refused in network
 rounds; it and `worm:input` (an ordinary verb in every build) run only inside
 simulation callbacks. The engine logs a TEST BUILD banner. An ordinary release has no RNG-control API.
 
-Copy the `tools` bundle to `WormForge/Mods/`, preserving local edits. When
+Copy the `tools` bundle to `WormBench/Mods/`, preserving local edits. When
 installing by copying files, also copy its `profiles/Audit*.toml` files
-into `WormForge/Profiles/`; the profile dropdown reads that folder. In the
-WormForge loader, select **Audit home** in the Profile dropdown. The profile
+into `WormBench/Profiles/`; the profile dropdown reads that folder. In the
+WormBench loader, select **Audit home** in the Profile dropdown. The profile
 owns the match settings (its `[scheme]`: no mines, oil drums or crates, a
 95-second turn; the other settings as in Intermediate), whatever scheme
 the lobby shows. Import `Audit.png` from `User/SavedLevels/` into WA's map

@@ -6,7 +6,7 @@ local LINES = { "speech/Amazing", "speech/Brilliant", "speech/Excellent", "speec
 
 return function()
   if not wa.on.skim then
-    wa.log("skim voices: this WormForge has no skim event; update it to hear the voices")
+    wa.log("skim voices: this WormBench has no skim event; update it to hear the voices")
     return
   end
 

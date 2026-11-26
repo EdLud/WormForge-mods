@@ -1,4 +1,4 @@
-# WormForge shared helpers
+# WormBench shared helpers
 
 Declare the dependency in your bundle's `mod.toml`:
 
@@ -46,7 +46,7 @@ Module tables and private globals are separate for each consuming bundle.
 
 `require("wf-lib/tooltip")` is the weapon tooltip: one window in WA's medium font
 at the bottom right, over the wind bar, bordered in the active team's colour
-and seen by that team's coalition. WormForge fades it out while WA's weapon
+and seen by that team's coalition. WormBench fades it out while WA's weapon
 panel is open.
 
 ```lua
@@ -70,7 +70,7 @@ An optional `asset_namespace = "wf-lib/name"` exposes library-owned assets to
 dependents with qualified paths such as `wf-lib/name/sprites/hand.png`. Sprite
 settings come from the library manifest. Paths stay inside the named provider.
 
-Make your own mod directly under `WormForge/Mods/`; `Mods/wf-lib/` belongs to
+Make your own mod directly under `WormBench/Mods/`; `Mods/wf-lib/` belongs to
 the catalogue's installs.
 
 `require("wf-lib/lightning")` is Project X's Lightning Strike. Declare

@@ -1,5 +1,5 @@
 -- From the repository root: lua mods/utilities/test_live_hp.lua
-local mods = WORMFORGE_MODS or "mods/"
+local mods = WORMBENCH_MODS or "mods/"
 local function run(live_first)
   local hurt, frame = {}, {}
   wa = {

@@ -1,4 +1,4 @@
-# Project X Curse of Death (utility_curse_of_death.pxl), ported to WormForge.
+# Project X Curse of Death (utility_curse_of_death.pxl), ported to WormBench.
 #
 # The four weapons keep PX's own .wep records (two no-turn specials and two
 # click strikes). Lua adds the mark, the curse, the homing pass and the two

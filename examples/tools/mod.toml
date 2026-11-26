@@ -108,7 +108,7 @@ id = "tools.perf"
 diagnostics = true
 type = "feature"
 name = "Profiler"
-description = "WormForge's profiler (wkLua.log), on this machine. The FPS counter is Core utilities' FPS counter option."
+description = "WormBench's profiler (wkLua.log), on this machine. The FPS counter is Core utilities' FPS counter option."
 entry = "perf.lua"
 
 [[components.options]]

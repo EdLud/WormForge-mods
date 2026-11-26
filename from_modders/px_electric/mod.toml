@@ -1,4 +1,4 @@
-# Electric Mine -- Project X's weapon_electric_mine, ported to WormForge.
+# Electric Mine -- Project X's weapon_electric_mine, ported to WormBench.
 #
 # The mine keeps its own custom explosion (`lib/custom_explosion.lua`) and taze
 # hold (`lib/electric_damage.lua`) here rather than in the `px` pack, whose

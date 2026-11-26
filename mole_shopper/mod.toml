@@ -1,7 +1,7 @@
 id = "px.mole_shopper"
 name = "Mole Shopper"
 version = "0.1.19"
-author = "popka, 0rang3 and Project X authors; WormForge port"
+author = "popka, 0rang3 and Project X authors; WormBench port"
 api_version = 5
 format_version = 2
 dependencies = ["wf.sdk"]

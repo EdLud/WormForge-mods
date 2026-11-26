@@ -17,7 +17,7 @@ working and `sb.PX_POSTURE` / `sb.PX_HANDS` are still available.
 
 ## Install
 
-Copy the `wfws_sdk` folder into `WormForge/Mods/wf-lib/` (any folder name works;
+Copy the `wfws_sdk` folder into `WormBench/Mods/wf-lib/` (any folder name works;
 the dependency id is what matters), next to `wf-lib/sdk` (`wf.sdk`) and
 `wf-lib/effects_sdk` (`effects.sdk`). The editor's exported bundles declare
 `wfws.sdk` and ship this folder at `wf-lib/wfws_sdk/`, so unpacking a ZIP into
@@ -627,7 +627,7 @@ worms.
   order are identical on every peer. `spare_shooter` (default on) skips the worm
   that swung, `once` (default on) records each victim for that swing, and the flag
   resets on the next Space press rather than on a timer.
-- **`log = true`** prints the strike to WormForge's log: the swing's start (tick,
+- **`log = true`** prints the strike to WormBench's log: the swing's start (tick,
   position, weapon, aim, facing), **one line per worm with its own
   `along`/`across`** and why it was skipped, a summary with the hit tick, the scan
   vector and the reach, and the swing's end. An empty box therefore names its own

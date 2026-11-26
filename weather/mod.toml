@@ -2,7 +2,7 @@
 id = "core.weather"
 name = "Weather"
 version = "0.3.1"
-author = "WormForge"
+author = "WormBench"
 api_version = 5
 format_version = 2
 dependencies = ["wf.sdk"]

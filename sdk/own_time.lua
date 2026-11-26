@@ -3,7 +3,7 @@
 local own_time = {}
 
 local ONE = 256
-local supported -- this WormForge has worm.time_scale
+local supported -- this WormBench has worm.time_scale
 local carry, counted, count = {}, {}, {} -- by worm id
 
 function own_time.scale(worm)

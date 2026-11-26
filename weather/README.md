@@ -29,7 +29,7 @@ settled snow loses those pixels when the snow under it melts.
 
 The rain sound is from Project X's Rain weather, the blizzard sound from
 Project X's weather sounds. The lightning is Project X's Lightning Strike, from
-`wf-lib/lightning` in the WormForge shared helpers.
+`wf-lib/lightning` in the WormBench shared helpers.
 
 `tools/make_weather_art.py` draws the sprites; the tests are in
 `tests/weather/`.

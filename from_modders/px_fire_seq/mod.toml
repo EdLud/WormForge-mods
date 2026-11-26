@@ -1,6 +1,6 @@
 # Project X's sequential-firing weapons -- the Ripper Star, the Megashark, the
 # hold-to-fire Megashark and the FAMAS -- and the shared base that fires their
-# bursts, ported to WormForge.
+# bursts, ported to WormBench.
 #
 # PX sequences these weapons by overriding `CWorm::FireFinal` and returning
 # before the stock fire so WA loops the shot (`ripper_fire.txt:11-32`,

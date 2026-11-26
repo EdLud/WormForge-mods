@@ -1,4 +1,4 @@
--- Profiler: wormForge's profiler (wkLua.log), on this machine.
+-- Profiler: WormBench's profiler (wkLua.log), on this machine.
 
 return function(ctx)
   wa.perf.enable({
