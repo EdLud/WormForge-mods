@@ -6,8 +6,12 @@ weapon.record = {}
 
 function weapon.definition()
   local fires = require("lib/shared").fires
+  local hold = require("lib/prod_hold")
   return require("lib/weapon").merge(weapon.record, {
-    copy_from = "stock.prod",
+    -- WA's Mine record, so the worm drops it from a vehicle too; the Prod's hold kept
+    copy_from = "stock.mine",
+    worm_sprites = hold.worm_sprites,
+    params = hold.params,
     name = "Mine Turret",
     panel_icon = "sprites/pyro_turrets/mine_icon.png",
     is_weapon = true,

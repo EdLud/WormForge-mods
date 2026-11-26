@@ -212,6 +212,8 @@ local DEFAULTS = {
   placement_reach = 64,
   health = 50,
   slide_friction = 0.20, -- pixels/frame lost on supported ground
+  drop_keep = 0.5, -- the share of a flying worm's speed a sentry it drops keeps
+  drop_max = 3, -- pixels/frame: the most of that speed it keeps on each axis
   contact_worm = 0.5, -- fraction of incoming worm velocity transferred
   contact_projectile = 0.25, -- PX Javelin transfers a quarter of its velocity
   boom = { damage = 50, id = 100, below = false },
@@ -758,12 +760,24 @@ function turret.new(cfg)
     end
   end
 
-  -- A sentry body at x, y (its feet's bottom); a planter worm passes through it until clear.
-  local function spawn(x, y, owner, alliance, facing, planter)
+  -- Part of a worm's speed on one axis, for a sentry it drops from a vehicle.
+  local function kept(v)
+    v = v * t.drop_keep
+    return math.max(-t.drop_max, math.min(t.drop_max, v))
+  end
+
+  -- What a worm drops a sentry from: a vehicle, a tool or a jump. On its feet it plants
+  -- it still, however it moves.
+  local FLYING = { jetpacking = true, parachuting = true, roping = true, bungee = true,
+    jumping = true, jump_falling = true, falling = true }
+
+  -- A sentry body at x, y (its feet's bottom), moving at vx, vy; a planter worm passes
+  -- through it until clear.
+  local function spawn(x, y, owner, alliance, facing, planter, vx, vy)
     local idle = facing < 0 and 270 or 90
     local body = wa.actors.spawn({
       sprite = false, x = x, y = y,
-      vx = 0, vy = 0,
+      vx = vx or 0, vy = vy or 0,
       origin = "bottom", owner = owner, persist = true,
       gravity = 1, body = { shape = t.art.mask, hits = { land = true, objects = true },
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
@@ -798,9 +812,12 @@ function turret.new(cfg)
       wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
       return nil
     end
-    local body, s = spawn(x, y, worm, alliance, facing, worm)
-    wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) passage=on",
-      t.kind, body.id, worm.id, x, y))
+    -- dropped from a vehicle, it keeps some of the worm's speed
+    local vx, vy = 0, 0
+    if worm.taken or FLYING[worm.state] then vx, vy = kept(worm.vx or 0), kept(worm.vy or 0) end
+    local body, s = spawn(x, y, worm, alliance, facing, worm, vx, vy)
+    wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) v=(%.2f,%.2f) passage=on",
+      t.kind, body.id, worm.id, x, y, vx, vy))
     return body, s
   end
 

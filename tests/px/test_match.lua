@@ -2625,6 +2625,25 @@ do
   end
 end
 
+print("Sentries: dropped from a vehicle, they keep part of the worm's speed")
+do
+  for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do
+    for _, case in ipairs({ { "jetpacking", 7, -3, 3, -1.5 }, { "parachuting", -2, 1, -1, 0.5 },
+        { "standing", 7, -3, 0, 0 } }) do
+      new_match()
+      local t = require("lib/shared")[kind]
+      local owner = worm(16)
+      for _, w in ipairs(worms) do w.x, w.y = 1000, 1000 end
+      owner.x, owner.y, owner.vx, owner.vy, owner.state = 100, 100, case[2], case[3], case[1]
+      M.spawned = {}
+      local body = t.place({ worm = owner })
+      check(kind .. ": " .. case[1] .. " at (" .. case[2] .. ", " .. case[3] .. ") drops it at ("
+        .. case[4] .. ", " .. case[5] .. ")", body.vx == case[4] and body.vy == case[5])
+      owner.state = nil
+    end
+  end
+end
+
 print("Lightning Strike: captures the selected sentry for the caster colour")
 do
   for _, kind in ipairs({ "sentry_gun", "sentry_laser" }) do

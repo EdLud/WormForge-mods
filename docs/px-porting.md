@@ -166,8 +166,11 @@ engine moves it to the pack sheet with the bomb.
 `px.petrol_turret`, `px.flame_turret`, `px.mine_turret` and
 `px.auto_ballista`, PyroMan's, from Project X's `p_turrets` library (the
 28.09.2026 build), each a component of its own, not in Highlander's pools.
-Their record is PX's, WA's Prod: the worm holds the Prod, and its shot
-places the turret (the Prod's hit dropped, as PX's `FireFinal` drops it).
+PX's record is WA's Prod; theirs is WA's Mine, as the Sentry Gun's is, so
+a worm on a jet pack, rope, bungee or parachute (the Helicopter, Hang Glider
+and Hot Air Balloon among them) drops one with Enter, where WA refuses the
+Prod. The worm still takes it out and puts it away with WA's Prod sheets
+(`lib/prod_hold.lua`: `wprdlnk` out, `wprdbk2` back).
 They place as the Sentry Gun does and share its body (`lib/turret.lua`:
 planting, the planter's passage, capture, the death blast), on an oil drum's
 radius-9 circle, PX's turret shape. Their brain is PyroMan's
