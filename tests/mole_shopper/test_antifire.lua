@@ -6,6 +6,13 @@ local a = {id=17,team=1,alliance=0,hp=100,state="standing",x=12,y=34,turn=true}
 local b = {id=33,team=2,alliance=0,hp=100,state="standing",x=70,y=34,turn=false}
 local c = {id=18,team=1,alliance=0,hp=100,state="standing",x=30,y=34,turn=false}
 local hits = 1
+local tray = {}
+-- How many of the suit's tray icons are open for `w`.
+local function shown(w)
+  local n=0
+  for _,e in ipairs(tray) do if e.open and e.worm==w and e.weapon=="px.antifire_suit" then n=n+1 end end
+  return n
+end
 wa = {
   msg={FRAME_FINISH=2,TURN_STARTED=99},depth={WORMS=20},
   world={frame=function() return frame end,turn_clock=function()return clock end},
@@ -18,7 +25,11 @@ wa = {
   turn_cleanup=function(f)cleanup=f end},
   sound={play=function(w,s)sounds[#sounds+1]={w,s} end},
   draw={quad=function(t)quads[#quads+1]=t end},
-  hud={message_top=function(text,to)hints[#hints+1]={text,to} end},
+  hud={message_top=function(text,to)hints[#hints+1]={text,to} end,
+    utilities={add=function(t)
+      local e={weapon=t.weapon,worm=t.worm,open=true};tray[#tray+1]=e
+      return {remove=function() e.open=false end}
+    end}},
   fire={repel=function(t)pushes[#pushes+1]=t;return hits end},
   sorted=function(t)local out={};for k in pairs(t)do out[#out+1]=k end;table.sort(out);return out end,
 }
@@ -29,6 +40,7 @@ assert(claim.utility.effect=="scripted" and not claim.handling.ends_turn)
 local function hit(w,kind,phase) return hurt{worm=w,kind=kind,phase=phase or "pre",amount=10} end
 assert(hit(a,"fire")==nil)
 claim.on_fire{worm=a}
+assert(shown(a)==1 and shown(b)==0,"putting it on shows its tray icon")
 assert(#sounds==1 and #hints==1 and hints[1][2].to=="coalition")
 draw();assert(#quads==1 and quads[1].color>>24==38,"activation starts with a faint shield")
 message(a,2);quads={};draw()
@@ -37,7 +49,7 @@ quads={};pushes={}
 assert(hit(a,"fire")=="eat" and hit(b,"fire")==nil)
 for _,kind in ipairs({"blast","hit","percent","nonlethal","poison"}) do assert(hit(a,kind)==nil) end
 assert(hit(a,"fire","post")==nil)
-claim.on_fire{worm=a};assert(#sounds==1,"repeated activation does not stack")
+claim.on_fire{worm=a};assert(#sounds==1 and shown(a)==1,"repeated activation does not stack")
 message(a,2)
 assert(#pushes==1 and pushes[1].radius==28 and pushes[1].power==28 and pushes[1].x==a.x)
 message(b,2);assert(#pushes==1,"other worms have no field")
@@ -54,9 +66,10 @@ local n=#sounds;hit(a,"fire");assert(#sounds==n,"at most one sizzle per worm per
 claim.on_fire{worm=b};claim.on_fire{worm=c}
 a.turn=true;b.turn=false;message(a,99)
 assert(hit(a,"fire")==nil and hit(c,"fire")==nil and hit(b,"fire")=="eat")
-b.state="drowning";message(b,2);b.state="standing";assert(hit(b,"fire")==nil)
-claim.on_fire{worm=b};death{victim=b};assert(hit(b,"fire")==nil)
-claim.on_fire{worm=a};a.hp=0;message(a,2);a.hp=100;assert(hit(a,"fire")==nil)
+assert(shown(a)==0 and shown(c)==0 and shown(b)==1,"its team's next turn takes the icons off")
+b.state="drowning";message(b,2);b.state="standing";assert(hit(b,"fire")==nil and shown(b)==0)
+claim.on_fire{worm=b};death{victim=b};assert(hit(b,"fire")==nil and shown(b)==0)
+claim.on_fire{worm=a};a.hp=0;message(a,2);a.hp=100;assert(hit(a,"fire")==nil and shown(a)==0)
 frame=205;claim.on_fire{worm=a};hit(a,"fire");quads={};draw()
 local puff
 for _,q in ipairs(quads) do if q.sprite:find("smoke.png") and q.frame==0 then puff=q end end
@@ -70,6 +83,7 @@ assert(hit(a,"fire")=="eat","fading shield is only presentation")
 -- The profile's options: a fresh install with them.
 local function install(opts)
   package.loaded["weapons/antifire_suit"] = nil
+  tray = {} -- a new match: the engine starts the tray empty
   require("weapons/antifire_suit").install{option = function(k) return opts[k] end}
 end
 local function suited(w) return hit(w,"fire")=="eat" end
@@ -81,15 +95,15 @@ a.turn,b.turn=true,false;claim.on_fire{worm=a}
 a.turn=false;b.turn=true;message(b,99);assert(suited(a),"another team's turn does not count")
 b.turn=false;a.turn=true;message(a,99);assert(suited(a),"one of two turns passed")
 cleanup();assert(suited(a),"a turn-based suit outlives the cleanup")
-message(a,99);assert(not suited(a),"off at its team's second turn")
+message(a,99);assert(not suited(a) and shown(a)==0,"off at its team's second turn")
 
 -- Timed, 10 seconds: off 500 frames after putting it on.
 install{duration=10, turns=1}
 frame=1000;claim.on_fire{worm=a}
 message(a,99);assert(suited(a),"a team turn does not end a timed suit")
-frame=1499;message(a,2);assert(suited(a),"still on at 499 frames")
-frame=1500;message(a,2);assert(not suited(a),"off at 10 seconds")
+frame=1499;message(a,2);assert(suited(a) and shown(a)==1,"still on at 499 frames")
+frame=1500;message(a,2);assert(not suited(a) and shown(a)==0,"off at 10 seconds, icon too")
 -- ...and at the turn's cleanup, whichever comes first.
 frame=2000;claim.on_fire{worm=a};frame=2100;message(a,2);assert(suited(a))
-cleanup();assert(not suited(a),"off at cleanup, as WA's utilities")
+cleanup();assert(not suited(a) and shown(a)==0,"off at cleanup, as WA's utilities")
 print("Antifire Suit: all Lua checks passed")

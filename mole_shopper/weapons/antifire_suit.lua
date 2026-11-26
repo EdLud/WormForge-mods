@@ -1,5 +1,6 @@
 -- Antifire Suit: protect the wearer from flames and repel nearby fire until their team's next turn.
 
+local ID = "px.antifire_suit"
 local ART = "sprites/antifire_suit/"
 local SOUND = "sounds/antifire_suit/putting_on_suit.wav"
 local RADIUS, POWER = 28, 28
@@ -21,6 +22,12 @@ function M.install(ctx)
   local function alpha(s, now)
     return math.max(IDLE_ALPHA, s.alpha - 2 * math.max(0, now - s.refreshed - 51))
   end
+  -- Its icon in the utility tray while it's on (shown on the wearer's turns).
+  local function off(id)
+    local s = suits[id]
+    if s and s.icon then s.icon:remove() end
+    suits[id] = nil
+  end
   local function flash(s)
     local now = wa.world.frame()
     s.alpha, s.refreshed = HIT_ALPHA, now
@@ -37,6 +44,8 @@ function M.install(ctx)
       local now = wa.world.frame()
       suits[w.id] = {team = w.team, alpha = IDLE_ALPHA, refreshed = now,
         turns = turns, ends = seconds > 0 and now + seconds * 50 or nil}
+      local tray = wa.hud and wa.hud.utilities
+      if tray then suits[w.id].icon = tray.add{ weapon = ID, worm = w } end
       wa.sound.play(w, SOUND)
       require("wf-lib/tooltip").notice(w, "Antifire Suit ON")
     end,
@@ -73,20 +82,20 @@ function M.install(ctx)
         local s = suits[id]
         if s.team == w.team and not s.ends then
           s.turns = s.turns - 1
-          if s.turns <= 0 then suits[id] = nil end
+          if s.turns <= 0 then off(id) end
         end
       end
       return
     end
     local s = suits[w.id]
     if not s then return end
-    if not alive(w) or (s.ends and wa.world.frame() >= s.ends) then suits[w.id] = nil; return end
+    if not alive(w) or (s.ends and wa.world.frame() >= s.ends) then off(w.id); return end
     wa.fire.repel{x = w.x, y = w.y, radius = RADIUS, power = POWER}
   end, {msgs = {wa.msg.FRAME_FINISH, wa.msg.TURN_STARTED}})
-  wa.on.death(function(ev) suits[ev.victim.id] = nil end)
+  wa.on.death(function(ev) off(ev.victim.id) end)
   wa.on.turn_cleanup(function()
     for _, id in ipairs(wa.sorted(suits)) do
-      if suits[id].ends then suits[id] = nil end
+      if suits[id].ends then off(id) end
     end
   end)
   -- Made once, and one table of the living worms emptied each frame: the
