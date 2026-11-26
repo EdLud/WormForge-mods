@@ -153,7 +153,7 @@ end
 
 local DEFAULTS = {
   sentry_gun = 0, sentry_gun_health = 50, sentry_gun_ammo = 20, sentry_gun_damage = 2, sentry_gun_push_pct = 100,
-  sentry_laser = 0, sentry_laser_health = 35,
+  sentry_laser = 0, sentry_laser_health = 35, tracking_pct = 100, aim_ahead = false,
 }
 for _, key in ipairs({ "petrol_turret", "flame_turret", "mine_turret", "auto_ballista" }) do
   DEFAULTS[key], DEFAULTS[key .. "_health"], DEFAULTS[key .. "_ammo"] = 0, 50, 6
@@ -272,6 +272,24 @@ do
     end
   end
   check("drawn grey", grey == 3, grey)
+end
+
+print("Hazardous Sentries: one Tracking speed and Aim ahead for all of them, not the weapons'")
+do
+  mock()
+  local red = M.worm(1, 1, 0, 100, 300)
+  install({ sentry_gun = 1, mine_turret = 1, tracking_pct = 300, aim_ahead = true })
+  turn_start(red)
+  local gun, mine
+  for _, h in ipairs(hazards()) do
+    if h.t.kind == "hazard_sentry" then gun = h.t elseif h.t.kind == "hazard_mine_turret" then mine = h.t end
+  end
+  check("the gun turns 4.5 degrees a frame and fires 20 frames after it acquires",
+    gun and gun.rot_active == 4.5 and gun.activate == 20)
+  check("the turret: faster, quicker, and aiming ahead", mine and mine.thinking == 5 and mine.pick_pct == 90 and mine.aim_ahead)
+  local shared = require("lib/shared")
+  check("the weapons' own turrets as they were", shared.sentry_gun.rot_active == 1.5 and shared.sentry_gun.activate == 60
+    and shared.mine_turret.thinking == 15 and not shared.mine_turret.aim_ahead)
 end
 
 print("Hazardous Sentries: a neutral Sentry Gun fires at every team, as no team's")

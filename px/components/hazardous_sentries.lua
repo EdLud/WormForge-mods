@@ -9,6 +9,8 @@ local KINDS = { -- each option's prefix and its turret's weapon, in the order th
   { key = "auto_ballista", id = "px.auto_ballista" },
 }
 
+local SHARED_OPTIONS = { tracking_pct = true, aim_ahead = true } -- one setting for every kind
+
 return {
   install = function(ctx)
     local loader = require("components/loader")
@@ -35,7 +37,10 @@ return {
           gpu_prefix = spec.params and spec.params.gpu_prefix })
       end
       local t = shared.hazard_turrets[kind.id]()
-      module.set_options(t, function(key) return ctx.option(kind.key .. "_" .. key) end)
+      module.set_options(t, function(key)
+        if SHARED_OPTIONS[key] then return ctx.option(key) end
+        return ctx.option(kind.key .. "_" .. key)
+      end)
       hazards[#hazards + 1] = { t = t, kind = kind, count = ctx.option(kind.key) }
     end
 

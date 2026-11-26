@@ -877,6 +877,24 @@ turrets; a team's turret takes them. A Tazer stun wears off after two turns
 of anyone's. Lightning Strike captures one for the caster's coalition, which
 then owns it as it would its own. Everything else (health, damage disabling
 a sentry for the turn, ammo per turn, the death blast) is the weapons'.
+Tracking speed and Aim ahead (below) are one setting each for all of them.
+
+### Tracking speed and Aim ahead
+
+Every sentry weapon and the add-on have **Tracking speed (%)** (100 to 1000,
+default 100, the ports as they were): at `p`%, the Sentry Gun and Laser turn
+`p / 100` times as fast toward a target (`rot_active`, 1.5 and 5 degrees a
+frame) and fire `100 / p` as soon after acquiring it (`activate`, 60 and 20
+frames, whole frames); PyroMan's turrets turn `p / 100` times as fast
+(0.08 rad a frame), think `100 / p` as long before aiming (15 frames) and take
+a moving worm in range with `p / 100` times the chance a frame (30%, at most
+100%; still one `wa.random` draw per worm). It's for fast targets: a
+helicopter flies 5 pixels a frame an axis, so at 150 pixels it sweeps 1.9
+degrees a frame past a Sentry Gun at 1.5. The four turrets and the add-on
+also have **Aim ahead** (off): the lobbed solve aims at the target's position
+plus its speed (`vx`, `vy`, synced) times the shot's flight time, the Auto
+Ballista's flight worked out again for that point. The Gun and Laser hit at
+once, so they don't need it.
 
 ## Random Race
 

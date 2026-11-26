@@ -222,8 +222,8 @@ end
 print("PyroMan's turrets: Health, Ammo per turn, Fire rate and Fire increase are options")
 do
   local t, a, s = planted("mine_turret")
-  local options = { health = 80, ammo = 3, fire_rate = 800, fire_increase_pct = 50 }
-  require("weapons/mine_turret").configure({ option = function(key) return assert(options[key], key) end })
+  local options = { health = 80, ammo = 3, fire_rate = 800, fire_increase_pct = 50, tracking_pct = 100, aim_ahead = false }
+  require("weapons/mine_turret").configure({ option = function(key) assert(options[key] ~= nil, key); return options[key] end })
   enemy(150)
   start_turn(M.worms[2])
   check("its ammo and fire rate", s.ammo == 3 and s.reload_time == 800, s.reload_time)
@@ -233,6 +233,26 @@ do
   check("three a turn", #M.mines == 3, #M.mines)
   t.place({ worm = M.worms[1] })
   check("a turret placed after takes its health", t.state[M.actors[#M.actors].id].health == 80)
+end
+
+print("PyroMan's turrets: Tracking speed and Aim ahead are options")
+do
+  local t, a, s = planted("mine_turret")
+  local options = { health = 50, ammo = 6, fire_rate = 400, fire_increase_pct = 12, tracking_pct = 300, aim_ahead = true }
+  require("weapons/mine_turret").configure({ option = function(key) assert(options[key] ~= nil, key); return options[key] end })
+  check("three times the turn, a third of the wait, 90% a frame", near(t.speed, 0.24) and t.thinking == 5 and t.pick_pct == 90,
+    t.speed .. " " .. t.thinking .. " " .. t.pick_pct)
+  local w = enemy(150)
+  w.vx = 2
+  start_turn(M.worms[2])
+  for _ = 1, 40 do
+    frames(a, 1)
+    if s.lrx ~= 0 then break end
+  end
+  check("it aims where the worm will be when the mine lands", near(s.lrx, (w.x + 2 * 32 - 500) / 32), s.lrx)
+  options.tracking_pct, options.aim_ahead = 100, false
+  require("weapons/mine_turret").configure({ option = function(key) return options[key] end })
+  check("100% is the turret as it was", near(t.speed, 0.08) and t.thinking == 15 and t.pick_pct == 30 and not t.aim_ahead)
 end
 
 print("PyroMan's turrets: land in the arc keeps it from firing")

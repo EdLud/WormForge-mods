@@ -285,6 +285,13 @@ function turret.new(cfg)
   t.feet = feet
   local state = {}
 
+  -- Tracking speed (%): how fast it turns toward a target and how soon it fires once it has one.
+  local base_rot, base_activate = t.rot_active, t.activate
+  function t.set_tracking(pct)
+    t.rot_active = base_rot * pct / 100
+    t.activate = base_activate * 100 // pct
+  end
+
   -- The worms near enough to track, in wa.worms.all()'s order; a far one can't be
   -- tracked, so only the near ones' fields are read.
   local function worm_targets(_, _, s, watch)

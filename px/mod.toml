@@ -1315,6 +1315,22 @@ max = 100
 label = "Auto Ballista fire increase (%)"
 description = ""
 
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast every sentry turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
+[[components.options]]
+key = "aim_ahead"
+type = "bool"
+default = false
+label = "Aim ahead"
+description = "Turrets aim where a moving target will be when the shot lands, not where it is now."
+
 [[components]]
 id = "px.double_bazooka"
 type = "weapon"
@@ -1553,6 +1569,15 @@ default = 35
 label = "Health"
 description = "Damage the sentry takes before it's destroyed."
 
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
 [[components]]
 id = "px.sentry_gun"
 type = "weapon"
@@ -1601,6 +1626,15 @@ max = 1000
 default = 100
 label = "Push (%)"
 description = "Bullet knockback relative to normal sentry rounds. 100 keeps normal push; 0 disables it."
+
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
 
 [[components]]
 id = "px.kamikaze_rocket"
@@ -1672,6 +1706,22 @@ default = 12
 label = "Fire increase (%)"
 description = "How much longer each wait between shots is than the last, in percent."
 
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
+[[components.options]]
+key = "aim_ahead"
+type = "bool"
+default = false
+label = "Aim ahead"
+description = "Aims where a moving target will be when the shot lands, not where it is now."
+
 [[components]]
 id = "px.flame_turret"
 type = "weapon"
@@ -1717,6 +1767,22 @@ max = 100
 default = 12
 label = "Fire increase (%)"
 description = "How much longer each wait between shots is than the last, in percent."
+
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
+[[components.options]]
+key = "aim_ahead"
+type = "bool"
+default = false
+label = "Aim ahead"
+description = "Aims where a moving target will be when the shot lands, not where it is now."
 
 [[components]]
 id = "px.mine_turret"
@@ -1764,6 +1830,22 @@ default = 12
 label = "Fire increase (%)"
 description = "How much longer each wait between shots is than the last, in percent."
 
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
+[[components.options]]
+key = "aim_ahead"
+type = "bool"
+default = false
+label = "Aim ahead"
+description = "Aims where a moving target will be when the shot lands, not where it is now."
+
 [[components]]
 id = "px.auto_ballista"
 type = "weapon"
@@ -1809,6 +1891,22 @@ max = 100
 default = 12
 label = "Fire increase (%)"
 description = "How much longer each wait between shots is than the last, in percent."
+
+[[components.options]]
+key = "tracking_pct"
+type = "int"
+default = 100
+min = 100
+max = 1000
+label = "Tracking speed (%)"
+description = "How fast it turns toward a target and how soon it starts firing, as a percentage of normal; raise it against fast targets such as helicopters."
+
+[[components.options]]
+key = "aim_ahead"
+type = "bool"
+default = false
+label = "Aim ahead"
+description = "Aims where a moving target will be when the shot lands, not where it is now."
 
 [[components]]
 id = "px.nuke_rocket"

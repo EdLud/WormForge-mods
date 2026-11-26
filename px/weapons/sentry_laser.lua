@@ -266,6 +266,7 @@ end
 
 function weapon.set_options(sentry, option)
   sentry.health = option("health")
+  sentry.set_tracking(option("tracking_pct"))
 end
 
 function weapon.configure(ctx)

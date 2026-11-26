@@ -48,7 +48,9 @@ local BASE = {
   fire_increase_pct = 12, -- how much longer each next wait is
   aim_sound_gap = 180,
   health = 50, explode_damage = 50,
+  aim_ahead = false, -- aim where a moving target will be when the shot lands
 }
+local PICK_PCT = 30 -- the chance a frame of taking a moving worm in range
 
 local installed = false
 function pyro.install()
@@ -82,17 +84,17 @@ local function find_target(t, a, s, watch, seen)
         if w.visible == false then break end
         local dx, dy = x - cx, y - py
         local d = math.sqrt(dx * dx + dy * dy)
-        if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < 30 then s.tid = id end
+        if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < t.pick_pct then s.tid = id end
       end
     end
   end
 end
 
-local function solve(t, a, s, target)
+local function solve(t, a, s, tx, ty)
   local cx, cy = centre(a)
   local tm = s.flight
-  local rx = (target.x - cx) / tm
-  local y = target.y - (cy - t.tower_offset)
+  local rx = (tx - cx) / tm
+  local y = ty - (cy - t.tower_offset)
   local g = wa.world.gravity() * t.g_factor
   local ry = (2 * y - g * tm * tm) / (2 * tm)
   if rx > 0 then
@@ -110,7 +112,15 @@ local function aim(t, a, s, target)
   local dist = math.sqrt(dx * dx + dy * dy)
   if dist > t.lost_px then s.tid = nil; return false end
   if t.aim_time then s.flight = t.aim_time(dist) end
-  solve(t, a, s, target)
+  local tx, ty = target.x, target.y
+  if t.aim_ahead then
+    tx, ty = tx + target.vx * s.flight, ty + target.vy * s.flight
+    if t.aim_time then
+      local lx, ly = tx - cx, ty - cy
+      s.flight = t.aim_time(math.sqrt(lx * lx + ly * ly))
+    end
+  end
+  solve(t, a, s, tx, ty)
   if math.abs(s.want - s.ta) > t.speed * 2 then
     if s.want > s.ta then s.ta = s.ta + t.speed else s.ta = s.ta - t.speed end
     return false
@@ -256,6 +266,8 @@ local function draw_off_screen(s) return s.draw_aim and s.tid ~= nil end
 function pyro.set_options(t, option)
   t.health, t.ammo = option("health"), option("ammo")
   t.fire_rate_ms, t.fire_increase_pct = option("fire_rate"), option("fire_increase_pct")
+  t.set_tracking(option("tracking_pct"))
+  t.aim_ahead = option("aim_ahead")
 end
 
 function pyro.configure(t, ctx)
@@ -286,6 +298,13 @@ function pyro.new(cfg)
     head = t.layer(pyro.SHEET, Z_HEAD),
     labels = t.layer(health_label.SHEET, Z_AMMO - 1),
   }
+  local base_speed, base_thinking = t.speed, t.thinking
+  t.pick_pct = PICK_PCT
+  function t.set_tracking(pct) -- faster turning, less thinking, a likelier pick
+    t.speed = base_speed * pct / 100
+    t.thinking = base_thinking * 100 // pct
+    t.pick_pct = math.min(100, PICK_PCT * pct // 100)
+  end
   return t
 end
 

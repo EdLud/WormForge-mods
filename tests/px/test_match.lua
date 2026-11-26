@@ -6672,7 +6672,7 @@ do
     local id, health = "px." .. kind, 123
     HIGHLANDER_CLAIMING = id
     require("components/loader").install({ id = id, option = function(key)
-      local options = { health = health, ammo = 20, damage = 2, push_pct = 100 }
+      local options = { health = health, ammo = 20, damage = 2, push_pct = 100, tracking_pct = 100 }
       assert(options[key] ~= nil); return options[key]
     end })
     HIGHLANDER_CLAIMING = nil
@@ -6689,6 +6689,7 @@ do
     HIGHLANDER_CLAIMING = "px.sentry_gun"
     require("components/loader").install({ id = "px.sentry_gun", option = function(key)
       if key == "health" then return 50 end
+      if key == "tracking_pct" then return 100 end
       assert(options[key] ~= nil); return options[key]
     end })
     HIGHLANDER_CLAIMING = nil

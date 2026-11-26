@@ -135,6 +135,7 @@ function weapon.set_options(gun, option)
   gun.ammo = option("ammo")
   gun.damage = option("damage")
   gun.push_pct = option("push_pct")
+  gun.set_tracking(option("tracking_pct"))
 end
 
 function weapon.configure(ctx)
