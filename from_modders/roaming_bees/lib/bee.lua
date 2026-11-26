@@ -68,10 +68,11 @@ local BUMP_LOOKOUT_FRAMES = 45
 local ROAM_SLOWDOWN_RADIUS_PX = 60
 local ROAM_SLOWDOWN_MIN_FRAC  = 0.35
 
--- An idle bee (roaming, no worm within LOD_RADIUS_PX) runs its whole brain
--- every LOD_EVERY frames; between them it only flaps and turns. WA moves it
--- every frame at the speed it was given, and picking a target still runs
--- for every bee every frame, so a worm coming near wakes it at once.
+-- An idle bee (roaming, no worm within LOD_RADIUS_PX) sleeps (`a:sleep`) for
+-- LOD_EVERY - 1 frames after each think: the engine doesn't call it, WA
+-- moves it at the speed it was given, and its next call catches up the
+-- flaps and turns it slept through. A worm coming within LOD_RADIUS_PX, a
+-- hit, a touch, a bump or a target picked for it wakes it at once.
 local LOD_RADIUS_PX = 600
 local LOD_EVERY = 3
 -- Per-frame factors applied over the frames one think covers (1 to LOD_EVERY).
@@ -331,9 +332,19 @@ local KNOCKED = {
   parachuting = true,
 }
 
+-- Ends a bee's sleep (`a:sleep`): the engine calls it on the next frame.
+local function wake(a, s)
+  if s.asleep then
+    a:sleep(0)
+    s.asleep = false
+  end
+end
+
 local function refreshTargets()
   local frame = wa.world.frame() or 0
   if targetFrame == frame then return end
+  -- frames since the last refresh: more than 1 when every bee slept through some
+  local gap = targetFrame and frame - targetFrame or 1
   targetFrame = frame
  
   local worms = wa.worms.all()
@@ -365,7 +376,7 @@ local function refreshTargets()
     if s and not s.dead and not s.freeMe and not s.stopMe
         and not s.spin and not s.softSpin then
       if (s.lookoutCooldown or 0) > 0 then
-        s.lookoutCooldown = s.lookoutCooldown - 1
+        s.lookoutCooldown = math.max(0, s.lookoutCooldown - gap)
       end
       local target = s.targetId and wormsById[s.targetId]
       if target and (target.hp <= 0 or target.taken
@@ -377,6 +388,7 @@ local function refreshTargets()
         target = candidateCount > 0 and closestEnemy(s, a.x, a.y) or nil
         s.targetId = target and target.id or nil
       end
+      if s.targetId then wake(a, s) end
     end
   end
 end
@@ -941,17 +953,15 @@ local function idle(s)
     or s.stopMe or s.inWater) and s.bonk == 0 and s.clipFrames == 0
 end
 
-local function brain(a, s)
+local function brain(a, s, ev)
   if not s or state[s.id] ~= s then return end
+  s.asleep = false
   refreshTargets()
-  if s.skip > 0 and idle(s) then
-    s.skip, s.skipped = s.skip - 1, s.skipped + 1
+  local step = 1 + (ev and ev.slept or 0)
+  for _ = 2, step do -- the frames it slept through flapped and turned
     updateAnim(a, s)
     turnToward(a, s)
-    return
   end
-  local step = s.skipped + 1
-  s.skip, s.skipped = 0, 0
   readBody(a, s)
   if s.lastSpeed and not s.dead and not s.sting
       and speedOf(s) > s.lastSpeed + THROWN_PX then
@@ -961,7 +971,10 @@ local function brain(a, s)
   if state[s.id] == s then
     writeSpeed(a, s)
     s.lastSpeed = speedOf(s)
-    if idle(s) and farFromWorms(s.x, s.y) then s.skip = LOD_EVERY - 1 end
+    if idle(s) and farFromWorms(s.x, s.y) and a.sleep then
+      a:sleep(LOD_EVERY - 1, { near = LOD_RADIUS_PX })
+      s.asleep = true
+    end
   end
 end
 
@@ -1000,6 +1013,7 @@ end
 local function bump(a, ev)
   local s = state[a.id]
   if not s or s.dead then return end
+  wake(a, s)
   s.bonk = s.bonk + 1
   local limit = BONK_LIMIT
   if s.bonk > limit then
@@ -1028,7 +1042,7 @@ function M.spawn_actor(opts)
                 hit_by = { fire = true, blasts = true, bullets = true, arrows = true,
                           missiles = true, mines = true, actors = true } },
     grab    = "projectile",
-    on      = { frame = opts.brain or function(a) brain(a, s) end,
+    on      = { frame = opts.brain or function(a, ev) brain(a, s, ev) end,
                 hit = hurt, touched = onContact, contact = bump },
   })
 
@@ -1037,8 +1051,7 @@ function M.spawn_actor(opts)
         " (Rogue=" .. tostring(opts.rogue or false) .. ")")
     s = {
       id              = body.id,
-      skip            = 0, -- frames this idle bee rests before thinking again
-      skipped         = 0, -- frames it has rested since it last thought
+      asleep          = false, -- idle, it asked the engine to skip its next frames
       rogue           = opts.rogue or false,
       team            = opts.team or (owner and owner.team) or -1,
       colour          = opts.colour

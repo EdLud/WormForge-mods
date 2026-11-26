@@ -77,6 +77,7 @@ local function mock()
       end,
     },
   }
+  dofile(root .. "../tests/brush_mock.lua")(wa)
   for _, name in ipairs({ "lib/turret", "lib/pyro_turret", "lib/sentry_health", "lib/shared",
     "weapons/petrol_turret", "weapons/flame_turret", "weapons/mine_turret", "weapons/auto_ballista" }) do
     package.loaded[name] = nil
@@ -328,6 +329,52 @@ do
     obj.provider.strike(obj, 3)
     check(name .. ": Lightning makes it the striker's and it keeps firing", s.alliance == 3 and not s.disabled)
   end
+end
+
+print("PyroMan's turrets: idle, they sleep; a worm walking up wakes them to fire when an awake one does")
+do
+  -- The engine's `a:sleep`, as engine/actor_sleep.rs: skipped calls, a living worm within
+  -- `near` wakes it, and the call that ends it gets `ev.slept`.
+  local function run(sleeps)
+    local t, a, _, red = planted("mine_turret")
+    red.x = -5000 -- its planter far off: any living worm near wakes it
+    t.fire_rate_ms = 1000 -- a reload longer than finding and aiming at the worm again
+    local asleep, slept, near, calls = 0, 0, nil, 0
+    if sleeps then function a:sleep(n, opts) asleep, near = n, opts and opts.near end end
+    local walker = enemy(1500)
+    start_turn(M.worms[2])
+    local first
+    for f = 1, 600 do
+      M.frame, M.clock = M.frame + 1, M.clock - 20
+      if not first then walker.x = walker.x - 4 end
+      -- after its first shot the worm leaves, so the turret sleeps while it reloads, and
+      -- comes back three frames later, the reload still the longer wait
+      if first and f == first + 1 then walker.x = 5000 end
+      if first and f == first + 4 then walker.x = 650 end
+      local woke = false
+      for _, w in ipairs(M.worms) do
+        if asleep > 0 and w.hp > 0 and (w.x - a.x) ^ 2 + (w.y - a.y) ^ 2 <= near ^ 2 then woke = true end
+      end
+      if asleep > 0 and not woke then
+        asleep, slept = asleep - 1, slept + 1
+      else
+        asleep, calls = 0, calls + 1
+        local n = slept
+        slept = 0
+        a.on.frame(a, { slept = n })
+      end
+      if #M.mines == 1 and not first then first = f end
+      if #M.mines == 2 then return first, f, calls end
+    end
+  end
+  local awake_first, awake_second, awake_calls = run(false)
+  local first, second, calls = run(true)
+  check("an awake turret fires at the walker, and again when it comes back", awake_second ~= nil)
+  check("one that sleeps fires on the same frame", first == awake_first, tostring(first) .. " vs " .. tostring(awake_first))
+  check("and again on the same frame: its reload counted on through the sleep", second == awake_second,
+    tostring(second) .. " vs " .. tostring(awake_second))
+  check("called far less often while no worm was near", calls < awake_calls / 2,
+    tostring(calls) .. " of " .. tostring(awake_calls))
 end
 
 if failed > 0 then error(failed .. " FAILED") end

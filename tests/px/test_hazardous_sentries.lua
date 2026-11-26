@@ -140,6 +140,7 @@ local function mock(solid)
       end,
     },
   }
+  dofile(root .. "../tests/brush_mock.lua")(wa)
   for _, name in ipairs(MODULES) do package.loaded[name] = nil end
   require("lib/shared").fires = {}
   -- the pack's loader, as far as the add-on reaches it: the modules it asks for, set up
@@ -295,6 +296,56 @@ do
   M.bullets = {}
   frames(a, 300)
   check("and at red too", #M.bullets > 0, #M.bullets)
+end
+
+print("Hazardous Sentries: an idle Sentry Gun sleeps, its sweep where an awake one's is")
+do
+  -- The engine's `a:sleep` (engine/actor_sleep.rs): skipped calls, a living worm within
+  -- `near` wakes it, the call that ends it gets `ev.slept`. Each call's head angle, by frame.
+  local function run(sleeps)
+    mock()
+    local red = M.worm(1, 1, 0, 100, 300)
+    install({ sentry_gun = 1 })
+    turn_start(red)
+    local a = M.actors[#M.actors]
+    local s = hazards()[1].s
+    red.x = -5000
+    local asleep, slept, near, angles, calls = 0, 0, nil, {}, 0
+    if sleeps then function a:sleep(n, opts) asleep, near = n, opts and opts.near end end
+    local blue = M.worm(2, 2, 1, a.x + 2000, a.y - 5)
+    blue.vx = 1
+    for f = 1, 900 do
+      M.frame, M.clock = M.frame + 1, M.clock - 20
+      if f > 200 then blue.x = blue.x - 3 end
+      local woke = false
+      for _, w in ipairs(M.worms) do
+        if asleep > 0 and w.hp > 0 and (w.x - a.x) ^ 2 + (w.y - a.y) ^ 2 <= near ^ 2 then woke = true end
+      end
+      if asleep > 0 and not woke then
+        asleep, slept = asleep - 1, slept + 1
+      else
+        asleep, calls = 0, calls + 1
+        local n = slept
+        slept = 0
+        a.on.frame(a, { slept = n })
+        angles[f] = s.angle
+      end
+      if #M.bullets > 0 then return f, angles, calls end
+    end
+    return nil, angles, calls
+  end
+  local awake_at, awake_angles, awake_calls = run(false)
+  local at, angles, calls = run(true)
+  local same = 0
+  for f, angle in pairs(angles) do
+    if awake_angles[f] ~= angle then same = nil; break end
+    same = same + 1
+  end
+  check("an awake one fires at the worm walking up", awake_at ~= nil)
+  check("one that sleeps fires on the same frame", at == awake_at, tostring(at) .. " vs " .. tostring(awake_at))
+  check("each time it wakes, its head is where the awake one's is", same and same == calls, same)
+  check("called far less often while no worm was near", calls < awake_calls * 0.6,
+    tostring(calls) .. " of " .. tostring(awake_calls))
 end
 
 print("Hazardous Sentries: neutral turrets spare each other's arrows; a team's turret doesn't")

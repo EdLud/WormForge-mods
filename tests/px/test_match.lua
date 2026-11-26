@@ -762,6 +762,7 @@ local function new_match(opts)
                 else dy, self.vy = 0, 0 end
               end
             end
+            M.frame = (M.frame or 0) + 1 -- each step is a frame of its own, as WA's
             frame(self, {})
           end
         end

@@ -8,6 +8,89 @@ local feet = require("lib/sentry_mask")
 local health_label = require("lib/sentry_health")
 local electrical = require("lib/electrical")
 
+-- How far past its sensor a sentry still reads a worm's own fields: more than a worm
+-- moves in a frame. A sentry with no worm that near reads no worm's fields.
+turret.NEAR_SLACK_PX = 100
+
+-- Every worm, read once a frame for every sentry: wa.worms.all()'s list, each one's id,
+-- where it is, and whether any is invisible.
+local watched = {}
+function turret.watch(frame)
+  if watched.frame == frame then return watched end
+  local list = wa.worms.all()
+  local ids, x, y, hidden = {}, {}, {}, false
+  for i = 1, #list do
+    local w = list[i]
+    local id = w.id
+    ids[i], x[id], y[id] = id, w.x, w.y
+    if w.visible == false then hidden = true end
+  end
+  watched = { frame = frame, list = list, ids = ids, x = x, y = y, hidden = hidden }
+  return watched
+end
+
+-- PX's motion test: worm `w` (`id`, at `x`, `y`) moves if it has speed, or isn't where
+-- it was in `seen`, the watch of the frame the sentry last looked (nil since its turn
+-- began).
+function turret.moving(w, id, x, y, seen)
+  if w.vx ~= 0 or w.vy ~= 0 then return true end
+  local was = seen and seen.x[id]
+  return was ~= nil and (was ~= x or seen.y[id] ~= y)
+end
+
+-- Whether a worm the watch puts at `x`, `y` is within `reach` of (`cx`, `cy`) on each axis.
+function turret.near(x, y, cx, cy, reach)
+  local dx, dy = x - cx, y - cy
+  return dx <= reach and dx >= -reach and dy <= reach and dy >= -reach
+end
+
+-- Whether any worm in `watch` is near (`cx`, `cy`), as `turret.near` measures.
+function turret.any_near(watch, cx, cy, reach)
+  local xs, ys = watch.x, watch.y
+  for _, id in ipairs(watch.ids) do
+    if turret.near(xs[id], ys[id], cx, cy, reach) then return true end
+  end
+  return false
+end
+
+-- One sprite drawn many times a frame, for wa.on.draw: a brush and a list of boxes,
+-- filled by `put` and drawn at once by `flush`.
+local MAX_BOXES = 4096 -- brush:boxes' limit a call
+local Batch = {}
+Batch.__index = Batch
+
+function turret.batch(sprite, depth, blend)
+  return setmetatable({ sprite = sprite, depth = depth, blend = blend or "alpha", list = {}, count = 0 }, Batch)
+end
+
+function Batch:flush()
+  if self.count == 0 then return end
+  if not self.brush then
+    self.brush = wa.draw.brush{ sprite = self.sprite, depth = self.depth, blend = self.blend }
+  end
+  self.brush:boxes(self.list, self.count)
+  self.count = 0
+end
+
+-- A `w` x `h` box centred on (`x`, `y`), turned `angle` radians clockwise.
+function Batch:put(x, y, w, h, angle, frame, color)
+  if self.count == MAX_BOXES then self:flush() end
+  local i, list = self.count * 7, self.list
+  list[i + 1], list[i + 2], list[i + 3], list[i + 4] = x, y, w, h
+  list[i + 5], list[i + 6], list[i + 7] = angle, frame, color
+  self.count = self.count + 1
+end
+
+-- The world the screen shows, widened by `reach` pixels: left, top, right, bottom
+-- (nil when there's no view to cull to).
+function turret.on_screen(reach)
+  local v = wa.world.view and wa.world.view()
+  if not v or v.w <= 0 or v.h <= 0 then return nil end
+  local zoom = v.zoom > 0 and v.zoom or 1
+  local hw, hh = v.w / zoom / 2 + reach, v.h / zoom / 2 + reach
+  return v.cx - hw, v.cy - hh, v.cx + hw, v.cy + hh
+end
+
 local function electrical_targets()
   local out = {}
   for _, t in ipairs(turrets) do
@@ -137,6 +220,9 @@ local DEFAULTS = {
   hit_by = "all", -- what hits it once planted (`body.hit_by`)
   passage_hit_by = { arrows = true, melee = true, fire = true, dragon_ball = true, blasts = true },
   head_depth = wa.depth.FRONT,
+  -- frame calls an idle sentry sleeps through (`a:sleep`), woken at once by a worm coming
+  -- near; its head sweeps half a degree a frame, so a longer sleep would show
+  sleep_frames = 2,
 }
 
 function turret.angle_to(ax, ay, tx, ty)
@@ -199,24 +285,19 @@ function turret.new(cfg)
   t.feet = feet
   local state = {}
 
-  local function note_motion(s, w)
-    local p = s.seen[w.id]
-    local m = (w.vx ~= 0 or w.vy ~= 0)
-    if p then
-      if p.x ~= w.x or p.y ~= w.y then m = true end
-      p.x, p.y, p.moving = w.x, w.y, m
-    else
-      s.seen[w.id] = { x = w.x, y = w.y, moving = m }
-    end
-  end
-
-  local function worm_targets(_, _, s)
+  -- The worms near enough to track, in wa.worms.all()'s order; a far one can't be
+  -- tracked, so only the near ones' fields are read.
+  local function worm_targets(_, _, s, watch)
     local out = {}
-    for _, w in ipairs(wa.worms.all()) do
-      if w.visible ~= false and w.state ~= "frozen" then
-      local p = s.seen[w.id]
-        out[#out + 1] = { key = w.id, x = w.x, y = w.y, alliance = w.alliance, moving = p and p.moving, obj = w }
-    end
+    local cx, cy, reach = s.x, s.y - t.muzzle_up, t.sensor_px + turret.NEAR_SLACK_PX
+    local ids, xs, ys = watch.ids, watch.x, watch.y
+    for i, w in ipairs(watch.list) do
+      local id = ids[i]
+      if turret.near(xs[id], ys[id], cx, cy, reach) and w.visible ~= false and w.state ~= "frozen" then
+        local x, y = w.x, w.y
+        out[#out + 1] = { key = id, x = x, y = y, alliance = w.alliance,
+          moving = turret.moving(w, id, x, y, s.seen), obj = w }
+      end
     end
     return out
   end
@@ -281,20 +362,42 @@ function turret.new(cfg)
     end
   end
 
-  local function think(a, s)
-    if not cfg.targets then
-    for _, w in ipairs(wa.worms.all()) do note_motion(s, w) end
+  local function count_down(s)
+    if s.beep > 0 then s.beep = s.beep - 1 end
+    if s.activate > 0 then s.activate = s.activate - 1 end
+    if s.cooldown > 0 then s.cooldown = s.cooldown - 1 end
+    if s.servo_sound > 0 then s.servo_sound = s.servo_sound - 1 end
+    if s.fire_sound > 0 then s.fire_sound = s.fire_sound - 1 end
+  end
+
+  -- A frame the sentry slept through, idle: its sweep (or an inactive one's turn to
+  -- rest) and its countdowns, as `think` runs them with no target.
+  local function slept_frame(s)
+    local want = s.idle + s.sweep_dir * t.sweep
+    s.angle = turn_toward(s.angle, want, t.rot_idle)
+    if s.angle == want then s.sweep_dir = -s.sweep_dir end
+    if (180 - s.angle) * s.side < 0 then
+      s.side = -s.side
+      s.idle = 180 - 90 * s.side
     end
+    if not s.active then s.angle = turn_toward(s.angle, s.idle - 45 * s.side, t.rot_idle) end
+    count_down(s)
+  end
+
+  local function think(a, s, frame, steps)
+    for _ = 2, steps do slept_frame(s) end
+    local watch = not cfg.targets and turret.watch(frame)
 
     local target
     if s.active then
-      local list = targets(t, a, s)
+      local list = targets(t, a, s, watch)
       target = held(a, s, list)
       if not target and not s.lost then
         target = acquire(a, s, list)
         if target then s.tid = target.key end
       end
     end
+    if watch then s.seen = watch end
     local want
     local hx, hy = a.x, a.y - t.muzzle_up
     if target then
@@ -337,11 +440,7 @@ function turret.new(cfg)
       t.stop_firing(a, s)
     end
 
-    if s.beep > 0 then s.beep = s.beep - 1 end
-    if s.activate > 0 then s.activate = s.activate - 1 end
-    if s.cooldown > 0 then s.cooldown = s.cooldown - 1 end
-    if s.servo_sound > 0 then s.servo_sound = s.servo_sound - 1 end
-    if s.fire_sound > 0 then s.fire_sound = s.fire_sound - 1 end
+    count_down(s)
 
     local aligned = target and angle_gap(s.angle, want) <= t.aim_tolerance
     update_servo(a, s, target ~= nil and angle_gap(s.angle, want) >= 2 * t.rot_active)
@@ -454,22 +553,44 @@ function turret.new(cfg)
     end
     s.planted = planted
     if s.planted then
-      if math.abs(s.vx) <= t.slide_friction then s.vx = 0
-      elseif s.vx > 0 then s.vx = s.vx - t.slide_friction
-      else s.vx = s.vx + t.slide_friction end
-      a.vx = s.vx
+      local vx = s.vx
+      if math.abs(vx) <= t.slide_friction then vx = 0
+      elseif vx > 0 then vx = vx - t.slide_friction
+      else vx = vx + t.slide_friction end
+      if vx ~= s.vx then
+        s.vx = vx
+        a.vx = vx
+      end
     end
     if a:in_water() then destroy(a, s, false); return false end
     return true
   end
 
   local brain_think = think
-  if cfg.think then brain_think = function(a, s) cfg.think(t, a, s) end end
+  if cfg.think then brain_think = function(a, s, frame, steps) cfg.think(t, a, s, frame, steps) end end
 
-  local function brain(a)
+  -- Nothing to do until a worm comes near: planted and still, no target, not firing.
+  local function idle(s)
+    return s.planted and not s.planter and s.vx == 0 and s.vy == 0 and s.recoil == 0
+      and not (s.firing or s.rotating or s.had_target or s.lost) and s.tid == nil
+      and next(s.script_hits) == nil
+  end
+
+  -- An idle sentry with no worm near sleeps; the engine wakes it when one comes within
+  -- its sensor and the slack (from its body, so the muzzle's height on top), or when it
+  -- is hit, touched, moved or lands in water. A sentry aiming at missiles never sleeps.
+  local function sleep_if_idle(a, s, frame)
+    if cfg.targets or not t.sleep_frames or not a.sleep or not idle(s) then return end
+    local reach = t.sensor_px + turret.NEAR_SLACK_PX
+    if turret.any_near(turret.watch(frame), s.x, s.y - t.muzzle_up, reach) then return end
+    a:sleep(t.sleep_frames, { near = math.ceil(reach + t.muzzle_up) })
+  end
+
+  local function brain(a, ev)
     local s = state[a.id]
     if not s then return end
-    s.tick = s.tick + 1
+    local steps = 1 + (ev and ev.slept or 0) -- frames since its last call
+    s.tick = s.tick + steps
     local frame = wa.world.frame()
     for id, at in pairs(s.script_hits) do
       if at < frame - 1 then s.script_hits[id] = nil end
@@ -492,7 +613,10 @@ function turret.new(cfg)
       end
     end
     s.active = not s.disabled and s.ammo > 0
-    if s.planted then brain_think(a, s) end
+    if s.planted then
+      brain_think(a, s, frame, steps)
+      if state[a.id] == s then sleep_if_idle(a, s, frame) end
+    end
   end
 
   local function status(s)
@@ -507,52 +631,63 @@ function turret.new(cfg)
 
   local label_clearance = t.art.barrel and 26 or 25
 
-  local function sheet(path, x, y, frame, angle, rgb, depth, blend, size)
-    local h = (size or 144) / 2
-    local r = math.rad(angle)
-    local c, sn = math.cos(r), math.sin(r)
-    local points = {}
-    for i, p in ipairs({ {-h,-h}, {h,-h}, {h,h}, {-h,h} }) do
-      points[i] = { x + p[1] * c - p[2] * sn, y + p[1] * sn + p[2] * c }
-    end
-    wa.draw.quad({ sprite = path, points = points, frame = frame,
-      color = 0xFF000000 | rgb, depth = depth, blend = blend or "alpha" })
+  -- Each sprite's boxes for the frame, drawn in the order the layers were made.
+  local layers = {}
+  function t.layer(sprite, depth, blend)
+    local b = turret.batch(sprite, depth, blend)
+    layers[#layers + 1] = b
+    return b
+  end
+  local WHITE = 0xFFFFFFFF
+  local BASE, BARREL, GUN, FLARE, LIGHT, LABELS
+  if not cfg.draw then
+    BASE = t.layer(t.art.base, wa.depth.BEHIND_TERRAIN)
+    if t.art.barrel then BARREL = t.layer(t.art.barrel, t.head_depth + 1) end
+    GUN = t.layer(t.art.gun, t.head_depth)
+    if t.art.flare then FLARE = t.layer(t.art.flare, t.head_depth, "add") end
+    LIGHT = t.layer(t.art.light, t.head_depth - 1)
+    LABELS = t.layer(health_label.SHEET, t.head_depth - 2)
   end
   local function draw_sentry(s)
-    sheet(t.art.base, s.x + 1, s.y - 9, 0, 0, 0xFFFFFF, wa.depth.BEHIND_TERRAIN, "alpha", 64)
+    BASE:put(s.x + 1, s.y - 9, 64, 64, 0, 0, WHITE)
     local x, y, angle = s.x, s.y - t.muzzle_up, (90 - s.angle) % 360
+    local r = math.rad(angle)
     local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
-    if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
-    local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
-    local tint = turret.tint(t, s)
+    if BARREL then BARREL:put(x, y, 144, 144, r, pose, WHITE) end
+    local tint = 0xFF000000 | turret.tint(t, s)
     if t.art.turns then
       -- pre-turned head (tools/bake_turret_rotations.py): the nearest angle's frame, drawn upright;
       -- it is lit per angle, so a laser body needs no mirrored frame facing left
       local turn = math.floor(angle * t.art.turns / 360 + 0.5) % t.art.turns
       local row = t.art.barrel and 0 or pose
-      sheet(t.art.gun, x, y, row * t.art.turns + turn, 0, tint, t.head_depth, nil, t.art.gun_size)
+      local size = t.art.gun_size or 144
+      GUN:put(x, y, size, size, 0, row * t.art.turns + turn, tint)
     else
-      sheet(t.art.gun, x, y, look, angle, tint, t.head_depth)
+      GUN:put(x, y, 144, 144, r, t.art.barrel and (s.side < 0 and 1 or 0) or pose, tint)
     end
-    if t.art.flare then
-      sheet(t.art.flare, x, y, pose == 1 and 1 or 0, angle, 0xFFFFFF, t.head_depth, "add")
-    end
+    if FLARE then FLARE:put(x, y, 144, 144, r, pose == 1 and 1 or 0, WHITE) end
     local rgb, flash = status(s)
     if flash and (s.tick % 30) >= 15 then rgb = (rgb & 0xFEFEFE) >> 1 end
-    local r = math.rad(angle)
     local lx, ly = -7 * math.cos(r) + 3 * math.sin(r), -7 * math.sin(r) - 3 * math.cos(r)
-    sheet(t.art.light, x + lx, y + ly - 4, 0, 0, rgb, t.head_depth - 1, "alpha", 5)
-    health_label.draw(s.health, s.max_health, x,
-      y - label_clearance + 20, t.head_depth - 2)
+    LIGHT:put(x + lx, y + ly - 4, 5, 5, 0, 0, 0xFF000000 | rgb)
+    health_label.add(LABELS, s.health, s.max_health, x, y - label_clearance + 20)
   end
+  local draw = cfg.draw and function(s) cfg.draw(t, s) end or draw_sentry
+  local off_screen = cfg.draw_off_screen
+  local REACH = 100 -- pixels a sentry's art and label reach past its body
   if wa.on.draw then
     wa.on.draw(function()
-      for _, id in ipairs(wa.sorted(state)) do
-        local s = state[id]
-        if s.body.id == id then
-          if cfg.draw then cfg.draw(t, s) else draw_sentry(s) end
+      if next(state) == nil then return end
+      -- only the sentries the screen shows
+      local left, top, right, bottom = turret.on_screen(REACH)
+      for id, s in pairs(state) do
+        local x, y = s.x, s.y
+        if (not left or (x >= left and x <= right and y >= top and y <= bottom)
+            or (off_screen and off_screen(s))) and s.body.id == id then
+          draw(s)
         end
       end
+      for _, b in ipairs(layers) do b:flush() end
     end)
   end
 
@@ -634,7 +769,7 @@ function turret.new(cfg)
       angle = idle, idle = idle, side = facing < 0 and -1 or 1,
       sweep_dir = 1, shots = 0, firing = false, anim = 0, rotating = false,
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
-      had_target = false, lost = false, seen = {}, recoil = 0,
+      had_target = false, lost = false, recoil = 0,
       planter = planter, planter_id = planter and planter.id,
       landed_once = false, phase = 1,
     }
@@ -682,7 +817,7 @@ function turret.new(cfg)
   end)
 
   local function reload(s)
-    s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, {}
+    s.ammo, s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = t.ammo, true, false, false, nil, false, nil
     if t.turn_begin then t.turn_begin(t, s) end
   end
 
@@ -691,7 +826,7 @@ function turret.new(cfg)
     for id, s in pairs(state) do
       if s.body.id ~= id then state[id] = nil
       elseif s.stun then
-        s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = false, true, false, nil, false, {}
+        s.active, s.disabled, s.had_target, s.tid, s.lost, s.seen = false, true, false, nil, false, nil
       else
         reload(s)
       end

@@ -43,6 +43,7 @@ local BASE = {
   thinking = 15, -- frames between finding a worm and aiming
   min_px = 40, sensor_px = 350, lost_px = 450,
   speed = 0.08, -- radians a frame the head turns
+  sleep_frames = 25, -- an idle turret's head stands still, so it sleeps longer (lib/turret)
   fire_rate_ms = 400,
   fire_increase_pct = 12, -- how much longer each next wait is
   aim_sound_gap = 180,
@@ -59,35 +60,30 @@ end
 
 local function centre(a) return a.x, a.y - R end
 
-local function worm_by_id(id)
-  for _, w in ipairs(wa.worms.all()) do
-    if w.id == id then return w end
+local function worm_by_id(watch, id)
+  for i, w in ipairs(watch.list) do
+    if watch.ids[i] == id then return w end
   end
 end
 
-local function note_motion(s)
-  for _, w in ipairs(wa.worms.all()) do
-    local p, x, y = s.seen[w.id], w.x, w.y
-    local moving = w.vx ~= 0 or w.vy ~= 0
-    if p then
-      p.moving = moving or p.x ~= x or p.y ~= y
-      p.x, p.y = x, y
-    else
-      s.seen[w.id] = { x = x, y = y, moving = moving }
-    end
-  end
-end
-
-local function find_target(t, a, s)
+-- PX's pick: each moving enemy worm in range, in wa.worms.all()'s order, a 30% chance;
+-- an invisible one ends the search. Only the near worms are read, all of them while one
+-- is invisible. `seen` is the watch of the frame this turret last looked.
+local function find_target(t, a, s, watch, seen)
   local cx, cy = centre(a)
   local py = cy - t.tower_offset
-  for _, w in ipairs(wa.worms.all()) do
-    local seen = s.seen[w.id]
-    if w.alliance ~= s.alliance and seen and seen.moving and w.hp > 0 and w.state ~= "frozen" then
-      if w.visible == false then break end
-      local dx, dy = w.x - cx, w.y - py
-      local d = math.sqrt(dx * dx + dy * dy)
-      if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < 30 then s.tid = w.id end
+  local reach = t.sensor_px + turret.NEAR_SLACK_PX
+  local ids, xs, ys, all = watch.ids, watch.x, watch.y, watch.hidden
+  for i, w in ipairs(watch.list) do
+    local id = ids[i]
+    if all or turret.near(xs[id], ys[id], cx, py, reach) then
+      local x, y = w.x, w.y
+      if w.alliance ~= s.alliance and turret.moving(w, id, x, y, seen) and w.hp > 0 and w.state ~= "frozen" then
+        if w.visible == false then break end
+        local dx, dy = x - cx, y - py
+        local d = math.sqrt(dx * dx + dy * dy)
+        if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < 30 then s.tid = id end
+      end
     end
   end
 end
@@ -151,10 +147,11 @@ function pyro.force(s)
   return s.power - 0.1 + wa.random(0, 63) / 96
 end
 
-local function think(t, a, s)
-  note_motion(s)
-  if s.reload > 0 then s.reload = math.max(0, s.reload - FRAME_MS) end
-  local target = s.tid and worm_by_id(s.tid)
+local function think(t, a, s, frame, steps)
+  local watch, seen = turret.watch(frame), s.seen
+  s.seen = watch
+  if s.reload > 0 then s.reload = math.max(0, s.reload - FRAME_MS * steps) end
+  local target = s.tid and worm_by_id(watch, s.tid)
   if target and target.state == "frozen" then target = nil end
   if s.tid and not target then s.tid = nil end
   if s.draw_aim and target then
@@ -165,9 +162,9 @@ local function think(t, a, s)
   local running = s.clock ~= nil and clock < s.clock
   s.clock = clock
   if not running or s.ammo <= 0 or s.disabled then return end
-  if s.aim_sound > 0 then s.aim_sound = s.aim_sound - 1 end
+  if s.aim_sound > 0 then s.aim_sound = math.max(0, s.aim_sound - steps) end
   if not target then
-    find_target(t, a, s)
+    find_target(t, a, s, watch, seen)
     s.wait = t.thinking
     return
   end
@@ -225,38 +222,36 @@ local function ignore_hit(t, a, s, hit)
   return false
 end
 
-local CORNERS = { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } }
-local function quad(sheet, x, y, frame, rot, rgb, depth, size)
-  local h = (size or 40) / 2
-  local c, sn = wa.math.cos(rot), wa.math.sin(rot)
-  local points = {}
-  for i, p in ipairs(CORNERS) do
-    points[i] = { x + h * (p[1] * c - p[2] * sn), y + h * (p[1] * sn + p[2] * c) }
-  end
-  wa.draw.quad({ sprite = sheet, points = points, frame = frame,
-    color = 0xFF000000 | rgb, depth = depth, blend = "alpha" })
-end
-
 local function dim(rgb, k)
   local r, g, b = (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF
   return (math.floor(r * k) << 16) | (math.floor(g * k) << 8) | math.floor(b * k)
 end
 
+local SIZE = 40 -- the sheet's frames, pixels square
+
 local function draw(t, s)
+  local layers = t.pyro_layers
   local cx, cy = s.x, s.y - R
   local rgb = turret.tint(t, s)
-  quad(pyro.SHEET, cx, cy, t.frames.base, 0, rgb, Z_BASE)
+  local colour = 0xFF000000 | rgb
+  layers.base:put(cx, cy, SIZE, SIZE, 0, t.frames.base, colour)
   if s.draw_aim and s.tid then
-    quad(pyro.SHEET, s.aim_x, s.aim_y, RETICLE, wa.world.frame() * 0.04, rgb, Z_BASE)
+    layers.base:put(s.aim_x, s.aim_y, SIZE, SIZE, wa.world.frame() * 0.04, RETICLE, colour)
   end
-  local head = dim(rgb, math.max(0, s.health) / s.max_health * 0.75 + 0.25)
-  if t.ammo_sprite then quad(t.ammo_sprite, cx, cy, 0, 0, head, Z_AMMO, t.ammo_size) end
+  local head = 0xFF000000 | dim(rgb, math.max(0, s.health) / s.max_health * 0.75 + 0.25)
+  if layers.ammo then
+    local size = t.ammo_size or SIZE
+    layers.ammo:put(cx, cy, size, size, 0, 0, head)
+  end
   local frame, rot = t.frames.head, s.ta - 1.5707
   if s.dir < 0 then frame, rot = frame + MIRROR, 1.5707 - s.ta end
   local py = cy - t.tower_offset
-  quad(pyro.SHEET, cx, py, frame, rot, head, Z_HEAD)
-  health_label.draw(s.health, s.max_health, cx, py - 10, Z_AMMO - 1)
+  layers.head:put(cx, py, SIZE, SIZE, rot, frame, head)
+  health_label.add(layers.labels, s.health, s.max_health, cx, py - 10)
 end
+
+-- Its reticle shows while it aims, wherever the turret is.
+local function draw_off_screen(s) return s.draw_aim and s.tid ~= nil end
 
 function pyro.set_options(t, option)
   t.health, t.ammo = option("health"), option("ammo")
@@ -283,7 +278,15 @@ function pyro.new(cfg)
   c.sounds = { place = SETUP_SOUND }
   c.tints = TINTS
   c.think, c.draw, c.init, c.turn_begin, c.ignore_hit = think, draw, init, turn_begin, ignore_hit
-  return turret.new(c)
+  c.draw_off_screen = draw_off_screen
+  local t = turret.new(c)
+  t.pyro_layers = { -- in PX's order: base and reticle, ammo, head, label
+    base = t.layer(pyro.SHEET, Z_BASE),
+    ammo = c.ammo_sprite and t.layer(c.ammo_sprite, Z_AMMO),
+    head = t.layer(pyro.SHEET, Z_HEAD),
+    labels = t.layer(health_label.SHEET, Z_AMMO - 1),
+  }
+  return t
 end
 
 return pyro
