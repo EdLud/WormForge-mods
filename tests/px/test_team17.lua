@@ -10,6 +10,9 @@ local function check(name, ok, detail)
 end
 
 local frame, rolls, worms, crates, spawned, banners, windows, tray = 0, {}, {}, {}, {}, {}, {}, {}
+-- This machine's keys held, WA's panel on the screen (nil: shut) and the
+-- HUD's text this frame.
+local held, stock_panel, closes, texts = {}, nil, 0, {}
 local on
 -- wa.random takes its answers from `rolls` in turn (then the lowest).
 wa = {
@@ -25,6 +28,12 @@ wa = {
     for _, w in ipairs(worms) do if w.hp > 0 then alive[#alive + 1] = w end end
     return alive
   end },
+  -- crate_spot's row check of the crate's box: land above y 50.
+  land = { trace = function(_, y0) return y0 < 50 end },
+  panel = {
+    stock = function() return stock_panel end,
+    close = function() closes = closes + 1 return true end,
+  },
   world = {
     frame = function() return frame end,
     size = function() return { w = 100, h = 100 } end,
@@ -48,9 +57,12 @@ wa = {
   },
   hud = {
     message_top = function(t) banners[#banners + 1] = t end,
+    key = function(name) return held[name] == true end,
+    text = function(t) texts[#texts + 1] = t end,
     window = function(spec)
       local w = { spec = spec, open = true }
       function w:close() self.open = false end
+      function w:is_open() return self.open end
       windows[#windows + 1] = w
       return w
     end,
@@ -68,7 +80,7 @@ wa = {
   on = {},
 }
 local function reset_hooks()
-  on = { turn_start = {}, turn_end = {}, worm_message = {}, death = {} }
+  on = { turn_start = {}, turn_end = {}, worm_message = {}, death = {}, hud = {} }
   for name, list in pairs(on) do wa.on[name] = function(f) list[#list + 1] = f end end
 end
 local function fire(name, ...) for _, f in ipairs(on[name]) do f(...) end end
@@ -100,6 +112,8 @@ require("scheme/team17").install({ weapons = PLACED })
 local function step(w)
   frame = frame + 1
   fire("worm_message", w, wa.msg.FRAME_FINISH)
+  texts = {}
+  fire("hud")
 end
 -- WA's death event: the worm's HP reaches 0.
 local function kill(w)
@@ -211,6 +225,41 @@ step(b)
 check("a health crate of 75", #spawned == 1 and spawned[1].kind == "health" and spawned[1].health == 75)
 check("its banner", banners[1] == "Health crate spawned.")
 check("the rules window closes after ten seconds", not windows[2].open)
+
+-- Shift + T: the rules again, the panel shut; a second press closes them.
+local function press()
+  held = { shift = true, t = true }
+  step(b)
+  held = {}
+  step(b)
+end
+local before = #windows
+stock_panel = { x = 100, y = 200, w = 177, h = 159, open = true, opened = 1, cells = {} }
+step(b)
+check("the note above the open panel", texts[1] and texts[1].text == "Shift + T = scheme info"
+  and texts[1].align == "right" and texts[1].x == 277 and texts[1].y < 200)
+press()
+check("Shift + T opens the rules", #windows == before + 1 and windows[#windows].open)
+check("Shift + T shuts the open panel", closes == 1)
+stock_panel = nil
+for _ = 1, 1000 do step(b) end
+check("the rules stay open past the first turn's time", windows[#windows].open)
+held = { t = true }
+step(b)
+held = {}
+check("T alone does nothing", windows[#windows].open and #windows == before + 1)
+press()
+check("Shift + T again closes them", not windows[#windows].open and closes == 1)
+held = { shift = true, t = true }
+for _ = 1, 5 do step(b) end
+held = {}
+step(b)
+check("held down, Shift + T counts once", #windows == before + 2 and windows[#windows].open)
+stock_panel = { x = 100, y = 200, w = 177, h = 159, open = true, opened = 1, cells = {} }
+press()
+check("over the open panel, Shift + T keeps the hidden rules and shuts the panel",
+  #windows == before + 2 and windows[#windows].open and closes == 2)
+stock_panel = nil
 
 if failed > 0 then
   print(failed .. " Team17 check(s) failed")

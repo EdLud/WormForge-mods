@@ -4,6 +4,7 @@
 -- for the turn.
 
 local crate_spot = require("lib/crate_spot")
+local rules_window = require("lib/rules_window")
 
 local team17 = {}
 
@@ -48,10 +49,10 @@ local RULES = {
   { "A kill drops a weapon and a utility crate and gives 30 HP.", color = "yellow" },
   { "Have lots of fun!", color = "purple" },
 }
-local RULES_FRAMES = 500
 
 function team17.install(ctx)
   local placed = ctx.weapons
+  rules_window.install(RULES)
   local turn_on = false
 
   local function spawn(kind, contents, amount)
@@ -170,7 +171,6 @@ function team17.install(ctx)
     end
   end
 
-  local rules_window, rules_at = nil, nil
   wa.on.turn_start(function(ev)
     turn_on = true
     if ev.worm then
@@ -179,10 +179,6 @@ function team17.install(ctx)
       grey(ev.worm)
     end
     for _, c in ipairs(wa.crates.all()) do c.camera = false end
-    if not rules_window then
-      rules_window = wa.hud.window({ lines = RULES, align = "top", y = 60, over_panel = false })
-      rules_at = wa.world.frame()
-    end
   end)
   wa.on.turn_end(function()
     turn_on = false
@@ -207,10 +203,6 @@ function team17.install(ctx)
     if turn_on then
       health_timer()
       if current then grey(current) end
-    end
-    if rules_at and frame - rules_at >= RULES_FRAMES then
-      rules_window:close()
-      rules_at = nil
     end
   end, { msgs = { wa.msg.FRAME_FINISH, wa.msg.WEAPON_RELEASED } })
 end

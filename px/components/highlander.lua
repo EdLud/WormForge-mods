@@ -2,6 +2,14 @@
 
 local shared = require("lib/shared")
 
+local RULES = {
+  { "Highlander Orange", color = "purple" },
+  { "SDET", color = "red" },
+  { "Each worm has an individual weapon stock", color = "cyan" },
+  { "Killing a worm steals their weapons", color = "green" },
+  { "3 Balloons each turn", color = "yellow" },
+}
+
 local function pools_from(placed)
   local out = {
     offensive = {}, second = {}, movement = {},
@@ -22,6 +30,7 @@ end
 return {
   install = function(ctx)
     require("components/loader").place(ctx)
+    require("lib/rules_window").install(RULES)
     local pools = pools_from(ctx.placed)
     if #pools.offensive + #pools.second + #pools.movement == 0 then
       wa.log("highlander: no placed weapon is in a pool, so nothing is dealt")
