@@ -85,7 +85,8 @@ function weapon.setup()
 
   local function fire(t, a, s)
     local owner = t.owner(a, s)
-    if owner == a then t.stop_firing(a, s); return end
+    -- a coalition with no living worm holds fire; a neutral sentry fires as no team's
+    if owner == a and s.alliance ~= turret.NEUTRAL then t.stop_firing(a, s); return end
     s.shots = s.shots + 1
     local dev = 0
     if s.shots % 5 ~= 0 then dev = wa.random(-SPREAD_TENTHS, SPREAD_TENTHS) / 10 end
@@ -105,32 +106,39 @@ function weapon.setup()
     end
   end
 
-  local gun = turret.new({
-    kind = "sentry", weapon = "px.sentry_gun",
-    tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun)
-    damage = 2, push_pct = 100,
-    muzzle_out = MUZZLE_OUT,
-    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 52, flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
-    sounds = {
-      place = SND .. "sentryplace.wav", beep = SND .. "sentrybeeps2.wav",
-      fire_loop = SND .. "sentryfireloop.wav", fire_end = SND .. "sentryfireend.wav",
-      servo_start = SND .. "sentryservostart.wav", servo_loop = SND .. "sentryservoloop.wav",
-      servo_end = SND .. "sentryservoend.wav",
-    },
-    tints = TEAM_TINT,
-    fire = fire,
-  })
+  local function build(kind, id)
+    return turret.new({
+      kind = kind, weapon = id,
+      tazer = "stun", -- the Tazer's arc stuns it (PxSentryGun::Stun)
+      damage = 2, push_pct = 100,
+      muzzle_out = MUZZLE_OUT,
+      art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 52, flare = ART .. "turret_flare.png", light = ART .. "turret_light.png" },
+      sounds = {
+        place = SND .. "sentryplace.wav", beep = SND .. "sentrybeeps2.wav",
+        fire_loop = SND .. "sentryfireloop.wav", fire_end = SND .. "sentryfireend.wav",
+        servo_start = SND .. "sentryservostart.wav", servo_loop = SND .. "sentryservoloop.wav",
+        servo_end = SND .. "sentryservoend.wav",
+      },
+      tints = TEAM_TINT,
+      fire = fire,
+    })
+  end
 
+  local gun = build("sentry", "px.sentry_gun")
   shared.fires.sentry_gun = function(fire_ev) gun.place(fire_ev) end
   shared.sentry_gun = gun -- for the Highlander mock
+  shared.hazard_turrets["px.sentry_gun"] = function() return build("hazard_sentry") end
+end
+
+function weapon.set_options(gun, option)
+  gun.health = option("health")
+  gun.ammo = option("ammo")
+  gun.damage = option("damage")
+  gun.push_pct = option("push_pct")
 end
 
 function weapon.configure(ctx)
-  local gun = require("lib/shared").sentry_gun
-  gun.health = ctx.option("health")
-  gun.ammo = ctx.option("ammo")
-  gun.damage = ctx.option("damage")
-  gun.push_pct = ctx.option("push_pct")
+  weapon.set_options(require("lib/shared").sentry_gun, ctx.option)
 end
 
 return weapon

@@ -30,19 +30,28 @@ function weapon.setup()
     return true
   end
 
-  local t = pyro.new({
-    kind = "flame_turret", weapon = "px.flame_turret", frames = pyro.FRAMES.flame,
-    tazer = "empty", -- a CCustomTurret: the Tazer's arc empties its ammo
-    ammo = 18, tower_offset = 19, explode_damage = 45,
-    ammo_sprite = pyro.AMMO_FLAME, ammo_size = 40, -- WA's petrol3, PX's sprNum 126
-    shoot = shoot,
-  })
+  local function build(kind, id)
+    return pyro.new({
+      kind = kind, weapon = id, frames = pyro.FRAMES.flame,
+      tazer = "empty", -- a CCustomTurret: the Tazer's arc empties its ammo
+      ammo = 18, tower_offset = 19, explode_damage = 45,
+      ammo_sprite = pyro.AMMO_FLAME, ammo_size = 40, -- WA's petrol3, PX's sprNum 126
+      shoot = shoot,
+    })
+  end
+
+  local t = build("flame_turret", "px.flame_turret")
   shared.fires.flame_turret = function(fire_ev) t.place(fire_ev) end
   shared.flame_turret = t
+  shared.hazard_turrets["px.flame_turret"] = function() return build("hazard_flame_turret") end
+end
+
+function weapon.set_options(t, option)
+  require("lib/pyro_turret").set_options(t, option)
 end
 
 function weapon.configure(ctx)
-  require("lib/pyro_turret").configure(require("lib/shared").flame_turret, ctx)
+  weapon.set_options(require("lib/shared").flame_turret, ctx.option)
 end
 
 return weapon

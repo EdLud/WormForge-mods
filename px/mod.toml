@@ -1064,6 +1064,258 @@ before_weapons = true
 launches = ["px.nuke_rocket"]
 
 [[components]]
+id = "px.hazardous_sentries"
+type = "feature"
+name = "Hazardous Sentries"
+credits = "Sentry Gun by _Kilburn, Sentry Laser by rafa``2 from code by _Kilburn, turrets by PyroMan"
+description = "Places neutral grey sentries and turrets on the map at the start of each round; they fire at every team."
+entry = "components/hazardous_sentries.lua"
+before_weapons = true
+
+[[components.options]]
+key = "sentry_gun"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Sentry Guns"
+description = "How many are placed at the start of each round, each on the ground where a 50 by 50 pixel box fits. Their settings are separate from the weapons'."
+
+[[components.options]]
+key = "sentry_gun_health"
+type = "int"
+default = 50
+min = 1
+max = 500
+label = "Sentry Gun health"
+description = ""
+
+[[components.options]]
+key = "sentry_gun_ammo"
+type = "int"
+default = 20
+min = 1
+max = 1000
+label = "Sentry Gun ammo per turn"
+description = ""
+
+[[components.options]]
+key = "sentry_gun_damage"
+type = "int"
+default = 2
+min = 0
+max = 1000
+label = "Sentry Gun damage per shot"
+description = ""
+
+[[components.options]]
+key = "sentry_gun_push_pct"
+type = "int"
+default = 100
+min = 0
+max = 1000
+label = "Sentry Gun push (%)"
+description = ""
+
+[[components.options]]
+key = "sentry_laser"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Sentry Lasers"
+description = ""
+
+[[components.options]]
+key = "sentry_laser_health"
+type = "int"
+default = 35
+min = 1
+max = 500
+label = "Sentry Laser health"
+description = ""
+
+[[components.options]]
+key = "petrol_turret"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Petrol Turrets"
+description = ""
+
+[[components.options]]
+key = "petrol_turret_health"
+type = "int"
+default = 50
+min = 1
+max = 500
+label = "Petrol Turret health"
+description = ""
+
+[[components.options]]
+key = "petrol_turret_ammo"
+type = "int"
+default = 6
+min = 1
+max = 100
+label = "Petrol Turret ammo per turn"
+description = ""
+
+[[components.options]]
+key = "petrol_turret_fire_rate"
+type = "int"
+default = 400
+min = 20
+max = 10000
+label = "Petrol Turret fire rate (ms)"
+description = ""
+
+[[components.options]]
+key = "petrol_turret_fire_increase_pct"
+type = "int"
+default = 12
+min = 0
+max = 100
+label = "Petrol Turret fire increase (%)"
+description = ""
+
+[[components.options]]
+key = "flame_turret"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Flame Turrets"
+description = ""
+
+[[components.options]]
+key = "flame_turret_health"
+type = "int"
+default = 50
+min = 1
+max = 500
+label = "Flame Turret health"
+description = ""
+
+[[components.options]]
+key = "flame_turret_ammo"
+type = "int"
+default = 18
+min = 1
+max = 100
+label = "Flame Turret ammo per turn"
+description = ""
+
+[[components.options]]
+key = "flame_turret_fire_rate"
+type = "int"
+default = 400
+min = 20
+max = 10000
+label = "Flame Turret fire rate (ms)"
+description = ""
+
+[[components.options]]
+key = "flame_turret_fire_increase_pct"
+type = "int"
+default = 12
+min = 0
+max = 100
+label = "Flame Turret fire increase (%)"
+description = ""
+
+[[components.options]]
+key = "mine_turret"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Mine Turrets"
+description = ""
+
+[[components.options]]
+key = "mine_turret_health"
+type = "int"
+default = 50
+min = 1
+max = 500
+label = "Mine Turret health"
+description = ""
+
+[[components.options]]
+key = "mine_turret_ammo"
+type = "int"
+default = 6
+min = 1
+max = 100
+label = "Mine Turret ammo per turn"
+description = ""
+
+[[components.options]]
+key = "mine_turret_fire_rate"
+type = "int"
+default = 400
+min = 20
+max = 10000
+label = "Mine Turret fire rate (ms)"
+description = ""
+
+[[components.options]]
+key = "mine_turret_fire_increase_pct"
+type = "int"
+default = 12
+min = 0
+max = 100
+label = "Mine Turret fire increase (%)"
+description = ""
+
+[[components.options]]
+key = "auto_ballista"
+type = "int"
+default = 1
+min = 0
+max = 100
+label = "Auto Ballistas"
+description = ""
+
+[[components.options]]
+key = "auto_ballista_health"
+type = "int"
+default = 50
+min = 1
+max = 500
+label = "Auto Ballista health"
+description = ""
+
+[[components.options]]
+key = "auto_ballista_ammo"
+type = "int"
+default = 8
+min = 1
+max = 100
+label = "Auto Ballista ammo per turn"
+description = ""
+
+[[components.options]]
+key = "auto_ballista_fire_rate"
+type = "int"
+default = 400
+min = 20
+max = 10000
+label = "Auto Ballista fire rate (ms)"
+description = ""
+
+[[components.options]]
+key = "auto_ballista_fire_increase_pct"
+type = "int"
+default = 12
+min = 0
+max = 100
+label = "Auto Ballista fire increase (%)"
+description = ""
+
+[[components]]
 id = "px.double_bazooka"
 type = "weapon"
 name = "Double Bazooka"

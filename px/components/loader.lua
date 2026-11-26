@@ -5,11 +5,7 @@ local index = require("weapons/index")
 local loader = {}
 local loaded, placed_ids = false, nil
 local also = {}
-
-function loader.also(path)
-  assert(not loaded, "loader.also(" .. path .. "): the modules are already set up")
-  also[#also + 1] = path
-end
+local want = {} -- path -> true: set up, or to be
 
 local ORDER = {
   "lib/holds",
@@ -89,6 +85,38 @@ local ORDER = {
   "weapons/portal_gun",
 }
 
+local function need(path)
+  if want[path] then return end
+  want[path] = true
+  local module = require(path)
+  if type(module) == "table" then
+    for _, dependency in ipairs(module.requires or {}) do need(dependency) end
+  end
+end
+
+-- Each module in ORDER that `want` has and `done` hasn't, set up.
+local function set_up(done)
+  for _, path in ipairs(ORDER) do
+    if want[path] and not done[path] then
+      local module = require(path)
+      if type(module) == "table" and module.setup then module.setup() end
+    end
+  end
+end
+
+-- A module a component sets up as well; one asked for once the others are set up
+-- (two add-ons that both install before the weapons) is set up then.
+function loader.also(path)
+  if not loaded then
+    also[#also + 1] = path
+    return
+  end
+  local done = {}
+  for p in pairs(want) do done[p] = true end
+  need(path)
+  set_up(done)
+end
+
 function loader.place(ctx)
   if placed_ids then return placed_ids end
   local ids = {}
@@ -104,18 +132,9 @@ function loader.load(ids)
   require("lib/weapon")
   shared.fires = {}
   shared.missile_sprites = {}
-  local want = {}
   for id, path in pairs(index) do
     local definition = require(path)
     if definition.missile_sprite then shared.missile_sprites[id] = definition.missile_sprite end
-  end
-  local function need(path)
-    if want[path] then return end
-    want[path] = true
-    local module = require(path)
-    if type(module) == "table" then
-      for _, dependency in ipairs(module.requires or {}) do need(dependency) end
-    end
   end
   for _, path in ipairs({ "lib/holds", "weapons/old_woman_launcher", "lib/anim", "lib/missile_sprites" }) do
     want[path] = true
@@ -124,12 +143,7 @@ function loader.load(ids)
     if index[id] then need(index[id]) end
   end
   for _, path in ipairs(also) do need(path) end
-  for _, path in ipairs(ORDER) do
-    if want[path] then
-      local module = require(path)
-      if type(module) == "table" and module.setup then module.setup() end
-    end
-  end
+  set_up({})
 end
 
 function loader.install(ctx)

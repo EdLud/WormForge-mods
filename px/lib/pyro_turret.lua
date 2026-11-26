@@ -218,6 +218,7 @@ end
 
 local function ignore_hit(t, a, s, hit)
   if hit.kind ~= "arrow" then return false end
+  if not hit.team or hit.team == 0 then return s.alliance == turret.NEUTRAL end -- a neutral turret's arrow
   for _, w in ipairs(wa.worms.all()) do
     if w.team == hit.team then return w.alliance == s.alliance end
   end
@@ -243,7 +244,7 @@ end
 
 local function draw(t, s)
   local cx, cy = s.x, s.y - R
-  local rgb = TINTS[s.alliance + 1] or TINTS[1]
+  local rgb = turret.tint(t, s)
   quad(pyro.SHEET, cx, cy, t.frames.base, 0, rgb, Z_BASE)
   if s.draw_aim and s.tid then
     quad(pyro.SHEET, s.aim_x, s.aim_y, RETICLE, wa.world.frame() * 0.04, rgb, Z_BASE)
@@ -257,9 +258,13 @@ local function draw(t, s)
   health_label.draw(s.health, s.max_health, cx, py - 10, Z_AMMO - 1)
 end
 
+function pyro.set_options(t, option)
+  t.health, t.ammo = option("health"), option("ammo")
+  t.fire_rate_ms, t.fire_increase_pct = option("fire_rate"), option("fire_increase_pct")
+end
+
 function pyro.configure(t, ctx)
-  t.health, t.ammo = ctx.option("health"), ctx.option("ammo")
-  t.fire_rate_ms, t.fire_increase_pct = ctx.option("fire_rate"), ctx.option("fire_increase_pct")
+  pyro.set_options(t, ctx.option)
 end
 
 function pyro.new(cfg)

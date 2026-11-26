@@ -2,6 +2,8 @@
 
 local turret = {}
 local turrets = {}
+turret.NEUTRAL = 6 -- the side of a sentry no team owns: it targets every team
+turret.GREY = 0x9A9A9A -- a neutral sentry's tint
 local feet = require("lib/sentry_mask")
 local health_label = require("lib/sentry_health")
 local electrical = require("lib/electrical")
@@ -37,7 +39,7 @@ local function register_electrical()
             if s.stun <= 0 then
               s.stun = nil
               t.reload(s)
-            elseif alliance == s.alliance then
+            elseif alliance == s.alliance or s.alliance == turret.NEUTRAL then
               s.stun = s.stun - 1
             end
           end
@@ -183,6 +185,11 @@ local function angle_gap(a, b)
   return d < 0 and -d or d
 end
 
+function turret.tint(t, s)
+  if s.alliance == turret.NEUTRAL then return turret.GREY end
+  return t.tints[s.alliance + 1] or t.tints[1]
+end
+
 function turret.new(cfg)
   health_label.install()
   local t = {}
@@ -216,7 +223,7 @@ function turret.new(cfg)
   local targets = cfg.targets or worm_targets
 
   local function can_track(a, s, c, need_motion)
-    if c.alliance == s.alliance then return false end
+    if (c.alliance or turret.NEUTRAL) == s.alliance then return false end
     if need_motion and t.require_motion and not c.moving then return false end
     local ex, ey = a.x, a.y - t.muzzle_up
     local dx, dy = (c.x - ex) // 1, (c.y - ey) // 1
@@ -517,7 +524,7 @@ function turret.new(cfg)
     local pose = (s.firing or s.recoil > 0) and (1 + ((s.anim // 3) % 2)) or 0
     if t.art.barrel then sheet(t.art.barrel, x, y, pose, angle, 0xFFFFFF, t.head_depth + 1) end
     local look = t.art.barrel and (s.side < 0 and 1 or 0) or pose
-    local tint = t.tints[s.alliance + 1] or t.tints[1]
+    local tint = turret.tint(t, s)
     if t.art.turns then
       -- pre-turned head (tools/bake_turret_rotations.py): the nearest angle's frame, drawn upright;
       -- it is lit per angle, so a laser body needs no mirrored frame facing left
@@ -609,23 +616,13 @@ function turret.new(cfg)
     end
   end
 
-  function t.place(fire_ev)
-    local worm = fire_ev.worm
-    local alliance = worm.alliance or 0
-    if alliance < 0 or alliance > 5 then alliance = 0 end
-    local facing = worm.facing
+  -- A sentry body at x, y (its feet's bottom); a planter worm passes through it until clear.
+  local function spawn(x, y, owner, alliance, facing, planter)
     local idle = facing < 0 and 270 or 90
-    local x, y = placement(worm, facing)
-    if not x then
-      local ammo = worm:ammo(t.weapon)
-      if ammo >= 0 then worm:ammo(t.weapon, { set = ammo + 1 }) end
-      wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
-      return nil
-    end
     local body = wa.actors.spawn({
       sprite = false, x = x, y = y,
       vx = 0, vy = 0,
-      origin = "bottom", owner = worm, persist = true,
+      origin = "bottom", owner = owner, persist = true,
       gravity = 1, body = { shape = t.art.mask, hits = { land = true, objects = true },
         hit_by = { fire = true, dragon_ball = true, blasts = true } },
       on = { frame = brain, hit = hit, touched = touched },
@@ -638,14 +635,37 @@ function turret.new(cfg)
       sweep_dir = 1, shots = 0, firing = false, anim = 0, rotating = false,
       servo_sound = 0, fire_sound = 0, beep = 0, activate = 0, cooldown = 0,
       had_target = false, lost = false, seen = {}, recoil = 0,
-      planter = worm, planter_id = worm.id,
+      planter = planter, planter_id = planter and planter.id,
       landed_once = false, phase = 1,
     }
     state[body.id] = s
     s.body = body
     if t.init then t.init(t, body, s) end
+    return body, s
+  end
+
+  function t.place(fire_ev)
+    local worm = fire_ev.worm
+    local alliance = worm.alliance or 0
+    if alliance < 0 or alliance > 5 then alliance = 0 end
+    local facing = worm.facing
+    local x, y = placement(worm, facing)
+    if not x then
+      local ammo = worm:ammo(t.weapon)
+      if ammo >= 0 then worm:ammo(t.weapon, { set = ammo + 1 }) end
+      wa.log("Sentry: no clear placement within " .. t.placement_reach .. "px; charge refunded")
+      return nil
+    end
+    local body, s = spawn(x, y, worm, alliance, facing, worm)
     wa.log(string.format("Sentry placed %s id=%d planter=%d at=(%.2f,%.2f) passage=on",
       t.kind, body.id, worm.id, x, y))
+    return body, s
+  end
+
+  -- A neutral sentry no team owns, dropped at x, y.
+  function t.spawn_neutral(x, y, facing)
+    local body, s = spawn(x, y, "none", turret.NEUTRAL, facing)
+    wa.log(string.format("Sentry spawned %s id=%d at=(%.2f,%.2f) neutral", t.kind, body.id, x, y))
     return body, s
   end
 

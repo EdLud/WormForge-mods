@@ -842,6 +842,42 @@ Laser: 23.6). Beyond that circle, terrain hides a target from
 acquisition and tracking. Firing always requires a clear actual muzzle, and
 shots still collide with all terrain from that muzzle onward.
 
+## Hazardous Sentries
+
+`px.hazardous_sentries` is a WormForge add-on, not a Project X
+script: at the first turn of each round it places neutral copies of the six
+sentries and turrets above (Sentry Gun, Sentry Laser, Petrol, Flame and Mine
+Turrets, Auto Ballista) on the map. Each has a count (0 to 100, default 1) and
+its own copies of the weapon's options, separate from the weapon's: a profile
+can place the Sentry Gun with 50 health and add neutral ones with 80. The
+add-on builds a second turret of each kind (`shared.hazard_turrets`, the
+weapon module's own builder) and gives it these settings; the weapons'
+turrets are untouched.
+
+Where they go (`lib/hazard_spot.lua`): every column 5 pixels apart is traced
+down to the water for each surface, caverns included, and a ground point is
+the last free row above the land. A hazard needs a 50 by 50 pixel box above
+its ground point clear of land (the box's inscribed circle against land and
+bodies, then each of its 50 rows against land), 75 pixels from any living
+worm and 100 from the other hazards, measured from the box's centre. Each
+hazard starts from a random ground point (one `wa.random` draw) and takes the
+first that fits after it; one that fits nowhere is left out and logged. They
+go in the order above, each facing the middle of the map, and fall the last
+pixel onto their feet.
+
+A hazard belongs to no team: its body is an `owner = "none"` actor and its
+side is `turret.NEUTRAL` (6), drawn grey (`turret.GREY`, the laser's beam
+grey too). It targets every team's worms (the Laser: missiles, mines and
+balls of every team, leaving those of no team, as a fellow hazard's mines);
+what it fires is no team's, as stock oil drums' blasts are: the Gun's Uzi rounds
+through `wa.weapons.fire_bullet` with its body as the owner, the Petrol
+Turret's bombs, the Flame Turret's fires, the Mine Turret's mines and the
+Auto Ballista's arrows. A neutral turret's arrows pass the other neutral
+turrets; a team's turret takes them. A Tazer stun wears off after two turns
+of anyone's. Lightning Strike captures one for the caster's coalition, which
+then owns it as it would its own. Everything else (health, damage disabling
+a sentry for the turn, ammo per turn, the death blast) is the weapons'.
+
 ## Random Race
 
 The profile is PX's `RACE - Random - 0rang3.pxs` (September 2026 build):

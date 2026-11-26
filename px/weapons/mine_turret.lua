@@ -28,16 +28,25 @@ function weapon.setup()
     return true
   end
 
-  local t = pyro.new({
-    kind = "mine_turret", weapon = "px.mine_turret", frames = pyro.FRAMES.mine,
-    ammo = 6, shoot = shoot,
-  })
+  local function build(kind, id)
+    return pyro.new({
+      kind = kind, weapon = id, frames = pyro.FRAMES.mine,
+      ammo = 6, shoot = shoot,
+    })
+  end
+
+  local t = build("mine_turret", "px.mine_turret")
   shared.fires.mine_turret = function(fire_ev) t.place(fire_ev) end
   shared.mine_turret = t
+  shared.hazard_turrets["px.mine_turret"] = function() return build("hazard_mine_turret") end
+end
+
+function weapon.set_options(t, option)
+  require("lib/pyro_turret").set_options(t, option)
 end
 
 function weapon.configure(ctx)
-  require("lib/pyro_turret").configure(require("lib/shared").mine_turret, ctx)
+  weapon.set_options(require("lib/shared").mine_turret, ctx.option)
 end
 
 return weapon

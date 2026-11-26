@@ -213,32 +213,42 @@ function weapon.setup()
     if s.ammo <= 0 then s.active = false end
   end
 
-  local sentry = turret.new({
-    kind = "sentry_laser", weapon = "px.sentry_laser",
-    tazer = "stun", -- the Tazer's arc stuns it (PxSentryLaser::Stun)
-    muzzle_out = MUZZLE_OUT,
-    sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
-    rot_active = 5.0, aim_tolerance = 5.0, health = 35,
-    art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 36, barrel = ART .. "turret_barrel.png", light = ART .. "turret_light.png" },
-    sounds = {
-      place = SND .. "sentrylaserplace.wav", beep = SND .. "sentrylaserbeep.wav",
-      servo_start = SND .. "sentrylaserstart.wav", servo_loop = SND .. "sentrylaserloop.wav",
-      servo_end = SND .. "sentrylaserend.wav",
-    },
-    tints = TEAM_TINT,
-    targets = targets,
-    fire = fire,
-  })
-
-  local place = sentry.place
-  sentry.place = function(fire_ev)
-    local body, s = place(fire_ev)
-    if s then s.armed = {} end
-    return body, s
+  local function build(kind, id)
+    local t = turret.new({
+      kind = kind, weapon = id,
+      tazer = "stun", -- the Tazer's arc stuns it (PxSentryLaser::Stun)
+      muzzle_out = MUZZLE_OUT,
+      sensor_px = 300, ammo = 4, shot_frames = 6, activate = 20, beep_frames = 20,
+      rot_active = 5.0, aim_tolerance = 5.0, health = 35,
+      art = { base = ART .. "turret_base.png", mask = ART .. "turret_mask.png", gun = ART .. "turret_head.png", turns = 256, gun_size = 36, barrel = ART .. "turret_barrel.png", light = ART .. "turret_light.png" },
+      sounds = {
+        place = SND .. "sentrylaserplace.wav", beep = SND .. "sentrylaserbeep.wav",
+        servo_start = SND .. "sentrylaserstart.wav", servo_loop = SND .. "sentrylaserloop.wav",
+        servo_end = SND .. "sentrylaserend.wav",
+      },
+      tints = TEAM_TINT,
+      targets = targets,
+      fire = fire,
+    })
+    local place, spawn_neutral = t.place, t.spawn_neutral
+    t.place = function(fire_ev)
+      local body, s = place(fire_ev)
+      if s then s.armed = {} end
+      return body, s
+    end
+    t.spawn_neutral = function(...)
+      local body, s = spawn_neutral(...)
+      s.armed = {}
+      return body, s
+    end
+    return t
   end
+
+  local sentry = build("sentry_laser", "px.sentry_laser")
 
   shared.fires.sentry_laser = function(fire_ev) sentry.place(fire_ev) end
   shared.sentry_laser = sentry -- for the Highlander mock
+  shared.hazard_turrets["px.sentry_laser"] = function() return build("hazard_sentry_laser") end
 
   if wa.on.draw and wa.draw.ribbon then
     wa.on.draw(function()
@@ -254,8 +264,12 @@ function weapon.setup()
   end
 end
 
+function weapon.set_options(sentry, option)
+  sentry.health = option("health")
+end
+
 function weapon.configure(ctx)
-  require("lib/shared").sentry_laser.health = ctx.option("health")
+  weapon.set_options(require("lib/shared").sentry_laser, ctx.option)
 end
 
 return weapon

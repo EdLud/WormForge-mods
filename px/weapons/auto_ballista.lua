@@ -27,21 +27,30 @@ function weapon.setup()
     return true
   end
 
-  local t = pyro.new({
-    kind = "auto_ballista", weapon = "px.auto_ballista", frames = pyro.FRAMES.ballista,
-    ammo = 8, tower_len = 16, g_factor = 0.25,
-    aim_time = function(dist) return dist / 10 + 1 end, -- "500 pixels per sec"
-    hit_by = { worms = true, missiles = true, mines = true, actors = true, bullets = true,
-      melee = true, fire = true, dragon_ball = true, blasts = true },
-    passage_hit_by = { melee = true, fire = true, dragon_ball = true, blasts = true },
-    shoot = shoot,
-  })
+  local function build(kind, id)
+    return pyro.new({
+      kind = kind, weapon = id, frames = pyro.FRAMES.ballista,
+      ammo = 8, tower_len = 16, g_factor = 0.25,
+      aim_time = function(dist) return dist / 10 + 1 end, -- "500 pixels per sec"
+      hit_by = { worms = true, missiles = true, mines = true, actors = true, bullets = true,
+        melee = true, fire = true, dragon_ball = true, blasts = true },
+      passage_hit_by = { melee = true, fire = true, dragon_ball = true, blasts = true },
+      shoot = shoot,
+    })
+  end
+
+  local t = build("auto_ballista", "px.auto_ballista")
   shared.fires.auto_ballista = function(fire_ev) t.place(fire_ev) end
   shared.auto_ballista = t
+  shared.hazard_turrets["px.auto_ballista"] = function() return build("hazard_auto_ballista") end
+end
+
+function weapon.set_options(t, option)
+  require("lib/pyro_turret").set_options(t, option)
 end
 
 function weapon.configure(ctx)
-  require("lib/pyro_turret").configure(require("lib/shared").auto_ballista, ctx)
+  weapon.set_options(require("lib/shared").auto_ballista, ctx.option)
 end
 
 return weapon
