@@ -264,9 +264,21 @@ local function turn_toward(cur, want, speed)
   return (cur + d) % 360
 end
 
-local function play(a, sound)
-  if sound then wa.sound.play(a, sound) end
+-- Frames after a sentry plays a sound in which no sentry plays it again: sentries
+-- placed, woken or firing together sound like one, not all of them at once.
+local SOUND_GAP_FRAMES = 10
+local played = {}
+
+-- Every sentry and turret sound goes through here (a file or WA's sound number).
+function turret.play(a, sound)
+  if not sound then return end
+  local frame = wa.world.frame() or 0
+  local last = played[sound]
+  if last and frame >= last and frame - last < SOUND_GAP_FRAMES then return end
+  played[sound] = frame
+  wa.sound.play(a, sound)
 end
+local play = turret.play
 
 local function angle_gap(a, b)
   local d = (a - b + 540) % 360 - 180

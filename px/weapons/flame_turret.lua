@@ -22,6 +22,7 @@ end
 function weapon.setup()
   local shared = require("lib/shared")
   local pyro = require("lib/pyro_turret")
+  local turret = require("lib/turret")
   local FLAME_SOUND = 22 -- WA's Flamethrower, as PX plays it
 
   local function shoot(t, a, s, shot)
@@ -30,7 +31,7 @@ function weapon.setup()
     wa.fire.spawn({ owner = t.owner(a, s), x = shot.x, y = shot.y,
       vx = shot.dx * force, vy = shot.dy * force,
       count = 0, duration = 1500, up_power = 1, damage = -1, damage_scale = 5 })
-    wa.sound.play(a, FLAME_SOUND)
+    turret.play(a, FLAME_SOUND)
     return true
   end
 

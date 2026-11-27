@@ -152,7 +152,7 @@ function weapon.setup()
         r.life = r.life - 1
         r.size = r.size - 0.07
         if r.size < 0.5 then r.size = 1.0 end
-        if r.life == 0 then wa.sound.play(a, "sounds/laser_gun/laser_end.wav") end
+        if r.life == 0 then turret.play(a, "sounds/laser_gun/laser_end.wav") end
         if r.life <= 0 and #r.fx == 0 then
           for i, other in ipairs(rays) do
             if other == r then table.remove(rays, i) break end
@@ -178,7 +178,7 @@ function weapon.setup()
       ang = ang, rgb = BEAM_RGB[s.alliance + 1] or { 125, 125, 125 },
       seed = (x0 // 1 * 7919 + y0 // 1) % 0x80000000 }
     rays[#rays + 1] = r
-    wa.sound.play(a, "sounds/laser_gun/laser_start.wav")
+    turret.play(a, "sounds/laser_gun/laser_start.wav")
 
     wa.land.cut({ x = hx, y = hy, shape = "circle", radius = HOLE })
     for _, obj in ipairs(touched(x0, y0, dx, dy, length, target.obj and target.obj.id, a.id)) do
@@ -202,7 +202,7 @@ function weapon.setup()
         target.obj:remove()
       end
       fx_disintegrate(r, target.x, target.y)
-      wa.sound.play(a, SND .. "sentrylaserdisin.wav")
+      turret.play(a, SND .. "sentrylaserdisin.wav")
       s.tid, s.had_target = nil, false
     end
     ray_actor(r, a)

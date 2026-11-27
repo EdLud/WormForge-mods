@@ -401,5 +401,29 @@ do
     tostring(calls) .. " of " .. tostring(awake_calls))
 end
 
+print("PyroMan's turrets: planted together, one setup sound")
+do
+  local SETUP = "sounds/pyro_turrets/turret_setup.wav"
+  local t, a = planted("mine_turret")
+  t.place({ worm = M.worm(3, 1, 0, 700, 300) })
+  local b = M.actors[#M.actors]
+  local function setups(x)
+    local n = 0
+    for _, snd in ipairs(x.sounds) do if snd == SETUP then n = n + 1 end end
+    return n
+  end
+  for _ = 1, 3 do
+    M.frame = M.frame + 1
+    a.on.frame(a); b.on.frame(b)
+  end
+  check("two turrets planting on one frame: one setup sound", setups(a) + setups(b) == 1,
+    setups(a) .. " + " .. setups(b))
+  M.frame = M.frame + 10
+  t.place({ worm = M.worm(4, 1, 0, 900, 300) })
+  local c = M.actors[#M.actors]
+  frames(c, 1)
+  check("a third, 10 frames later, has its own", setups(c) == 1, setups(c))
+end
+
 if failed > 0 then error(failed .. " FAILED") end
 print("PyroMan's turrets: placing, targets, lobbed aim, reloads, each weapon, damage and drawing: ALL PASS")

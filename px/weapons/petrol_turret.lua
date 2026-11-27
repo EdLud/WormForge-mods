@@ -22,7 +22,8 @@ end
 function weapon.setup()
   local shared = require("lib/shared")
   local pyro = require("lib/pyro_turret")
-  local NEUTRAL = require("lib/turret").NEUTRAL
+  local turret = require("lib/turret")
+  local NEUTRAL = turret.NEUTRAL
   local DAMAGE = 15 -- PX's admg: the bomb's launch.explosion.damage
   local LAUNCH_SOUND = 44 -- WA's sound PX plays with each
 
@@ -31,7 +32,7 @@ function weapon.setup()
     local force = pyro.force(s)
     local owner = t.owner(a, s)
     if owner == a and s.alliance ~= NEUTRAL then return false end
-    wa.sound.play(a, LAUNCH_SOUND)
+    turret.play(a, LAUNCH_SOUND)
     wa.weapons.launch({ weapon = "stock.petrol_bomb", owner = owner,
       x = shot.x, y = shot.y, vx = shot.dx * force, vy = shot.dy * force,
       missile = { explosion = { power = DAMAGE } } })
