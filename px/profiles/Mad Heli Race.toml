@@ -27,7 +27,7 @@ dash_steer_factor = 130
 fuel = 0
 
 [options."spawn.bees.swarm"]
-bee_density = 40
+bee_density = 25
 
 [options."utilities.bullet_time"]
 seconds = 6
