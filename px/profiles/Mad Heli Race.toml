@@ -48,13 +48,6 @@ worm_energy = 255
 ammo = -1
 auto_use = true
 
-[weapon_settings."stock.homing_missile"]
-ammo = 2
-
-[weapon_settings."stock.homing_missile".each_turn]
-amount = 2
-mode = "replace"
-
 [weapon_settings."stock.teleport"]
 ammo = -1
 
@@ -66,10 +59,6 @@ mode = "replace"
 column = 6
 row = "utility"
 
-[weapons."px.golden_grenade"]
-column = 1
-row = "F1"
-
 [weapons."px.helicopter"]
 column = 1
 row = "utility"
@@ -77,10 +66,6 @@ row = "utility"
 [weapons."stock.fast_walk"]
 column = 3
 row = "F12"
-
-[weapons."stock.homing_missile"]
-column = 2
-row = "F1"
 
 [weapons."stock.skip_go"]
 column = 1
