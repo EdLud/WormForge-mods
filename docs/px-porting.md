@@ -847,26 +847,41 @@ shots still collide with all terrain from that muzzle onward.
 
 ## Hazardous Sentries
 
-`px.hazardous_sentries` is a WormBench add-on, not a Project X
-script: at the first turn of each round it places neutral copies of the six
-sentries and turrets above (Sentry Gun, Sentry Laser, Petrol, Flame and Mine
-Turrets, Auto Ballista) on the map. Each has a count (0 to 100, default 1) and
-its own copies of the weapon's options, separate from the weapon's: a profile
-can place the Sentry Gun with 50 health and add neutral ones with 80. The
-add-on builds a second turret of each kind (`shared.hazard_turrets`, the
-weapon module's own builder) and gives it these settings; the weapons'
-turrets are untouched.
+`px.hazardous_sentries` is a WormBench add-on, not a Project X script: at the
+first turn of each round it places neutral copies of the six sentries and
+turrets above (Sentry Gun, Sentry Laser, Petrol, Flame and Mine Turrets, Auto
+Ballista) on the map. **Density** (0 to 100, default 40, 0 off) sets how many
+for the map's size, and each kind's share (`<kind>_share`, a `shares =
+"hazards"` group adding up to 100; defaults 20 for the Gun and the Laser, 15
+for each turret) how likely each one placed is to be that kind: one
+`wa.random(1, 100)` draw a hazard, none when only one kind has a share. The
+rest of a hazard's settings are fixed in the add-on
+(`components/hazardous_sentries.lua`), apart from the weapons' options: 50
+health (the Laser 35), the Gun's 2 damage a shot and full push, the PyroMan
+turrets' 400 ms between their first two shots, each next wait 12% longer, and
+ammo per turn of 20 (Gun), 3 (Petrol), 6 (Flame), 3 (Mine) and 3 (Auto
+Ballista). The add-on builds a second turret of each kind
+(`shared.hazard_turrets`, the weapon module's own builder) and gives it these
+settings; the weapons' turrets are untouched.
 
 Where they go (`lib/hazard_spot.lua`): every column 5 pixels apart is traced
 down to the water for each surface, caverns included, and a ground point is
 the last free row above the land. A hazard needs a 50 by 50 pixel box above
 its ground point clear of land (the box's inscribed circle against land and
-bodies, then each of its 50 rows against land), 75 pixels from any living
-worm and 100 from the other hazards, measured from the box's centre. Each
-hazard starts from a random ground point (one `wa.random` draw) and takes the
-first that fits after it; one that fits nowhere is left out and logged. They
-go in the order above, each facing the middle of the map, and fall the last
-pixel onto their feet.
+bodies, then each of its 50 rows against land), 75 pixels from any living worm
+and 100 from the other hazards, measured from the box's centre. Each hazard
+starts from a random ground point (one `wa.random` draw) and takes the first
+that fits after it; when none fits, the rest are left out and logged. Each
+faces the middle of the map and falls the last pixel onto its feet.
+
+How many (`spot.count`): density x the map's mean side (the integer square
+root of width x height) / 7500, rounded, so at 100 one for every 75 pixels of
+it. It was set by three maps at density 50 (8 on a 1920 by 696 battle map, 11
+on a 2280 by 1168 one, 38 on a 7680 by 4176 rope race map) and has nothing to
+do with the ground: a first version counted the ground a box fits on and gave
+the rope race map 235 (its long flat floors) and the battle maps 1 (a 50 pixel
+box with a flat bottom fits few points on a slope). Where the count asks for
+more than fits, the rest are logged.
 
 A hazard belongs to no team: its body is an `owner = "none"` actor and its
 side is `turret.NEUTRAL` (6), drawn grey (`turret.GREY`, the laser's beam
@@ -878,8 +893,9 @@ Turret's bombs, the Flame Turret's fires, the Mine Turret's mines and the
 Auto Ballista's arrows. A neutral turret's arrows pass the other neutral
 turrets; a team's turret takes them. A Tazer stun wears off after two turns
 of anyone's. Lightning Strike captures one for the caster's coalition, which
-then owns it as it would its own. Everything else (health, damage disabling
-a sentry for the turn, ammo per turn, the death blast) is the weapons'.
+then owns it as it would its own. Everything else (damage disabling a sentry
+for the turn, ammo refilled each turn, the death blast) works as the weapons'
+does.
 Tracking speed and Aim ahead (below) are one setting each for all of them.
 
 ### Tracking speed and Aim ahead

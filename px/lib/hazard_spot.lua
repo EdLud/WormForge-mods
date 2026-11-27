@@ -26,6 +26,22 @@ function spot.ground()
   return out
 end
 
+-- The square root of n, rounded down, in integers (the same on every machine).
+local function isqrt(n)
+  local x, y = n, (n + 1) // 2
+  while y < x do x, y = y, (y + n // y) // 2 end
+  return x
+end
+
+-- How many hazards a density from 0 to 100 places on this map: at 100, one for every 75 pixels of
+-- its mean side, the square root of width x height, so a map twice as wide and twice as tall gets
+-- twice as many. The ground they stand on doesn't count: a rope race map's long flat floors would
+-- give it several times what its size asks for, a battle map's slopes next to none.
+function spot.count(density)
+  local size = wa.world.size()
+  return (density * isqrt(size.w * size.h) + 3750) // 7500
+end
+
 local function far(x, y, points, gap)
   for _, p in ipairs(points) do
     local dx, dy = p[1] - x, p[2] - y

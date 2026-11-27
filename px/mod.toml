@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.96"
+version = "0.20.97"
 author = "Project X authors"
 api_version = 5
 format_version = 2
@@ -1073,246 +1073,73 @@ entry = "components/hazardous_sentries.lua"
 before_weapons = true
 
 [[components.options]]
-key = "sentry_gun"
+key = "density"
 type = "int"
-default = 1
+default = 40
 min = 0
 max = 100
-label = "Sentry Guns"
-description = "How many are placed at the start of each round, each on the ground where a 50 by 50 pixel box fits. Their settings are separate from the weapons'."
+zero = "off"
+label = "Density"
+description = "How many are placed at the start of each round, for the map's size. At 50, a normal 1920 by 696 map gets 8, a 2280 by 1168 one 11 and a 7680 by 4176 one 38. Each needs a 50 by 50 pixel box on the ground, so a crowded map may have room for fewer."
 
 [[components.options]]
-key = "sentry_gun_health"
-type = "int"
-default = 50
-min = 1
-max = 500
-label = "Sentry Gun health"
-description = ""
-
-[[components.options]]
-key = "sentry_gun_ammo"
+key = "sentry_gun_share"
 type = "int"
 default = 20
-min = 1
-max = 1000
-label = "Sentry Gun ammo per turn"
-description = ""
-
-[[components.options]]
-key = "sentry_gun_damage"
-type = "int"
-default = 2
-min = 0
-max = 1000
-label = "Sentry Gun damage per shot"
-description = ""
-
-[[components.options]]
-key = "sentry_gun_push_pct"
-type = "int"
-default = 100
-min = 0
-max = 1000
-label = "Sentry Gun push (%)"
-description = ""
-
-[[components.options]]
-key = "sentry_laser"
-type = "int"
-default = 1
 min = 0
 max = 100
-label = "Sentry Lasers"
-description = ""
+shares = "hazards"
+label = "Sentry Guns (%)"
+description = "How likely each one placed is to be each kind. The six add up to 100."
 
 [[components.options]]
-key = "sentry_laser_health"
+key = "sentry_laser_share"
 type = "int"
-default = 35
-min = 1
-max = 500
-label = "Sentry Laser health"
-description = ""
-
-[[components.options]]
-key = "petrol_turret"
-type = "int"
-default = 1
+default = 20
 min = 0
 max = 100
-label = "Petrol Turrets"
+shares = "hazards"
+label = "Sentry Lasers (%)"
 description = ""
 
 [[components.options]]
-key = "petrol_turret_health"
+key = "petrol_turret_share"
 type = "int"
-default = 50
-min = 1
-max = 500
-label = "Petrol Turret health"
-description = ""
-
-[[components.options]]
-key = "petrol_turret_ammo"
-type = "int"
-default = 6
-min = 1
-max = 100
-label = "Petrol Turret ammo per turn"
-description = ""
-
-[[components.options]]
-key = "petrol_turret_fire_rate"
-type = "int"
-default = 400
-min = 20
-max = 10000
-label = "Petrol Turret fire rate (ms)"
-description = ""
-
-[[components.options]]
-key = "petrol_turret_fire_increase_pct"
-type = "int"
-default = 12
+default = 15
 min = 0
 max = 100
-label = "Petrol Turret fire increase (%)"
+shares = "hazards"
+label = "Petrol Turrets (%)"
 description = ""
 
 [[components.options]]
-key = "flame_turret"
+key = "flame_turret_share"
 type = "int"
-default = 1
+default = 15
 min = 0
 max = 100
-label = "Flame Turrets"
+shares = "hazards"
+label = "Flame Turrets (%)"
 description = ""
 
 [[components.options]]
-key = "flame_turret_health"
+key = "mine_turret_share"
 type = "int"
-default = 50
-min = 1
-max = 500
-label = "Flame Turret health"
-description = ""
-
-[[components.options]]
-key = "flame_turret_ammo"
-type = "int"
-default = 18
-min = 1
-max = 100
-label = "Flame Turret ammo per turn"
-description = ""
-
-[[components.options]]
-key = "flame_turret_fire_rate"
-type = "int"
-default = 400
-min = 20
-max = 10000
-label = "Flame Turret fire rate (ms)"
-description = ""
-
-[[components.options]]
-key = "flame_turret_fire_increase_pct"
-type = "int"
-default = 12
+default = 15
 min = 0
 max = 100
-label = "Flame Turret fire increase (%)"
+shares = "hazards"
+label = "Mine Turrets (%)"
 description = ""
 
 [[components.options]]
-key = "mine_turret"
+key = "auto_ballista_share"
 type = "int"
-default = 1
+default = 15
 min = 0
 max = 100
-label = "Mine Turrets"
-description = ""
-
-[[components.options]]
-key = "mine_turret_health"
-type = "int"
-default = 50
-min = 1
-max = 500
-label = "Mine Turret health"
-description = ""
-
-[[components.options]]
-key = "mine_turret_ammo"
-type = "int"
-default = 6
-min = 1
-max = 100
-label = "Mine Turret ammo per turn"
-description = ""
-
-[[components.options]]
-key = "mine_turret_fire_rate"
-type = "int"
-default = 400
-min = 20
-max = 10000
-label = "Mine Turret fire rate (ms)"
-description = ""
-
-[[components.options]]
-key = "mine_turret_fire_increase_pct"
-type = "int"
-default = 12
-min = 0
-max = 100
-label = "Mine Turret fire increase (%)"
-description = ""
-
-[[components.options]]
-key = "auto_ballista"
-type = "int"
-default = 1
-min = 0
-max = 100
-label = "Auto Ballistas"
-description = ""
-
-[[components.options]]
-key = "auto_ballista_health"
-type = "int"
-default = 50
-min = 1
-max = 500
-label = "Auto Ballista health"
-description = ""
-
-[[components.options]]
-key = "auto_ballista_ammo"
-type = "int"
-default = 8
-min = 1
-max = 100
-label = "Auto Ballista ammo per turn"
-description = ""
-
-[[components.options]]
-key = "auto_ballista_fire_rate"
-type = "int"
-default = 400
-min = 20
-max = 10000
-label = "Auto Ballista fire rate (ms)"
-description = ""
-
-[[components.options]]
-key = "auto_ballista_fire_increase_pct"
-type = "int"
-default = 12
-min = 0
-max = 100
-label = "Auto Ballista fire increase (%)"
+shares = "hazards"
+label = "Auto Ballistas (%)"
 description = ""
 
 [[components.options]]

@@ -21,7 +21,7 @@ local M
 local function mock(solid)
   M = { worms = {}, actors = {}, bullets = {}, shots = {}, mines = {}, arrows = {}, fires = {},
     quads = {}, frame = 0, clock = 30000, solid = solid or function(_, y) return y > 300 end,
-    picks = {}, rng = function(lo) return lo end, handlers = { turn_start = {}, turn_end = {} }, loads = {}, also = {} }
+    picks = {}, draws = {}, rng = function(lo) return lo end, handlers = { turn_start = {}, turn_end = {} }, loads = {}, also = {} }
   local function worm(id, team, alliance, x, y)
     local w = { id = id, team = team, alliance = alliance, x = x, y = y, vx = 0, vy = 0, hp = 100, facing = 1 }
     function w:ammo() return 1 end
@@ -43,6 +43,8 @@ local function mock(solid)
     end,
     random = function(lo, hi)
       M.picks[#M.picks + 1] = { lo, hi }
+      -- a hazard's kind is drawn from 1 to 100 (the shares): those come from M.draws, in turn
+      if hi == 100 and #M.draws > 0 then return table.remove(M.draws, 1) end
       return M.rng(lo, hi)
     end,
     sound = { play = function(target, name) if target.sounds then target.sounds[#target.sounds + 1] = name end end },
@@ -65,7 +67,7 @@ local function mock(solid)
       frame = function() return M.frame end,
       turn_clock = function() return M.clock end,
       gravity = function() return 0.2 end,
-      size = function() return { w = 1000, h = 600 } end,
+      size = function() return M.size or { w = 1000, h = 600 } end,
       water = function() return 560 end,
       -- a pixel walk of the line, as the engine's sweep with radius 0
       trace = function(spec)
@@ -152,12 +154,14 @@ local function mock(solid)
 end
 
 local DEFAULTS = {
-  sentry_gun = 0, sentry_gun_health = 50, sentry_gun_ammo = 20, sentry_gun_damage = 2, sentry_gun_push_pct = 100,
-  sentry_laser = 0, sentry_laser_health = 35, tracking_pct = 100, aim_ahead = false,
+  density = 0, sentry_gun_share = 0, sentry_laser_share = 0, petrol_turret_share = 0, flame_turret_share = 0,
+  mine_turret_share = 0, auto_ballista_share = 0, tracking_pct = 100, aim_ahead = false,
 }
-for _, key in ipairs({ "petrol_turret", "flame_turret", "mine_turret", "auto_ballista" }) do
-  DEFAULTS[key], DEFAULTS[key .. "_health"], DEFAULTS[key .. "_ammo"] = 0, 50, 6
-  DEFAULTS[key .. "_fire_rate"], DEFAULTS[key .. "_fire_increase_pct"] = 400, 12
+-- On the mock's 1000 by 600 map density 10 places one, 30 three.
+local function one(kind, options)
+  options = options or {}
+  options.density, options[kind .. "_share"] = 10, 100
+  return options
 end
 local function install(options)
   local ctx = { weapons = options.weapons or {}, option = function(key)
@@ -223,6 +227,24 @@ do
   check("nil when nothing fits", spot.find(ground, full) == nil)
 end
 
+print("Hazardous Sentries: how many, for the map's size")
+do
+  local spot = require("lib/hazard_spot")
+  mock()
+  -- the mock's 1000 by 600 map: the test's own densities
+  check("density 10 one, 30 three, 100 ten, 0 none", spot.count(10) == 1 and spot.count(30) == 3
+    and spot.count(100) == 10 and spot.count(0) == 0)
+  -- at 50, the maps it was set by: a normal battle map, a large one, a big rope race map
+  local at50 = {}
+  for _, size in ipairs({ { 1920, 696 }, { 2280, 1168 }, { 7680, 4176 } }) do
+    M.size = { w = size[1], h = size[2] }
+    at50[#at50 + 1] = spot.count(50)
+  end
+  check("8, 11 and 38 at density 50", at50[1] == 8 and at50[2] == 11 and at50[3] == 38, table.concat(at50, ","))
+  M.size = { w = 24000, h = 2200 }
+  check("a 24000 by 2200 rope map: 97 at 100", spot.count(100) == 97, spot.count(100))
+end
+
 -- Each hazard body's turret and state, as the Tazer's arc finds them.
 local function hazards()
   local out = {}
@@ -236,7 +258,8 @@ print("Hazardous Sentries: placed at the first turn, grey, of no team, on their 
 do
   mock()
   local red = M.worm(1, 1, 0, 100, 300)
-  install({ sentry_gun = 2, sentry_gun_health = 80, sentry_gun_damage = 7, petrol_turret = 1, petrol_turret_ammo = 9 })
+  M.draws = { 1, 67, 68 } -- Sentry Gun up to 67, then the Petrol Turret
+  install({ density = 30, sentry_gun_share = 67, petrol_turret_share = 33 })
   local shared = require("lib/shared")
   check("only the turrets it places are set up", #M.also == 2
     and M.also[1] == "weapons/sentry_gun" and M.also[2] == "weapons/petrol_turret")
@@ -246,6 +269,11 @@ do
   turn_start(red)
   local placed = hazards()
   check("three placed", #placed == 3, #placed)
+  local kind_draws = 0
+  for _, p in ipairs(M.picks) do
+    if p[1] == 1 and p[2] == 100 then kind_draws = kind_draws + 1 end
+  end
+  check("a kind drawn for each, by the shares", kind_draws == 3 and #M.draws == 0, kind_draws)
   turn_start(red)
   check("once a round", #hazards() == 3)
   local guns, petrol = 0, nil
@@ -253,12 +281,12 @@ do
     check("owned by no team, no planter", h.s.body.owner == "none" and h.s.planter == nil)
     if h.t.kind == "hazard_sentry" then
       guns = guns + 1
-      check("the add-on's health and damage", h.s.max_health == 80 and h.t.damage == 7)
+      check("the add-on's fixed health, ammo and damage", h.s.max_health == 50 and h.t.ammo == 20 and h.t.damage == 2)
     elseif h.t.kind == "hazard_petrol_turret" then
       petrol = h
     end
   end
-  check("two guns and a petrol turret", guns == 2 and petrol and petrol.s.ammo == 9)
+  check("two guns and a petrol turret", guns == 2 and petrol and petrol.s.ammo == 3)
   check("the weapons keep their own settings", shared.sentry_gun.health == 50 and shared.sentry_gun.damage == 2
     and shared.petrol_turret.ammo == 6)
   local grey = 0
@@ -274,11 +302,25 @@ do
   check("drawn grey", grey == 3, grey)
 end
 
+print("Hazardous Sentries: the other turrets' fixed ammo per turn")
+do
+  mock()
+  local red = M.worm(1, 1, 0, 100, 300)
+  M.draws = { 1, 40, 80 }
+  install({ density = 30, flame_turret_share = 34, mine_turret_share = 33, auto_ballista_share = 33 })
+  turn_start(red)
+  local ammo = {}
+  for _, h in ipairs(hazards()) do ammo[h.t.kind] = h.t.ammo end
+  check("Flame 6, Mine 3, Auto Ballista 3", ammo.hazard_flame_turret == 6 and ammo.hazard_mine_turret == 3
+    and ammo.hazard_auto_ballista == 3)
+end
+
 print("Hazardous Sentries: one Tracking speed and Aim ahead for all of them, not the weapons'")
 do
   mock()
   local red = M.worm(1, 1, 0, 100, 300)
-  install({ sentry_gun = 1, mine_turret = 1, tracking_pct = 300, aim_ahead = true })
+  M.draws = { 1, 100 }
+  install({ density = 20, sentry_gun_share = 50, mine_turret_share = 50, tracking_pct = 300, aim_ahead = true })
   turn_start(red)
   local gun, mine
   for _, h in ipairs(hazards()) do
@@ -296,7 +338,7 @@ print("Hazardous Sentries: a neutral Sentry Gun fires at every team, as no team'
 do
   mock()
   local red = M.worm(1, 1, 0, 100, 300)
-  install({ sentry_gun = 1, sentry_gun_damage = 7, sentry_gun_push_pct = 40 })
+  install(one("sentry_gun"))
   turn_start(red)
   local a = M.actors[#M.actors]
   local blue = M.worm(2, 2, 1, a.x + 120, a.y - 5)
@@ -307,7 +349,7 @@ do
   local shot = M.bullets[1]
   check("it fires", shot ~= nil, #M.bullets)
   check("with its own body as the owner, which keeps out of the round", shot and shot.owner == a and shot.ignore[1] == a)
-  check("on the add-on's damage and push", shot and shot.damage == 7 and shot.push_pct == 40)
+  check("on the add-on's damage and push", shot and shot.damage == 2 and shot.push_pct == 100)
   blue.x = 5000
   red.x, red.y, red.vx = a.x - 120, a.y - 5, 1
   turn_start(red)
@@ -323,7 +365,7 @@ do
   local function run(sleeps)
     mock()
     local red = M.worm(1, 1, 0, 100, 300)
-    install({ sentry_gun = 1 })
+    install(one("sentry_gun"))
     turn_start(red)
     local a = M.actors[#M.actors]
     local s = hazards()[1].s
@@ -370,7 +412,7 @@ print("Hazardous Sentries: neutral turrets spare each other's arrows; a team's t
 do
   mock()
   local red = M.worm(1, 1, 0, 100, 300)
-  install({ auto_ballista = 1 })
+  install(one("auto_ballista"))
   turn_start(red)
   local a = M.actors[#M.actors]
   local t
@@ -394,7 +436,7 @@ print("Hazardous Sentries: a stunned neutral sentry comes back")
 do
   mock()
   local red = M.worm(1, 1, 0, 100, 300)
-  install({ sentry_laser = 1 })
+  install(one("sentry_laser"))
   turn_start(red)
   local a = M.actors[#M.actors]
   local obj
@@ -412,4 +454,4 @@ do
 end
 
 if failed > 0 then error(failed .. " FAILED") end
-print("Hazardous Sentries: ground, box, settings, no team, arrows and stuns: ALL PASS")
+print("Hazardous Sentries: ground, box, count, settings, no team, arrows and stuns: ALL PASS")
