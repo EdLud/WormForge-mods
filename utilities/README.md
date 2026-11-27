@@ -17,7 +17,7 @@ live_hp = true
 
 | Setting | Type | What it does |
 |---|---|---|
-| Heal at turn start | number, 0–50 | Heals the worm by the set amount at the start of its turn. |
+| Heal at turn start | number, 0–500 | Heals the worm by the set amount at the start of its turn. |
 | ExTurnSide | switch | Left and right turn the worm during jumps, flights and other actions. By reddaz. |
 | Agility | switch | The arrow keys steer the worm a little in the air. By Zed and 0rang3, ported by reddaz. |
 | Parkour | switch | In the air, Enter kicks the worm off a wall within 20 pixels and Backspace bunny-hops it off the land below. From Project X. |

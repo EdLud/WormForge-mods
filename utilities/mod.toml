@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.21.0"
+version = "0.21.1"
 author = "WormBench"
 api_version = 5
 format_version = 2
@@ -27,7 +27,7 @@ key = "heal_per_turn"
 type = "int"
 default = 0
 min = 0
-max = 50
+max = 500
 label = "Heal at turn start (HP)"
 description = "Heals the worm by the set amount at the start of its turn."
 
