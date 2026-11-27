@@ -1,7 +1,7 @@
 # Weather: clear skies, rain and snow, each with its share of the turn cycles.
 id = "core.weather"
 name = "Weather"
-version = "0.3.1"
+version = "0.3.2"
 author = "WormBench"
 api_version = 5
 format_version = 2

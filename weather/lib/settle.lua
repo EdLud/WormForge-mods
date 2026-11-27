@@ -1,5 +1,5 @@
--- Settling snow: anywhere on the map, a pixel or a 2x2 square at a time, lying on the land or frosting it a little
--- way in; lying snow slides off steep steps, falls when its land goes and melts.
+-- Settling snow: anywhere on the map, lying on the land as a pixel or a small mound, or frosting it a little way in
+-- as a pixel or a 2x2 square; lying snow slides off steep steps, falls when its land goes and melts.
 local settle = {}
 
 settle.SHEET = "sprites/settle.png"
@@ -8,15 +8,25 @@ settle.SHADES = 4 -- frames 0..3: one pixel of snow, in four shades
 settle.STRIP = 4 -- frame STRIP + h - 1: a column of h pixels of snow, h 1..FRAME
 settle.SQUARE = settle.STRIP + FRAME -- frames SQUARE..SQUARE + 3: a 2x2 square, in four shades
 local TICK = 5 -- frames between tries
-local WIDTH_PER_TRY = 250 -- pixels of map width a try a tick stands for, at full snow
-local STAMPS = 8 -- falls of snow (a pixel or a 2x2 square) laid a tick at most
+local WIDTH_PER_TRY = 125 -- pixels of map width a try a tick stands for, at full snow
+local STAMPS = 16 -- falls of snow (a pixel, a mound or frost) laid a tick at most
 local CLEAR = 14 -- pixels kept free round worms and objects
 local SLIDE = 3 -- a pixel of snow slides to the next column when that is this much lower or more
 local SLIDES = 64 -- columns a pixel slides across at most
 local LEVEL = 6 -- columns a pixel moves across at most onto thinner snow
 local REACH = 2 -- pixels up or down the next column's top may lie for snow to spread onto it
 local LEDGE = 2 -- pixels of snow a column holds on a steep face
-settle.BIG = 50 -- % of the snow that comes as 2x2 squares, the rest as single pixels
+settle.BIG = 50 -- % of the frost that comes as 2x2 squares, the rest as single pixels
+-- Lying snow comes as a single pixel or as a mound, its pixels high across its columns, each with its share of the
+-- falls in %: about 7 pixels a fall.
+settle.MOUNDS = {
+  { { 1 }, 20 },
+  { { 1, 2, 1 }, 20 },
+  { { 1, 2, 2, 1 }, 20 },
+  { { 1, 2, 3, 2, 1 }, 20 },
+  { { 1, 2, 3, 3, 2, 1 }, 10 },
+  { { 1, 2, 3, 4, 3, 2, 1 }, 10 },
+}
 settle.FROST_SHARE = 50 -- % of the snow that frosts the land rather than lying on it
 settle.FROST = 10 -- pixels into the land frost reaches, more often near its top
 local FROST_CHECKS = 16 -- frost spots checked a frame for their land blown away
@@ -71,15 +81,18 @@ local function land_below(x, y, water)
 end
 
 -- Where a pixel of snow landing on top of column x (land at s) comes to rest: on the next column while that is
--- at least SLIDE lower, the steeper side first; nil when it slides into the water.
-local function slide(x, s, width, water)
+-- at least SLIDE lower, the steeper side first, never onto a column whose snow lies elsewhere than its land's top
+-- (snow left hanging over a ledge blown away, not yet fallen); nil when it slides into the water.
+local function slide(cols, x, s, width, water)
   for _ = 1, SLIDES do
     local drop, bx, bs = SLIDE - 1, nil, nil
     for _, dx in ipairs({ -1, 1 }) do
       local nx = x + dx
       if nx >= 0 and nx < width and not wa.land.solid(nx, s - 1) then
         local ns = land_below(nx, s - 1, water)
+        local col = ns and cols[nx]
         local d = ns and ns - s or math.huge
+        if col and col.depth > 0 and col.top ~= ns then d = -math.huge end
         -- A tie goes one way or the other by where it is, the same on every machine.
         if d > drop or (d == drop and bx and (x + s) % 2 == 1) then drop, bx, bs = d, nx, ns end
       end
@@ -266,23 +279,122 @@ function settle.sweep(s, water)
   end
 end
 
--- One fall of snow: a spot anywhere in the air of the map, straight down onto the land under it, a pixel or a 2x2
--- square, lying there or frosting the land. Returns how many pixels it laid.
+-- The next fall of lying snow, by the shares of settle.MOUNDS: its height in each column.
+local function mound()
+  local r = wa.random(1, 100)
+  for _, m in ipairs(settle.MOUNDS) do
+    r = r - m[2]
+    if r <= 0 then return m[1] end
+  end
+  return { 1 }
+end
+
+-- One fall of snow: a spot anywhere in the air of the map, straight down onto the land under it, lying there as a
+-- pixel or a mound or frosting the land as a pixel or a 2x2 square. Returns how many pixels it laid.
 function settle.try(s, size)
   local water = wa.world.water()
   local x, y = wa.random(0, size.w - 2), wa.random(0, water - 1)
-  local big = wa.random(1, 100) <= settle.BIG
   if wa.land.solid(x, y) then return 0 end
   if wa.random(1, 100) <= settle.FROST_SHARE then
     local top = land_below(x, y, water)
-    return top and settle.frost(s, x, top, big) or 0
+    return top and settle.frost(s, x, top, wa.random(1, 100) <= settle.BIG) or 0
+  end
+  local heights = mound()
+  if #heights == 1 then
+    local top = land_below(x, y, water)
+    return (top and settle.place(s, x, top, water, true)) and 1 or 0
+  end
+  return settle.mound(s, x, y, heights, water)
+end
+
+-- Whether column x, its land's top at row `top`, has a next column SLIDE or more lower: a pixel there slides off.
+local function sheds(x, top, width, water)
+  for _, nx in ipairs({ x - 1, x + 1 }) do
+    if nx >= 0 and nx < width and not wa.land.solid(nx, top - 1) then
+      local ns = land_below(nx, top - 1, water)
+      if not ns or ns - top >= SLIDE then return true end
+    end
+  end
+  return false
+end
+
+-- A mound of lying snow come down over (x, y): each column straight onto its own land, so it follows the ground,
+-- built a layer at a time under the rules a single pixel keeps (as deep as a column may take, never 2 pixels over
+-- both of its neighbours, clear of worms and objects), then laid with one stamp a column. A column on the edge of a
+-- steep step or on a steep face hands its pixels on one at a time, as single pixels fall, to slide off. Returns how
+-- many pixels it laid.
+function settle.mound(s, x, y, heights, water)
+  local width, solid = s.width, wa.land.solid
+  local cols, plan = {}, {}
+  for i, h in ipairs(heights) do
+    local cx = x + i - 1
+    if cx < width and not solid(cx, y) then
+      if s.cols[cx] then settle.check(s, cx, water) end
+      local top = land_below(cx, y, water)
+      local col = s.cols[cx]
+      local depth = col and col.depth or 0
+      -- Land laid over this snow since (a girder): the column doesn't follow it.
+      if top and top <= water - 2 and not (depth > 0 and col.top ~= top) then
+        if sheds(cx, top, width, water) or steep(s.cols, cx, top + depth, width) then
+          plan[i] = { x = cx, shed = h }
+        else
+          plan[i] = { x = cx, top = top, depth = depth, h = h, added = 0 }
+        end
+      end
+    end
+  end
+  -- The top row of column i of the mound as planned, or nil outside it.
+  local function planned(i)
+    local p = plan[i]
+    return p and p.top and p.top - p.added
+  end
+  local function stands_over(i, t)
+    for _, j in ipairs({ i - 1, i + 1 }) do
+      local nt = planned(j)
+      if nt then
+        if nt <= t + 1 then return false end
+      else
+        local nx = x + j - 1
+        if nx < 0 or nx >= width or solid(nx, t) or solid(nx, t + 1) then return false end
+      end
+    end
+    return true
+  end
+  for k = 1, #heights do
+    for i = 1, #heights do
+      local p = plan[i]
+      if p and p.top and p.h >= k and p.added == k - 1 then
+        local depth, t = p.depth + p.added, p.top - p.added - 1
+        local ok = depth < s.cfg.settle_depth and t >= 2 and not stands_over(i, t) and not crowded(p.x, t)
+        if ok then p.added = k end
+      end
+    end
   end
   local laid = 0
-  for dx = 0, big and 1 or 0 do
-    for _ = 1, big and 2 or 1 do
-      -- Each pixel looks for the top again: the one before may have raised it.
-      local top = not wa.land.solid(x + dx, y) and land_below(x + dx, y, water)
-      if top and settle.place(s, x + dx, top, water, true) then laid = laid + 1 end
+  for i = 1, #heights do
+    local p = plan[i]
+    if p and p.top and p.added > 0 then
+      stamp(settle.STRIP + p.added - 1, p.x, p.top - 1)
+      local col = s.cols[p.x]
+      if col then
+        col.top, col.depth = p.top - p.added, p.depth + p.added
+      else
+        s.cols[p.x] = { top = p.top - p.added, depth = p.added }
+        s.order[#s.order + 1] = p.x
+      end
+      touch(s, p.x)
+      laid = laid + p.added
+    end
+  end
+  -- After the stamps, so a pixel sliding onto a column of the mound finds its snow as laid.
+  for i = 1, #heights do
+    local p = plan[i]
+    if p and p.shed then
+      for _ = 1, p.shed do
+        local top = land_below(p.x, y, water)
+        if not (top and settle.place(s, p.x, top, water, true)) then break end
+        laid = laid + 1
+      end
     end
   end
   return laid
@@ -352,7 +464,7 @@ end
 -- whether it rests there. `reconcile` first brings that column's snow up to date with the land.
 function settle.place(s, x, top, water, reconcile)
   local cfg, width = s.cfg, s.width
-  local px, py = slide(x, top, width, water)
+  local px, py = slide(s.cols, x, top, width, water)
   if not px then return false end
   px, py = level(s.cols, px, py, width)
   if py < 2 or py > water - 2 then return false end

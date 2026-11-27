@@ -959,20 +959,20 @@ do
   for _, spot in ipairs(s.frost) do if spot.x >= cut_x0 and spot.x < cut_x1 then left = left + 1 end end
   check("and the simulation forgets that frost", before > 0 and left == 0 and #(s.chunks[c] or {}) == 0, left)
 
-  -- Half and half, as the add-on comes: more snow than lying snow alone gave.
+  -- Half and half, with the mounds, as the add-on comes: more snow than single pixels lying alone gave.
   -- The committed single pixels laid 4792 in this time over this land, held by the falls a tick.
-  local function laid(frost, big)
+  local function laid(frost, mounds)
     settling({ snow = 100 }, nil, nil, frost)
     settle = load_module("lib/settle")
-    settle.BIG = big or settle.BIG
+    settle.MOUNDS = mounds or settle.MOUNDS
     turn(1)
     sim_frames(3000)
     local n = 0
     for _, t in ipairs(M.stamps) do n = n + #settle.frame_pixels(t.frame) end
     return n
   end
-  local singles, mixed = laid(0, 0), laid(50)
-  check("2x2 squares bring twice the snow or more", mixed > 2 * singles, mixed .. " vs " .. singles)
+  local singles, mixed = laid(0, { { { 1 }, 100 } }), laid(50)
+  check("mounds bring twice the snow or more", mixed > 2 * singles, mixed .. " vs " .. singles)
 
   -- The glow: a box on each column's top and each frost spot, drawn on the ground in front of the land.
   settling({ snow = 100 }, nil, nil, 50)

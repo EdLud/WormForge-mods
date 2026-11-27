@@ -15,10 +15,10 @@ sky behind the land and acts as the Lightning Strike does. It aims at mines,
 oil drums and crates first, else at worms and graves.
 
 Snow drifts down behind the land from white clouds. On the ground it comes
-anywhere on the map, under ledges and in caves too, a pixel or a 2x2 square at
-a time. Half of it builds up as land: worms stand on it, dig it and blow it
-up. It slides off steep steps and drifts at their foot, and when the land under
-it is blown away it falls to the land below. The other half frosts the land up
+anywhere on the map, under ledges and in caves too. Half of it builds up as
+land, a pixel or a small mound up to 4 pixels high at a time: worms stand on
+it, dig it and blow it up. It slides off steep steps and drifts at their foot,
+and when the land under it is blown away it falls to the land below. The other half frosts the land up
 to 10 pixels in, and stays. Settled snow has a faint glow. It needs the
 Direct3D 9 (shader) renderer to show white; without it, settled snow takes the
 nearest colour of the land.
