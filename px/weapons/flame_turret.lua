@@ -1,4 +1,4 @@
--- Flame Turret: a turret that lobs fire at moving enemies, over the land in their way.
+-- Flame Turret: a turret that lobs fire at moving enemies it can see.
 
 local weapon = {}
 

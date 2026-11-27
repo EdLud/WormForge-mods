@@ -70,7 +70,8 @@ end
 
 -- PX's pick: each moving enemy worm in range, in wa.worms.all()'s order, a 30% chance;
 -- an invisible one ends the search. Only the near worms are read, all of them while one
--- is invisible. `seen` is the watch of the frame this turret last looked.
+-- is invisible. `seen` is the watch of the frame this turret last looked. Unlike PX, it
+-- takes only a worm it can see, as a sentry does: no land between its head and the worm.
 local function find_target(t, a, s, watch, seen)
   local cx, cy = centre(a)
   local py = cy - t.tower_offset
@@ -84,7 +85,10 @@ local function find_target(t, a, s, watch, seen)
         if w.visible == false then break end
         local dx, dy = x - cx, y - py
         local d = math.sqrt(dx * dx + dy * dy)
-        if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < t.pick_pct then s.tid = id end
+        if d >= t.min_px and d < t.sensor_px and wa.random(0, 99) < t.pick_pct
+          and turret.sight(t, a, x, y) then
+          s.tid = id
+        end
       end
     end
   end
@@ -164,10 +168,6 @@ local function think(t, a, s, frame, steps)
   local target = s.tid and worm_by_id(watch, s.tid)
   if target and target.state == "frozen" then target = nil end
   if s.tid and not target then s.tid = nil end
-  if s.draw_aim and target then
-    if s.aim_x < target.x then s.aim_x = s.aim_x + 4 elseif s.aim_x > target.x then s.aim_x = s.aim_x - 4 end
-    if s.aim_y < target.y then s.aim_y = s.aim_y + 4 elseif s.aim_y > target.y then s.aim_y = s.aim_y - 4 end
-  end
   local clock = wa.world.turn_clock()
   local running = s.clock ~= nil and clock < s.clock
   s.clock = clock
@@ -180,6 +180,10 @@ local function think(t, a, s, frame, steps)
   end
   if s.wait > 0 then s.wait = s.wait - 1; return end
   if not aim(t, a, s, target) or s.reload > 0 then return end
+  if not turret.sight(t, a, target.x, target.y) then -- gone behind land: it looks again
+    s.tid, s.wait = nil, 10
+    return
+  end
   if blocked(t, a, s) then
     if wa.random(0, 99) < 65 then
       next_flight(s)
@@ -210,16 +214,22 @@ local function think(t, a, s, frame, steps)
   end
 end
 
+-- Where each turret's aim mark is drawn, a turret's state to its mark. PX moves the mark
+-- toward the worm as it draws, not as the game runs, so it follows the worm where it is
+-- drawn; the game never reads it. It starts at the turret each turn, as PX's does.
+local marks = setmetatable({}, { __mode = "k" })
+
 local function init(t, a, s)
-  local cx, cy = centre(a)
   s.ammo, s.ta, s.dir, s.want, s.power = 0, 1.57, 1, 1.57, 0
   s.reload, s.reload_time, s.flight, s.wait = 0, t.fire_rate_ms, 32, 0
-  s.aim_sound, s.draw_aim, s.aim_x, s.aim_y = 0, false, cx, cy
+  s.aim_sound, s.draw_aim = 0, false
   s.lrx, s.lry = 0, 0
+  s.loaded = false -- had a turn's shots: a new turret waits for the next turn
 end
 
 local function turn_begin(t, s)
-  s.draw_aim, s.aim_x, s.aim_y = false, s.x, s.y - R
+  s.draw_aim, s.loaded = false, true
+  marks[s] = nil
   s.reload_time = t.fire_rate_ms
 end
 
@@ -238,6 +248,36 @@ local function dim(rgb, k)
 end
 
 local SIZE = 40 -- the sheet's frames, pixels square
+local AIM_STEP_PX = 8 -- how far the aim mark moves on each axis a frame: PX's 4 a drawn frame
+local EMPTY_DIM = 0.45 -- an empty turret's head, darker still
+
+-- Out of this turn's shots (or emptied by the Tazer): drawn without its ammo, darker.
+local function empty(s) return s.loaded and s.ammo <= 0 end
+
+-- Its aim mark, while it has a target and shots left.
+local function aiming(s) return s.draw_aim and s.tid ~= nil and not empty(s) end
+
+local function approach(v, goal, step)
+  if v < goal then return math.min(goal, v + step) end
+  return math.max(goal, v - step)
+end
+
+local function move_aim(s, cx, cy, now)
+  local m = marks[s]
+  if not m then
+    m = { x = cx, y = cy, at = now }
+    marks[s] = m
+  end
+  local step = AIM_STEP_PX * math.max(0, math.min(5, now - m.at))
+  m.at = now
+  for _, w in ipairs(wa.worms.all()) do
+    if w.id == s.tid then
+      m.x, m.y = approach(m.x, w.x, step), approach(m.y, w.y, step)
+      break
+    end
+  end
+  return m
+end
 
 local function draw(t, s)
   local layers = t.pyro_layers
@@ -245,11 +285,15 @@ local function draw(t, s)
   local rgb = turret.tint(t, s)
   local colour = 0xFF000000 | rgb
   layers.base:put(cx, cy, SIZE, SIZE, 0, t.frames.base, colour)
-  if s.draw_aim and s.tid then
-    layers.base:put(s.aim_x, s.aim_y, SIZE, SIZE, wa.world.frame() * 0.04, RETICLE, colour)
+  if aiming(s) then
+    local now = wa.world.frame() + (wa.draw.fraction and wa.draw.fraction() or 0)
+    local m = move_aim(s, cx, cy, now)
+    layers.base:put(m.x, m.y, SIZE, SIZE, now * 0.04, RETICLE, colour)
   end
-  local head = 0xFF000000 | dim(rgb, math.max(0, s.health) / s.max_health * 0.75 + 0.25)
-  if layers.ammo then
+  local k = math.max(0, s.health) / s.max_health * 0.75 + 0.25
+  if empty(s) then k = k * EMPTY_DIM end
+  local head = 0xFF000000 | dim(rgb, k)
+  if layers.ammo and not empty(s) then
     local size = t.ammo_size or SIZE
     layers.ammo:put(cx, cy, size, size, 0, 0, head)
   end
@@ -261,7 +305,7 @@ local function draw(t, s)
 end
 
 -- Its reticle shows while it aims, wherever the turret is.
-local function draw_off_screen(s) return s.draw_aim and s.tid ~= nil end
+local function draw_off_screen(s) return aiming(s) end
 
 function pyro.set_options(t, option)
   t.health, t.ammo = option("health"), option("ammo")

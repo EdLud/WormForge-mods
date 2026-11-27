@@ -1,4 +1,4 @@
--- Mine Turret: a turret that lobs armed mines at moving enemies, over the land in their way.
+-- Mine Turret: a turret that lobs armed mines at moving enemies it can see.
 
 local weapon = {}
 

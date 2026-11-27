@@ -1,4 +1,4 @@
--- Auto Ballista: a turret that shoots arrows at moving enemies.
+-- Auto Ballista: a turret that shoots arrows at moving enemies it can see.
 
 local weapon = {}
 

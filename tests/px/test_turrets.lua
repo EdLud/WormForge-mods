@@ -49,6 +49,15 @@ local function mock()
         M.booms[#M.booms + 1] = spec
       end,
       gravity = function() return 0.2 end,
+      -- a pixel walk of the line, as the engine's sweep with radius 0
+      trace = function(spec)
+        local n = math.max(1, math.max(math.abs(spec.x1 - spec.x0), math.abs(spec.y1 - spec.y0)) // 1)
+        for i = 0, n do
+          local x, y = spec.x0 + (spec.x1 - spec.x0) * i / n, spec.y0 + (spec.y1 - spec.y0) * i / n
+          if M.solid(x // 1, y // 1) then return { hit = true, starts_solid = i == 0, x = x, y = y } end
+        end
+        return { hit = false }
+      end,
       collides = function(spec)
         for _, w in ipairs(spec.with) do
           if w == "terrain" and M.solid(spec.x // 1, spec.y // 1) then return true end
@@ -56,7 +65,7 @@ local function mock()
         return false
       end,
     },
-    draw = { quad = function(q) M.quads[#M.quads + 1] = q end },
+    draw = { quad = function(q) M.quads[#M.quads + 1] = q end, fraction = function() return M.fraction or 0 end },
     weapons = { launch = function(spec) M.shots[#M.shots + 1] = spec; return 1 end },
     mines = { spawn = function(spec) M.mines[#M.mines + 1] = spec; return {} end },
     arrows = { spawn = function(spec) M.arrows[#M.arrows + 1] = spec; return {} end },
@@ -263,11 +272,30 @@ print("PyroMan's turrets: land in the arc keeps it from firing")
 do
   local t, a, s = planted("mine_turret")
   enemy(150)
-  M.solid = function(x, y) return x > 560 and x < 580 and y < 300 end
+  -- clear of the line from its head (500, 266) to the worm (650, 300), in every arc's way
+  -- but the flattest (16 frames)
+  M.solid = function(x, y) return x > 560 and x < 580 and y < 262 end
   start_turn(M.worms[2])
-  frames(a, 300)
-  check("a wall in the way: nothing fired", #M.mines == 0)
-  check("it tries other flight times", s.flight ~= 32, s.flight)
+  local m = until_shot(a, M.mines)
+  check("it tries other flight times, and fires the flat one under the land", m and m.vy > -1, m and m.vy)
+end
+
+print("PyroMan's turrets: only a worm it can see")
+do
+  local t, a, s = planted("mine_turret")
+  local w = enemy(150)
+  M.solid = function(x, y) return x > 560 and x < 580 and y > 200 and y < 300 end
+  start_turn(M.worms[2])
+  frames(a, 100)
+  check("a worm behind land is never taken", s.tid == nil and #M.mines == 0, s.tid)
+  M.solid = function() return false end
+  frames(a, 1)
+  check("in sight, it is", s.tid == w.id, s.tid)
+  frames(a, 15)
+  M.solid = function(x, y) return x > 560 and x < 580 and y > 200 and y < 300 end
+  local shots = #M.mines
+  frames(a, 100)
+  check("gone behind land, it is dropped before a shot", s.tid == nil and #M.mines == shots, s.tid)
 end
 
 print("PyroMan's turrets: each fires its own")
@@ -330,6 +358,61 @@ do
   check("head: the mirrored frame, dimmed by health", head.frame == 2 + 14
     and head.color == (0xFF000000 | (math.floor(255 * k) << 16) | (math.floor(128 * k) << 8) | math.floor(128 * k)),
     string.format("%d %x", head.frame, head.color))
+end
+
+print("PyroMan's turrets: out of shots, it shows it")
+do
+  local t, a, s = planted("petrol_turret")
+  local function drawn()
+    M.quads = {}
+    M.handlers.draw()
+    local by = {}
+    for _, q in ipairs(M.quads) do
+      if q.sprite == "sprites/pyro_turrets/ammo_petrol.png" then by.ammo = q
+      elseif q.frame == 13 then by.mark = q
+      elseif q.frame == 2 or q.frame == 2 + 14 then by.head = q end
+    end
+    return by
+  end
+  check("placed, it waits with its ammo shown", drawn().ammo ~= nil)
+  enemy(150)
+  start_turn(M.worms[2])
+  local full = drawn().head.color
+  for _ = 1, 6 do until_shot(a, M.shots) end
+  frames(a, 1)
+  local d = drawn()
+  check("all six fired: no ammo, no aim mark, a darker head", s.ammo == 0 and d.ammo == nil and d.mark == nil
+    and d.head.color ~= full and (d.head.color & 0xFF) < (full & 0xFF), string.format("%x", d.head.color))
+  start_turn(M.worms[2])
+  check("the next turn it is full again", drawn().ammo ~= nil and drawn().head.color == full)
+end
+
+print("PyroMan's turrets: the aim mark follows the worm as drawn")
+do
+  local t, a, s = planted("petrol_turret")
+  local w = enemy(150)
+  start_turn(M.worms[2])
+  until_shot(a, M.shots)
+  local function mark()
+    M.quads = {}
+    M.handlers.draw()
+    for _, q in ipairs(M.quads) do
+      if q.frame == 13 then return (q.points[1][1] + q.points[3][1]) / 2, (q.points[1][2] + q.points[3][2]) / 2 end
+    end
+  end
+  M.fraction = 0
+  local x0 = mark()
+  check("it starts at the turret", x0 and math.abs(x0 - 500) < 1e-6, x0)
+  M.fraction = 0.5
+  local x1, y1 = mark()
+  check("8 pixels a frame on each axis, as it is drawn", math.abs(x1 - 504) < 1e-6, x1)
+  M.fraction = 0
+  local x2, y2
+  for _ = 1, 40 do M.frame = M.frame + 1; x2, y2 = mark() end
+  check("then on the worm, still", math.abs(x2 - w.x) < 1e-6 and math.abs(y2 - w.y) < 1e-6, x2 .. "," .. y2)
+  M.frame = M.frame + 1
+  local x3, y3 = mark()
+  check("no jiggle about it", x3 == x2 and y3 == y2)
 end
 
 print("PyroMan's turrets: the Tazer's arc and Lightning Strike (lib/electrical)")

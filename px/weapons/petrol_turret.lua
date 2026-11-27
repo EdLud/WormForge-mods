@@ -1,4 +1,4 @@
--- Petrol Turret: a turret that lobs Petrol Bombs at moving enemies, over the land in their way.
+-- Petrol Turret: a turret that lobs Petrol Bombs at moving enemies it can see.
 
 local weapon = {}
 
