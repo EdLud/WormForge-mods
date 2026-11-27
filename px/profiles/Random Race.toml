@@ -192,16 +192,16 @@ column = 1
 row = "utility"
 
 [weapons."px.jump"]
-column = 1
-row = "F2"
+column = 5
+row = "F8"
 
 [weapons."px.parkour"]
-column = 1
-row = "F1"
+column = 6
+row = "F8"
 
 [weapons."px.portal_gun"]
-column = 1
-row = "F3"
+column = 4
+row = "F8"
 
 [weapons."px.skip_go_surrender"]
 column = 1
@@ -212,8 +212,8 @@ column = 5
 row = "utility"
 
 [weapons."px.wings"]
-column = 1
-row = "F4"
+column = 2
+row = "F8"
 
 [weapons."stock.fast_walk"]
 column = 3

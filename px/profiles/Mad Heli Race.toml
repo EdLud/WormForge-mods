@@ -1,0 +1,97 @@
+# WormBench profile "Mad Heli Race": made in the mod loader; safe to edit by hand.
+description = "The Full Fromage"
+features = ["core.utilities", "px.hazardous_sentries", "px.oil_drums"]
+
+[options."core.utilities"]
+fast_aim = true
+fps_counter = true
+heal_per_turn = 50
+instant_death = "in_flight"
+live_hp = true
+
+[options."px.hazardous_sentries"]
+aim_ahead = true
+auto_ballista_share = 0
+density = 30
+flame_turret_share = 0
+mine_turret_share = 50
+petrol_turret_share = 50
+sentry_gun_share = 0
+sentry_laser_share = 0
+tracking_pct = 150
+
+[options."px.helicopter"]
+dash_fuel = 50
+dash_refill_factor = 35
+dash_speed = 330
+dash_steer_factor = 130
+fuel = 0
+
+[options."utilities.bullet_time"]
+seconds = 6
+
+[scheme]
+fall_damage = 1
+game_engine_speed = 1.0
+hazards = 143
+indestructible_land = true
+loss_of_control_doesn_t_end_turn = true
+manual_worm_placement = true
+rubberworm_anti_sink = true
+turn_time = 40
+weapon_use_doesn_t_end_turn = true
+worm_energy = 255
+
+[weapon_settings."stock.fast_walk"]
+ammo = -1
+auto_use = true
+
+[weapon_settings."stock.homing_missile"]
+ammo = 2
+
+[weapon_settings."stock.homing_missile".each_turn]
+amount = 2
+mode = "replace"
+
+[weapon_settings."stock.teleport"]
+ammo = -1
+
+[weapon_settings."utilities.bullet_time".each_turn]
+amount = 1
+mode = "replace"
+
+[weapons."px.anti_fall_damage"]
+column = 6
+row = "utility"
+
+[weapons."px.golden_grenade"]
+column = 1
+row = "F1"
+
+[weapons."px.helicopter"]
+column = 1
+row = "utility"
+
+[weapons."stock.fast_walk"]
+column = 3
+row = "F12"
+
+[weapons."stock.homing_missile"]
+column = 2
+row = "F1"
+
+[weapons."stock.skip_go"]
+column = 1
+row = "F12"
+
+[weapons."stock.surrender"]
+column = 2
+row = "F12"
+
+[weapons."stock.teleport"]
+column = 4
+row = "F8"
+
+[weapons."utilities.bullet_time"]
+column = 7
+row = "utility"
