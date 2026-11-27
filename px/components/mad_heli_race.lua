@@ -3,7 +3,7 @@
 local RULES = {
   { "Mad Heli Race", color = "purple" },
   { "Big Rope Race maps recommended", color = "cyan" },
-  { "One Bullet Time per turn", color = "green" },
+  { "One Bullet Time and 100 health per turn", color = "green" },
   { "Shift to Dash", color = "yellow" },
 }
 

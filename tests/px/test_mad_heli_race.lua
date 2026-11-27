@@ -39,7 +39,7 @@ local text = {}
 for i, l in ipairs(lines) do text[i] = l[1] end
 check("the rules window opens at the first turn", #windows == 1 and windows[1].open)
 check("its lines are Mad Heli Race's", table.concat(text, " / ") ==
-  "Mad Heli Race / Big Rope Race maps recommended / One Bullet Time per turn / Shift to Dash",
+  "Mad Heli Race / Big Rope Race maps recommended / One Bullet Time and 100 health per turn / Shift to Dash",
   table.concat(text, " / "))
 check("Shift + T is wired", #on.hud == 1)
 

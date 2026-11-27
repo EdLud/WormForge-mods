@@ -1,10 +1,10 @@
 # WormBench profile "Mad Heli Race": made in the mod loader; safe to edit by hand.
-description = "Big Rope Race maps recommended. One Bullet Time per turn. Shift to Dash."
+description = "Big Rope Race maps recommended. One Bullet Time and 100 health per turn. Shift to Dash."
 features = ["core.utilities", "mad_heli_race.rules", "px.hazardous_sentries", "px.oil_drums", "spawn.bees.swarm"]
 
 [options."core.utilities"]
 fast_aim = true
-heal_per_turn = 50
+heal_per_turn = 100
 instant_death = "in_flight"
 live_hp = true
 
