@@ -163,9 +163,20 @@ local function takeHit(a, s, damage, spin)
   if s.hp <= 0 then s.dead = true; log("[BEE] dead: hp<=0 (damage)") end
 end
 
+-- Frames after one buzz in which no other bee buzzes: a swarm sounds like one
+-- bee, not all of them at once. Under the 15 frames between a chasing bee's
+-- buzzes, so a lone bee keeps its rhythm.
+local BUZZ_GAP_FRAMES = 10
+local lastBuzzFrame
+
 local function playBuzz(target)
   if not target or #M.SOUNDS == 0 then return end
-  local snd = M.SOUNDS[rand(1, #M.SOUNDS)]
+  local snd = M.SOUNDS[rand(1, #M.SOUNDS)] -- drawn even when muted: the game's RNG
+  local frame = wa.world.frame() or 0
+  if lastBuzzFrame and frame >= lastBuzzFrame and frame - lastBuzzFrame < BUZZ_GAP_FRAMES then
+    return
+  end
+  lastBuzzFrame = frame
   wa.sound.play(target, snd)
 end
 
