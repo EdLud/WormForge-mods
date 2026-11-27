@@ -16,7 +16,7 @@ parkour = true
 quantity = 2
 
 [options."spawn.bees.swarm"]
-bee_amount = 2
+bee_density = 10
 
 [scheme]
 hazards = 143

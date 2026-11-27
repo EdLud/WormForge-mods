@@ -1211,6 +1211,18 @@ function M.install_weapon(ctx)
   })
 end
 
+-- How many map bees a density from 0 to 100 asks for, by the map's area: at 100, 20 on a
+-- 1920 x 696 map and 250 on a 7680 x 4176 one, in a straight line between them (10 at no area),
+-- and no more than 250 past it. Integers only, the same on every machine.
+local SMALL_AREA, LARGE_AREA = 1920 * 696, 7680 * 4176
+local SMALL_BEES, LARGE_BEES = 20, 250
+function M.bees_for_density(density, w, h)
+  local area = math.min(w * h, LARGE_AREA)
+  local span = LARGE_AREA - SMALL_AREA
+  local at_100 = SMALL_BEES * span + (LARGE_BEES - SMALL_BEES) * (area - SMALL_AREA) -- x span
+  return (density * at_100 + 50 * span) // (100 * span)
+end
+
 function M.install_swarm(ctx)
   wa.assets.load({ sprites = { M.SPRITE, M.HAT }, sounds = M.SOUNDS,
                    gpu_prefix = "sprites/" })
@@ -1218,18 +1230,21 @@ function M.install_swarm(ctx)
   installHat()
 
   local on = ctx.option("spawn_map_bees")
-  local amount = ctx.option("bee_amount")
+  local density = ctx.option("bee_density")
   local bees = {
     hp = ctx.option("bee_health"),
     chase_scale = ctx.option("bee_speed") / 100,
     attack = ctx.option("bee_attack"),
   }
-  wa.log(("Keeper Bee swarm: %s, %d bees, %d health, %d%% speed, %s")
-    :format(on and "on" or "off", amount, bees.hp, ctx.option("bee_speed"), bees.attack))
-  if not on then return end
+  wa.log(("Keeper Bee swarm: %s, density %d, %d health, %d%% speed, %s")
+    :format(on and "on" or "off", density, bees.hp, ctx.option("bee_speed"), bees.attack))
+  if not on or density <= 0 then return end
 
   wa.on.turn_start(function(ev)
     if swarmPlanted then return end
+    local size = wa.world.size()
+    local amount = M.bees_for_density(density, size.w, size.h)
+    if amount <= 0 then swarmPlanted = true; return end
     if M.spawn_map_bees(amount, ev.worm, bees) > 0 then swarmPlanted = true end
   end)
 end

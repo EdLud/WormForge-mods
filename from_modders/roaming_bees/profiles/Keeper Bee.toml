@@ -4,7 +4,7 @@
 # anywhere on the panel; any weapon may go any place.
 #
 # The swarm is an add-on, not the weapon: leaving it out of `features` keeps the
-# map clear, and its two settings are in [options] below.
+# map clear, and its settings are in [options] below.
 #
 # A component in no panel slot registers nothing, so removing the weapon from a
 # profile leaves the match working.
@@ -21,4 +21,4 @@ crate = 0
 
 [options."spawn.bees.swarm"]
 spawn_map_bees = true
-bee_amount = 4
+bee_density = 20
