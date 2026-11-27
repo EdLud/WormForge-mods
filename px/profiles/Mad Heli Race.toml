@@ -48,6 +48,9 @@ worm_energy = 255
 ammo = -1
 auto_use = true
 
+[weapon_settings."stock.homing_missile"]
+ammo = -1
+
 [weapon_settings."stock.teleport"]
 ammo = -1
 
@@ -66,6 +69,10 @@ row = "utility"
 [weapons."stock.fast_walk"]
 column = 3
 row = "F12"
+
+[weapons."stock.homing_missile"]
+column = 2
+row = "F1"
 
 [weapons."stock.skip_go"]
 column = 1
