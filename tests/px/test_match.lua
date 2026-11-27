@@ -5804,10 +5804,11 @@ do
   check("native click confirmation has no duplicate Lua marker",
     not (M.spawned and #M.spawned > 0))
   check("click confirms target with PX's sound at WA's teleport priority",
-    w.state ~= "teleporting" and M.sounds[1] == 68 and M.sound_flags[1] == 3)
-  M.message(w, wa.msg.FRAME_FINISH)
-  check("the next frame enters WA's teleport pose and plays PX's start sound",
+    M.sounds[1] == 68 and M.sound_flags[1] == 3)
+  check("the click enters WA's teleport pose, which holds the turn, and plays PX's start sound",
     w.state == "teleporting" and M.sounds[2] == 67 and M.sound_flags[2] == 3)
+  check("WA's teleport state, not the click, ends the shot",
+    spec.click_finish == false)
   for _ = 1, 49 do M.message(w, wa.msg.FRAME_FINISH) end
   check("worm remains in place for 49 frames after starting",
     w.x == 40 and w.y == 70 and not M.digs)

@@ -22,6 +22,7 @@ function weapon.definition()
     panel_icon = "sprites/super_tele/icon.png",
     on_select = { cursor = true },
     on_click = function(ev) fires.super_tele_click(ev) end,
+    click_finish = false, -- WA's teleport state ends the shot, after the arrival
   })
 end
 
@@ -63,8 +64,10 @@ function weapon.setup()
       fires.teleports[worm.id] = { placed = true, frames = 0 }
       return
     end
-    fires.teleports[worm.id] = { x = ev.x, y = y, frames = 0, pending = true }
+    fires.teleports[worm.id] = { x = ev.x, y = y, frames = 0 }
     wa.sound.play(worm, SOUND_COMMUNICATOR, TELE_SOUND_PRIORITY) -- PX's M_SETTARGET confirmation
+    worm:teleport_pose() -- its 100 frames keep the turn past the arrival, so a crate there is collected
+    wa.sound.play(worm, SOUND_TELEPORT, TELE_SOUND_PRIORITY) -- PX's teleport start
   end
 
   wa.on.worm_message(function(worm, msg)
@@ -84,12 +87,6 @@ function weapon.setup()
     end
     if worm.hp <= 0 then
       fires.teleports[worm.id] = nil
-      return
-    end
-    if tele.pending then
-      tele.pending = false
-      worm:teleport_pose()
-      wa.sound.play(worm, SOUND_TELEPORT, TELE_SOUND_PRIORITY) -- PX's teleport start
       return
     end
     tele.frames = tele.frames + 1
