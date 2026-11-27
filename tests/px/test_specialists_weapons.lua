@@ -43,7 +43,8 @@ print("Specialists weapon declarations and bounded Tele Arrow placement passed")
 
 local hooks, actors, draws = {}, {}, {}
 wa = {
-  on = {worm_message=function(f) hooks.frame=f end,draw=function(f) hooks.draw=f end},
+  on = {worm_message=function(f) hooks.frame=f end,draw=function(f) hooks.draw=f end,
+    frame=function(f) hooks.tick=f end},
   msg={FRAME_FINISH=2},math={sin=math.sin,cos=math.cos},depth={FRONT=9},
   world={water=function()return 1000 end,gravity=function()return 0.12 end},
   draw={quad=function(q)draws[#draws+1]=q end},
@@ -56,18 +57,13 @@ dynamite.setup()
 local owner={turn=true,hp=100,aiming=true,weapon="px.thrown_dynamite",aim=0.5,facing=1,x=100,y=100}
 for _=1,3 do hooks.frame(owner) end
 hooks.draw()
-assert(#actors==1 and #draws==3 and draws[1].visibility==owner)
+assert(#actors==0 and #draws==3 and draws[1].visibility==owner, "sparks need no actor")
 assert(draws[1].sprite=="sprites/thrown_dynamite/spark.png")
 owner.weapon="stock.grenade";hooks.frame(owner)
-for _=1,55 do actors[1].on(actors[1]) end
+for _=1,55 do hooks.tick() end
 draws={};hooks.draw()
-assert(actors[1].dead and #draws==0,"held sparks expire after selection changes")
--- A rejected updater must not leave frozen drawing data after the error.
-dynamite.setup();owner.weapon="px.thrown_dynamite"
-wa.actors.spawn=function()error("pool full")end
-assert(not pcall(hooks.frame,owner))
-draws={};hooks.draw();assert(#draws==0)
-print("Thrown Dynamite sparks use one updater, inherit visibility and expire")
+assert(#draws==0,"held sparks expire after selection changes")
+print("Thrown Dynamite sparks age each game frame, inherit visibility and expire")
 
 -- TNT: the Specialists scheme's record, PX's upright sprite on every TNT
 -- missile (its bits have none of their own), and the fuse trail's particles
@@ -80,7 +76,8 @@ assert(tnt_def.clusters.count == 3 and tnt_def.clusters.bit.explosion.power == 3
 assert(tnt.missile_sprite.upright and tnt.missile_sprite.first_sprite == nil)
 hooks, actors, draws = {}, {}, {}
 wa = {
-  on = {missile_frame=function(f) hooks.missile=f end,draw=function(f) hooks.draw=f end},
+  on = {missile_frame=function(f) hooks.missile=f end,draw=function(f) hooks.draw=f end,
+    frame=function(f) hooks.tick=f end},
   math={sin=math.sin,cos=math.cos},depth={EFFECTS=7},
   world={water=function()return 1000 end,wind=function()return 0 end},
   worms={all=function()return {owner} end},
@@ -94,13 +91,15 @@ require("lib/shared").current_worm = function() return owner end
 tnt.setup()
 hooks.missile({weapon="px.thrown_dynamite",phase="post",x=50,y=50})
 hooks.missile({weapon="px.tnt",phase="pre",x=50,y=50})
-assert(#actors==0, "only the TNT's own missiles, after WA moved them")
+hooks.draw()
+assert(#draws==0, "only the TNT's own missiles, after WA moved them")
+draws={}
 hooks.missile({weapon="px.tnt",phase="post",x=50,y=50})
 hooks.missile({weapon="px.tnt",phase="post",x=50,y=50})
 hooks.draw()
-assert(#actors==1 and #draws==3, "a spark a frame, the glow every other")
+assert(#actors==0 and #draws==3, "a spark a frame, the glow every other, and no actor")
 assert(draws[1].sprite=="sprites/tnt/trail.png" and draws[3].sprite=="sprites/tnt/glow.png")
-for _=1,40 do actors[1].on(actors[1]) end
+for _=1,40 do hooks.tick() end
 draws={};hooks.draw()
-assert(actors[1].dead and #draws==0, "the trail expires once the TNT is gone")
+assert(#draws==0, "the trail expires once the TNT is gone")
 print("TNT record, sprite and fuse trail passed")

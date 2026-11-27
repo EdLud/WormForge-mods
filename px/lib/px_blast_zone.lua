@@ -53,11 +53,9 @@ function M.install(ctx)
   local shooter
 
   local function boom(z, obj)
-    local b = wa.actors.spawn({
-      sprite = false, x = z.x, y = z.y, owner = z.owner, on = function() end,
-    })
-    b:explode({ damage = DAMAGE, id = PUSH, below = false })
-    if not b.dead then b:remove() end
+    -- The thrower's blast while they live; no team's once they are gone.
+    local owner = z.owner and z.owner.id ~= 0 and z.owner or "none"
+    wa.world.explode({ x = z.x, y = z.y, owner = owner, damage = DAMAGE, id = PUSH, below = false })
     if obj.kind == "mine" then
       local fuse = obj.fuse
       if not fuse or fuse < 0 then fuse = wa.random(MINE_FUSE_MIN, MINE_FUSE_MAX) end

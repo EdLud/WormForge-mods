@@ -167,8 +167,7 @@ function M.install(opts)
   end
 
   local function blast(owner, x, y, damage, kind)
-    wa.actors.spawn({ sprite = false, x = x, y = y, owner = owner,
-      explode = { damage = damage, id = kind or 100, now = true } })
+    wa.world.explode({ x = x, y = y, owner = owner, damage = damage, id = kind or 100 })
   end
 
   local function fires(owner, x, y, count, duration, list)
@@ -246,11 +245,10 @@ function M.install(opts)
   end
 
   BURST.mine = function(ev, owner)
-    local layer = wa.actors.spawn({ sprite = false, owner = owner, x = ev.x, y = ev.y, on = function(a) a:remove() end })
     for _ = 1, 7 do
       local vx = between(-7, 7)
       local vy = between(-7, -4)
-      wa.mines.spawn({ owner = layer, x = ev.x, y = ev.y, vx = vx, vy = vy,
+      wa.mines.spawn({ owner = "none", x = ev.x, y = ev.y, vx = vx, vy = vy,
         fuse = 3000, arm = 3000, damage = 48, radius = 48 })
     end
     blast(owner, ev.x, ev.y, 10)
@@ -274,11 +272,10 @@ function M.install(opts)
   end
 
   LAUNCHED.mine = function(ev, owner)
-    local layer = wa.actors.spawn({ sprite = false, owner = owner, x = ev.x, y = ev.y, on = function(a) a:remove() end })
     for _ = 1, 5 do
       local vx = between(-7, 7)
       local vy = between(-7, -4)
-      wa.mines.spawn({ owner = layer, x = ev.x, y = ev.y, vx = vx, vy = vy,
+      wa.mines.spawn({ owner = "none", x = ev.x, y = ev.y, vx = vx, vy = vy,
         fuse = 3000, arm = 3000, damage = 40, radius = 48 })
     end
     blast(owner, ev.x, ev.y, 10)

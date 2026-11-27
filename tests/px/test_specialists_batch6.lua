@@ -8,14 +8,15 @@ local shared={current_worm=function()return turn_worm end}
 package.preload["lib/shared"]=function()return shared end
 
 local hooks={missile={},message={},turn_start={},turn_end={},draw={},explode={}}
-local log={cuts={},hurts={},hits={},spawned={},drums={},sounds={},messages={},fires={},mines={},ammo={},quads={}}
+local log={cuts={},hurts={},hits={},spawned={},booms={},drums={},sounds={},messages={},fires={},mines={},ammo={},quads={}}
 local frame,collides=0,false
 local worms,mines,crates,oil={}, {}, {}, {}
 wa={
   msg={FRAME_FINISH=2},depth={OBJECTS=0xE0000},
   world={frame=function()return frame end,keys=function()return {digit=turn_worm and turn_worm.digit}end,
     collides=function()return collides end,cavern=function()return false end,
-    view=function()return {cx=0,cy=0,w=100000,h=100000,zoom=1} end},
+    view=function()return {cx=0,cy=0,w=100000,h=100000,zoom=1} end,
+    explode=function(e)assert(e.owner,"world.explode needs an owner");log.booms[#log.booms+1]=e end},
   land={cut=function(c)log.cuts[#log.cuts+1]=c end},
   worms={all=function()return worms end},
   mines={all=function()return mines end,spawn=function(s)
@@ -118,7 +119,7 @@ barrel.definition.on_fire({worm=shooter,x=0,y=0,vx=0,vy=0})
 each(hooks.explode,{drum=log.drums[3],x=10,y=20,team=0,replace=function()end})
 check(#log.fires==3 and log.fires[1].count==15 and log.fires[1].duration==8300 and log.fires[1].damage==17,
   "Barrel Launcher: a turn's end picks napalm again; three of PX's fires")
-local boom=log.spawned[#log.spawned].spec.explode
+local boom=log.booms[#log.booms]
 check(boom and boom.damage==30,"Barrel Launcher: napalm's blast of 30")
 press(2);barrel.definition.on_fire({worm=shooter,x=0,y=0,vx=0,vy=0})
 each(hooks.explode,{drum=log.drums[4],x=10,y=20,team=0,replace=function()end})

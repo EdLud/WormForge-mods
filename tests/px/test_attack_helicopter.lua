@@ -36,6 +36,7 @@ wa = {
   on = {
     missile_frame = function(f) missile_frames[#missile_frames + 1] = f end,
     draw = function(f) draws[#draws + 1] = f end,
+    frame = function() end, -- the trails' clock; the strike's frames are its body's
   },
   draw = {
     ribbon = function() end,

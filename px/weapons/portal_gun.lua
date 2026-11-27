@@ -59,7 +59,7 @@ function weapon.setup()
   local SPEED = 35
   local chosen, held, half_used = {}, {}, {}
   local bolts, effects = {}, Effects.new()
-  local ticker
+  local ticking = false -- portals and effects run from the first shot on
   local colours = { 0xFFDF6400, 0xFF003FEF }
   local team_colours = { 0xD21400, 0x0014DC, 0x00DC00, 0xFADC00, 0xDC00DC, 0x00E6E6 }
   local function sound(name, worm) wa.sound.play(worm, "sounds/" .. name .. ".wav") end
@@ -92,12 +92,9 @@ function weapon.setup()
       end
     end
   end
-  local function ensure_ticker(worm)
-    if ticker then return end
-    ticker = wa.actors.spawn({ sprite = ART .. "portal_glow.png", x = 0, y = -1000,
-      owner = worm, on = { frame = tick } })
-    ticker:gfx{ scale = 0 }
-  end
+  wa.on.frame(function()
+    if ticking then tick() end
+  end)
 
   local function supported(x, y)
     for _, d in ipairs({ {-15,-15}, {15,15}, {-15,15}, {15,-15} }) do
@@ -194,7 +191,7 @@ function weapon.setup()
 
   shared.fires.portal_gun = function(fire)
     local worm, keys = fire.worm, wa.world.keys()
-    ensure_ticker(worm)
+    ticking = true
     local colour = shot_colour(worm, keys)
     local aim = ground_aim(worm)
     if fire.airborne then

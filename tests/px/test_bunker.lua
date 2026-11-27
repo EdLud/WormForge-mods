@@ -17,6 +17,7 @@ local function reset(super, force_x, force_y, active)
     world = {
       gravity = function() return 0.25 end, water = function() return 10000 end,
       cavern = function() return false end, trace = function() return nil end,
+      explode = function(s) blasts[#blasts+1] = {x=s.x,y=s.y,spec=s} end,
     },
     land = {
       trace = function(x0,y0,x1,y1)

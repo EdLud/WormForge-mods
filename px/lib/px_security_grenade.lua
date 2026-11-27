@@ -41,10 +41,8 @@ function M.install(ctx)
     elseif msg == wa.msg.FRAME_FINISH and #pending > 0 then
       for _, p in ipairs(pending) do
         for _, off in ipairs(RING) do
-          local a = wa.actors.spawn({ sprite = false, x = p.x + off[1], y = p.y + off[2],
-            owner = shooter, on = function() end })
-          a:explode({ id = PUSH, damage = DAMAGE, below = false })
-          a:remove()
+          wa.world.explode({ x = p.x + off[1], y = p.y + off[2], owner = shooter,
+            id = PUSH, damage = DAMAGE, below = false })
         end
       end
       pending = {}

@@ -99,18 +99,21 @@ function magnet.hit(m, a, event)
 end
 
 -- A new magnet. `m` holds its state (pol, team, turns, health, x, y, a: its
--- body); `field` the field's numbers, its source the body unless `source`
--- names another actor; `ring` the rings: largest radius, pixels a frame,
--- frames between rings and frames before one starts again.
+-- body); `field` the field's numbers, on the body, or at `at` = { x, y }
+-- for a field its magnet moves itself (`m.field:move`); `ring` the rings:
+-- largest radius, pixels a frame, frames between rings and frames before
+-- one starts again.
 function magnet.add(m, field, ring)
   m.max_turns, m.max_health = m.turns, m.health
   m.age, m.spark, m.angle, m.alive = 0, 0, m.angle or 0, true
   m.sync2 = field.range * field.range // SYNC_FACTOR
   m.ring = ring or { max = 120, speed = 0.8, gap = 65, cycle = 195 }
-  m.field = wa.magnetism.field({ source = field.source or m.a, range = field.range,
+  local spec = { range = field.range,
     strength = field.strength, max_force = field.max_force,
     softening = m.pol < 0 and field.attract_softening or field.repel_softening,
-    polarity = m.pol < 0 and "attract" or "repel" })
+    polarity = m.pol < 0 and "attract" or "repel" }
+  if field.at then spec.x, spec.y = field.at[1], field.at[2] else spec.source = m.a end
+  m.field = wa.magnetism.field(spec)
   magnets[#magnets + 1] = m
   return m
 end

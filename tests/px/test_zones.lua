@@ -16,6 +16,7 @@ local function event(name, ...)
 end
 local function frames(n)
   for _ = 1, n do
+    event("frame")
     local count = #actors
     for i = 1, count do
       local a = actors[i]
@@ -48,7 +49,11 @@ local function reset(rate, turns, both)
     fog = { enabled = function() return fog_on end,
       shade = function(x, y) return shade_at and shade_at(x, y) or 0 end },
     log = function() end,
-    world = { wind = function() return 0 end, gravity = function() return 1/8 end,
+    world = { explode = function(e)
+        assert(e.damage == 30 and e.id == 30 and e.below == false and e.owner)
+        blasts = blasts + 1
+      end,
+      wind = function() return 0 end, gravity = function() return 1/8 end,
       water = function() return 1000 end, keys = function() return keys end,
       electrical_nearby = function() return nearby end },
     worms = { all = function() return worms end },
@@ -68,7 +73,6 @@ local function reset(rate, turns, both)
     actors = { spawn = function(s)
       local a = { x = s.x, y = s.y, on = s.on, owner = s.owner, sprite = s.sprite, body = s.body }
       function a:remove() self.dead = true end
-      function a:explode(e) assert(e.damage == 30 and e.id == 30); blasts = blasts + 1 end
       function a:gfx() end
       function a:frame() end
       actors[#actors+1] = a; return a
@@ -80,7 +84,7 @@ local function reset(rate, turns, both)
       draws[#draws+1] = copy
     end },
   }
-  for _, name in ipairs({ "turn_start", "turn_end", "draw", "worm_message", "missile_frame" }) do
+  for _, name in ipairs({ "turn_start", "turn_end", "draw", "worm_message", "missile_frame", "frame" }) do
     wa.on[name] = function(f)
       hooks[name] = hooks[name] or {}; hooks[name][#hooks[name]+1] = f
     end
@@ -203,7 +207,7 @@ crate_list = {}
 assert(sim_random==0, "effects must not consume gameplay RNG")
 health = reset(60); w=worm(); w.aiming=true
 event("worm_message",w,wa.msg.FRAME_FINISH)
-assert(actors[1].owner==w, "particle updater needs the aiming worm as its explicit owner")
+for _, a in ipairs(actors) do assert(a.sprite ~= false or a.owner ~= w, "particles need no actor to age them") end
 assert(#draw()==1 and draws[1].sprite:match("mcrate0"))
 frames(25); assert(#draw()==0)
 w.aiming=false; event("worm_message",w,wa.msg.FRAME_FINISH); assert(#draw()==0)
@@ -217,10 +221,9 @@ for _, weapon in ipairs({"px.health_zone","px.blast_zone"}) do
     -- Enough emissions to fill the cap if the updater fails to age particles.
     for _ = 1, 100 do event("missile_frame",missile); frames(1) end
     assert(#draw()>0, "later shots must still have trails")
-    for _, a in ipairs(actors) do assert(a.owner==w, "flight actors need an explicit owner") end
+    for _, a in ipairs(actors) do assert(a.sprite, "flight particles need no hidden actor") end
     assert(sim_random==0)
     frames(45); assert(#draw()==0, "trails must expire after every shot")
-    for _, a in ipairs(actors) do assert(a.dead, "idle particle updater must clean up") end
   end
 end
 print("Zones: subsequent-turn lifetime, HP/min accumulation, original art, particles and gameplay regression checks passed")

@@ -145,10 +145,7 @@ function weapon.setup()
     end
     if bursts[1] then bursts = {} end
     for _, p in ipairs(blasts) do
-      local a = wa.actors.spawn({ sprite = false, x = p.x, y = p.y,
-        owner = owner, on = function() end })
-      a:explode({ id = PUSH, damage = DAMAGE, below = false })
-      a:remove()
+      wa.world.explode({ x = p.x, y = p.y, owner = owner, id = PUSH, damage = DAMAGE, below = false })
     end
     if blasts[1] then blasts = {} end
   end, { msgs = { wa.msg.FIRE_WEAPON, wa.msg.FRAME_FINISH } })

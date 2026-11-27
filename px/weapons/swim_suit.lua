@@ -532,9 +532,7 @@ function weapon.setup()
     wa.on.contact(function(worm, other)
       local s = swimmers[worm.id]
       if s and s.plopped and other.kind == "missile" then
-        wa.actors.spawn({
-          sprite = false, x = other.x, y = other.y, owner = worm, explode = { damage = 100, id = 50, now = true },
-        })
+        wa.world.explode({ x = other.x, y = other.y, owner = worm, damage = 100, id = 50 })
         other.y = wa.world.water() + 4096
       end
     end)

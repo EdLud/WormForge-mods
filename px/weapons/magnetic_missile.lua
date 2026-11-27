@@ -97,7 +97,6 @@ function weapon.setup()
       a:warp({ x = m.x, y = m.y, vx = 0, vy = 0 })
       if m.y >= wa.world.water() + SUNK then
         magnet.remove(m)
-        m.anchor:remove()
         a:remove()
         return
       end
@@ -105,7 +104,6 @@ function weapon.setup()
     if m.health <= 0 then
       magnet.trigger_mines(m)
       magnet.remove(m)
-      m.anchor:remove()
       a:explode(BOOM)
       a:remove()
       return
@@ -122,7 +120,7 @@ function weapon.setup()
     end
     m.field_x = m.x - wa.math.cos(m.angle) * BEHIND
     m.field_y = m.y - wa.math.sin(m.angle) * BEHIND
-    m.anchor:warp({ x = m.field_x, y = m.field_y, vx = 0, vy = 0 })
+    m.field:move(m.field_x, m.field_y)
     if m.turns > 0 then
       m.field.native = not (m.ended_at and m.age - m.ended_at >= 300)
       magnet.trigger_mines(m)
@@ -149,10 +147,9 @@ function weapon.setup()
     })
     a:collision_ignore(worm, true)
     m.a, m.team = a, worm.team
-    m.anchor = wa.actors.spawn({ sprite = false, owner = worm, x = m.x, y = m.y, on = function() end })
     magnet.add(m, { range = FIELD.range, strength = FIELD.strength, max_force = FIELD.max_force,
       attract_softening = FIELD.attract_softening, repel_softening = FIELD.repel_softening,
-      source = m.anchor }, RING)
+      at = { m.x, m.y } }, RING)
     m.trail = wa.draw.trail and wa.draw.trail({ sprite = BEAM, width = 6, max = 15,
       color = pol < 0 and 0xFFC83C3C or 0xFF3C50BE, blend = "add" })
   end

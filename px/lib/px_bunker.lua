@@ -56,11 +56,7 @@ function M.install(ctx)
   local busters = {} -- body actor id -> state
 
   local function blast(m, x, y)
-    local b = wa.actors.spawn({ sprite = ART .. "idle.png", x = x, y = y,
-      owner = m.owner, on = function() end })
-    b:gfx{ scale = 0 }
-    b:explode({ damage = DAMAGE, id = BLAST, below = false })
-    if not b.dead then b:remove() end
+    wa.world.explode({ x = x, y = y, owner = m.owner, damage = DAMAGE, id = BLAST, below = false })
     if super_buster and m.owner then
       wa.fire.spawn({ owner = m.owner, x = x, y = y, count = 6,
         duration = FIRE.duration, up_power = FIRE.up_power, damage = FIRE.damage })

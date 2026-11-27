@@ -169,7 +169,6 @@ return function(cfg)
   local pending_one = {}
   local last_side = {}
   local popups = {}
-  local spawned = false
   local rng = 0x9E3779B9
 
   local function next_rng()
@@ -243,14 +242,7 @@ return function(cfg)
     end
   end
 
-  wa.on.worm_message(function(worm)
-    if spawned then return end
-    spawned = true
-    wa.actors.spawn({
-      sprite = false, x = 0, y = 0, owner = worm,
-      on = observe,
-    })
-  end, { msgs = { wa.msg.FRAME_FINISH } })
+  wa.on.frame(observe)
 
   wa.on.draw(function()
     local frame = wa.world.frame()

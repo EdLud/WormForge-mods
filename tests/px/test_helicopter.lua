@@ -56,10 +56,11 @@ local function dash_frames(vx, vy, keys, n, k, steer, facing)
   return vx, vy
 end
 
-local handlers, draws, quads, ribbons, spawned, worms, shift, pops
+local handlers, draws, quads, ribbons, spawned, worms, shift, pops, booms
 
 local function new_match(options)
   handlers, draws, quads, ribbons, spawned, worms, shift, pops = {}, {}, {}, {}, {}, {}, false, {}
+  booms = {}
   wa = {
     depth = { FRONT = 0x10000 },
     msg = { FRAME_FINISH = 2 },
@@ -90,6 +91,7 @@ local function new_match(options)
       water = function() return 10000 end,
       retreat = function() return 0 end,
       frame = function() return 0 end,
+      explode = function(spec) booms[#booms + 1] = spec end,
     },
     draw = {
       quad = function(q) quads[#quads + 1] = q end,
@@ -357,14 +359,12 @@ do
   check("up and right: 0.32 more", near(w.fuel - before, 0.32), w.fuel - before)
   w.keys = {}
   frame(w, 2000)
-  local blasts = 0
-  for _, a in ipairs(spawned) do if a.explode then blasts = blasts + 1 end end
-  check("it never runs out: still flying, no crash", w.gravity == 0.2 and blasts == 0 and w.fuel > 40, w.fuel)
+  check("it never runs out: still flying, no crash", w.gravity == 0.2 and #booms == 0 and w.fuel > 40, w.fuel)
 
   w = new_match({ fuel = 1 })
   take_off(w)
   frame(w, 60)
-  check("limited fuel still runs out and crashes", spawned[#spawned].explode ~= nil)
+  check("limited fuel still runs out and crashes", #booms > 0)
 end
 
 print("helicopter crash: its size grows with speed only as far as the option says")
@@ -373,7 +373,7 @@ for _, case in ipairs({ { 0, 10 }, { 50, 17 }, { 100, 24 } }) do
   take_off(w)
   w.vx, w.y = 20, 20000 -- 10 a frame by the crash's measure, into the water
   frame(w)
-  local blast = spawned[#spawned].explode
+  local blast = booms[#booms]
   check("scale " .. case[1] .. "%: size " .. case[2], blast and blast.id == case[2] and blast.damage == 2 * case[2],
     blast and blast.id)
 end

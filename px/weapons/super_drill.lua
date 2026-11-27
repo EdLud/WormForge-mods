@@ -17,34 +17,29 @@ function weapon.definition()
 end
 
 function weapon.setup()
+  -- worm id -> its drill: a second, wider cut each game frame while the
+  -- stock drill runs.
   local drills = {}
 
-  local function follow_drill(worm, id)
-    local started, waiting = false, 0
-    return function(a)
+  wa.on.frame(function()
+    for _, id in ipairs(wa.sorted(drills)) do
+      local d = drills[id]
+      local worm = d.worm
       if worm.drilling then
-        started = true
+        d.started = true
         wa.land.cut({ x = worm.x, y = worm.y, shape = "drill" })
-        return
+      elseif not d.started and d.waiting < 4 then
+        d.waiting = d.waiting + 1
+      else
+        drills[id] = nil
       end
-      if not started and waiting < 4 then
-        waiting = waiting + 1
-        return
-      end
-      drills[id] = nil
-      a:remove()
     end
-  end
+  end)
 
   wa.on.worm_message(function(worm, msg)
     if worm.weapon == "px.super_drill" and not drills[worm.id]
         and worm:ammo("px.super_drill") ~= 0 then
-      local id = worm.id
-      drills[id] = wa.actors.spawn({
-        sprite = false, x = worm.x, y = worm.y,
-        owner = worm,
-        on = follow_drill(worm, id),
-      })
+      drills[worm.id] = { worm = worm, started = false, waiting = 0 }
     end
   end, { msgs = { wa.msg.FIRE_WEAPON } })
 end

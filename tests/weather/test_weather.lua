@@ -60,7 +60,7 @@ local function new_match(options, extra)
     seed = (seed * 1103515245 + 12345) % 0x80000000
     return seed
   end
-  M = { frame = 0, draws = {}, turn_starts = {}, turn_ends = {}, spawned = {}, quads = {}, quad = {}, quad_boxes = {},
+  M = { frame = 0, draws = {}, turn_starts = {}, turn_ends = {}, frame_hooks = {}, spawned = {}, quads = {}, quad = {}, quad_boxes = {},
     ribbons = {}, mines = {}, oil = {}, crates = {}, worms = {}, graves = {}, sounds = {}, ambients = {}, logs = {},
     stamps = {}, cuts = {} }
   local function solid(x, y) return x < 200 and y >= 400 end
@@ -113,6 +113,7 @@ local function new_match(options, extra)
       draw = function(f) M.draws[#M.draws + 1] = f end,
       turn_start = function(f) M.turn_starts[#M.turn_starts + 1] = f end,
       turn_end = function(f) M.turn_ends[#M.turn_ends + 1] = f end,
+      frame = function(f) M.frame_hooks[#M.frame_hooks + 1] = f end,
     },
     log = function(line) M.logs[#M.logs + 1] = line end,
     world = {
@@ -200,6 +201,7 @@ end
 local function frames(n)
   for _ = 1, n do
     M.frame = M.frame + 1
+    for _, f in ipairs(M.frame_hooks) do f() end
     for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
     draw()
   end
@@ -209,6 +211,7 @@ end
 local function sim_frames(n)
   for _ = 1, n do
     M.frame = M.frame + 1
+    for _, f in ipairs(M.frame_hooks) do f() end
     for _, a in ipairs(M.spawned) do if not a.dead then a.on(a) end end
   end
 end
@@ -308,9 +311,9 @@ do
   function worm:heal(n) self.hp = self.hp + n end
   M.mines, M.worms = { mine }, { worm }
   for _, f in ipairs(M.turn_starts) do f({}) end
-  check("one clock actor, owned by no one", #M.spawned == 1 and M.spawned[1].owner == "none")
+  check("the clock is a frame hook, not an actor", #M.spawned == 0 and #M.frame_hooks == 1)
   frames(50)
-  check("100 % strikes on the first second", #M.spawned >= 2)
+  check("100 % strikes on the first second", #M.spawned >= 1 and M.spawned[1].owner == "none")
   local strike = load_module("wf-lib/lightning").strikes[1]
   check("aimed at the mine", strike and math.abs(strike.ex - 600) < 1 and math.abs(strike.ey - 300) < 1,
     strike and (strike.ex .. "," .. strike.ey))
@@ -325,7 +328,7 @@ do
   new_match()
   for _, f in ipairs(M.turn_starts) do f({}) end
   frames(220)
-  check("nothing to aim at: no strike", #M.spawned == 1, #M.spawned)
+  check("nothing to aim at: no strike", #M.spawned == 0, #M.spawned)
 
   new_match({ lightning_chance = 0 })
   for _, f in ipairs(M.turn_starts) do f({}) end
@@ -618,7 +621,7 @@ end
 do
   local land = settling({ snow = 100 })
   turn(1)
-  check("one clock for the weather", #M.spawned == 1)
+  check("one clock for the weather", #M.spawned == 0 and #M.frame_hooks == 1)
   sim_frames(3000)
   local cols, deepest = land.columns()
   local in_ground, under_roof, colour, covered = 0, 0, true, 0

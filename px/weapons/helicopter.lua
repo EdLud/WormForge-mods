@@ -99,9 +99,7 @@ function weapon.setup()
     if size < 10 then size = 10 end
     -- how much of that growth with speed the profile wants: 0 none, 100 all of it
     size = trunc(10 + (size - 10) * (shared.helicopter_crash_scale or 0) / 100)
-    wa.actors.spawn({
-      sprite = false, x = worm.x, y = worm.y, owner = worm, explode = { damage = size * 2, id = size, now = true },
-    })
+    wa.world.explode({ x = worm.x, y = worm.y, owner = worm, damage = size * 2, id = size })
     worm.gravity = 1
     worm.wind = 0
     local oops = HELI_OOPS[wa.random(1, 10)]

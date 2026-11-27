@@ -494,9 +494,8 @@ function turret.new(cfg)
     if explode then
       local owner = t.owner(a, s)
       if owner ~= a then
-        local e = wa.actors.spawn({ sprite = false, owner = owner,
-          x = a.x, y = a.y - t.boom_up, explode = { damage = t.boom.damage, id = t.boom.id, now = true } })
-        e:remove()
+        wa.world.explode({ x = a.x, y = a.y - t.boom_up, owner = owner,
+          damage = t.boom.damage, id = t.boom.id })
       else
         a:explode(t.boom)
       end

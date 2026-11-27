@@ -11,12 +11,13 @@ local function check(name, ok)
   if not ok then failed = failed + 1 end
 end
 
-local kept, draws, missile_frames, driver = {}, {}, {}, nil
+local kept, draws, missile_frames, game_frame = {}, {}, {}, nil
 wa = {
   depth = { OBJECTS = 0xE0000 },
   on = {
     missile_frame = function(f) missile_frames[#missile_frames + 1] = f end,
     draw = function(f) draws[#draws + 1] = f end,
+    frame = function(f) game_frame = f end,
   },
   draw = {
     ribbon = function() error("drawn by the engine, not wa.draw.ribbon") end,
@@ -30,11 +31,7 @@ wa = {
   },
   sprites = { key = function(path) return "px.attack_helicopter:" .. path end },
   actors = {
-    spawn = function(spec)
-      driver = { on = spec.on, gone = false }
-      function driver:remove() self.gone = true end
-      return driver
-    end,
+    spawn = function() error("the trails need no actor") end,
   },
 }
 
@@ -58,7 +55,7 @@ local function frame(x)
     f({ id = 77, phase = "pre", x = x, y = 5, vx = 3, vy = 0 })
     f({ id = 77, phase = "post", x = x, y = 5, vx = 3, vy = 0 })
   end
-  driver.on(driver)
+  game_frame()
 end
 for x = 1, 8 do frame(x * 3) end
 local same = #kept[1].pushed == #t.pts
@@ -67,9 +64,8 @@ check("a point every second frame, as the module samples", #kept[1].pushed == 4 
 check("not finished while the round flies", not kept[1].finished and trail.has(77))
 
 -- The round is gone: no more frames.
-for _ = 1, 3 do driver.on(driver) end
+for _ = 1, 3 do game_frame() end
 check("finished once its round stopped", kept[1].finished and not trail.has(77))
-check("handed over: the driver goes", driver.gone)
 
 local u = trail.add(78, "owner")
 trail.drop(78)

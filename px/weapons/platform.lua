@@ -25,7 +25,7 @@ local function place(shot)
   end
   s.actor = wa.actors.spawn{
     sprite=false,owner=shot.worm,x=x,y=y,origin="center",persist=true,
-    body={shape=ART.."body.png",hits={},hit_by="all"},
+    body={shape=ART.."body.png",hits={},hit_by="all"},grab=false,
     on={frame=function(a)
       a.x,a.y,a.vx,a.vy=s.x,s.y,0,0
     end,hit=hit},

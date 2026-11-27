@@ -330,6 +330,8 @@ local function inventory_api()
   return api
 end
 
+-- The explosions wa.world.explode made this match, oldest first.
+local function booms() return M.explosions or {} end
 local function new_match(opts)
   opts = opts or {}
   M, logs, active, death_seen, replaced = {}, {}, nil, {}, {}
@@ -426,6 +428,12 @@ local function new_match(opts)
       end,
       set_gravity = function(v) M.gravity = v end,
       set_wind = function(v) M.wind = v end,
+      -- As the engine's: WA's explosion at a point, for its owner (or "none").
+      explode = function(spec)
+        if spec.owner == nil then error("world.explode needs an owner", 2) end
+        M.explosions = M.explosions or {}
+        M.explosions[#M.explosions + 1] = spec
+      end,
       sky = function() return -208 end,
       -- As the engine's wa.world.collides: terrain from M.solid at the
       -- circle's centre and rim; worms, mines, oil drums and crates as circles
@@ -885,6 +893,14 @@ local function new_match(opts)
             end
           end
           return eat
+        end
+      end,
+      -- Once a game frame, after WA's: M.game_frame() runs them.
+      frame = function(f)
+        M.frame_hooks = M.frame_hooks or {}
+        M.frame_hooks[#M.frame_hooks + 1] = f
+        M.game_frame = function()
+          for _, h in ipairs(M.frame_hooks) do h() end
         end
       end,
       -- Every handler, as for worm_message: the balloon's and the rules'.
@@ -1787,7 +1803,7 @@ do
   check("a blast disables it for the turn", impacts() == before)
   body.hit(body, { kind = "bullet", damage = 40 })
   check("at 0 of its 50 health it explodes, damage 50, blast 100, and its head goes",
-    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and M.actor_booms[1].opts.id == 100 and body.dead and turret.state[body.id] == nil)
+    #booms() == 1 and booms()[1].damage == 50 and booms()[1].id == 100 and body.dead and turret.state[body.id] == nil)
   M.solid, M.gravity = nil, nil
 end
 
@@ -1928,7 +1944,7 @@ do
     disintegrations() == 6 and ball.gone and not own_ball.gone, disintegrations())
   body.hit(body, { kind = "blast", damage = 35 })
   check("at 0 of its 35 health it explodes, damage 50, blast 100, body and barrel gone",
-    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 50 and body.dead and turret.state[body.id] == nil)
+    #booms() == 1 and booms()[1].damage == 50 and body.dead and turret.state[body.id] == nil)
   M.solid, M.gravity, M.missiles = nil, nil, {}
 end
 
@@ -2809,11 +2825,10 @@ do
   M.hud()
   check("the HUD counts down its 4 seconds", M.hud_lines[1] == "Kamikaze Rocket: 3.96", M.hud_lines[1])
   for _ = 1, 197 do M.message(w, wa.msg.FRAME_FINISH) end
-  check("no blast before 4 seconds", #M.actor_booms == 0)
+  check("no blast before 4 seconds", #booms() == 0)
   M.message(w, wa.msg.FRAME_FINISH)
   check("at 4 seconds it blows up (damage 30, blast 100) and the worm goes into the water",
-    #M.actor_booms == 1 and M.actor_booms[1].opts.damage == 30 and M.actor_booms[1].opts.id == 100
-      and w.y > M.water)
+    #booms() == 1 and booms()[1].damage == 30 and booms()[1].id == 100 and w.y > M.water)
   w.state = nil -- WA's Kamikaze ends in the water
   M.message(w, wa.msg.FRAME_FINISH)
   check("when WA's Kamikaze ends, the worm is shown again and the rocket gone",
@@ -4304,12 +4319,12 @@ do
   end
   check("later missiles of the slot (the cluster bits) are no fusing rocket: no hiss", #M.sounds == sounds)
   M.sounds = {}
-  local before = M.spawned and #M.spawned or 0
+  local before, nb = M.spawned and #M.spawned or 0, #booms()
   spec.on_explode({ x = 100, y = -200, slot = 12, missile = 9001 })
   M.message(far, wa.msg.FRAME_FINISH)
   check("its explosion: sounds 85 and 70, and two 40/40 blasts", M.sounds[1] == 85 and M.sounds[2] == 70
-    and #M.spawned == before + 2 and M.spawned[before + 1].explode.damage == 40
-    and M.spawned[before + 1].explode.id == 40 and M.spawned[before + 2].explode.now)
+    and #booms() == nb + 2 and booms()[nb + 1].damage == 40 and booms()[nb + 1].id == 40
+    and booms()[nb + 2].id == 40 and (M.spawned and #M.spawned or 0) == before)
   check("and it ends there", #M.launched == 1)
 end
 
@@ -4353,15 +4368,15 @@ do
   M.retreat = 0
   -- Hitting a mine is fine; hitting a worm fast is not.
   M.contact(w, { kind = "mine" }, { vx = 3, vy = 0, flags = 0 })
-  check("a mine does not crash it", #M.spawned == 2)
+  check("a mine does not crash it", #M.spawned == 2 and #booms() == 0)
   M.contact(w, { kind = "worm" }, { vx = (1 / 2), vy = 0, flags = 0 })
-  check("a slow touch does not crash it", #M.spawned == 2)
+  check("a slow touch does not crash it", #M.spawned == 2 and #booms() == 0)
   M.contact(w, { kind = "land" }, { vx = 0, vy = (1 / 2), flags = 0 })
-  check("a slow landing does not crash it: PX's smooth landing", #M.spawned == 2)
+  check("a slow landing does not crash it: PX's smooth landing", #M.spawned == 2 and #booms() == 0)
   M.contact(w, { kind = "worm" }, { vx = 3, vy = 0, flags = 0 })
-  local boom = M.spawned[#M.spawned]
-  check("a fast hit crashes it: an explosion of at least 10", boom.explode and boom.explode.id == 10
-    and boom.explode.damage == 20 and boom.explode.now, boom.explode and boom.explode.id)
+  local boom = booms()[#booms()]
+  check("a fast hit crashes it: an explosion of at least 10", boom and boom.id == 10
+    and boom.damage == 20, boom and boom.id)
   -- From wa.on.contact there is no brain to inherit an owner from.
   check("the explosion is the worm's own", boom.owner == w)
   check("and lands the worm, shown again", w.gravity == 1 and w.wind == 0 and w.body_visible == true)
@@ -4370,10 +4385,10 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   jet_pack_starts(w)
   M.message(w, wa.msg.FRAME_FINISH)
-  local n = #M.spawned
+  local nb = #booms()
   w.fuel = (0.05)
   M.message(w, wa.msg.FRAME_FINISH)
-  check("fuel below 0.1 crashes it", #M.spawned == n + 1 and M.spawned[#M.spawned].explode)
+  check("fuel below 0.1 crashes it", #booms() == nb + 1)
   -- WA ends the jet pack on the ground without a scripted state change.
   w.state = "prefiring"
   M.message(w, wa.msg.FRAME_FINISH)
@@ -4381,12 +4396,13 @@ do
   M.message(w, wa.msg.FRAME_FINISH)
   w.fuel, w.vy, w.vx = 50, 0, 0
   w.state = "standing"
-  n = #M.spawned
+  local n = #M.spawned
+  nb = #booms()
   local flown = M.spawned[#M.spawned]
   M.message(w, wa.msg.FRAME_FINISH)
   local out = M.spawned[#M.spawned]
   check("WA ends the jet pack at rest: its state survives, no explosion", w.state == "standing"
-    and #M.spawned == n + 1 and not out.explode.now and w.gravity == 1 and not w.steered)
+    and #M.spawned == n + 1 and #booms() == nb and w.gravity == 1 and not w.steered)
   check("the worm climbs out over WA's jet pack put-away: the climb-in backwards, the body hidden",
     flown.dead and out.sprite == "sprites/helicopter/jumpin.png" and w.body_visible == false)
   for _ = 1, 22 do M.message(w, wa.msg.FRAME_FINISH) end
@@ -4411,9 +4427,9 @@ do
   jet_pack_starts(w); w.weapon = nil
   M.message(w, wa.msg.FRAME_FINISH)
   check("the last one still flies: armed in the wind-up", w.fuel > 39, tostring(w.fuel))
-  local before = #M.spawned
+  local before = #booms()
   M.contact(w, { kind = "land" }, { vx = 0, vy = 3, flags = 0 })
-  check("a fast landing crashes it, as in PX", #M.spawned == before + 1 and M.spawned[#M.spawned].explode)
+  check("a fast landing crashes it, as in PX", #booms() == before + 1)
 end
 
 print("hot air balloon: PX's balloon, flown with WA's parachute physics upside down")
@@ -4991,12 +5007,12 @@ do
   local m = { id = 1, phase = "pre", weapon = "bazooka", x = 0, y = 0, vx = 0, vy = 0, collision_mask = 0x400000 }
   M.missile(m)
   check("a missile in the water also hits worms", m.collision_mask == 0x40007C)
-  local n = #M.spawned
+  local n = #booms()
   local missile = { kind = "missile", x = 120, y = 520 }
   M.contact(w, missile, { vx = 0, vy = 0, flags = 0 })
-  local boom = M.spawned[n + 1]
-  check("it blows up on the swimmer (100, 50) and is gone", boom and boom.explode and boom.explode.damage == 100
-    and boom.explode.id == 50 and missile.y > M.water)
+  local boom = booms()[n + 1]
+  check("it blows up on the swimmer (100, 50) and is gone", boom and boom.damage == 100
+    and boom.id == 50 and missile.y > M.water)
   -- The turn ends with it in the water: the engine lets go, and it drowns.
   w.taken, w.vx, w.vy = nil, 0, 0
   M.message(w, wa.msg.FRAME_FINISH)
@@ -6758,7 +6774,7 @@ do
     check("helicopter: fuel keeps burning without a refill", near(w.fuel, first - 0.02))
     if fuel == 999 then
       M.contact(w, { kind = "land" }, { vx = 10, vy = 10 })
-      local boom = M.spawned[#M.spawned].spec.explode
+      local boom = booms()[#booms()]
       check("helicopter: high-fuel crash at 100% speed scaling retains PX's formula", boom.id == 923 and boom.damage == 1846,
         "blast=" .. boom.id .. " damage=" .. boom.damage)
     end

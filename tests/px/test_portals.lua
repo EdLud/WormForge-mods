@@ -39,7 +39,7 @@ wa = {
 }
 dofile(root .. "../tests/brush_mock.lua")(wa)
 for _, name in ipairs({ "missiles", "mines", "crates", "oil", "graves", "arrows" }) do wa[name]={all=function() return {} end} end
-for _, name in ipairs({"body_move", "worm_message", "turn_start", "turn_end", "draw"}) do
+for _, name in ipairs({"body_move", "worm_message", "turn_start", "turn_end", "draw", "frame"}) do
   local listeners = {}
   wa.on[name] = function(f, opts)
     listeners[#listeners+1] = {f=f,opts=opts}
@@ -256,7 +256,7 @@ assert(shared.portals.pairs[0].active)
 -- Complete the pair: ambience runs only while transport is active; endpoint
 -- art is always submitted. Particle lifetimes/motion stay in Lua looks.
 shared.portals:place(0,1,300,100,-1,0)
-actors[1].on.frame(actors[1])
+hooks.frame()
 draws={}; hooks.draw()
 assert(endpoint("portal_orange.png") and endpoint("portal_blue.png"))
 local Effects=require("lib/portal_effects")

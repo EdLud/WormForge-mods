@@ -15,7 +15,7 @@ end
 local M
 local function mock(opts)
   opts = opts or {}
-  M = { drums = {}, worms = {}, actors = {}, fires = {}, mines = {}, launches = {}, sounds = {},
+  M = { drums = {}, worms = {}, actors = {}, booms = {}, fires = {}, mines = {}, launches = {}, sounds = {},
     quads = {}, randoms = {}, frame = 0, cavern = opts.cavern or false,
     view = { cx = 500, cy = 300, w = 1920, h = 1080, zoom = 1 },
     rng = function(lo) return lo end }
@@ -46,7 +46,12 @@ local function mock(opts)
     math = { sin = math.sin, cos = math.cos },
     random = function(lo, hi) M.randoms[#M.randoms + 1] = { lo, hi }; return M.rng(lo, hi) end,
     world = { cavern = function() return M.cavern end, frame = function() return M.frame end,
-      view = function() return M.view end },
+      view = function() return M.view end,
+      explode = function(spec)
+        -- As the engine: an owner, or owner = "none" for no team.
+        if spec.owner == nil then error("world.explode needs an owner", 2) end
+        M.booms[#M.booms + 1] = spec
+      end },
     oil = { all = function(opts)
       local near = opts and opts.near
       local out = {}
@@ -111,11 +116,7 @@ local function drum_of(kind, opts)
 end
 
 local function blasts()
-  local out = {}
-  for _, a in ipairs(M.actors) do
-    if a.spec.explode then out[#out + 1] = a.spec.explode end
-  end
-  return out
+  return M.booms
 end
 
 print("oil drums: the deal")
@@ -149,7 +150,7 @@ do
     and f[1].vx == -3 and f[1].vy == -3 and f[1].y == 299 and f[2].vx == 3 and f[2].y == 301
     and f[3].vx == 0 and f[3].vy == -8 and f[3].y == 298)
   local b = blasts()
-  check("explosive: PX's blast, kind 100, damage 85", #b == 1 and b[1].id == 100 and b[1].damage == 85 and b[1].now)
+  check("explosive: PX's blast, kind 100, damage 85", #b == 1 and b[1].id == 100 and b[1].damage == 85)
 
   drum_of("napalm")
   burst(M.drums[1])
@@ -210,7 +211,7 @@ do
   check("mine: seven of WA's mines, PX's 3 s arming and fuse, 48 damage and radius", #m == 7
     and m[1].arm == 3000 and m[1].fuse == 3000 and m[1].damage == 48 and m[1].radius == 48
     and m[1].vx == -7 and m[1].vy == -7)
-  check("mine: laid by an actor, for no team", m[1].owner == M.actors[1] and M.actors[1].spec.explode == nil)
+  check("mine: no team's, with no actor to lay it", m[1].owner == "none" and #M.actors == 0)
 
   drum_of("teleport", { cavern = true })
   burst(M.drums[1])
@@ -222,7 +223,7 @@ do
   M.worm(3, 2, 0, 0)
   burst(M.drums[1], 2)
   check("the team that set it off owns the blast: its first worm",
-    M.actors[1].spec.owner.id == 3, M.actors[1].spec.owner.id)
+    M.booms[1].owner.id == 3, M.booms[1].owner.id)
 end
 
 print("oil drums: a burst between turns is no team's")
@@ -235,7 +236,7 @@ do
   local owner = M.fires[1] and M.fires[1].owner
   check("explosive: its three fires and its blast, all of one owner",
     #M.fires == 3 and #blasts() == 1 and owner ~= nil
-    and M.fires[3].owner == owner and M.actors[#M.actors].spec.owner == owner)
+    and M.fires[3].owner == owner and M.booms[#M.booms].owner == owner)
   check("the owner is an actor of no worm, gone on its first frame",
     owner.spec and owner.spec.owner == "none" and owner.spec.sprite == false
     and (owner.spec.on(owner) or owner.dead))

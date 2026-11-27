@@ -5,7 +5,7 @@ local zone = require("lib/px_zone")
 local M = { ROOT = "sprites/zone_fx/", FADE = 150 }
 M.HEAL, M.DAMAGE, M.AIM_DAMAGE, M.GLOW = M.ROOT .. "mcrate0.png",
   M.ROOT .. "fallout.png", M.ROOT .. "wormhit2.png", M.ROOT .. "glow.png"
-local particles, driver, installed, seed = {}, nil, false, 1729
+local particles, installed, seed = {}, false, 1729
 local LIMIT = 256
 
 local function random()
@@ -47,16 +47,8 @@ local function step()
   end
 end
 
-local function emit(sheet, x, y, aim, glow, owner)
+local function emit(sheet, x, y, aim, glow)
   if y >= wa.world.water() or #particles >= LIMIT then return end
-  if not driver then
-    if not owner then return end
-    driver = wa.actors.spawn({ sprite = false, x = x, y = y, owner = owner,
-      on = function(a)
-        step()
-        if #particles == 0 then driver = nil; a:remove() end
-      end })
-  end
   local speed, heading = -3 - random() * 4, random() * 2 * math.pi
   local damaging_aim = aim and sheet == M.AIM_DAMAGE
   particles[#particles + 1] = {
@@ -76,18 +68,13 @@ local function emit(sheet, x, y, aim, glow, owner)
   }
 end
 
-local function flight_owner()
-  local worms = wa.worms.all()
-  for _, worm in ipairs(worms) do
-    if worm.turn then return worm end
-  end
-  return worms[1]
-end
-
 function M.install()
   if installed then return end
   installed = true
   wa.assets.load({ sprites = { M.HEAL, M.DAMAGE, M.AIM_DAMAGE, M.GLOW }, gpu_prefix = M.ROOT })
+  wa.on.frame(function()
+    if particles[1] then step() end
+  end)
   wa.on.draw(function()
     for _, p in ipairs(particles) do
       local t = p.age / p.life
@@ -103,9 +90,8 @@ function M.flight(weapon, healing)
   on_missile(function(m)
     if m.weapon ~= weapon or m.phase ~= "post" then return end
     count = count + 1
-    local owner = not driver and flight_owner() or nil
-    emit(healing and healing() and M.HEAL or M.DAMAGE, m.x, m.y, false, false, owner)
-    if count % 2 == 0 then emit(M.GLOW, m.x, m.y, false, true, owner) end
+    emit(healing and healing() and M.HEAL or M.DAMAGE, m.x, m.y, false, false)
+    if count % 2 == 0 then emit(M.GLOW, m.x, m.y, false, true) end
   end, { weapons = { weapon }, phase = "post" })
 end
 
@@ -118,7 +104,7 @@ end
 function M.aim(worm, healing)
   local angle = worm.aim * math.pi * -worm.facing
   emit(healing and M.HEAL or M.AIM_DAMAGE,
-    worm.x + wa.math.sin(angle) * 22, worm.y - wa.math.cos(angle) * 12, true, false, worm)
+    worm.x + wa.math.sin(angle) * 22, worm.y - wa.math.cos(angle) * 12, true, false)
 end
 
 return M

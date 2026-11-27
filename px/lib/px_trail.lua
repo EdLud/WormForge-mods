@@ -12,37 +12,34 @@ trail.GLOW = "sprites/px_effects/beam_glow.png"
 local trails = {}
 local keys = {}
 local live = {}
-local driver, tick = nil, 0
+local tick = 0
 local STALE = 2
 
-local function start_driver(t, owner)
-  if driver then return end
-  driver = wa.actors.spawn({
-    sprite = t.beam, visible = false, owner = owner,
-    on = function(a)
-      tick = tick + 1
-      for i = #trails, 1, -1 do
-        local v = trails[i]
-        if v.live and tick - v.seen >= STALE then
-          v.live = false
-          live[v.id] = nil
-          if v.kept then v.kept:finish() end
-        end
-        if v.kept and not v.live then
-          table.remove(trails, i)
-        elseif not v.live and tick % v.vanish == 0 then
-          table.remove(v.pts, 1)
-          if #v.pts == 0 then
-            table.remove(trails, i)
-            live[v.id] = nil
-          end
-        end
+-- A game frame: a round unseen for STALE frames finishes its trail, which then sheds.
+-- The count stands still while there are no trails.
+local function step()
+  if not trails[1] then return end
+  tick = tick + 1
+  for i = #trails, 1, -1 do
+    local v = trails[i]
+    if v.live and tick - v.seen >= STALE then
+      v.live = false
+      live[v.id] = nil
+      if v.kept then v.kept:finish() end
+    end
+    if v.kept and not v.live then
+      table.remove(trails, i)
+    elseif not v.live and tick % v.vanish == 0 then
+      table.remove(v.pts, 1)
+      if #v.pts == 0 then
+        table.remove(trails, i)
+        live[v.id] = nil
       end
-      if #trails == 0 then driver = nil; a:remove() end
-    end,
-  })
+    end
+  end
 end
 
+-- `owner` is unused.
 function trail.add(id, owner, opts)
   local t = {
     id = id, pts = {}, live = true, seen = tick,
@@ -68,7 +65,6 @@ function trail.add(id, owner, opts)
   end
   trails[#trails + 1] = t
   live[id] = t
-  start_driver(t, owner)
   return t
 end
 
@@ -92,6 +88,7 @@ function trail.install()
   installed = true
   keys[trail.BEAM] = wa.sprites.key(trail.BEAM)
   keys[trail.GLOW] = wa.sprites.key(trail.GLOW)
+  wa.on.frame(step)
 
   wa.on.missile_frame(function(m)
     local t = live[m.id]

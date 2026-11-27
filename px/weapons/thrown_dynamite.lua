@@ -40,12 +40,12 @@ local weapon = {
 }
 
 function weapon.setup()
-  local particles, driver, seed = {}, nil, 1733
+  local particles, seed = {}, 1733
   local function random()
     seed = (seed * 16807) % 2147483647
     return seed / 2147483647
   end
-  local function step(a)
+  wa.on.frame(function()
     for i = #particles, 1, -1 do
       local p = particles[i]
       p.age = p.age + 1
@@ -55,8 +55,7 @@ function weapon.setup()
         p.vx, p.vy = p.vx / 2, p.vy / 2 - 3 * wa.world.gravity()
       end
     end
-    if #particles == 0 then driver = nil; a:remove() end
-  end
+  end)
   wa.on.worm_message(function(worm)
     if not worm.turn or worm.hp <= 0 or not worm.aiming or worm.weapon ~= "px.thrown_dynamite"
       or #particles >= 64 then return end
@@ -64,9 +63,6 @@ function weapon.setup()
     local x = worm.x + wa.math.sin(angle) * 13
     local y = worm.y - wa.math.cos(angle) * 23
     if y >= wa.world.water() then return end
-    if not driver then
-      driver = wa.actors.spawn{sprite=false,owner=worm,x=x,y=y,on=step}
-    end
     local direction, speed = random() * math.pi * 2, 1 + random() * 4
     particles[#particles+1] = {x=x,y=y,age=0,
       vx=wa.math.cos(direction)*speed,vy=wa.math.sin(direction)*speed,owner=worm}

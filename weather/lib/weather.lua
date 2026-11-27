@@ -21,7 +21,7 @@ W.cycles = 0
 W.ticks, W.on_cycle, W.on_turn = {}, {}, {}
 
 local cycle_cfg
-local set_up, begun = false, false
+local set_up, begun, ticking = false, false, false
 
 -- The weather of a turn cycle, by the shares: drawn only when more than one has a share.
 function W.next_kind(cfg)
@@ -48,16 +48,7 @@ end
 -- The first turn: the first weather, then the clock of the simulation.
 local function begin()
   if cycle_cfg and not W.kind then W.set_kind(W.next_kind(cycle_cfg)) end
-  if #W.ticks > 0 then
-    local size = wa.world.size()
-    wa.actors.spawn({
-      sprite = "sprites/flat.png", visible = false, owner = "none", x = size.w // 2, y = 0,
-      on = function()
-        local frame = wa.world.frame()
-        for _, tick in ipairs(W.ticks) do tick(frame) end
-      end,
-    })
-  end
+  ticking = #W.ticks > 0
 end
 
 -- A turn cycle starts when a team that already played since the last one plays again.
@@ -177,6 +168,12 @@ local function setup()
   for _, path in ipairs(SPRITES) do W.keys[path] = wa.sprites.key(path) end
   wa.on.turn_start(turn_start)
   if wa.on.turn_end then wa.on.turn_end(turn_end) end
+  -- The weather's clock, from the first turn on.
+  wa.on.frame(function()
+    if not ticking then return end
+    local frame = wa.world.frame()
+    for _, tick in ipairs(W.ticks) do tick(frame) end
+  end)
   if wa.on.draw and wa.draw.brush and wa.draw.ribbon then
     L.setup()
     wa.on.draw(draw)

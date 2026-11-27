@@ -15,7 +15,7 @@ local function near(a, b) return math.abs(a - b) < 1e-9 end
 
 local M
 local function mock()
-  M = { worms = {}, actors = {}, shots = {}, mines = {}, arrows = {}, fires = {}, sounds = {},
+  M = { worms = {}, actors = {}, booms = {}, shots = {}, mines = {}, arrows = {}, fires = {}, sounds = {},
     quads = {}, frame = 0, clock = 30000, solid = function() return false end,
     rng = function(lo) return lo end, handlers = {}, loads = {} }
   local function worm(id, team, alliance, x, y)
@@ -44,6 +44,10 @@ local function mock()
     world = {
       frame = function() return M.frame end,
       turn_clock = function() return M.clock end,
+      explode = function(spec)
+        assert(spec.owner, "world.explode needs an owner")
+        M.booms[#M.booms + 1] = spec
+      end,
       gravity = function() return 0.2 end,
       collides = function(spec)
         for _, w in ipairs(spec.with) do
@@ -308,9 +312,9 @@ do
   check("damage does not disable it, as it does a sentry", not s.disabled)
   a.on.hit(a, { kind = "blast", damage = 45 })
   check("at 0 health it is gone", a.dead and t.state[a.id] == nil)
-  local boom = M.actors[#M.actors]
-  check("in its colour's blast, 50 damage, from its centre",
-    boom ~= a and boom.y == 300 - 9 and boom.dead)
+  local boom = M.booms[#M.booms]
+  check("in its colour's blast, 50 damage, from its centre, with no stand-in actor",
+    boom and boom.y == 300 - 9 and boom.damage == 50 and M.actors[#M.actors] == a)
 end
 
 print("PyroMan's turrets: drawn in its colour, darker as it is hurt, the head flipped facing left")

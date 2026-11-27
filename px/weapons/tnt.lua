@@ -80,14 +80,14 @@ function weapon.definition()
 end
 
 function weapon.setup()
-  local shared = require("lib/shared")
   local TRAIL, GLOW, LIMIT = ART .. "trail.png", ART .. "glow.png", 256
-  local particles, driver, seed, count = {}, nil, 1741, 0
+  local particles, seed, count = {}, 1741, 0
   local function random()
     seed = (seed * 16807) % 2147483647
     return seed / 2147483647
   end
-  local function step(a)
+  local function step()
+    if not particles[1] then return end
     local wind = wa.world.wind()
     for i = #particles, 1, -1 do
       local p = particles[i]
@@ -99,16 +99,10 @@ function weapon.setup()
         p.vy = p.vy / (1 + p.drag)
       end
     end
-    if #particles == 0 then driver = nil; a:remove() end
   end
+  wa.on.frame(step)
   local function emit(x, y, glow)
     if y >= wa.world.water() or #particles >= LIMIT then return end
-    if not driver then
-      local owner = shared.current_worm() or wa.worms.all()[1]
-      if not owner then return end
-      driver = wa.actors.spawn{ sprite = false, owner = owner, x = x, y = y,
-        on = step }
-    end
     local speed, heading = -3 - random() * 4, random() * 2 * math.pi
     particles[#particles + 1] = glow
       and { sheet = GLOW, x = x, y = y, vx = 0, vy = 0, age = 0, life = 10, drag = 1, wind = 0,

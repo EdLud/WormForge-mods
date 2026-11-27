@@ -234,10 +234,8 @@ function weapon.setup()
         wa.sound.play(owner, 85)
         wa.sound.play(owner, 70) -- "louder please :D"
         for _ = 1, 2 do
-          wa.actors.spawn({
-            sprite = false, x = ev.x, y = ev.y, owner = owner,
-            explode = { damage = NUKE_BLAST.damage, id = NUKE_BLAST.id, now = true },
-          })
+          wa.world.explode({ x = ev.x, y = ev.y, owner = owner,
+            damage = NUKE_BLAST.damage, id = NUKE_BLAST.id })
         end
       end
       return

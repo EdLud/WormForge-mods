@@ -21,8 +21,7 @@ local function place(fire)
     require("lib/weapon_hint").notice(worm, "No room for a crate!")
     return
   end
-  local layer = wa.actors.spawn({ sprite = false, owner = worm, x = x, y = y, on = function(a) a:remove() end })
-  local mine = wa.mines.spawn({ owner = layer, x = crate.x, y = crate.y, fuse = 0, arm = 0,
+  local mine = wa.mines.spawn({ owner = "none", x = crate.x, y = crate.y, fuse = 0, arm = 0,
     damage = TRAP.damage, radius = TRAP.radius, dud_proof = true })
   mine.visible, mine.gravity = false, 0
   traps[#traps + 1] = { crate = crate, mine = mine }
