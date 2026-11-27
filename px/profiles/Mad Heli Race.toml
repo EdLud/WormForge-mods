@@ -28,6 +28,7 @@ fuel = 0
 
 [options."spawn.bees.swarm"]
 bee_density = 25
+bee_speed = 60
 
 [options."utilities.bullet_time"]
 seconds = 6
