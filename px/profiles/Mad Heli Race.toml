@@ -1,10 +1,9 @@
 # WormBench profile "Mad Heli Race": made in the mod loader; safe to edit by hand.
-description = "The Full Fromage"
-features = ["core.utilities", "px.hazardous_sentries", "px.oil_drums"]
+description = "Big Rope Race maps recommended. One Bullet Time per turn. Shift to Dash."
+features = ["core.utilities", "mad_heli_race.rules", "px.hazardous_sentries", "px.oil_drums"]
 
 [options."core.utilities"]
 fast_aim = true
-fps_counter = true
 heal_per_turn = 50
 instant_death = "in_flight"
 live_hp = true

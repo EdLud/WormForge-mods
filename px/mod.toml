@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.98"
+version = "0.20.99"
 author = "Project X authors"
 api_version = 5
 format_version = 2
@@ -914,6 +914,13 @@ name = "Random Race"
 authors = ["0rang3"]
 description = "Each time the first team's turn comes round, a race is chosen at random and every team gets only its weapons: Parkour with Jump and Low Gravity, or Portal Gun, both with Anti Fall Damage; Wings; Helicopter; or Ninja Rope with Parachute."
 entry = "components/random_race.lua"
+
+[[components]]
+id = "mad_heli_race.rules"
+type = "feature"
+name = "Mad Heli Race rules"
+description = "Shows Mad Heli Race's rules at the first turn, and again on Shift + T."
+entry = "components/mad_heli_race.lua"
 
 [[components]]
 id = "team17.rules"
