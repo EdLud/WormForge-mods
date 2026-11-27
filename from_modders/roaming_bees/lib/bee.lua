@@ -473,8 +473,10 @@ local function detonate(a, s)
   letGo(s, s.vx, s.vy)
   writeSpeed(a, s)
   wa.sound.play(a,54)
-  a:explode({ damage = s.supercharged and 55 or 40, id = 100 })
+  -- Forgotten before the blast: the blast hits this bee too, and its hit
+  -- handler can't write `a` while `a:explode` holds it.
   state[s.id] = nil
+  a:explode({ damage = s.supercharged and 55 or 40, id = 100 })
   a:remove()
 end
 
