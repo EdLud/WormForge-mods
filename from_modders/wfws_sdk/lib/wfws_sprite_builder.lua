@@ -1858,7 +1858,9 @@ local function hold_ensure_hook()
             -- render rate isn't the game's and differs between machines.
             if ws.frame ~= now then
               ws.frame = now
-              ws.counter = math.min(20, ws.counter + 1)
+              -- 21, not 20: aim frames draw `hold_grow(counter - 1)`, so the
+              -- last grow-in frame needs the extra tick to reach full size.
+              ws.counter = math.min(21, ws.counter + 1)
               if entry.frames > 1 then
                 ws.phase = hold_next_phase(ws.phase, entry.anim_speed)
               end
