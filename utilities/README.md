@@ -60,6 +60,6 @@ sound of a weapon or utility crate.
 ## Tests
 
 From the repository root: `lua mods/utilities/test_live_hp.lua`,
-`test_instant_death.lua`, `test_auto_use.lua`, `test_fast_aim.lua`,
+`test_instant_death.lua`, `test_auto_use.lua`, `test_fast_aim.lua`, `test_ex_turn_side.lua`,
 `test_panel_highlight.lua` and
 `lua mods/tests/utilities/test_bullet_time.lua`, `test_cursor.lua`.
