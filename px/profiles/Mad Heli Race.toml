@@ -1,6 +1,6 @@
 # WormBench profile "Mad Heli Race": made in the mod loader; safe to edit by hand.
 description = "Big Rope Race maps recommended. One Bullet Time per turn. Shift to Dash."
-features = ["core.utilities", "mad_heli_race.rules", "px.hazardous_sentries", "px.oil_drums"]
+features = ["core.utilities", "mad_heli_race.rules", "px.hazardous_sentries", "px.oil_drums", "spawn.bees.swarm"]
 
 [options."core.utilities"]
 fast_aim = true
@@ -25,6 +25,9 @@ dash_refill_factor = 35
 dash_speed = 330
 dash_steer_factor = 130
 fuel = 0
+
+[options."spawn.bees.swarm"]
+bee_density = 40
 
 [options."utilities.bullet_time"]
 seconds = 6
