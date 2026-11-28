@@ -1,7 +1,7 @@
 # Core utilities: a collection of features that could fit a diverse set of schemes
 id = "core.utilities"
 name = "Core utilities"
-version = "0.21.1"
+version = "0.22.0"
 author = "WormBench"
 api_version = 5
 format_version = 2
@@ -518,6 +518,21 @@ min = 0
 max = 100
 label = "Highest height (pixels)"
 description = "Each crate pops in at a random height between the lowest and the highest, then falls."
+
+# Voice effects: lines from the team's sound bank on match events.
+[[components]]
+id = "core.voice_effects"
+type = "feature"
+name = "Voice effects"
+description = "Worms speak lines from their team's sound bank when things happen in the match."
+entry = "features/voice_effects.lua"
+
+[[components.options]]
+key = "skim_voices"
+type = "bool"
+default = true
+label = "Skim voices"
+description = "The team whose turn it is cheers each skim off the water: Amazing, Brilliant, Excellent, then Perfect."
 
 # The Cursor: one weapon with seven modes.
 [[components]]

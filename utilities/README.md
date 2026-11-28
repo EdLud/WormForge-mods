@@ -2,7 +2,7 @@
 
 WormBench's add-ons and tools, the mod **Core utilities** (`core.utilities`):
 **Utilities**, with match settings the lobby scheme doesn't have and some
-favourite mods as switches; **Fog of war**; **Worm glow**; **Crate pop**; the **+N Seconds**
+favourite mods as switches; **Fog of war**; **Worm glow**; **Crate pop**; **Voice effects**; the **+N Seconds**
 and **Bullet Time** utilities; and the **Cursor** weapon.
 
 ```toml
@@ -43,6 +43,15 @@ sound of a weapon or utility crate.
 |---|---|---|
 | Pitch range | number, 0–12 semitones | Each pop sounds a random pitch up to this far higher or lower. 3 by default. |
 | Lowest height, Highest height | numbers, 0–100 pixels | Each crate pops in at a random height between the two, then falls. 30 and 50 by default. Land above the crate stops it lower. |
+
+## Voice effects
+
+Worms speak lines from the sound bank their team picked when things happen in
+the match. A team whose bank has no file for a line stays silent for it.
+
+| Setting | Type | What it does |
+|---|---|---|
+| Skim voices | switch | The team whose turn it is cheers each skim off the water: **Amazing** for the first, then **Brilliant**, **Excellent**, and **Perfect** for the fourth and every skim after it. Each worm counts its own skims, and every count starts again at the next turn. On by default. |
 
 ## Cursor
 
