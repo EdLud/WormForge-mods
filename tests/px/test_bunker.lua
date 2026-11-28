@@ -106,18 +106,14 @@ for _,super in ipairs({false,true}) do
   frames(a,1)
   assert(a.x>old_x,"a steered drill carries momentum out of the terrain")
 
-  -- A tool picks the drill out of the land and throws it: it stops digging,
-  -- flies from where it was put with the speed it was given, and digs again.
+  -- A push while it drills (its own flames hit it) moves nothing and
+  -- doesn't stop the dig.
   a=reset(super)
   terrain=true; frames(a,3)
-  terrain=false
-  a.x,a.y,a.vx,a.vy=300,-50,4,0
+  local dig_x,dig_y=a.x,a.y
+  a.x,a.y,a.vx,a.vy=a.x+1,a.y-1,0.9,-0.4
   frames(a,1)
-  near(a.x,304); near(a.y,-50+0.25)
-  near(a.vx,0); near(a.vy,0)
-  frames(a,1)
-  near(a.x,308)
-  terrain=true; frames(a,1)
-  assert(a.sprite:find("digging"),"it digs again where it lands")
+  near(a.x,dig_x); near(a.y,dig_y+1.15)
+  assert(a.sprite:find("digging"),"it keeps digging")
 end
-print("Bunker Busters: magnetic fall, capped steering, rotated probes/art/flare, original lifetime: ALL PASS")
+print("Bunker Busters: magnetic fall, capped steering, rotated probes/art/flare, original lifetime, pushes ignored: ALL PASS")
