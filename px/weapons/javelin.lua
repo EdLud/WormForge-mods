@@ -113,6 +113,7 @@ function weapon.setup()
         local sentry = turrets.projectile_target(ev.x, ev.y)
         if sentry and turrets.projectile_hit(sentry, 20, vx / 4, vy / 4, v and v.id) then return end
       end
+      if not target and shared.fan_hit and shared.fan_hit(ev.x, ev.y, 20, v and v.id) then return end
       local frame = orientation(vx, vy)
       local sx, sy, deeper
       if not target then

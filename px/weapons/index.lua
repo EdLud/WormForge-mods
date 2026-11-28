@@ -16,6 +16,7 @@ return {
   ["px.double_bazooka"] = "weapons/double_bazooka",
   ["px.electric_grenade"] = "weapons/electric_grenade",
   ["px.electromagnet"] = "weapons/electromagnet",
+  ["px.fan"] = "weapons/fan",
   ["px.ferret"] = "weapons/ferret",
   ["px.fire_jump"] = "weapons/fire_jump",
   ["px.flame_turret"] = "weapons/flame_turret",

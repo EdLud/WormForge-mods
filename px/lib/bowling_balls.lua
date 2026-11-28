@@ -8,6 +8,7 @@ balls.INERTIA_X, balls.INERTIA_Y = 0.8, 0.4
 function balls.setup()
   local shared = require("lib/shared")
   local placed = require("lib/placed")
+  local airflow = require("lib/airflow")
 
   local RADIUS = balls.RADIUS
   local BOUNCE, FRICTION = 0.03, 0.02
@@ -48,6 +49,7 @@ function balls.setup()
   local ZAP_R, ZAP_G, ZAP_B = 80, 110, 128
   local TRAIL_LIFE = 30
   local SPRITE_DROP = 4
+  local BLOWN = 0.25 -- a fan's airflow pushes it at a quarter, as a magnet's field does
   local LIFT = 0.5 -- half a pixel
   local BALL_DEPTH = wa.depth.OBJECTS
   local GLOW_DEPTH, SHEEN_DEPTH, SPARK_DEPTH = BALL_DEPTH + 1, BALL_DEPTH - 1, BALL_DEPTH - 2
@@ -421,9 +423,10 @@ function balls.setup()
             b.lvx, b.lvy, b.rvx, b.rvy = b.vx, b.vy, b.vx, b.vy
           end
           local fx, fy, _, waking = wa.magnetism.sample(b.x, b.y, a)
-          if waking then wake(b) end
+          local ax, ay = airflow.push(b.x, b.y)
+          if waking or ax ~= 0 or ay ~= 0 then wake(b) end
           if not b.asleep then
-            b.vx, b.vy = b.vx + fx * 0.25, b.vy + fy * 0.25
+            b.vx, b.vy = b.vx + fx * 0.25 + ax * BLOWN, b.vy + fy * 0.25 + ay * BLOWN
           end
           tick(a.id)
           if b.zapped then electrified_frame(b) end

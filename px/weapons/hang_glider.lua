@@ -26,6 +26,7 @@ function weapon.setup()
   local shared = require("lib/shared")
   local own_time = require("wf-lib/own_time")
   local parachute = require("lib/parachute")
+  local airflow = require("lib/airflow")
   parachute.setup()
   local STOPPERS = { { wa.worms, 6 }, { wa.mines, 4 }, { wa.crates, 10 }, { wa.oil, 9 } }
   shared.balloons = shared.balloons or {}
@@ -149,6 +150,7 @@ function weapon.setup()
       if f < 0 then up_x, up_y = -fwd_y, fwd_x else up_x, up_y = fwd_y, -fwd_x end
       local sx, sy = g.sx, g.sy
       sy = sy + wa.world.gravity() * GLIDER_GRAVITY
+      sy = sy - airflow.lift(worm.x, worm.y) -- an upright Fan's rising air
       local wind = up_x * wa.world.wind() * GLIDER_WIND
       sx, sy = sx + wind * up_x, sy + wind * up_y
       local up_vel = sx * up_x + sy * up_y

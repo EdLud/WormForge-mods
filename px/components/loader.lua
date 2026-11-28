@@ -69,6 +69,7 @@ local ORDER = {
   "weapons/ferret",
   "lib/magnet",
   "weapons/electromagnet",
+  "weapons/fan",
   "weapons/magnetic_missile",
   "weapons/crate_strike",
   "weapons/submarine_attack",

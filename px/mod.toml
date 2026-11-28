@@ -12,7 +12,7 @@
 # Development tests and their match setup live outside this pack, in tests/px/.
 id = "px.ports"
 name = "Project X ports"
-version = "0.20.109"
+version = "0.20.111"
 author = "Project X authors"
 api_version = 5
 format_version = 2
@@ -183,6 +183,30 @@ fps = 15
 play = "loop"
 
 [sprites."sprites/electromagnet/wmaglnku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanbak.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanbakd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanbaku.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanlnk.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanlnkd.png"]
+fps = 15
+play = "loop"
+
+[sprites."sprites/fan/wfanlnku.png"]
 fps = 15
 play = "loop"
 
@@ -1924,6 +1948,16 @@ deprecated_options = ["mine_push"]
 
 [components.suggests."hl.rules"]
 pool = "second"
+
+[[components]]
+id = "px.fan"
+type = "weapon"
+name = "Fan"
+authors = ["_Kilburn"]
+description = "Place a fan that blows for a few turns: 1 to 5 set its force, + stands it upright. On its side it adds to the wind; upright it lifts gliders, balloons and flames. Without its grate, its blades hit what stands in front."
+entry = "components/weapon.lua"
+icon = "sprites/fan/ico_fan.png"
+default_position = { row = "F12", column = 3 }
 
 [[components]]
 id = "px.3_girder_pack"

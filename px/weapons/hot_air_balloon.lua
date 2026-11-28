@@ -36,6 +36,7 @@ function weapon.setup()
   local shared = require("lib/shared")
   local own_time = require("wf-lib/own_time")
   local parachute = require("lib/parachute")
+  local airflow = require("lib/airflow")
   parachute.setup()
   shared.balloons = shared.balloons or {}
   local balloons = shared.balloons
@@ -154,6 +155,7 @@ function weapon.setup()
         vx = vx + (right and push or 0) - (left and push or 0)
         vy = vy + (down and push or 0) - (up and push or 0)
         vy = vy - g * worm.gravity
+        vy = vy - airflow.lift(b.x, b.y) * (b.wind / 100) -- an upright Fan's rising air
         local side = wa.world.wind() >= 0 and 1 or -1
         if worm:fits(b.x + side, b.y) then
           vx = vx + wa.world.wind() * (b.wind / 100)
