@@ -3,12 +3,12 @@
 local weapon = {}
 
 local ART = "sprites/fire_cluster/"
+local GRENADE_SPRITE = 50 -- the stock grenade's: a flying round keeps it, and the art spec hides it
 local CLUSTLET_SPRITE = 54 -- the stock cluster bit's, which the clustlets fly with
 local CLUSTLETS = 5
 
 weapon.record = {
   missile = {
-    sprite = 0, -- WA draws no round; the art spec draws it
     burst = "nothing",
     impact_particles = false,
     bounce = {
@@ -47,7 +47,7 @@ local CLUSTLET = {
 }
 
 weapon.missile_sprite = {
-  { sheet = ART .. "bullet.png", frames = 1, spin = true, hide = true, first_sprite = 0 },
+  { sheet = ART .. "bullet.png", frames = 1, spin = true, hide = true, first_sprite = GRENADE_SPRITE },
   { sheet = ART .. "clustlet.png", frames = 1, spin = true, hide = true,
     first_sprite = CLUSTLET_SPRITE },
 }

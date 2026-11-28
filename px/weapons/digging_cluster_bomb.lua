@@ -9,7 +9,6 @@ local DIG_SOUND = 65574 -- the Mole Bomb's digging sound
 
 weapon.record = {
   missile = {
-    sprite = 0, -- WA draws no round; the art spec draws it
     action = "dig",
     animation = 2,
     burst = "nothing",
@@ -63,7 +62,7 @@ local CLUSTLET = {
 local SPEEDS = { { 0, -10 }, { 5, -6 }, { -5, -6 }, { 6, 4 }, { -6, 6 } }
 
 weapon.missile_sprite = {
-  { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = 0 },
+  { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = GRENADE_SPRITE },
   -- PX draws each clustlet as the bomb itself.
   { sheet = ART .. "bullet.png", frames = 1, hide = true, first_sprite = CLUSTLET_SPRITE },
 }
